@@ -1,0 +1,37 @@
+# Golang executables
+/bin
+engine-api
+
+# Golang dependencies
+Gopkg.lock
+Gopkg.toml
+/vendor
+
+# Golang test coverage
+/coverage
+
+# Certificates
+/certs
+
+# Swaggo docs
+/docs
+
+# Document
+/document
+
+# Profiling dump
+*.prof
+
+# VS Code
+.vscode
+
+# Logs
+*.log
+
+# Compressed content
+*.tar
+
+# Version file (used in CI)
+version
+
+*.plugin

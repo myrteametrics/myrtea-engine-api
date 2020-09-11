@@ -1,0 +1,19 @@
+[
+    {
+        "id": 1,
+        "cronexpr": "*/5 * * * *",
+        "ids": [
+            "fact_test_1",
+            "fact_test_2",
+            "fact_test_3"
+        ]
+    },
+    {
+        "id": 2,
+        "cronexpr": "*/15 * * * *",
+        "ids": [
+            "fact_test_4",
+            "fact_test_5"
+        ]
+    }
+]

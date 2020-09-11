@@ -1,0 +1,35 @@
+language: go
+sudo: false
+
+go:
+  - "1.14"
+
+cache:
+  directories:
+    - $GOPATH/pkg/mod
+
+git:
+  depth: 1
+
+branches:
+  only:
+    - master
+
+env:
+  global:
+    - GO111MODULE=on
+
+services:
+  - postgresql
+
+addons:
+  postgresql: "10"
+
+script:
+  - make swag
+  - make test-integration
+  - make build
+
+after_success:
+  - cat coverage/profile.out >> coverage.txt
+  - bash <(curl -s https://codecov.io/bash)

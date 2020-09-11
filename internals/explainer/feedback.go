@@ -1,0 +1,228 @@
+package explainer
+
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/action"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/rootcause"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+)
+
+// CloseIssueWithoutFeedback close an issue without standard feedback on rootcause / action
+func CloseIssueWithoutFeedback(dbClient *sqlx.DB, issueID int64, reason string, groups []int64, user groups.UserWithGroups) error {
+	issue, found, err := issues.R().Get(issueID, groups)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("Issue with id %d not found", issueID)
+	}
+	if issue.State.IsClosed() {
+		return fmt.Errorf("Issue with id %d is already in a closed state", issueID)
+	}
+
+	tx, err := dbClient.Beginx()
+	if err != nil {
+		return err
+	}
+
+	err = updateIssueState(tx, issueID, models.ClosedNoFeedback, groups, user)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return nil
+}
+
+// CloseIssueWithFeedback generate and persist an issue feedback for the rootcause/action stats and ML models
+func CloseIssueWithFeedback(dbClient *sqlx.DB, issueID int64, recommendation models.FrontRecommendation, groups []int64, user groups.UserWithGroups) error {
+	issue, found, err := issues.R().Get(issueID, groups)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("Issue with id %d not found", issueID)
+	}
+	if issue.State.IsClosed() {
+		return fmt.Errorf("Issue with id %d is already in a closed state", issueID)
+	}
+
+	exists, err := checkExistsIssueResolution(dbClient, issueID)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return errors.New("A feedback has already been done on this issue")
+	}
+
+	selectedRootCause, selectedActions, err := ExtractSelectedFromTree(recommendation)
+	if err != nil {
+		return err
+	}
+
+	tx, err := dbClient.Beginx()
+	if err != nil {
+		return err
+	}
+
+	err = persistIssueFeedback(tx, issueID, selectedRootCause, selectedActions)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = SaveIssueDraft(tx, issueID, recommendation, groups, user)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = updateIssueState(tx, issueID, models.ClosedFeedback, groups, user)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+func checkExistsIssueResolution(dbClient *sqlx.DB, issueID int64) (bool, error) {
+	var exists bool
+	checkNameQuery := `select exists(select 1 from issue_resolution_v1 where issue_id = $1) AS "exists"`
+	err := dbClient.QueryRow(checkNameQuery, issueID).Scan(&exists)
+	if err != nil && err != sql.ErrNoRows {
+		return false, err
+	}
+	return exists, nil
+}
+
+func updateIssueState(tx *sqlx.Tx, issueID int64, state models.IssueState, groups []int64, user groups.UserWithGroups) error {
+	issue, found, err := issues.R().Get(issueID, groups)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("Issue with id %d not found", issueID)
+	}
+
+	issue.State = state
+	err = issues.R().Update(tx, issueID, issue, user)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// persistIssueFeedback persist a rootcause and an ensemble of actions related to the resolution of an issue
+func persistIssueFeedback(tx *sqlx.Tx, issueID int64, selectedRootCause *models.FrontRootCause, selectedActions []*models.FrontAction) error {
+	issue, found, err := issues.R().Get(issueID, groups.GetTokenAllGroups())
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errors.New("Issue not found")
+	}
+	situationID := issue.SituationID
+	ruleID := issue.Rule.RuleID
+
+	// Create new rootcause if needed
+	dbRootCauseID := selectedRootCause.ID
+	if selectedRootCause.Custom {
+		dbRootCause := models.NewRootCause(-1, selectedRootCause.Name, selectedRootCause.Description, situationID, ruleID)
+		dbRootCauseID, err = rootcause.R().Create(tx, dbRootCause)
+		if err != nil {
+			return err
+		}
+	} else {
+		checkRC, found, err := rootcause.R().Get(selectedRootCause.ID)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return errors.New("This rootcause doesn't not exists")
+		}
+		if checkRC.SituationID != situationID {
+			return errors.New("This rootcause cannot be used on the current issue/situation")
+		}
+		if checkRC.RuleID != ruleID {
+			return errors.New("This rootcause cannot be used on the current issue/situation (invalid rule)")
+		}
+	}
+
+	// Create new actions if needed
+	dbActionIDs := make([]int64, 0)
+	for _, selectedAction := range selectedActions {
+		dbActionID := selectedAction.ID
+		if selectedAction.Custom {
+			dbAction := models.NewAction(-1, selectedAction.Name, selectedAction.Description, dbRootCauseID)
+			dbActionID, err = action.R().Create(tx, dbAction)
+			if err != nil {
+				return err
+			}
+		} else {
+			checkAction, found, err := action.R().Get(selectedAction.ID)
+			if err != nil {
+				return err
+			}
+			if !found {
+				return errors.New("This action doesn't not exists")
+			}
+			if checkAction.RootCauseID != dbRootCauseID {
+				return errors.New("This action cannot be used on the current rootcause")
+			}
+		}
+		dbActionIDs = append(dbActionIDs, dbActionID)
+	}
+
+	// Persist feedback in resolutions stats table
+	for _, actionID := range dbActionIDs {
+		err := persistIssueResolutionStat(tx, issueID, dbRootCauseID, actionID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// persistIssueResolutionStat persist a single selected tuple of rootcause/action in the resolution statistics table
+func persistIssueResolutionStat(tx *sqlx.Tx, issueID int64, rootCauseID int64, actionID int64) error {
+	query := `INSERT into issue_resolution_v1 (feedback_date, issue_id, rootcause_id, action_id) 
+		values (:feedback_date, :issue_id, :rootcause_id, :action_id)`
+	params := map[string]interface{}{
+		"feedback_date": time.Now().UTC(),
+		"issue_id":      issueID,
+		"rootcause_id":  rootCauseID,
+		"action_id":     actionID,
+	}
+
+	var err error
+	if tx != nil {
+		_, err = tx.NamedExec(query, params)
+	} else {
+		_, err = postgres.DB().NamedExec(query, params)
+	}
+	if err != nil {
+		return errors.New("Couldn't query the database:" + err.Error())
+	}
+	return nil
+}

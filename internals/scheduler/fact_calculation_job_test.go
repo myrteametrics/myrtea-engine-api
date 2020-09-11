@@ -1,0 +1,645 @@
+package scheduler
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"testing"
+	"time"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/calendar"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/evaluator"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/search"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tasker"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
+	"github.com/myrteametrics/myrtea-sdk/v4/configuration"
+	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
+	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v4/models"
+	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
+)
+
+func dbFactInit(dbClient *sqlx.DB, t *testing.T) {
+	dbFactDestroy(dbClient, t)
+	tests.DBExec(dbClient, tests.CalendarTableV3, t, true)
+	tests.DBExec(dbClient, tests.CalendarUnionTableV3, t, true)
+	tests.DBExec(dbClient, tests.RulesTableV1, t, true)
+	tests.DBExec(dbClient, tests.RuleVersionsTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationDefinitionTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationTemplateInstancesTableV1, t, true)
+	tests.DBExec(dbClient, tests.FactDefinitionTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationFactsTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationRulesTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationHistoryTableV1, t, true)
+	tests.DBExec(dbClient, tests.FactHistoryTableV1, t, true)
+	tests.DBExec(dbClient, tests.ModelTableV1, t, true)
+	tests.DBExec(dbClient, tests.EsIndicesTableV1, t, true)
+}
+
+func dbFactDestroy(dbClient *sqlx.DB, t *testing.T) {
+	tests.DBExec(dbClient, tests.RuleVersionsDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationRulesDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.RulesDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationFactsDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.FactDefinitionDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationTemplateInstancesDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationDefinitionDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.CalendarUnionDropTableV3, t, true)
+	tests.DBExec(dbClient, tests.CalendarDropTableV3, t, true)
+	tests.DBExec(dbClient, tests.SituationHistoryDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.FactHistoryDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.ModelDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.EsIndicesDropTableV1, t, true)
+}
+
+func insertFactData(dbClient *sqlx.DB, t *testing.T) {
+	dt := time.Now().Add(-1 * time.Minute).Truncate(1 * time.Millisecond).UTC()
+	//Insert model test
+	query := `INSERT INTO model_v1 VALUES (:id, :name, :definition)`
+	_, err := dbClient.NamedExec(query, map[string]interface{}{
+		"id":   1,
+		"name": "test",
+		"definition": `{"id": 0, "name": "test", "fields":
+						[
+							{"name": "id", "type": "string", "semantic": false, "synonyms": ["id", "identifiant"]},
+							{"name": "name", "type": "string", "semantic": false, "synonyms": ["name", "nom"]},
+							{"name": "type", "type": "string", "semantic": false, "synonyms": ["type"]},
+							{"name": "value", "type": "float", "semantic": false, "synonyms": ["value", "valeur"]},
+							{"name": "date", "type": "datetime", "semantic": false, "synonyms": ["date"]}
+						],
+						"source": "", "rollcron": "@midnight", "rollmode": "rollover", "synonyms": ["test"]}`,
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	//Insert elasticsearch indices  test
+	query = `INSERT INTO elasticsearch_indices_v1 VALUES (:id, :logical, :technical, :creation_date)`
+	_, err = dbClient.NamedExec(query, map[string]interface{}{
+		"id":            1,
+		"logical":       "myrtea-test",
+		"technical":     "myrtea-test-active-000001",
+		"creation_date": dt,
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	//insert Fact
+	query = `INSERT INTO fact_definition_v1 VALUES (:id, :name, :definition, :last_modified)`
+	_, err = dbClient.NamedExec(query, map[string]interface{}{
+		"id":   1,
+		"name": "fact_1",
+		"definition": `{"id":1,"name":"fact_1","isObject":false,"model":"test","intent":{"operator":"avg","term":"value"},
+							"condition":{
+								"operator":"and",
+								"fragments":
+								[
+									{"operator":"for","term":"type","value":"type"},
+									{"operator":"exists","term":"value"},
+									{"operator":"between","term":"date","value":"startofday","value2":"now"}
+								]
+							},
+							"comment":"","isTemplate":true,"variables":["type"]}`,
+		"last_modified": dt,
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func loadConfiguration() {
+
+	if viper.GetString("INSTANCE_NAME") == "" {
+
+		allowedConfigKey := []configuration.ConfigKey{
+			{Type: configuration.StringFlag, Name: "INSTANCE_NAME", DefaultValue: "myrtea", Description: "Myrtea instance name"},
+		}
+		configName, configPath, envPrefix := "engine-api", "config", "MYRTEA"
+		configuration.InitializeConfig(allowedConfigKey, configName, configPath, envPrefix)
+	}
+}
+
+func esInit(t *testing.T) {
+	esDestroy()
+
+	templateBodyJSON := `{ "index_patterns": ["myrtea-test-active-*"],
+						   "mappings": { "document": { "properties": {
+								"name": { "type": "keyword" },
+								"id": { "type": "keyword" },
+			 					"type": { "type": "keyword" },
+			  					"value": { "type": "float" }
+							} } }
+	  					}`
+
+	_, err := elasticsearch.C().Client.
+		IndexPutTemplate("template-myrtea-test").
+		BodyString(templateBodyJSON).
+		Do(context.Background())
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = elasticsearch.C().Client.CreateIndex("myrtea-test-active-000001").Do(context.Background())
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = elasticsearch.C().Client.Alias().Add("myrtea-test-active-*", "myrtea-test-search").Do(context.Background())
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func esIndexData(t *testing.T, m int) {
+
+	now := time.Now().Format("2006-01-02T15:04:05.000Z07:00")
+
+	docs := []*models.Document{
+		{ID: fmt.Sprint(1 * m), Index: "myrtea-test-active-000001", IndexType: "document", Source: map[string]interface{}{"id": "1", "name": "name1", "type": "type1", "value": 0 * m, "date": now}},
+		{ID: fmt.Sprint(2 * m), Index: "myrtea-test-active-000001", IndexType: "document", Source: map[string]interface{}{"id": "2", "name": "name2", "type": "type1", "value": 20 * m, "date": now}},
+		{ID: fmt.Sprint(3 * m), Index: "myrtea-test-active-000001", IndexType: "document", Source: map[string]interface{}{"id": "3", "name": "name3", "type": "type1", "value": 100 * m, "date": now}},
+		{ID: fmt.Sprint(4 * m), Index: "myrtea-test-active-000001", IndexType: "document", Source: map[string]interface{}{"id": "4", "name": "name4", "type": "type2", "value": 20 * m, "date": now}},
+		{ID: fmt.Sprint(5 * m), Index: "myrtea-test-active-000001", IndexType: "document", Source: map[string]interface{}{"id": "5", "name": "name5", "type": "type2", "value": 40 * m, "date": now}},
+		{ID: fmt.Sprint(6 * m), Index: "myrtea-test-active-000001", IndexType: "document", Source: map[string]interface{}{"id": "6", "name": "name6", "type": "type2", "value": 30 * m, "date": now}},
+		{ID: fmt.Sprint(7 * m), Index: "myrtea-test-active-000001", IndexType: "document", Source: map[string]interface{}{"id": "7", "name": "name7", "type": "type3", "value": 100 * m, "date": now}},
+		{ID: fmt.Sprint(8 * m), Index: "myrtea-test-active-000001", IndexType: "document", Source: map[string]interface{}{"id": "8", "name": "name8", "type": "type3", "value": 100 * m, "date": now}},
+		{ID: fmt.Sprint(9 * m), Index: "myrtea-test-active-000001", IndexType: "document", Source: map[string]interface{}{"id": "9", "name": "name9", "type": "type3", "value": 100 * m, "date": now}},
+	}
+
+	elasticsearch.C().BulkIndex(context.Background(), docs)
+}
+
+func esDestroy() {
+	elasticsearch.C().Client.IndexDeleteTemplate("template-myrtea-test").Do(context.Background())
+	elasticsearch.C().Client.DeleteIndex("myrtea-test-active-000001").Do(context.Background())
+	elasticsearch.C().Client.Alias().Remove("myrtea-test-active-*", "myrtea-test-search").Do(context.Background())
+}
+
+func TestExpressionFact(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql + elasticseach test in short mode")
+	}
+
+	zapCfg := zap.NewDevelopmentConfig()
+	zapCfg.Level.SetLevel(zap.InfoLevel)
+	logger, err := zapCfg.Build(zap.AddStacktrace(zap.ErrorLevel))
+	if err != nil {
+		log.Fatalf("can't initialize zap logger: %v", err)
+	}
+	defer logger.Sync()
+	zap.ReplaceGlobals(logger)
+
+	db := tests.DBClient(t)
+	postgres.ReplaceGlobals(db)
+	defer dbFactDestroy(db, t)
+	dbFactInit(db, t)
+
+	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
+	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	situation.R().Create(
+		situation.Situation{ID: 1, Name: "s", Facts: []int64{1, 2},
+			Parameters: map[string]string{"const_z": "100"},
+			ExpressionFacts: []situation.ExpressionFact{
+				{Name: "a_", Expression: "a.aggs.doc_count.value"},
+				{Name: "b_", Expression: "b.aggs.doc_count.value"},
+				{Name: "c", Expression: "a_ + b_ + const_z"},
+				{Name: "d", Expression: "c * 3 + a_"},
+				{Name: "e", Expression: "-1 / 0"},
+			},
+		},
+	)
+	s, _, _ := situation.R().Get(1, groups.GetTokenAllGroups())
+
+	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
+	fact.R().Create(engine.Fact{ID: 1, Name: "a", Intent: &engine.IntentFragment{Operator: engine.Count, Term: "test"}})
+	fact.R().Create(engine.Fact{ID: 2, Name: "b", Intent: &engine.IntentFragment{Operator: engine.Count, Term: "test"}})
+	t1 := time.Now().UTC()
+	fact.PersistFactResult(1, t1, 0, 0, &reader.Item{Key: "a", Aggs: map[string]*reader.ItemAgg{"doc_count": {Value: 5}}}, true)
+	t2 := time.Now().UTC()
+	fact.PersistFactResult(2, t2, 0, 0, &reader.Item{Key: "b", Aggs: map[string]*reader.ItemAgg{"doc_count": {Value: 3}}}, true)
+
+	situationsToEvaluate, err := updateSituations(map[string]situation.HistoryRecord{
+		"1-0": {
+			ID:         1,
+			FactsIDS:   map[int64]*time.Time{1: &t1, 2: &t2},
+			Parameters: s.Parameters,
+		},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	situationEvaluations, _ := evaluator.EvaluateSituations(situationsToEvaluate, "standart")
+	t.Log(situationEvaluations)
+	_ = situationEvaluations
+}
+
+func TestFactCaltulationJob(t *testing.T) {
+	t.Skip("Elasticsearch unsupported tests")
+	if testing.Short() {
+		t.Skip("skipping postgresql + elasticseach test in short mode")
+	}
+
+	db := tests.DBClient(t)
+	postgres.ReplaceGlobals(db)
+	defer dbFactDestroy(db, t)
+	dbFactInit(db, t)
+
+	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
+	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	search.ReplaceGlobals(search.NewPostgresRepository(db))
+	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
+	calendar.ReplaceGlobals(calendar.NewPostgresRepository(db))
+	ReplaceGlobals(NewScheduler())
+	calendar.Init()
+
+	insertFactData(db, t)
+
+	loadConfiguration()
+	executorCredentials := &elasticsearch.Credentials{
+		URLs: []string{"http://localhost:9200"},
+	}
+	elasticsearch.ReplaceGlobals(executorCredentials)
+	defer esDestroy()
+	esInit(t)
+	time.Sleep(1 * time.Second)
+
+	tasker.ReplaceGlobals(tasker.NewTasker())
+	tasker.T().StartBatchProcessor()
+	defer tasker.T().StopBatchProcessor()
+
+	s1 := situation.Situation{
+		Name:       "Situation1",
+		Facts:      []int64{1},
+		Parameters: map[string]string{"type": "type1"},
+	}
+	s1ID, err := situation.R().Create(s1)
+	if err != nil {
+		t.Error(err)
+	}
+	s1.ID = s1ID
+
+	s2 := situation.Situation{
+		Name:       "Situation2",
+		Facts:      []int64{1},
+		Parameters: map[string]string{"type": "type2"},
+	}
+	s2ID, err := situation.R().Create(s2)
+	if err != nil {
+		t.Error(err)
+	}
+	s2.ID = s2ID
+
+	s3 := situation.Situation{
+		Name:       "Situation3",
+		Facts:      []int64{1},
+		Parameters: map[string]string{"type": "type3"},
+	}
+	s3ID, err := situation.R().Create(s3)
+	if err != nil {
+		t.Error(err)
+	}
+	s3.ID = s3ID
+
+	job := FactCalculationJob{
+		FactIds: []int64{1},
+	}
+
+	job.Run()
+
+	dt := time.Now().Truncate(1 * time.Millisecond).UTC()
+	s1HistoryRecords, _ := search.R().GetSituationHistoryRecords(s1, 0, dt, dt, dt, true, true, true, true, search.DownSampling{})
+	s2HistoryRecords, _ := search.R().GetSituationHistoryRecords(s2, 0, dt, dt, dt, true, true, true, true, search.DownSampling{})
+	s3HistoryRecords, _ := search.R().GetSituationHistoryRecords(s3, 0, dt, dt, dt, true, true, true, true, search.DownSampling{})
+
+	fmt.Println(s1HistoryRecords)
+
+	if s1HistoryRecords[0].Situations[0].Facts[0].FactName != "fact_1" || s1HistoryRecords[0].Situations[0].Facts[0].Value.(float64) != 40 {
+		t.Error("Situation1 records are not as expected")
+	}
+	if s2HistoryRecords[0].Situations[0].Facts[0].FactName != "fact_1" || s2HistoryRecords[0].Situations[0].Facts[0].Value.(float64) != 30 {
+		t.Error("Situation2 records are not as expected")
+	}
+	if s3HistoryRecords[0].Situations[0].Facts[0].FactName != "fact_1" || s3HistoryRecords[0].Situations[0].Facts[0].Value.(float64) != 100 {
+		t.Error("Situation1 records are not as expected")
+	}
+}
+
+func TestFactCaltulationJobSituationTemplate(t *testing.T) {
+	t.Skip("Elasticsearch unsupported tests")
+	if testing.Short() {
+		t.Skip("skipping postgresql + elasticseach test in short mode")
+	}
+
+	db := tests.DBClient(t)
+	postgres.ReplaceGlobals(db)
+	defer dbFactDestroy(db, t)
+	dbFactInit(db, t)
+
+	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
+	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	search.ReplaceGlobals(search.NewPostgresRepository(db))
+	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
+	calendar.ReplaceGlobals(calendar.NewPostgresRepository(db))
+	ReplaceGlobals(NewScheduler())
+	calendar.Init()
+
+	insertFactData(db, t)
+
+	loadConfiguration()
+	executorCredentials := &elasticsearch.Credentials{
+		URLs: []string{"http://localhost:9200"},
+	}
+	elasticsearch.ReplaceGlobals(executorCredentials)
+	defer esDestroy()
+	esInit(t)
+	time.Sleep(1 * time.Second)
+
+	tasker.ReplaceGlobals(tasker.NewTasker())
+	tasker.T().StartBatchProcessor()
+	defer tasker.T().StopBatchProcessor()
+
+	s1 := situation.Situation{
+		Name:       "Situation1",
+		Groups:     []int64{1},
+		Facts:      []int64{1},
+		Parameters: map[string]string{"type0": "type0"},
+		IsTemplate: true,
+	}
+	s1ID, err := situation.R().Create(s1)
+	if err != nil {
+		t.Error(err)
+	}
+	s1.ID = s1ID
+
+	_, err = situation.R().CreateTemplateInstance(s1ID,
+		situation.TemplateInstance{
+			SituationID: s1ID,
+			Name:        "Instance1",
+			Parameters:  map[string]string{"type": "type1"},
+		},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = situation.R().CreateTemplateInstance(s1ID,
+		situation.TemplateInstance{
+			SituationID: s1ID,
+			Name:        "Instance2",
+			Parameters:  map[string]string{"type": "type2"},
+		},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = situation.R().CreateTemplateInstance(s1ID,
+		situation.TemplateInstance{
+			SituationID: s1ID,
+			Name:        "Instance3",
+			Parameters:  map[string]string{"type": "type3"},
+		},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+
+	job := FactCalculationJob{
+		FactIds: []int64{1},
+	}
+
+	job.Run()
+
+	dt := time.Now().Truncate(1 * time.Millisecond).UTC()
+	s1HistoryRecords, _ := search.R().GetSituationHistoryRecords(s1, 0, dt, dt, dt, true, true, true, true, search.DownSampling{})
+
+	if s1HistoryRecords[0].Situations[0].Facts[0].FactName != "fact_1" || s1HistoryRecords[0].Situations[0].Facts[0].Value.(float64) != 40 {
+		t.Error("Situation1 records are not as expected")
+	}
+	if s1HistoryRecords[0].Situations[1].Facts[0].FactName != "fact_1" || s1HistoryRecords[0].Situations[1].Facts[0].Value.(float64) != 30 {
+		t.Error("Situation2 records are not as expected")
+	}
+	if s1HistoryRecords[0].Situations[2].Facts[0].FactName != "fact_1" || s1HistoryRecords[0].Situations[2].Facts[0].Value.(float64) != 100 {
+		t.Error("Situation1 records are not as expected")
+	}
+}
+
+func TestFactRecaltulationJob(t *testing.T) {
+	t.Skip("Elasticsearch unsupported tests")
+	if testing.Short() {
+		t.Skip("skipping postgresql + elasticseach test in short mode")
+	}
+
+	db := tests.DBClient(t)
+	postgres.ReplaceGlobals(db)
+	defer dbFactDestroy(db, t)
+	dbFactInit(db, t)
+
+	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
+	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
+	search.ReplaceGlobals(search.NewPostgresRepository(db))
+
+	calendar.ReplaceGlobals(calendar.NewPostgresRepository(db))
+	ReplaceGlobals(NewScheduler())
+	calendar.Init()
+
+	insertFactData(db, t)
+
+	loadConfiguration()
+	executorCredentials := &elasticsearch.Credentials{
+		URLs: []string{"http://localhost:9200"},
+	}
+	elasticsearch.ReplaceGlobals(executorCredentials)
+	defer esDestroy()
+	esInit(t)
+	time.Sleep(1 * time.Second)
+
+	calendar.Init()
+	nTasker := tasker.NewTasker()
+	tasker.ReplaceGlobals(nTasker)
+	tasker.T().StartBatchProcessor()
+	defer tasker.T().StopBatchProcessor()
+
+	s1ID, err := situation.R().Create(
+		situation.Situation{
+			Name:       "Situation1",
+			Facts:      []int64{1},
+			Parameters: map[string]string{"type": "type1"},
+		},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+	s2ID, err := situation.R().Create(
+		situation.Situation{
+			Name:       "Situation2",
+			Facts:      []int64{1},
+			Parameters: map[string]string{"type": "type2"},
+		},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+	s3ID, err := situation.R().Create(
+		situation.Situation{
+			Name:       "Situation3",
+			Facts:      []int64{1},
+			Parameters: map[string]string{"type": "type3"},
+		},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+
+	///create rules
+	rule1 := rule.Rule{}
+	json.Unmarshal(dataRule1, &rule1)
+	r1ID, err := rule.R().Create(rule1)
+
+	situation.R().SetRules(s1ID, []int64{int64(r1ID)})
+	situation.R().SetRules(s2ID, []int64{int64(r1ID)})
+	situation.R().SetRules(s3ID, []int64{int64(r1ID)})
+
+	job := FactCalculationJob{
+		FactIds: []int64{1},
+	}
+
+	st := time.Now()
+	index := "myrtea-test-active-000001"
+	docs := []*models.Document{
+		{ID: "1", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "1", "name": "name1", "type": "type1", "value": 0, "date": st.Format("2006-01-02T15:04:05.000Z07:00")}},
+		{ID: "2", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "2", "name": "name2", "type": "type1", "value": 20}},
+		{ID: "3", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "3", "name": "name3", "type": "type1", "value": 100}},
+
+		{ID: "4", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "4", "name": "name4", "type": "type2", "value": 20, "date": st.Format("2006-01-02T15:04:05.000Z07:00")}},
+		{ID: "5", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "5", "name": "name5", "type": "type2", "value": 40}},
+		{ID: "6", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "6", "name": "name6", "type": "type2", "value": 30}},
+
+		{ID: "7", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "7", "name": "name7", "type": "type3", "value": 100, "date": st.Format("2006-01-02T15:04:05.000Z07:00")}},
+		{ID: "8", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "8", "name": "name8", "type": "type3", "value": 100}},
+		{ID: "9", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "9", "name": "name9", "type": "type3", "value": 100}},
+	}
+	elasticsearch.C().BulkIndex(context.Background(), docs)
+	time.Sleep(1 * time.Second)
+
+	job.Run()
+	time.Sleep(1 * time.Second)
+	validateRecords(t, []int64{s1ID, s2ID, s3ID}, st, time.Now(), "State", "Down")
+
+	now := time.Now()
+	docs = []*models.Document{
+		{ID: "2", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "2", "name": "name2", "type": "type1", "value": 100, "date": now.Format("2006-01-02T15:04:05.000Z07:00")}},
+
+		{ID: "5", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "5", "name": "name5", "type": "type2", "value": 30, "date": now.Format("2006-01-02T15:04:05.000Z07:00")}},
+
+		{ID: "8", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "8", "name": "name8", "type": "type3", "value": 100, "date": now.Format("2006-01-02T15:04:05.000Z07:00")}},
+	}
+	elasticsearch.C().BulkIndex(context.Background(), docs)
+	time.Sleep(1 * time.Second)
+
+	job.Run()
+	time.Sleep(1 * time.Second)
+	validateRecords(t, []int64{s1ID, s2ID, s3ID}, st, time.Now(), "State", "Down")
+
+	now = time.Now()
+	docs = []*models.Document{
+		{ID: "3", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "2", "name": "name2", "type": "type1", "value": 20, "date": now.Format("2006-01-02T15:04:05.000Z07:00")}},
+
+		{ID: "6", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "5", "name": "name5", "type": "type2", "value": 40, "date": now.Format("2006-01-02T15:04:05.000Z07:00")}},
+
+		{ID: "9", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "8", "name": "name8", "type": "type3", "value": 100, "date": now.Format("2006-01-02T15:04:05.000Z07:00")}},
+	}
+	elasticsearch.C().BulkIndex(context.Background(), docs)
+	time.Sleep(1 * time.Second)
+
+	job.Run()
+	time.Sleep(1 * time.Second)
+	validateRecords(t, []int64{s1ID, s2ID, s3ID}, st, now.Add(-1*time.Second), "State", "Down")
+	validateRecords(t, []int64{s1ID, s2ID, s3ID}, now, time.Now(), "State", "UP")
+
+	docs = []*models.Document{
+		{ID: "2", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "2", "name": "name2", "type": "type1", "value": 100, "date": st.Format("2006-01-02T15:04:05.000Z07:00")}},
+		{ID: "3", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "2", "name": "name2", "type": "type1", "value": 20, "date": st.Format("2006-01-02T15:04:05.000Z07:00")}},
+
+		{ID: "5", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "5", "name": "name5", "type": "type2", "value": 30, "date": st.Format("2006-01-02T15:04:05.000Z07:00")}},
+		{ID: "6", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "5", "name": "name5", "type": "type2", "value": 40, "date": st.Format("2006-01-02T15:04:05.000Z07:00")}},
+
+		{ID: "8", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "8", "name": "name8", "type": "type3", "value": 100, "date": st.Format("2006-01-02T15:04:05.000Z07:00")}},
+		{ID: "9", Index: index, IndexType: "document", Source: map[string]interface{}{"id": "8", "name": "name8", "type": "type3", "value": 100, "date": st.Format("2006-01-02T15:04:05.000Z07:00")}},
+	}
+	elasticsearch.C().BulkIndex(context.Background(), docs)
+	time.Sleep(1 * time.Second)
+
+	job.From = "calendar_add(now, \"-1h\")"
+	job.To = "now"
+
+	job.Run()
+	time.Sleep(1 * time.Second)
+	validateRecords(t, []int64{s1ID, s2ID, s3ID}, st, time.Now(), "State", "UP")
+}
+
+func validateRecords(t *testing.T, situationIDs []int64, from time.Time, to time.Time, key string, value string) {
+	for _, sID := range situationIDs {
+		query := search.Query{
+			SituationID: sID,
+			Start:       from,
+			End:         to,
+		}
+
+		results, _ := query.Execute()
+
+		for _, result := range results {
+			for _, sh := range result.Situations {
+				if sh.MetaData[key] != value {
+					t.Error("The SituationHistoryRecord obtained is not as expected")
+					t.FailNow()
+				}
+			}
+		}
+
+	}
+}
+
+var dataRule1 = []byte(`
+{
+	"name": "rule1",
+	"description": "this is the rule 1",
+	"cases": [
+		{
+			"name": "case1",
+			"condition": "fact_1.aggs.doc_count.value >= 3",
+			"actions": [
+				{
+					"name": "set",
+					"parameters": {
+						"State": "\"UP\""
+					}
+				}
+			]
+		},
+		{
+			"name": "case2",
+			"condition": "fact_1.aggs.doc_count.value < 3",
+			"actions": [
+				{
+					"name": "set",
+					"parameters": {
+						"State": "\"Down\""
+					}
+				}
+			]
+		}
+	],
+	"enabled": true
+}
+`)

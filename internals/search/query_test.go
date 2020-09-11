@@ -1,0 +1,565 @@
+package search
+
+import (
+	"testing"
+	"time"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
+	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+)
+
+func dbFactInit(dbClient *sqlx.DB, t *testing.T) {
+	dbFactDestroy(dbClient, t)
+	tests.DBExec(dbClient, tests.CalendarTableV3, t, true)
+	tests.DBExec(dbClient, tests.RulesTableV1, t, true)
+	tests.DBExec(dbClient, tests.RuleVersionsTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationDefinitionTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationTemplateInstancesTableV1, t, true)
+	tests.DBExec(dbClient, tests.FactDefinitionTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationFactsTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationRulesTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationHistoryTableV1, t, true)
+	tests.DBExec(dbClient, tests.FactHistoryTableV1, t, true)
+	tests.DBExec(dbClient, tests.ModelTableV1, t, true)
+	tests.DBExec(dbClient, tests.EsIndicesTableV1, t, true)
+}
+
+func dbFactDestroy(dbClient *sqlx.DB, t *testing.T) {
+	tests.DBExec(dbClient, tests.RuleVersionsDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationRulesDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.RulesDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationFactsDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.FactDefinitionDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationTemplateInstancesDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationDefinitionDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationHistoryDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.FactHistoryDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.ModelDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.EsIndicesDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.CalendarDropTableV3, t, true)
+}
+
+func TestSearch(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql + elasticseach test in short mode")
+	}
+
+	db := tests.DBClient(t)
+	defer dbFactDestroy(db, t)
+	dbFactInit(db, t)
+
+	postgres.ReplaceGlobals(db)
+	ReplaceGlobals(NewPostgresRepository(db))
+	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
+	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
+
+	fact1ID, _ := fact.R().Create(engine.Fact{Name: "fact_1"})
+	fact2ID, _ := fact.R().Create(engine.Fact{Name: "fact_2"})
+
+	situationID, _ := situation.R().Create(
+		situation.Situation{
+			Name:  "Situation_1",
+			Facts: []int64{fact1ID, fact2ID},
+		},
+	)
+
+	ts := time.Date(2019, time.November, 2, 12, 00, 0, 0, time.UTC)
+	fact.PersistFactResult(fact1ID, ts, 0, 0, &reader.Item{
+		Aggs: map[string]*reader.ItemAgg{
+			"avg_value": {Value: 10},
+			"doc_count": {Value: 5},
+		},
+	}, true)
+	fact.PersistFactResult(fact2ID, ts, 0, 0, &reader.Item{
+		Aggs: map[string]*reader.ItemAgg{
+			"avg_value": {Value: 20},
+			"doc_count": {Value: 15},
+		},
+	}, true)
+
+	situation.Persist(
+		situation.HistoryRecord{
+			ID: situationID, TS: ts,
+			FactsIDS:                 map[int64]*time.Time{fact1ID: &ts, fact2ID: &ts},
+			Parameters:               map[string]string{"p_id": "s1", "p_1": "10"},
+			EvaluatedExpressionFacts: map[string]interface{}{"a": 10, "b": 20, "c": map[string]interface{}{"d": 30}},
+		},
+		false,
+	)
+
+	situation.UpdateHistoryMetadata(situationID, ts, 0, []models.MetaData{
+		{Key: "state", Value: "OK"},
+		{Key: "percentage", Value: 0.5},
+	})
+
+	query := Query{
+		SituationID: situationID,
+		Time:        ts,
+	}
+
+	result, _ := query.Execute()
+
+	if len(result) != 1 {
+		t.Error("The number of SituationHistoryRecords obtained is not as expected")
+		t.FailNow()
+	}
+	if result[0].DateTime != ts {
+		t.Error("The SituationHistoryRecords obtained is not as expected")
+		t.FailNow()
+	}
+	if len(result[0].Situations) != 1 {
+		t.Error("The number of SituationHistoryRecord obtained is not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].SituationID != situationID {
+		t.Error("The SituationHistoryRecord obtained is not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].Parameters["p_id"] != "s1" || result[0].Situations[0].Parameters["p_1"] != "10" {
+		t.Error("The SituationHistoryRecord Parameters obtained are not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].MetaData["percentage"].(float64) != 0.5 {
+		t.Error("The SituationHistoryRecord Parameters obtained are not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].ExpressionFacts["a"].(float64) != 10 {
+		t.Error("The SituationHistoryRecord ExpressionFacts obtained are not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].ExpressionFacts["b"].(float64) != 20 {
+		t.Error("The SituationHistoryRecord ExpressionFacts obtained are not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].ExpressionFacts["c"].(map[string]interface{})["d"].(float64) != 30 {
+		t.Error("The SituationHistoryRecord ExpressionFacts obtained are not as expected")
+		t.FailNow()
+	}
+	if len(result[0].Situations[0].Facts) != 2 {
+		t.Error("The number of FactHistoryRecord obtained is not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].Facts[0].FactID != fact1ID || result[0].Situations[0].Facts[0].FactName != "fact_1" {
+		t.Error("The FactHistoryRecords obtained are not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].Facts[0].Value.(float64) != 10 || result[0].Situations[0].Facts[0].DocCount.(float64) != 5 {
+		t.Error("The FactHistoryRecords obtained are not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].Facts[1].FactID != fact2ID || result[0].Situations[0].Facts[1].FactName != "fact_2" {
+		t.Error("The FactHistoryRecords obtained are not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].Facts[1].Value.(float64) != 20 || result[0].Situations[0].Facts[1].DocCount.(float64) != 15 {
+		t.Error("The FactHistoryRecords obtained are not as expected")
+		t.FailNow()
+	}
+}
+
+func TestSearchDownSamplingAVG(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql + elasticseach test in short mode")
+	}
+
+	db := tests.DBClient(t)
+	defer dbFactDestroy(db, t)
+	dbFactInit(db, t)
+
+	postgres.ReplaceGlobals(db)
+	ReplaceGlobals(NewPostgresRepository(db))
+	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
+	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
+
+	fact1ID, _ := fact.R().Create(engine.Fact{Name: "fact_1"})
+	fact2ID, _ := fact.R().Create(engine.Fact{Name: "fact_2"})
+
+	situationID, _ := situation.R().Create(
+		situation.Situation{
+			Name:  "Situation_1",
+			Facts: []int64{fact1ID, fact2ID},
+		},
+	)
+
+	fact1Values := []float64{20, 22, 34, 44, 54}
+	fact1DocCount := []float64{10, 12, 15, 20, 30}
+	fact2Values := []float64{25, 28, 25, 30, 64}
+	fact2DocCount := []float64{15, 18, 41, 54, 40}
+
+	percentages := make([]float64, 0)
+	for i, val := range fact1Values {
+		percentages = append(percentages, val/fact2Values[i])
+	}
+
+	ts := time.Date(2019, time.November, 2, 12, 00, 0, 0, time.UTC)
+	tsi := ts
+	for i := 0; i < 5; i++ {
+
+		fact.PersistFactResult(fact1ID, tsi, 0, 0, &reader.Item{
+			Aggs: map[string]*reader.ItemAgg{
+				"avg_value": {Value: fact1Values[i]},
+				"doc_count": {Value: fact1DocCount[i]},
+			},
+		}, true)
+		fact.PersistFactResult(fact2ID, tsi, 0, 0, &reader.Item{
+			Aggs: map[string]*reader.ItemAgg{
+				"avg_value": {Value: fact2Values[i]},
+				"doc_count": {Value: fact2DocCount[i]},
+			},
+		}, true)
+
+		situation.Persist(
+			situation.HistoryRecord{
+				ID: situationID, TS: tsi,
+				FactsIDS:   map[int64]*time.Time{fact1ID: &tsi, fact2ID: &tsi},
+				Parameters: map[string]string{"p_id": "s1", "p_1": "10"},
+			},
+			false,
+		)
+
+		situation.UpdateHistoryMetadata(situationID, tsi, 0, []models.MetaData{
+			{Key: "state", Value: "OK"},
+			{Key: "percentage", Value: percentages[i]},
+		})
+
+		tsi = tsi.Add(12 * time.Minute)
+	}
+
+	query := Query{
+		SituationID: situationID,
+		Start:       ts,
+		End:         ts.Add(24 * time.Hour),
+		DownSampling: DownSampling{
+			Granularity: time.Hour,
+			Operation:   "avg",
+		},
+	}
+
+	result, _ := query.Execute()
+
+	if len(result) != 1 {
+		t.Error("The number of SituationHistoryRecords obtained is not as expected")
+		t.FailNow()
+	}
+	if result[0].DateTime != ts {
+		t.Error("The SituationHistoryRecord obtained is not as expected")
+		t.FailNow()
+	}
+	if len(result[0].Situations) != 1 {
+		t.Error("The number of SituationHistoryRecord obtained is not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].SituationID != situationID {
+		t.Error("The SituationHistoryRecord obtained is not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].Parameters["p_id"] != "s1" || result[0].Situations[0].Parameters["p_1"] != "10" {
+		t.Error("The SituationHistoryRecord Parameters obtained are not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].MetaData["percentage"].(float64) != getAvg(percentages) {
+		t.Error("The SituationHistoryRecord Parameters obtained are not as expected")
+		t.FailNow()
+	}
+	if len(result[0].Situations[0].Facts) != 2 {
+		t.Error("The number of FactHistoryRecord obtained is not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].Facts[0].FactID != fact1ID || result[0].Situations[0].Facts[0].FactName != "fact_1" {
+		t.Error("The FactHistoryRecords obtained are not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].Facts[0].Value.(float64) != getAvg(fact1Values) || result[0].Situations[0].Facts[0].DocCount.(float64) != getAvg(fact1DocCount) {
+		t.Error("The FactHistoryRecords obtained are not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].Facts[1].FactID != fact2ID || result[0].Situations[0].Facts[1].FactName != "fact_2" {
+		t.Error("The FactHistoryRecords obtained are not as expected")
+		t.FailNow()
+	}
+	if result[0].Situations[0].Facts[1].Value.(float64) != getAvg(fact2Values) || result[0].Situations[0].Facts[1].DocCount.(float64) != getAvg(fact2DocCount) {
+		t.Error("The FactHistoryRecords obtained are not as expected")
+		t.FailNow()
+	}
+}
+
+func TestSearchDownSamplingLatest(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql + elasticseach test in short mode")
+	}
+
+	db := tests.DBClient(t)
+	defer dbFactDestroy(db, t)
+	dbFactInit(db, t)
+
+	postgres.ReplaceGlobals(db)
+	ReplaceGlobals(NewPostgresRepository(db))
+	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
+	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
+
+	fact1ID, _ := fact.R().Create(engine.Fact{Name: "fact_1"})
+	fact2ID, _ := fact.R().Create(engine.Fact{Name: "fact_2"})
+
+	situationID, _ := situation.R().Create(
+		situation.Situation{
+			Name:  "Situation_1",
+			Facts: []int64{fact1ID, fact2ID},
+		},
+	)
+
+	fact1Values := []float64{20, 22, 34, 44, 54}
+	fact1DocCount := []float64{10, 12, 15, 20, 30}
+	fact2Values := []float64{25, 28, 25, 30, 64}
+	fact2DocCount := []float64{15, 18, 41, 54, 40}
+
+	percentages := make([]float64, 0)
+	for i, val := range fact1Values {
+		percentages = append(percentages, val/fact2Values[i])
+	}
+
+	ts := time.Date(2019, time.November, 2, 00, 00, 0, 0, time.UTC)
+	tsi := ts
+	for i := 1; i <= 3; i++ {
+		for j := 0; j < 5; j++ {
+			fact.PersistFactResult(fact1ID, tsi, 0, 0, &reader.Item{
+				Aggs: map[string]*reader.ItemAgg{
+					"avg_value": {Value: fact1Values[j] * float64(i)},
+					"doc_count": {Value: fact1DocCount[j] * float64(i)},
+				},
+			}, true)
+			fact.PersistFactResult(fact2ID, tsi, 0, 0, &reader.Item{
+				Aggs: map[string]*reader.ItemAgg{
+					"avg_value": {Value: fact2Values[j] * float64(i)},
+					"doc_count": {Value: fact2DocCount[j] * float64(i)},
+				},
+			}, true)
+			situation.Persist(
+				situation.HistoryRecord{
+					ID: situationID, TS: tsi,
+					FactsIDS:   map[int64]*time.Time{fact1ID: &tsi, fact2ID: &tsi},
+					Parameters: map[string]string{"p_id": "s1", "p_1": "10"},
+				},
+				false,
+			)
+			situation.UpdateHistoryMetadata(situationID, tsi, 0, []models.MetaData{
+				{Key: "state", Value: "OK"},
+				{Key: "percentage", Value: percentages[j] * float64(i)},
+			})
+			tsi = tsi.Add(12 * time.Minute)
+		}
+		tsi = tsi.Truncate(24 * time.Hour).Add(24 * time.Hour)
+	}
+
+	query := Query{
+		SituationID: situationID,
+		Start:       ts,
+		End:         ts.Add(72 * time.Hour),
+		DownSampling: DownSampling{
+			Granularity: 24 * time.Hour,
+			Operation:   "latest",
+		},
+	}
+
+	results, _ := query.Execute()
+
+	if len(results) != 3 {
+		t.Error("The number of SituationHistoryRecords obtained is not as expected")
+		t.Log(len(results), "vs expected 3")
+		t.FailNow()
+	}
+	ts = ts.Add(48 * time.Minute)
+	for i, result := range results {
+		if result.DateTime != ts {
+			t.Error("The SituationHistoryRecord obtained is not as expected")
+			t.FailNow()
+		}
+		if len(result.Situations) != 1 {
+			t.Error("The number of SituationHistoryRecord obtained is not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].SituationID != situationID {
+			t.Error("The SituationHistoryRecord obtained is not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].Parameters["p_id"] != "s1" || result.Situations[0].Parameters["p_1"] != "10" {
+			t.Error("The SituationHistoryRecord Parameters obtained are not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].MetaData["percentage"].(float64) != percentages[len(percentages)-1]*float64(i+1) {
+			t.Error("The SituationHistoryRecord Parameters obtained are not as expected")
+			t.FailNow()
+		}
+		if len(result.Situations[0].Facts) != 2 {
+			t.Error("The number of FactHistoryRecord obtained is not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].Facts[0].FactID != fact1ID || result.Situations[0].Facts[0].FactName != "fact_1" {
+			t.Error("The FactHistoryRecords obtained are not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].Facts[0].Value.(float64) != fact1Values[len(percentages)-1]*float64(i+1) ||
+			result.Situations[0].Facts[0].DocCount.(float64) != fact1DocCount[len(percentages)-1]*float64(i+1) {
+			t.Error("The FactHistoryRecords obtained are not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].Facts[1].FactID != fact2ID || result.Situations[0].Facts[1].FactName != "fact_2" {
+			t.Error("The FactHistoryRecords obtained are not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].Facts[1].Value.(float64) != fact2Values[len(percentages)-1]*float64(i+1) ||
+			result.Situations[0].Facts[1].DocCount.(float64) != fact2DocCount[len(percentages)-1]*float64(i+1) {
+			t.Error("The FactHistoryRecords obtained are not as expected")
+			t.FailNow()
+		}
+		ts = ts.Add(24 * time.Hour)
+	}
+}
+
+func TestSearchDownSamplingFirst(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql + elasticseach test in short mode")
+	}
+
+	db := tests.DBClient(t)
+	defer dbFactDestroy(db, t)
+	dbFactInit(db, t)
+
+	postgres.ReplaceGlobals(db)
+	ReplaceGlobals(NewPostgresRepository(db))
+	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
+	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
+
+	fact1ID, _ := fact.R().Create(engine.Fact{Name: "fact_1"})
+	fact2ID, _ := fact.R().Create(engine.Fact{Name: "fact_2"})
+
+	situationID, _ := situation.R().Create(
+		situation.Situation{
+			Name:  "Situation_1",
+			Facts: []int64{fact1ID, fact2ID},
+		},
+	)
+
+	fact1Values := []float64{20, 22, 34, 44, 54}
+	fact1DocCount := []float64{10, 12, 15, 20, 30}
+	fact2Values := []float64{25, 28, 25, 30, 64}
+	fact2DocCount := []float64{15, 18, 41, 54, 40}
+
+	percentages := make([]float64, 0)
+	for i, val := range fact1Values {
+		percentages = append(percentages, val/fact2Values[i])
+	}
+
+	ts := time.Date(2019, time.November, 2, 00, 00, 0, 0, time.UTC)
+	tsi := ts
+	for i := 1; i <= 3; i++ {
+		for j := 0; j < 5; j++ {
+			fact.PersistFactResult(fact1ID, tsi, 0, 0, &reader.Item{
+				Aggs: map[string]*reader.ItemAgg{
+					"avg_value": {Value: fact1Values[j] * float64(i)},
+					"doc_count": {Value: fact1DocCount[j] * float64(i)},
+				},
+			}, true)
+			fact.PersistFactResult(fact2ID, tsi, 0, 0, &reader.Item{
+				Aggs: map[string]*reader.ItemAgg{
+					"avg_value": {Value: fact2Values[j] * float64(i)},
+					"doc_count": {Value: fact2DocCount[j] * float64(i)},
+				},
+			}, true)
+			situation.Persist(
+				situation.HistoryRecord{
+					ID: situationID, TS: tsi,
+					FactsIDS:   map[int64]*time.Time{fact1ID: &tsi, fact2ID: &tsi},
+					Parameters: map[string]string{"p_id": "s1", "p_1": "10"},
+				},
+				false,
+			)
+			situation.UpdateHistoryMetadata(situationID, tsi, 0, []models.MetaData{
+				{Key: "state", Value: "OK"},
+				{Key: "percentage", Value: percentages[j] * float64(i)},
+			})
+			tsi = tsi.Add(12 * time.Minute)
+		}
+		tsi = tsi.Truncate(24 * time.Hour).Add(24 * time.Hour)
+	}
+
+	query := Query{
+		SituationID: situationID,
+		Start:       ts,
+		End:         ts.Add(72 * time.Hour),
+		DownSampling: DownSampling{
+			Granularity: 24 * time.Hour,
+			Operation:   "first",
+		},
+	}
+
+	results, _ := query.Execute()
+
+	if len(results) != 3 {
+		t.Error("The number of SituationHistoryRecords obtained is not as expected")
+		t.FailNow()
+	}
+	for i, result := range results {
+		if result.DateTime != ts {
+			t.Error("The SituationHistoryRecord obtained is not as expected")
+			t.FailNow()
+		}
+		if len(result.Situations) != 1 {
+			t.Error("The number of SituationHistoryRecord obtained is not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].SituationID != situationID {
+			t.Error("The SituationHistoryRecord obtained is not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].Parameters["p_id"] != "s1" || result.Situations[0].Parameters["p_1"] != "10" {
+			t.Error("The SituationHistoryRecord Parameters obtained are not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].MetaData["percentage"].(float64) != percentages[0]*float64(i+1) {
+			t.Error("The SituationHistoryRecord Parameters obtained are not as expected")
+			t.FailNow()
+		}
+		if len(result.Situations[0].Facts) != 2 {
+			t.Error("The number of FactHistoryRecord obtained is not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].Facts[0].FactID != fact1ID || result.Situations[0].Facts[0].FactName != "fact_1" {
+			t.Error("The FactHistoryRecords obtained are not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].Facts[0].Value.(float64) != fact1Values[0]*float64(i+1) ||
+			result.Situations[0].Facts[0].DocCount.(float64) != fact1DocCount[0]*float64(i+1) {
+			t.Error("The FactHistoryRecords obtained are not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].Facts[1].FactID != fact2ID || result.Situations[0].Facts[1].FactName != "fact_2" {
+			t.Error("The FactHistoryRecords obtained are not as expected")
+			t.FailNow()
+		}
+		if result.Situations[0].Facts[1].Value.(float64) != fact2Values[0]*float64(i+1) ||
+			result.Situations[0].Facts[1].DocCount.(float64) != fact2DocCount[0]*float64(i+1) {
+			t.Error("The FactHistoryRecords obtained are not as expected")
+			t.FailNow()
+		}
+		ts = ts.Add(24 * time.Hour)
+	}
+}
+
+func getAvg(values []float64) float64 {
+	var sum float64
+	for _, value := range values {
+		sum = sum + value
+	}
+	return sum / float64(len(values))
+}

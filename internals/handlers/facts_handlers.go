@@ -1,0 +1,757 @@
+package handlers
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"sort"
+	"strconv"
+
+	"github.com/go-chi/chi"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v4/plugins/baseline"
+	"github.com/myrteametrics/myrtea-sdk/v4/builder"
+	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"go.uber.org/zap"
+)
+
+// GetFacts godoc
+// @Summary Get all fact definitions
+// @Description Get all fact definitions
+// @Tags Facts
+// @Produce json
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 500 "internal server error"
+// @Router /engine/facts [get]
+func GetFacts(w http.ResponseWriter, r *http.Request) {
+	facts, err := fact.R().GetAll()
+	if err != nil {
+		zap.L().Error("Error getting facts", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	factsSlice := make([]engine.Fact, 0)
+	for _, fact := range facts {
+		factsSlice = append(factsSlice, fact)
+	}
+
+	sort.SliceStable(factsSlice, func(i, j int) bool {
+		return factsSlice[i].ID < factsSlice[j].ID
+	})
+
+	render.JSON(w, r, factsSlice)
+}
+
+// GetFact godoc
+// @Summary Get a fact definition
+// @Description Get a fact definition
+// @Tags Facts
+// @Produce json
+// @Param id path string true "Fact ID"
+// @Param byName query string false "Find fact by it's name"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Router /engine/facts/{id} [get]
+func GetFact(w http.ResponseWriter, r *http.Request) {
+	byName := false
+	_byName := r.URL.Query().Get("byName")
+	if _byName == "true" {
+		byName = true
+	}
+
+	id := chi.URLParam(r, "id")
+	f, apiError, err := lookupFact(byName, id)
+	if err != nil {
+		render.Error(w, r, apiError, err)
+		return
+	}
+
+	render.JSON(w, r, f)
+}
+
+// ValidateFact godoc
+// @Summary Validate a new fact definition
+// @Description Validate a new fact definition
+// @Tags Facts
+// @Accept json
+// @Produce json
+// @Param fact body interface{} true "Fact definition (json)"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Failure 500 "Status" internal server error"
+// @Router /engine/facts/validate [post]
+func ValidateFact(w http.ResponseWriter, r *http.Request) {
+
+	var newFact engine.Fact
+	err := json.NewDecoder(r.Body).Decode(&newFact)
+	if err != nil {
+		zap.L().Warn("Fact definition json decode", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	if ok, err := newFact.IsValid(); !ok {
+		zap.L().Warn("Fact definition json is invalid", zap.Error(err))
+		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		return
+	}
+
+	render.JSON(w, r, newFact)
+}
+
+// PostFact godoc
+// @Summary Create a new fact definition
+// @Description Create a new fact definition
+// @Tags Facts
+// @Accept json
+// @Produce json
+// @Param fact body interface{} true "Fact definition (json)"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Failure 500 "Status" internal server error"
+// @Router /engine/facts [post]
+func PostFact(w http.ResponseWriter, r *http.Request) {
+
+	var newFact engine.Fact
+	err := json.NewDecoder(r.Body).Decode(&newFact)
+	if err != nil {
+		zap.L().Warn("Fact definition json decode", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	if ok, err := newFact.IsValid(); !ok {
+		zap.L().Warn("Fact definition json is invalid", zap.Error(err))
+		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		return
+	}
+
+	newFactID, err := fact.R().Create(newFact)
+	if err != nil {
+		zap.L().Error("Error while creating the Fact", zap.Any("fact", newFact), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		return
+	}
+
+	f, found, err := fact.R().Get(newFactID)
+	if err != nil {
+		zap.L().Error("Error while fetch the created fact", zap.Any("newfactID", newFactID), zap.Any("newfact", newFact), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Error("Fact cannot be found after creation", zap.Any("newfactID", newFactID), zap.Any("newfact", newFact), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, fmt.Errorf("Resouce with id %d not found after creation", newFactID))
+		return
+	}
+
+	render.JSON(w, r, f)
+}
+
+// PutFact godoc
+// @Summary Create or remplace a fact definition
+// @Description Create or remplace a fact definition
+// @Tags Facts
+// @Accept json
+// @Produce json
+// @Param id path string true "Fact ID"
+// @Param fact body interface{} true "Fact definition (json)"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Failure 500 "Status" internal server error"
+// @Router /engine/facts/{id} [put]
+func PutFact(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	idFact, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error on parsing fact id", zap.String("factID", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	var newFact engine.Fact
+	err = json.NewDecoder(r.Body).Decode(&newFact)
+	if err != nil {
+		zap.L().Warn("Fact definition json decode", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+	newFact.ID = idFact
+
+	if ok, err := newFact.IsValid(); !ok {
+		zap.L().Warn("Fact definition json is invalid", zap.Error(err))
+		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		return
+	}
+
+	err = fact.R().Update(idFact, newFact)
+	if err != nil {
+		zap.L().Error("Error while updating the Fact", zap.Int64("idFact", idFact), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		return
+	}
+
+	f, found, err := fact.R().Get(idFact)
+	if err != nil {
+		zap.L().Error("Error while fetch the created fact", zap.Any("factID", idFact), zap.Any("newfact", newFact), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Error("Error while creating the Fact", zap.Any("factID", idFact), zap.Any("newfact", newFact), zap.Error(errors.New("Fact not properly created")))
+		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, fmt.Errorf("Resouce with id %d not found after update", idFact))
+		return
+	}
+
+	render.JSON(w, r, f)
+}
+
+// DeleteFact godoc
+// @Summary Delete a fact definition
+// @Description Delete a fact definition
+// @Tags Facts
+// @Produce json
+// @Param id path string true "Fact ID"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Router /engine/facts/{id} [delete]
+func DeleteFact(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	idFact, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error on parsing fact id", zap.String("factID", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	err = fact.R().Delete(idFact)
+	if err != nil {
+		zap.L().Error("Error while deleting the Fact", zap.Int64("factID", idFact), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		return
+	}
+
+	render.OK(w, r)
+}
+
+// ExecuteFact godoc
+// @Summary Execute a fact with a given timestamp
+// @Description Execute a fact with a given timestamp
+// @Tags Facts
+// @Produce json
+// @Param id path string true "Fact ID"
+// @Param byName query string false "Find fact by it's name"
+// @Param time query string true "Timestamp used for the fact execution"
+// @Param cache query string false "Cache maximum age in minutes(go duration: 10m, 1h, ...). If unset, use cache with no limit of age. If set to 0, disable cache"
+// @Param nhit query int false "Hit per page"
+// @Param offset query int false "Offset number"
+// @Param placeholders query string false "Placeholders (format: key1:value1,key2:value2)"
+// @Param debug query string false "Debug true/false"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Router /engine/facts/{id}/execute [get]
+func ExecuteFact(w http.ResponseWriter, r *http.Request) {
+
+	debug := false
+	_debug := r.URL.Query().Get("debug")
+	if _debug == "true" {
+		debug = true
+	}
+
+	useCache := (r.URL.Query().Get("cache") != "0")
+	cacheDuration, err := ParseDuration(r.URL.Query().Get("cache"))
+	if err != nil {
+		zap.L().Warn("Parse input cache", zap.Error(err), zap.String("rawCache", r.URL.Query().Get("cache")))
+		render.Error(w, r, render.ErrAPIParsingDuration, err)
+		return
+	}
+
+	t, err := ParseTime(r.URL.Query().Get("time"))
+	if err != nil {
+		zap.L().Warn("Parse input time", zap.Error(err), zap.String("rawTime", r.URL.Query().Get("time")))
+		render.Error(w, r, render.ErrAPIParsingDateTime, err)
+		return
+	}
+
+	nhit, err := ParseInt(r.URL.Query().Get("nhit"))
+	if err != nil {
+		zap.L().Warn("Parse input nhit", zap.Error(err), zap.String("rawNhit", r.URL.Query().Get("nhit")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	offset, err := ParseInt(r.URL.Query().Get("offset"))
+	if err != nil {
+		zap.L().Warn("Parse input offset", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("offset")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	placeholders, err := ParsePlaceholders(r.URL.Query().Get("placeholders"))
+	if err != nil {
+		zap.L().Warn("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
+		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
+		return
+	}
+
+	byName := false
+	_byName := r.URL.Query().Get("byName")
+	if _byName == "true" {
+		byName = true
+	}
+
+	id := chi.URLParam(r, "id")
+	f, apiError, err := lookupFact(byName, id)
+	if err != nil {
+		render.Error(w, r, apiError, err)
+		return
+	}
+
+	var data *reader.WidgetData
+	if useCache {
+		zap.L().Debug("Use history cache to resolve query")
+		item, _, err := fact.GetFactResultFromHistory(f.ID, t, -1, 0, true, cacheDuration)
+		if err != nil {
+			zap.L().Error("Cannot fetch fact history", zap.Int64("id", f.ID), zap.Time("t", t), zap.Duration("cache", cacheDuration), zap.Error(err))
+			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+			return
+		}
+		if item != nil {
+			data = &reader.WidgetData{
+				Aggregates: item,
+			}
+		}
+	}
+
+	if data == nil {
+		zap.L().Debug("Use elasticsearch to resolve query")
+		if debug {
+			zap.L().Debug("Debugging fact", zap.Any("f", f))
+		}
+
+		pf, err := fact.Prepare(&f, nhit, offset, t, placeholders)
+		if err != nil {
+			zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
+			render.Error(w, r, render.ErrAPIResourceInvalid, err)
+			return
+		}
+
+		if debug {
+			zap.L().Debug("Debugging prepared fact", zap.Any("pf", pf))
+			source, _ := builder.BuildEsSearchSource(pf)
+			zap.L().Debug("Debugging final elastic query", zap.Any("query", source))
+		}
+
+		data, err = fact.Execute(pf)
+		if err != nil {
+			zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("prepared-query", pf))
+			render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
+			// FIXME: render.Error(w, r, render.ErrAPIResourceInvalid, err)
+			return
+		}
+
+		if data.Aggregates != nil {
+			pluginBaseline, err := baseline.P()
+			if err == nil {
+				// value, err := pluginBaseline.Baseline.GetBaselineValue(0, f.ID, situationID, situationInstanceID, t)
+				values, err := pluginBaseline.Baseline.GetBaselineValues(-1, f.ID, 0, 0, t)
+				if err != nil {
+					zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
+				}
+				data.Aggregates.Baselines = values
+			}
+		}
+
+		err = fact.PersistFactResult(f.ID, t, 0, 0, data.Aggregates, true)
+		if err != nil {
+			zap.L().Error("Cannot persist fact", zap.Error(err))
+		}
+	}
+
+	render.JSON(w, r, data)
+}
+
+// ExecuteFactFromSource godoc
+// @Summary Execute a fact with a given timestamp
+// @Description Execute a fact with a given timestamp
+// @Tags Facts
+// @Consumme json
+// @Produce json
+// @Param fact body interface{} true "Fact definition (json)"
+// @Param time query string true "Timestamp used for the fact execution"
+// @Param nhit query int false "Hit per page"
+// @Param offset query int false "Offset number"
+// @Param placeholders query string false "Placeholders (format key1:value1,key2:value2)"
+// @Param debug query string false "Debug true/false"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Router /engine/facts/execute [post]
+func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
+
+	debug := false
+	_debug := r.URL.Query().Get("debug")
+	if _debug == "true" {
+		debug = true
+	}
+
+	t, err := ParseTime(r.URL.Query().Get("time"))
+	if err != nil {
+		zap.L().Error("Parse input time", zap.Error(err), zap.String("rawTime", r.URL.Query().Get("time")))
+		render.Error(w, r, render.ErrAPIParsingDateTime, err)
+		return
+	}
+
+	nhit, err := ParseInt(r.URL.Query().Get("nhit"))
+	if err != nil {
+		zap.L().Error("Parse input nhit", zap.Error(err), zap.String("rawNhit", r.URL.Query().Get("nhit")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	offset, err := ParseInt(r.URL.Query().Get("offset"))
+	if err != nil {
+		zap.L().Error("Parse input offset", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("offset")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	placeholders, err := ParsePlaceholders(r.URL.Query().Get("placeholders"))
+	if err != nil {
+		zap.L().Error("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
+		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
+		return
+	}
+
+	var newFact engine.Fact
+	err = json.NewDecoder(r.Body).Decode(&newFact)
+	if err != nil {
+		zap.L().Warn("Fact definition json decode", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	if ok, err := newFact.IsValid(); !ok {
+		zap.L().Warn("Fact definition json is invalid", zap.Error(err))
+		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		return
+	}
+
+	if debug {
+		zap.L().Debug("Debugging fact", zap.Any("newFact", newFact))
+	}
+
+	pf, err := fact.Prepare(&newFact, nhit, offset, t, placeholders)
+	if err != nil {
+		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("newFact", newFact))
+		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		return
+	}
+
+	if debug {
+		zap.L().Debug("Debugging prepared fact", zap.Any("pf", pf))
+		source, _ := builder.BuildEsSearchSource(pf)
+		zap.L().Debug("Debugging final elastic query", zap.Any("query", source))
+	}
+
+	item, err := fact.Execute(pf)
+	if err != nil {
+		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("prepared-query", pf))
+		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
+		return
+	}
+
+	render.JSON(w, r, item)
+}
+
+// GetFactHits godoc
+// @Summary Execute a fact and restitue the hits
+// @Description Execute a fact and restitue the hits
+// @Tags Facts
+// @Produce json
+// @Param id path string true "Fact ID"
+// @Param time query string true "Timestamp used for the fact execution"
+// @Param nhit query int false "Hit per page"
+// @Param offset query int false "Offset number"
+// @Param situationId query string false "Situation Id, necessary if the fact is template"
+// @Param situationInstanceId query string false "Situation instance Id if applicable"
+// @Param debug query string false "Debug true/false"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Router /engine/facts/{id}/hits [get]
+func GetFactHits(w http.ResponseWriter, r *http.Request) {
+
+	debug := false
+	_debug := r.URL.Query().Get("debug")
+	if _debug == "true" {
+		debug = true
+	}
+
+	t, err := ParseTime(r.URL.Query().Get("time"))
+	if err != nil {
+		zap.L().Error("Parse input time", zap.Error(err), zap.String("rawTime", r.URL.Query().Get("time")))
+		render.Error(w, r, render.ErrAPIParsingDateTime, err)
+		return
+	}
+
+	nhit, err := ParseInt(r.URL.Query().Get("nhit"))
+	if err != nil {
+		zap.L().Error("Parse input nhit", zap.Error(err), zap.String("rawNhit", r.URL.Query().Get("nhit")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	offset, err := ParseInt(r.URL.Query().Get("offset"))
+	if err != nil {
+		zap.L().Error("Parse input offset", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("offset")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+	var f engine.Fact
+	var found bool
+
+	idFact, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error on parsing fact id", zap.String("factID", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	f, found, err = fact.R().Get(idFact)
+	if err != nil {
+		zap.L().Error("Error while fetching fact", zap.String("factid", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("Fact does not exists", zap.String("factid", id))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	if f.Dimensions != nil {
+		zap.L().Warn("Fact does have dimensions", zap.String("factid", id))
+		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("Service not supported on fact with dimensions"))
+		return
+	}
+
+	if f.IsObject {
+		zap.L().Warn("Fact is an object fact", zap.String("factid", id))
+		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("Service not supported on fact object"))
+		return
+	}
+
+	var data *reader.WidgetData
+	placeholders := make(map[string]string)
+
+	if f.IsTemplate {
+		idSituationStr := r.URL.Query().Get("situationId")
+		idSituation, err := strconv.ParseInt(idSituationStr, 10, 64)
+		if err != nil {
+			zap.L().Warn("Parse input situationId", zap.Error(err), zap.String("rawsituationId", r.URL.Query().Get("situationId")))
+			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			return
+		}
+
+		groups := GetUserGroupsFromContext(r)
+		situationn, found, err := situation.R().Get(idSituation, groups)
+		if err != nil {
+			zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
+			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+			return
+		}
+		if !found {
+			zap.L().Warn("Situation does not exists", zap.Int64("situationID", idSituation))
+			render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+			return
+		}
+
+		var situationInstance situation.TemplateInstance
+		situationInstaceIDStr := r.URL.Query().Get("situationInstanceId")
+		if situationInstaceIDStr != "" {
+			situationInstaceID, err := strconv.ParseInt(situationInstaceIDStr, 10, 64)
+			if err != nil {
+				zap.L().Warn("Parse input situationInstanceId", zap.Error(err), zap.String("rawSituationInstanceId", r.URL.Query().Get("situationInstanceId")))
+				render.Error(w, r, render.ErrAPIParsingInteger, err)
+				return
+			}
+
+			situationInstance, found, err = situation.R().GetTemplateInstance(situationInstaceID)
+			if err != nil {
+				zap.L().Error("Cannot retrieve situation Instance", zap.Int64("situationInstanceID", situationInstaceID), zap.Error(err))
+				render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+				return
+			}
+			if !found {
+				zap.L().Warn("Situation Instance does not exists", zap.Int64("situationInstanceID", situationInstaceID))
+				render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+				return
+			}
+		}
+
+		for key, param := range situationn.Parameters {
+			placeholders[key] = param
+		}
+
+		for key, param := range situationInstance.Parameters {
+			placeholders[key] = param
+		}
+	}
+
+	// Change the behaviour of the Fact
+	f.Intent.Operator = engine.Select
+
+	pf, err := fact.Prepare(&f, nhit, offset, t, placeholders)
+	if err != nil {
+		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
+		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		return
+	}
+
+	if debug {
+		zap.L().Debug("Debugging prepared fact", zap.Any("pf", pf))
+		source, _ := builder.BuildEsSearchSource(pf)
+		zap.L().Debug("Debugging final elastic query", zap.Any("query", source))
+	}
+
+	data, err = fact.Execute(pf)
+	if err != nil {
+		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("prepared-query", pf))
+		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
+		return
+	}
+
+	render.JSON(w, r, data)
+}
+
+// FactToESQuery godoc
+// @Summary Execute a fact with a given timestamp
+// @Description Execute a fact with a given timestamp
+// @Tags Facts
+// @Produce json
+// @Param id path string true "Fact ID"
+// @Param byName query string false "Find fact by it's name"
+// @Param time query string true "Timestamp used for the fact execution"
+// @Param cache query string false "Cache maximum age in minutes(go duration: 10m, 1h, ...). If unset, use cache with no limit of age. If set to 0, disable cache"
+// @Param nhit query int false "Hit per page"
+// @Param offset query int false "Offset number"
+// @Param placeholders query string false "Placeholders (format: key1:value1,key2:value2)"
+// @Param debug query string false "Debug true/false"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Router /engine/facts/{id}/es [get]
+func FactToESQuery(w http.ResponseWriter, r *http.Request) {
+
+	debug := false
+	_debug := r.URL.Query().Get("debug")
+	if _debug == "true" {
+		debug = true
+	}
+
+	t, err := ParseTime(r.URL.Query().Get("time"))
+	if err != nil {
+		zap.L().Error("Parse input time", zap.Error(err), zap.String("rawTime", r.URL.Query().Get("time")))
+		render.Error(w, r, render.ErrAPIParsingDateTime, err)
+		return
+	}
+
+	nhit, err := ParseInt(r.URL.Query().Get("nhit"))
+	if err != nil {
+		zap.L().Error("Parse input nhit", zap.Error(err), zap.String("rawNhit", r.URL.Query().Get("nhit")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	offset, err := ParseInt(r.URL.Query().Get("offset"))
+	if err != nil {
+		zap.L().Error("Parse input offset", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("offset")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	placeholders, err := ParsePlaceholders(r.URL.Query().Get("placeholders"))
+	if err != nil {
+		zap.L().Warn("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
+		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
+		return
+	}
+
+	byName := false
+	_byName := r.URL.Query().Get("byName")
+	if _byName == "true" {
+		byName = true
+	}
+
+	id := chi.URLParam(r, "id")
+	f, apiError, err := lookupFact(byName, id)
+	if err != nil {
+		render.Error(w, r, apiError, err)
+		return
+	}
+
+	zap.L().Debug("Use elasticsearch to resolve query")
+	if debug {
+		zap.L().Debug("Debugging fact", zap.Any("f", f))
+	}
+
+	pf, err := fact.Prepare(&f, nhit, offset, t, placeholders)
+	if err != nil {
+		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
+		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		return
+	}
+
+	source, _ := builder.BuildEsSearchSource(pf)
+	zap.L().Info("Debugging final elastic query", zap.Any("query", source))
+
+	render.JSON(w, r, source)
+}
+
+func lookupFact(byName bool, id string) (engine.Fact, render.APIError, error) {
+	var f engine.Fact
+	var err error
+	var found bool
+	if byName {
+		f, found, err = fact.R().GetByName(id)
+		if err != nil {
+			zap.L().Error("Error while fetching fact", zap.String("factid", id), zap.Error(err))
+			return engine.Fact{}, render.ErrAPIDBSelectFailed, err
+		}
+		if !found {
+			zap.L().Warn("Fact does not exists", zap.String("factid", id))
+			return engine.Fact{}, render.ErrAPIDBResourceNotFound, fmt.Errorf("fact not found with name %s", id)
+		}
+	} else {
+		idFact, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			zap.L().Warn("Error on parsing fact id", zap.String("factID", id), zap.Error(err))
+			return engine.Fact{}, render.ErrAPIParsingInteger, err
+		}
+		f, found, err = fact.R().Get(idFact)
+		if err != nil {
+			zap.L().Error("Error while fetching fact", zap.Int64("factid", idFact), zap.Error(err))
+			return engine.Fact{}, render.ErrAPIDBSelectFailed, err
+		}
+		if !found {
+			zap.L().Warn("Fact does not exists", zap.String("factid", id))
+			return engine.Fact{}, render.ErrAPIDBResourceNotFound, fmt.Errorf("fact not found with id %d", idFact)
+		}
+	}
+	return f, render.APIError{}, nil
+}

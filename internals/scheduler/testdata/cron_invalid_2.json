@@ -1,0 +1,8 @@
+[
+    {
+        "cronexpr": "*/5 * aaa",
+        "ids": [
+            "fact_test_1"
+        ]
+    }
+]

@@ -1,0 +1,188 @@
+facts:
+  not_a_fact:
+
+  not_a_fact2:
+    - comment: a
+    - operator: b
+
+  invalid_model: 
+    model: 
+      - shipment
+    operator: COUNT
+    term: order
+
+  invalid_comment: 
+    comment:
+      - "ceci est un"
+      - "fact de test"
+    operator: COUNT
+    term: order
+
+  invalid_key:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    not_a_key: not a good key
+
+  no_intent_term:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+
+  empty_intent_term:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: 
+ 
+  no_intent_operator:
+    comment: "ceci est un fact de test"
+    term: order
+
+  empty_intent_operator:
+    comment: "ceci est un fact de test"
+    operator:
+    term: order
+
+  empty_dimensions:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    dimensions:
+
+  invalid_dimensions:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    dimensions:
+      - BY
+  
+  invalid_dimensions2:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    dimensions:
+      - client
+  
+  invalid_dimensions_datehistogram_without_interval:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    dimensions:
+      - DATEHISTOGRAM in_timestamp
+
+  invalid_conditions:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      - boutique = Opera
+
+  empty_condition:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      conditions:
+
+  empty_condition_content:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      conditions:
+        - 
+        - 
+
+  too_many_root_condition:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      conditions:
+        - boutique = Opera
+        - boutique = Madeleine
+        
+  too_many_root_condition2:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      conditions:
+        - boutique = Opera
+        - boutique = Madeleine
+      or:
+        conditions:
+          - azerty
+
+  empty_and_condition:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      and:
+
+  empty_sub_and_condition:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      and:
+        conditions:
+
+  empty_or_condition:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      or:
+
+  empty_sub_or_condition:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      or:
+        conditions:
+
+  empty_not_condition:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      not:
+
+  empty_sub_not_condition:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      not:
+        conditions:
+
+  invalid_condition_in_and:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      and:
+        conditions:
+          - boutique = 
+
+  invalid_condition_in_or:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      or:
+        conditions:
+          - boutique = 
+  
+  invalid_condition_invalid_key:
+    comment: "ceci est un fact de test"
+    operator: COUNT
+    term: order
+    filters:
+      or:
+        not_a_key:
+          - boutique = test
+        conditions:
+          - boutique = test

@@ -1,0 +1,29 @@
+syntax = "proto3";
+package proto;
+
+message BaselineValueRequest {
+    int64 id = 1;
+    int64 fact_id = 2;
+    int64 situation_id = 3;
+    int64 situation_instance_id = 4;
+    string time = 5;
+}
+
+message BaselineValue {
+    string time = 1;
+    double value = 2;
+    double value_lower = 3;
+    double value_upper = 4;
+    double avg = 5;
+    double std = 6;
+    double median = 7;
+}
+
+message BaselineValues {
+    map<string, BaselineValue> values = 1;
+}
+
+service Baseline {
+    // rpc GetBaselineValue(BaselineValueRequest) returns (BaselineValue);
+    rpc GetBaselineValues(BaselineValueRequest) returns (BaselineValues);
+}

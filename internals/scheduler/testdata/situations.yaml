@@ -1,0 +1,8 @@
+situations:
+  situation_test_1:
+    - fact_test_1
+    - fact_test_2
+
+  situation_test_2:
+    - fact_test_2
+    - fact_test_3
