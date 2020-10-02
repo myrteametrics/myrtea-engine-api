@@ -41,6 +41,7 @@ func initRepositories() {
 	calendar.ReplaceGlobals(calendar.NewPostgresRepository(dbClient))
 	connector.ReplaceGlobals(connector.NewPostgresRepository(dbClient))
 	rule.ReplaceGlobals(rule.NewPostgresRepository(dbClient))
+	modeler.ReplaceGlobals(modeler.NewPostgresRepository(dbClient))
 }
 
 func initServices() {
