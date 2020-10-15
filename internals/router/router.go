@@ -17,23 +17,58 @@ import (
 	plugin "github.com/myrteametrics/myrtea-engine-api/v4/plugins"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/myrteametrics/myrtea-sdk/v4/security"
+	"github.com/spf13/viper"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
 )
 
-// NewChiRouter initialize a chi.Mux router with all required default middleware (logger, security, recovery, etc.)
-func NewChiRouter(apiEnableSecurity bool, apiEnableCORS bool, apiEnableGatewayMode bool, logLevel zap.AtomicLevel,
-	plugins []plugin.MyrteaPlugin) *chi.Mux {
+// Config wraps common configuration parameters
+type Config struct {
+	Security           bool
+	CORS               bool
+	GatewayMode        bool
+	VerboseError       bool
+	AuthenticationMode string
+	LogLevel           zap.AtomicLevel
+	Plugins            []plugin.MyrteaPlugin
+}
+
+// Check clean up the configuration and logs comments if required
+func (config *Config) Check() {
+	if !config.Security {
+		zap.L().Warn("API starting in unsecured mode, be sure to set API_ENABLE_SECURITY=true in production")
+	}
+	if config.VerboseError {
+		zap.L().Warn("API starting in verbose error mode, be sure to set API_ENABLE_VERBOSE_MODE=false in production")
+	}
+	if config.GatewayMode {
+		zap.L().Warn("Server router will be started using API Gateway mode. " +
+			"Please ensure every request has been properly pre-verified by the auth-api")
+		if !config.Security {
+			zap.L().Warn("Gateway mode has no use if API security is not enabled (API_ENABLE_SECURITY=false)")
+			config.GatewayMode = false
+		}
+	}
+	if config.Security && config.GatewayMode && config.AuthenticationMode == "SAML" {
+		zap.L().Warn("SAML Authentication mode is not compatible with API_ENABLE_GATEWAY_MODE=true")
+		config.GatewayMode = false
+	}
+	if config.AuthenticationMode != "BASIC" && config.AuthenticationMode != "SAML" {
+		zap.L().Warn("Authentication mode not supported. Back to default value 'BASIC'", zap.String("AuthenticationMode", config.AuthenticationMode))
+		config.AuthenticationMode = "BASIC"
+	}
+}
+
+// New returns a new fully configured instance of chi.Mux
+// It instanciates all middlewares including the security ones, all routes and route groups
+func New(config Config) *chi.Mux {
+
+	config.Check()
 
 	r := chi.NewRouter()
-
-	// Specific security middleware initialization
-	signingKey := []byte(security.RandString(128))
-	securityMiddleware := security.NewMiddlewareJWT(signingKey, security.NewDatabaseAuth(postgres.DB()))
-
 	// Global middleware stack
 	// TODO: Add CORS middleware
-	if apiEnableCORS {
+	if config.CORS {
 		cors := cors.New(cors.Options{
 			AllowedOrigins:   []string{"*"},
 			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -54,7 +89,31 @@ func NewChiRouter(apiEnableSecurity bool, apiEnableCORS bool, apiEnableGatewayMo
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Timeout(60 * time.Second))
 
-	r.Route("/api/v4", func(r chi.Router) {
+	var routes func(r chi.Router)
+	var err error
+	switch config.AuthenticationMode {
+	case "BASIC":
+		routes, err = buildRoutesV3Basic(config)
+	case "SAML":
+		routes, err = buildRoutesV3SAML(config)
+	default:
+		zap.L().Panic("Authentication mode not supported", zap.String("AuthenticationMode", config.AuthenticationMode))
+		return nil
+	}
+	if err != nil {
+		zap.L().Panic("Cannot initialize API routes", zap.String("AuthenticationMode", config.AuthenticationMode), zap.Error(err))
+	}
+
+	r.Route("/api/v3", routes)
+
+	return r
+}
+
+func buildRoutesV3Basic(config Config) (func(r chi.Router), error) {
+	signingKey := []byte(security.RandString(128))
+	securityMiddleware := security.NewMiddlewareJWT(signingKey, security.NewDatabaseAuth(postgres.DB()))
+
+	return func(r chi.Router) {
 
 		// Public routes
 		r.Group(func(rg chi.Router) {
@@ -66,8 +125,8 @@ func NewChiRouter(apiEnableSecurity bool, apiEnableCORS bool, apiEnableGatewayMo
 
 		// Protected routes
 		r.Group(func(rg chi.Router) {
-			if apiEnableSecurity {
-				if apiEnableGatewayMode {
+			if config.Security {
+				if config.GatewayMode {
 					// Warning: No signature verification will be done on JWT.
 					// JWT MUST have been verified before by the API Gateway
 					rg.Use(UnverifiedAuthenticator)
@@ -79,18 +138,18 @@ func NewChiRouter(apiEnableSecurity bool, apiEnableCORS bool, apiEnableGatewayMo
 			}
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
-			rg.HandleFunc("/log_level", logLevel.ServeHTTP)
+			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
 			rg.Mount("/engine", engineRouter())
-			for _, plugin := range plugins {
-				rg.Mount(fmt.Sprintf("%s", plugin.HandlerPrefix()), plugin.Handler())
+			for _, plugin := range config.Plugins {
+				rg.Mount(plugin.HandlerPrefix(), plugin.Handler())
 				rg.HandleFunc(fmt.Sprintf("/plugin%s", plugin.HandlerPrefix()), ReverseProxy(plugin))
 			}
 		})
 
 		// Admin Protection routes
 		r.Group(func(rg chi.Router) {
-			if apiEnableSecurity {
-				if apiEnableGatewayMode {
+			if config.Security {
+				if config.GatewayMode {
 					// Warning: No signature verification will be done on JWT.
 					// JWT MUST have been verified before by the API Gateway
 					rg.Use(UnverifiedAuthenticator)
@@ -109,7 +168,7 @@ func NewChiRouter(apiEnableSecurity bool, apiEnableCORS bool, apiEnableGatewayMo
 		// System intra services Protection routes
 		r.Group(func(rg chi.Router) {
 			//TODO: change to be intra APIs
-			if apiEnableSecurity {
+			if config.Security {
 				rg.Use(jwtauth.Verifier(jwtauth.New(jwt.SigningMethodHS256.Name, signingKey, nil)))
 				rg.Use(CustomAuthenticator)
 				rg.Use(ContextMiddleware)
@@ -118,9 +177,83 @@ func NewChiRouter(apiEnableSecurity bool, apiEnableCORS bool, apiEnableGatewayMo
 
 			rg.Mount("/service", serviceRouter())
 		})
-	})
+	}, nil
+}
 
-	return r
+func buildRoutesV3SAML(config Config) (func(r chi.Router), error) {
+
+	samlConfig := SamlSPMiddlewareConfig{
+		MetadataMode:             viper.GetString("AUTHENTICATION_SAML_METADATA_MODE"),
+		MetadataFilePath:         viper.GetString("AUTHENTICATION_SAML_METADATA_FILE_PATH"),
+		MetadataURL:              viper.GetString("AUTHENTICATION_SAML_METADATA_URL"),
+		EnableMemberOfValidation: viper.GetBool("AUTHENTICATION_SAML_ENABLE_MEMBEROF_VALIDATION"),
+		AttributeUserID:          viper.GetString("AUTHENTICATION_SAML_ATTRIBUTE_USER_ID"),
+		AttributeUserDisplayName: viper.GetString("AUTHENTICATION_SAML_ATTRIBUTE_USER_DISPLAYNAME"),
+		AttributeUserMemberOf:    viper.GetString("AUTHENTICATION_SAML_ATTRIBUTE_USER_MEMBEROF"),
+	}
+	if ok, err := samlConfig.IsValid(); !ok {
+		return nil, err
+	}
+
+	spRootURLStr := viper.GetString("AUTHENTICATION_SAML_ROOT_URL")
+	entityID := viper.GetString("AUTHENTICATION_SAML_ENTITYID")
+	samlKeyFile := viper.GetString("AUTHENTICATION_SAML_KEY_FILE_PATH")
+	samlCrtFile := viper.GetString("AUTHENTICATION_SAML_CRT_FILE_PATH")
+	samlSPMiddleware, err := NewSamlSP(spRootURLStr, entityID, samlKeyFile, samlCrtFile, samlConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return func(r chi.Router) {
+
+		// Public routes
+		r.Group(func(rg chi.Router) {
+			rg.Get("/isalive", handlers.IsAlive)
+			rg.Get("/swagger/*", httpSwagger.WrapHandler)
+			rg.Handle("/saml/*", samlSPMiddleware)
+		})
+
+		// Protected routes
+		r.Group(func(rg chi.Router) {
+			if config.Security {
+				rg.Use(samlSPMiddleware.RequireAccount)
+				rg.Use(samlSPMiddleware.ContextMiddleware)
+			}
+			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
+
+			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
+			rg.Mount("/engine", engineRouter())
+			for _, plugin := range config.Plugins {
+				rg.Mount(plugin.HandlerPrefix(), plugin.Handler())
+				rg.HandleFunc(fmt.Sprintf("/plugin%s", plugin.HandlerPrefix()), ReverseProxy(plugin))
+			}
+		})
+
+		// Admin Protection routes
+		r.Group(func(rg chi.Router) {
+			if config.Security {
+				rg.Use(samlSPMiddleware.RequireAccount)
+				rg.Use(samlSPMiddleware.ContextMiddleware)
+				rg.Use(security.AdminAuthentificator)
+			}
+			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
+
+			rg.Mount("/admin", adminRouter())
+		})
+
+		// System intra services Protection routes
+		r.Group(func(rg chi.Router) {
+			//TODO: change to be intra APIs
+			if config.Security {
+				rg.Use(samlSPMiddleware.RequireAccount)
+				rg.Use(samlSPMiddleware.ContextMiddleware)
+				rg.Use(security.AdminAuthentificator)
+			}
+			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
+
+			rg.Mount("/service", serviceRouter())
+		})
+	}, nil
 }
 
 // ReverseProxy act as a reverse proxy for any plugin http handlers

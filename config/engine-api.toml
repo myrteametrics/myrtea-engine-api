@@ -24,24 +24,30 @@ SERVER_TLS_FILE_CRT = "certs/server.rsa.crt"
 # Default value: "certs/server.rsa.key"
 SERVER_TLS_FILE_KEY = "certs/server.rsa.key"
 
-# Enable or Disable CORS policy on the API
+# Enable or disable CORS policy on the API
 # See https://enable-cors.org/
 # Default value: "false"
 API_ENABLE_CORS = "false"
 
-# Enable or Disable API security
+# Enable or disable API security
 # If unsecured = false, a valid JWT (JSON Web Token) is required to access the API
 # This JWT is delivered using the /login endpoint (which required a login and a password)
 # If API_ENABLE_SECURITY = false, no JWT is required and all endpoints can be called freely
 # Default value: "true"
 API_ENABLE_SECURITY = "true"
 
-# Enable or Disable API Gateway mode
+# Enable or disable API Gateway mode
 # If API_ENABLE_GATEWAY_MODE = true, the API will still required a JWT but no validation will be done on this JWT
 # Be aware that in gateway mode, every JWT MUST have been validated by another layer of security (in this case, an API Gateway using the auth-api)
 # The auth-api will be responsible to deliver the tokens (/login) and to validate the tokens (/validate)
 # Default value: "false"
 API_ENABLE_GATEWAY_MODE = "false"
+
+# Enable or disable verbose API error
+# If enabled, in case of error, the API will returns additional information to help debugging
+# Do not enable in production
+# Default value: "false
+API_ENABLE_VERBOSE_ERROR = "false"
 
 # Specify the instance name
 # The instance name must be the same in every components in the stack to ensure proper working conditions
@@ -100,3 +106,55 @@ POSTGRESQL_CONN_MAX_LIFETIME = "0"
 # Warning: Keep this parameter to "true" in production to ensure proper rotation even after a restart
 # Default value: "true"
 ENABLE_CRONS_ON_START = "true"
+
+# Specify the authentication mode
+# Can either be "BASIC" or "SAML"
+# In case of SAML, some more parameters are required to ensure proper functionning
+# Default value: "BASIC"
+AUTHENTICATION_MODE = "BASIC"
+
+# Specify the SAML root URL (Only if AUTHENTICATION_MODE="SAML")
+# It is the public endpoint used to access the API (frequently through a frontend proxy)
+# Default value: "http://localhost:8080/api/v3
+AUTHENTICATION_SAML_ROOT_URL = "http://localhost:8080/api/v3/"
+
+# Specify the unique SAML EntityID used in the SP metadata file, registered in the IDP (Only if AUTHENTICATION_MODE="SAML")
+# Default value: "http://localhost:8080/"
+AUTHENTICATION_SAML_ENTITYID = "http://localhost:8080/"
+
+# Specify the file path for the SAML SSL certificate private key (Only if AUTHENTICATION_MODE="SAML")
+# Default value: "resources/saml/certs/myservice.key"
+AUTHENTICATION_SAML_KEY_FILE_PATH = "resources/saml/certs/myservice.key"
+
+# Specify the file path for the SAML SSL certificate public key (Only if AUTHENTICATION_MODE="SAML")
+# Default value: "resources/saml/certs/myservice.crt"
+AUTHENTICATION_SAML_CRT_FILE_PATH = "resources/saml/certs/myservice.crt"
+
+# Specify the IDP metadata retrieval mode (Only if AUTHENTICATION_MODE="SAML")
+# Can either be "FETCH" or "FILE"
+# Default value: "FETCH"
+AUTHENTICATION_SAML_METADATA_MODE = "FETCH"
+
+# Specify the IDP metadata fetch URL (Only if AUTHENTICATION_MODE="SAML")
+# Default value: "https://samltest.id/saml/idp"
+AUTHENTICATION_SAML_METADATA_FETCH_URL = "https://samltest.id/saml/idp"
+
+# Specify the IDP metadata file path (Only if AUTHENTICATION_MODE="SAML")
+# Default value: "resources/saml/metadata/idp-samltestid.metadata.xml"
+AUTHENTICATION_SAML_METADATA_FILE_PATH = "resources/saml/metadata/idp-samltestid.metadata.xml"
+
+# Specify the SAML response attribute corresponding to the user unique ID
+# Default value: "uid"
+AUTHENTICATION_SAML_ATTRIBUTE_USER_ID = "uid"
+
+# Specify the SAML response attribute corresponding to the user displayed name
+# Default value: "cn"
+AUTHENTICATION_SAML_ATTRIBUTE_USER_DISPLAYNAME = "cn"
+
+# Specify if the authentication process must check if the user has at least one existing group in Myrtea
+# Default value: "true"
+AUTHENTICATION_SAML_ENABLE_MEMBEROF_VALIDATION = "true"
+
+# Specify the SAML response attribute corresponding to the user groups
+# Default value: "memberOf"
+AUTHENTICATION_SAML_ATTRIBUTE_USER_MEMBEROF = "memberOf"
