@@ -35,3 +35,12 @@ Gopkg.toml
 version
 
 *.plugin
+
+# Security files (certs, private keys, metadatas)
+resources/saml/certs/*.key
+resources/saml/certs/*.crt
+resources/saml/metadata/*.xml
+# Default example security file
+!resources/saml/certs/myservice.key
+!resources/saml/certs/myservice.crt
+!resources/saml/metadata/idp-samltestid.metadata.xml
