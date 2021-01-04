@@ -91,6 +91,34 @@ func SetAsEvaluated(situationID int64, t time.Time, templateInstanceID int64) er
 	return nil
 }
 
+// UpdateExpressionFacts update the expression facts result on a situation history record
+func UpdateExpressionFacts(record HistoryRecord) error {
+	jsonEvaluatedExpressionFacts, err := json.Marshal(record.EvaluatedExpressionFacts)
+	if err != nil {
+		return err
+	}
+
+	query := `UPDATE situation_history_v1 SET expression_facts = :expression_facts WHERE id = :situationid AND situation_instance_id = :situation_instance_id AND ts = :ts`
+	params := map[string]interface{}{
+		"expression_facts":      string(jsonEvaluatedExpressionFacts),
+		"situationid":           record.ID,
+		"situation_instance_id": record.TemplateInstanceID,
+		"ts":                    record.TS.UTC(),
+	}
+	res, err := postgres.DB().NamedExec(query, params)
+	if err != nil {
+		return err
+	}
+	i, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if i != 1 {
+		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+	}
+	return nil
+}
+
 // GetFromHistory returns a single situation entry from postgresql
 // It can be based on an exact timestamp, or return the closest result
 func GetFromHistory(situationID int64, t time.Time, templateInstanceID int64, closest bool) (*HistoryRecord, error) {
