@@ -45,6 +45,7 @@ func initRepositories() {
 }
 
 func initServices() {
+	initCoordinator()
 	initNotifier()
 	initScheduler()
 	initTasker()
