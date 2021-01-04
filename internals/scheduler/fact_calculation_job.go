@@ -153,7 +153,7 @@ func (job FactCalculationJob) Run() {
 			if job.Debug {
 				zap.L().Debug("Debugging fact", zap.Any("f", f))
 			}
-			factSituationsHistory, err := getFactSituations(f, t)
+			factSituationsHistory, err := GetFactSituations(f, t)
 			if err != nil {
 				continue
 			}
@@ -213,7 +213,7 @@ func (job FactCalculationJob) Run() {
 			}
 		}
 
-		situationsToEvaluate, err := updateSituations(situationsToUpdate)
+		situationsToEvaluate, err := UpdateSituations(situationsToUpdate)
 		if err != nil {
 			zap.L().Error("Cannot update situations", zap.Error(err))
 			delete(S().RunningJobs, job.ScheduleID)
@@ -226,9 +226,9 @@ func (job FactCalculationJob) Run() {
 			for _, situationEvaluation := range situationEvaluations {
 				taskBatchs = append(taskBatchs, tasker.TaskBatch{
 					Context: map[string]interface{}{
-						"situationID":        int(situationEvaluation.ID),
+						"situationID":        situationEvaluation.ID,
 						"ts":                 situationEvaluation.TS,
-						"templateInstanceID": int(situationEvaluation.TemplateInstanceID),
+						"templateInstanceID": situationEvaluation.TemplateInstanceID,
 					},
 					Agenda: situationEvaluation.Agenda,
 				})
@@ -373,8 +373,8 @@ func (job FactCalculationJob) calculate(t time.Time, f engine.Fact, situationID 
 	return nil
 }
 
-// updateSituations creates the new instances of the situations in the history and evaluates them
-func updateSituations(situationsToUpdate map[string]situation.HistoryRecord) ([]evaluator.SituationToEvaluate, error) {
+// UpdateSituations creates the new instances of the situations in the history and evaluates them
+func UpdateSituations(situationsToUpdate map[string]situation.HistoryRecord) ([]evaluator.SituationToEvaluate, error) {
 	situationsToEvalute := make([]evaluator.SituationToEvaluate, 0)
 	for _, record := range situationsToUpdate {
 
@@ -414,7 +414,7 @@ func updateSituations(situationsToUpdate map[string]situation.HistoryRecord) ([]
 
 		err = situation.Persist(record, false)
 		if err != nil {
-			zap.L().Error("updateSituations.persistSituation:", zap.Error(err))
+			zap.L().Error("UpdateSituations.persistSituation:", zap.Error(err))
 			continue
 		}
 		situationsToEvalute = append(situationsToEvalute,
@@ -499,7 +499,8 @@ func flattenSituationData(record situation.HistoryRecord) (map[string]interface{
 	return situationData, nil
 }
 
-func getFactSituations(fact engine.Fact, t time.Time) ([]situation.HistoryRecord, error) {
+// GetFactSituations returns all situation linked to a fact
+func GetFactSituations(fact engine.Fact, t time.Time) ([]situation.HistoryRecord, error) {
 	factSituationsHistory := make([]situation.HistoryRecord, 0)
 	factSituations, err := situation.R().GetSituationsByFactID(fact.ID, true)
 	if err != nil {
