@@ -9,6 +9,7 @@ import (
 // It allows standard CRUD operation on facts
 type Repository interface {
 	Get(id int64) (Group, bool, error)
+	GetByName(name string) (Group, bool, error)
 	Create(group Group) (int64, error)
 	Update(group Group) error
 	Delete(id int64) error

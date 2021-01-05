@@ -9,6 +9,7 @@ import (
 	"os"
 )
 
+// nolint:deadcode,varcheck,unused
 var (
 	// Normal colors
 	nBlack   = []byte{'\033', '[', '3', '0', 'm'}
@@ -51,7 +52,7 @@ func init() {
 	}
 }
 
-// colorWrite
+// nolint:errcheck
 func cW(w io.Writer, useColor bool, color []byte, s string, args ...interface{}) {
 	if isTTY && useColor {
 		w.Write(color)
