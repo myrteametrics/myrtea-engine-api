@@ -30,8 +30,9 @@ type Query struct {
 
 //DownSampling downscale definition
 type DownSampling struct {
-	Granularity time.Duration `json:"granularity"`
-	Operation   string        `json:"operation"`
+	Granularity        time.Duration `json:"granularity"`
+	GranularitySpecial string        `json:"granularitySpecial"`
+	Operation          string        `json:"operation"`
 }
 
 // ErrDatabase wraps a database error
@@ -95,11 +96,16 @@ func (d *DownSampling) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
-	g, err := time.ParseDuration(strings.ToLower(aux.Granularity))
-	if err != nil {
-		return err
+	if aux.Granularity == "year" || aux.Granularity == "quarter" || aux.Granularity == "month" || aux.Granularity == "day" ||
+		aux.Granularity == "hour" || aux.Granularity == "minute" || aux.Granularity == "second" {
+		d.GranularitySpecial = aux.Granularity
+	} else {
+		g, err := time.ParseDuration(strings.ToLower(aux.Granularity))
+		if err != nil {
+			return err
+		}
+		d.Granularity = g
 	}
-	d.Granularity = g
 
 	d.Operation = strings.ToLower(d.Operation)
 	if d.Operation != "first" && d.Operation != "latest" && d.Operation != "sum" && d.Operation != "max" && d.Operation != "min" && d.Operation != "avg" {

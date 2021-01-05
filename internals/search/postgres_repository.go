@@ -34,26 +34,32 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 	downSampling DownSampling) (QueryResult, error) {
 
 	var query string
-	if downSampling.Granularity == 0 {
-		if !t.IsZero() {
-			query = `SELECT DISTINCT ON (situation_history_v1.situation_instance_id)
-				situation_history_v1.situation_instance_id, situation_template_instances_v1.name, situation_history_v1.ts,
-				situation_history_v1.facts_ids, situation_history_v1.expression_facts, situation_history_v1.parameters, situation_history_v1.metadatas
-				FROM situation_history_v1 LEFT JOIN situation_template_instances_v1 ON situation_history_v1.situation_instance_id = situation_template_instances_v1.id
-				WHERE situation_history_v1.id = :situation_id AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
-				AND ts <= :ts
-				ORDER BY situation_history_v1.situation_instance_id, situation_history_v1.ts DESC`
+	if downSampling.GranularitySpecial == "year" || downSampling.GranularitySpecial == "quarter" || downSampling.GranularitySpecial == "month" || downSampling.GranularitySpecial == "day" ||
+		downSampling.GranularitySpecial == "hour" || downSampling.GranularitySpecial == "minute" || downSampling.GranularitySpecial == "second" {
 
-		} else {
-			query = `SELECT situation_instance_id, situation_template_instances_v1.name, situation_history_v1.ts, situation_history_v1.facts_ids,
-				situation_history_v1.expression_facts, situation_history_v1.parameters, situation_history_v1.metadatas
-				FROM situation_history_v1 LEFT JOIN situation_template_instances_v1 ON situation_history_v1.situation_instance_id = situation_template_instances_v1.id
-				WHERE situation_history_v1.id = :situation_id AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
-				AND ts >= :tsFrom AND ts <= :tsTo
-				ORDER BY situation_history_v1.ts ASC`
+		if downSampling.Operation == "latest" {
+			var order = "DESC"
+			if downSampling.Operation == "first" {
+				order = "ASC"
+			}
+
+			query = `SELECT DISTINCT ON (situation_instance_id, name, interval) situation_instance_id, name, ts, facts_ids, expression_facts, parameters, metadatas
+				FROM (
+					SELECT situation_history_v1.situation_instance_id, situation_template_instances_v1.name, ts,
+					date_trunc('` + downSampling.GranularitySpecial + `', ts) AS interval,
+					situation_history_v1.facts_ids, situation_history_v1.expression_facts, situation_history_v1.parameters, situation_history_v1.metadatas
+					FROM situation_history_v1 LEFT JOIN situation_template_instances_v1 ON situation_history_v1.situation_instance_id = situation_template_instances_v1.id
+					WHERE situation_history_v1.id = :situation_id AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
+					AND ts >= :tsFrom AND ts <= :tsTo
+				) AS t
+				ORDER BY
+					situation_instance_id ` + order + `,
+					name ` + order + `,
+					interval ` + order + `,
+					ts ` + order
 		}
-	} else {
 
+	} else if downSampling.Granularity != 0 {
 		if downSampling.Operation == "first" || downSampling.Operation == "latest" {
 
 			var order = "DESC"
@@ -84,6 +90,24 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 				AND ts >= :tsFrom AND ts <= :tsTo
 				GROUP BY (situation_history_v1.situation_instance_id, situation_template_instances_v1.name, timestamp)
 				ORDER BY timestamp ASC`
+		}
+	} else {
+		if !t.IsZero() {
+			query = `SELECT DISTINCT ON (situation_history_v1.situation_instance_id)
+					situation_history_v1.situation_instance_id, situation_template_instances_v1.name, situation_history_v1.ts,
+					situation_history_v1.facts_ids, situation_history_v1.expression_facts, situation_history_v1.parameters, situation_history_v1.metadatas
+					FROM situation_history_v1 LEFT JOIN situation_template_instances_v1 ON situation_history_v1.situation_instance_id = situation_template_instances_v1.id
+					WHERE situation_history_v1.id = :situation_id AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
+					AND ts <= :ts
+					ORDER BY situation_history_v1.situation_instance_id, situation_history_v1.ts DESC`
+
+		} else {
+			query = `SELECT situation_instance_id, situation_template_instances_v1.name, situation_history_v1.ts, situation_history_v1.facts_ids,
+					situation_history_v1.expression_facts, situation_history_v1.parameters, situation_history_v1.metadatas
+					FROM situation_history_v1 LEFT JOIN situation_template_instances_v1 ON situation_history_v1.situation_instance_id = situation_template_instances_v1.id
+					WHERE situation_history_v1.id = :situation_id AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
+					AND ts >= :tsFrom AND ts <= :tsTo
+					ORDER BY situation_history_v1.ts ASC`
 		}
 	}
 
