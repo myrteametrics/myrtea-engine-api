@@ -2,7 +2,6 @@ package coordinator
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -55,8 +54,8 @@ func (logicalIndex *LogicalIndex) initialize() error {
 			logicalIndex.Model.ToElasticsearchMappingProperties(),
 			logicalIndex.Model.ElasticsearchOptions.AdvancedSettings,
 		)
-		b, _ := json.MarshalIndent(templateBody, "", " ")
-		fmt.Println(string(b))
+		// b, _ := json.MarshalIndent(templateBody, "", " ")
+		// fmt.Println(string(b))
 		err := logicalIndex.Executor.PutTemplate(ctx, templateName, templateBody)
 		if err != nil {
 			zap.L().Error("logicalIndex.Executor.PutTemplate()", zap.Error(err))
@@ -203,7 +202,7 @@ func persistTechnicalIndex(logicalIndex string, newIndex string, t time.Time) er
 		return errors.New("Postgresql Client not initialized")
 	}
 
-	query := `INSERT INTO elasticsearch_indices_v1 (id, logical, technical, creation_date) 
+	query := `INSERT INTO elasticsearch_indices_v1 (id, logical, technical, creation_date)
 		VALUES (DEFAULT, :logical, :technical, :creation_date);`
 	params := map[string]interface{}{
 		"logical":       logicalIndex,
