@@ -2,6 +2,7 @@ package groups
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -226,7 +227,7 @@ func (r *PostgresRepository) GetGroupsOfUser(userID int64) ([]GroupOfUser, error
 	}
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
-		return nil, errors.New("Couldn't retrieve the Groups of User with id " + string(userID) + " : " + err.Error())
+		return nil, fmt.Errorf("Couldn't retrieve the Groups of User with id %d : %s", userID, err.Error())
 	}
 	defer rows.Close()
 

@@ -58,7 +58,7 @@ func TestGetCalendars(t *testing.T) {
 	}
 
 	if calendars[0].ID != id {
-		t.Errorf("handler returned unexpected body: got %v want %v", string(calendars[id].ID), string(id))
+		t.Errorf("handler returned unexpected body: got %v want %v", calendars[id].ID, id)
 	}
 }
 

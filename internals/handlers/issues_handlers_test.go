@@ -153,7 +153,7 @@ func TestGetIssues(t *testing.T) {
 	}
 
 	if issues[id].ID != id {
-		t.Errorf("handler returned unexpected body: got %v want %v", string(issues[id].ID), string(id))
+		t.Errorf("handler returned unexpected body: got %v want %v", issues[id].ID, id)
 	}
 }
 
