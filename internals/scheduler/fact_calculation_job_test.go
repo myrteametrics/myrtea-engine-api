@@ -228,7 +228,7 @@ func TestExpressionFact(t *testing.T) {
 	t2 := time.Now().UTC()
 	fact.PersistFactResult(2, t2, 0, 0, &reader.Item{Key: "b", Aggs: map[string]*reader.ItemAgg{"doc_count": {Value: 3}}}, true)
 
-	situationsToEvaluate, err := updateSituations(map[string]situation.HistoryRecord{
+	situationsToEvaluate, err := UpdateSituations(map[string]situation.HistoryRecord{
 		"1-0": {
 			ID:         1,
 			FactsIDS:   map[int64]*time.Time{1: &t1, 2: &t2},
