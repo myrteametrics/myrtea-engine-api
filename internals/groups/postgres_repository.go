@@ -46,6 +46,29 @@ func (r *PostgresRepository) Get(id int64) (Group, bool, error) {
 	return Group{}, false, nil
 }
 
+// GetByName search and returns an User Group from the repository by its name
+func (r *PostgresRepository) GetByName(name string) (Group, bool, error) {
+	query := `SELECT id, name FROM user_groups_v1 WHERE name = :name`
+	params := map[string]interface{}{
+		"name": name,
+	}
+	rows, err := r.conn.NamedQuery(query, params)
+	if err != nil {
+		return Group{}, false, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		group := Group{}
+		err = rows.Scan(&group.ID, &group.Name)
+		if err != nil {
+			return Group{}, false, err
+		}
+		return group, true, nil
+	}
+	return Group{}, false, nil
+}
+
 // Create creates a new User Group in the repository
 func (r *PostgresRepository) Create(group Group) (int64, error) {
 	query := `INSERT INTO user_groups_v1 VALUES (DEFAULT, :name) RETURNING id`
@@ -219,8 +242,8 @@ func (r *PostgresRepository) DeleteMembership(userID int64, groupID int64) error
 
 // GetGroupsOfUser returns all User Groups of a User in the repository
 func (r *PostgresRepository) GetGroupsOfUser(userID int64) ([]GroupOfUser, error) {
-	query := `SELECT user_groups_v1.id, user_groups_v1.name, user_memberships_v1.role AS role_in_group 
-		FROM user_memberships_v1 INNER JOIN user_groups_v1 ON user_memberships_v1.group_id = user_groups_v1.id 
+	query := `SELECT user_groups_v1.id, user_groups_v1.name, user_memberships_v1.role AS role_in_group
+		FROM user_memberships_v1 INNER JOIN user_groups_v1 ON user_memberships_v1.group_id = user_groups_v1.id
 		WHERE user_memberships_v1.user_id = :user_id`
 	params := map[string]interface{}{
 		"user_id": userID,

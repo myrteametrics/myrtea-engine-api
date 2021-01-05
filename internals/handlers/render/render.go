@@ -99,11 +99,11 @@ func JSON(w http.ResponseWriter, r *http.Request, data interface{}) {
 }
 
 // Error handles and return an error (JSON format) with corresponding HTTP status
-// In case the API is configured with API_VERBOSE_ERROR = true, the detailed errors will also be sent in the JSON response
+// In case the API is configured with API_ENABLE_VERBOSE_ERROR = true, the detailed errors will also be sent in the JSON response
 func Error(w http.ResponseWriter, r *http.Request, apiError APIError, err error) {
 	apiError.RequestID = middleware.GetReqID(r.Context())
 
-	if viper.GetBool("API_VERBOSE_ERROR") {
+	if viper.GetBool("API_ENABLE_VERBOSE_ERROR") {
 		apiError.Details = err.Error()
 	}
 

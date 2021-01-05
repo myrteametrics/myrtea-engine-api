@@ -47,22 +47,22 @@ func main() {
 
 	plugins := make([]plugin.MyrteaPlugin, 0)
 
-	baselinePlugin := baseline.NewBaselinePlugin()
-	if baselinePlugin != nil {
+	if baselinePlugin := baseline.NewBaselinePlugin(); baselinePlugin != nil {
 		defer baselinePlugin.Stop()
-		baselinePlugin.Start()
-		baselinePlugin.Test()
-		baselinePlugin.Test()
-		plugins = append(plugins, baselinePlugin)
+		if err := baselinePlugin.Start(); err != nil {
+			zap.L().Error("Start baselinePlugin", zap.Error(err))
+		} else {
+			plugins = append(plugins, baselinePlugin)
+		}
 	}
 
-	assistantPlugin := assistant.NewAssistantPlugin()
-	if assistantPlugin != nil {
+	if assistantPlugin := assistant.NewAssistantPlugin(); assistantPlugin != nil {
 		defer assistantPlugin.Stop()
-		assistantPlugin.Start()
-		assistantPlugin.Test()
-		assistantPlugin.Test()
-		plugins = append(plugins, assistantPlugin)
+		if err := assistantPlugin.Start(); err == nil {
+			zap.L().Error("Start assistantPlugin", zap.Error(err))
+		} else {
+			plugins = append(plugins, assistantPlugin)
+		}
 	}
 
 	serverPort := viper.GetInt("SERVER_PORT")
@@ -70,20 +70,16 @@ func main() {
 	serverTLSCert := viper.GetString("SERVER_TLS_FILE_CRT")
 	serverTLSKey := viper.GetString("SERVER_TLS_FILE_KEY")
 
-	apiEnableCORS := viper.GetBool("API_ENABLE_CORS")
-	apiEnableSecurity := viper.GetBool("API_ENABLE_SECURITY")
-	apiEnableGatewayMode := viper.GetBool("API_ENABLE_GATEWAY_MODE")
-
-	if !apiEnableSecurity {
-		zap.L().Info("Warning: API starting in unsecured mode, be sure to set API_UNSECURED=false in production")
-	}
-	if apiEnableGatewayMode {
-		zap.L().Info("Server router will be started using API Gateway mode." +
-			"Please ensure every request has been properly pre-verified by the auth-api")
+	routerConfig := router.Config{
+		CORS:               viper.GetBool("API_ENABLE_CORS"),
+		Security:           viper.GetBool("API_ENABLE_SECURITY"),
+		GatewayMode:        viper.GetBool("API_ENABLE_GATEWAY_MODE"),
+		AuthenticationMode: viper.GetString("AUTHENTICATION_MODE"),
+		LogLevel:           zapConfig.Level,
+		Plugins:            plugins,
 	}
 
-	router := router.NewChiRouter(apiEnableSecurity, apiEnableCORS, apiEnableGatewayMode, zapConfig.Level, plugins)
-
+	router := router.New(routerConfig)
 	var srv *http.Server
 	if serverEnableTLS {
 		srv = server.NewSecuredServer(serverPort, serverTLSCert, serverTLSKey, router)
