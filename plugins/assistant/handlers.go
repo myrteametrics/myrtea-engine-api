@@ -98,7 +98,7 @@ func (m *AssistantPlugin) SendMessage(w http.ResponseWriter, r *http.Request) {
 		dim.DateInterval = "1h"
 	}
 
-	pf, err := fact.Prepare(&f, -1, -1, t, nil)
+	pf, err := fact.Prepare(&f, -1, -1, t, nil, false)
 	if err != nil {
 		zap.L().Error("Cannot prepare fact", zap.Error(err))
 		render.Error(w, r, render.ErrAPIResourceInvalid, err)

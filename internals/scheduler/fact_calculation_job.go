@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/calendar"
@@ -21,17 +20,18 @@ import (
 	"go.uber.org/zap"
 )
 
-const timeLayout = "2006-01-02T15:04:05.000"
+const timeLayout = "2006-01-02T15:04:05.000Z07:00"
 
 // FactCalculationJob represent a scheduler job instance which process a group of facts,
 // and persist the result in postgresql
 // It also generate situations, persists them and notify the rule engine to evaluate them
 type FactCalculationJob struct {
-	FactIds    []int64 `json:"factIds"`
-	From       string  `json:"from,omitempty"`
-	To         string  `json:"to,omitempty"`
-	Debug      bool    `json:"debug"`
-	ScheduleID int64   `json:"-"`
+	FactIds        []int64 `json:"factIds"`
+	From           string  `json:"from,omitempty"`
+	To             string  `json:"to,omitempty"`
+	LastDailyValue bool    `json:"lastDailyValue,omitempty"`
+	Debug          bool    `json:"debug"`
+	ScheduleID     int64   `json:"-"`
 }
 
 // NewFactCalculationJob returns a new isntance of FactCalculationJob
@@ -77,7 +77,7 @@ func (job *FactCalculationJob) ResolveFromAndTo(t time.Time) (time.Time, time.Ti
 		zap.L().Error("Error processing From expression in fact calculation jon", zap.Error(err))
 		return from, to, err
 	}
-	from, err = time.ParseInLocation("2006-01-02T15:04:05.000", result.(string), time.UTC)
+	from, err = time.ParseInLocation(timeLayout, result.(string), time.UTC)
 	if err != nil {
 		zap.L().Error("Error parsing From expression result as datetime in fact calculation job", zap.Error(err))
 		return from, to, err
@@ -88,10 +88,15 @@ func (job *FactCalculationJob) ResolveFromAndTo(t time.Time) (time.Time, time.Ti
 		zap.L().Error("Error processing To expression in fact calculation job", zap.Error(err))
 		return from, to, err
 	}
-	to, err = time.ParseInLocation("2006-01-02T15:04:05.000", result.(string), time.UTC)
+	to, err = time.ParseInLocation(timeLayout, result.(string), time.UTC)
 	if err != nil {
 		zap.L().Error("Error parsing To expression result as datetime in fact calculation job", zap.Error(err))
 		return from, to, err
+	}
+
+	if job.LastDailyValue {
+		from = time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, from.Location())
+		to = time.Date(to.Year(), to.Month(), to.Day(), 23, 59, 59, 0, to.Location())
 	}
 
 	return from, to, nil
@@ -113,7 +118,7 @@ func (job FactCalculationJob) Run() {
 	if _, ok := S().RunningJobs[job.ScheduleID]; !ok {
 		S().RunningJobs[job.ScheduleID] = true
 
-		t := time.Now().Truncate(1 * time.Millisecond).UTC()
+		t := time.Now().Truncate(1 * time.Second).UTC()
 		//Update the calendar base with last modifications
 		calendar.CBase().Update()
 
@@ -240,12 +245,11 @@ func (job FactCalculationJob) Run() {
 }
 
 func (job FactCalculationJob) update(t time.Time) error {
-
 	from, to, err := job.ResolveFromAndTo(t)
 	if err != nil {
 		return err
 	}
-	instances, err := fact.GetFactSituationInstances(job.FactIds, from, to)
+	instances, err := fact.GetFactSituationInstances(job.FactIds, from, to, job.LastDailyValue)
 	if err != nil {
 		zap.L().Error("Error Getting fact instances to update", zap.Error(err))
 		return err
@@ -257,7 +261,7 @@ func (job FactCalculationJob) update(t time.Time) error {
 	for _, instance := range instances {
 		var parameters map[string]string
 		if instance.SituationID == 0 {
-			parameters = nil
+			parameters = make(map[string]string, 0)
 		} else {
 			parameters = instance.SituationInstances[0].Parameters
 		}
@@ -278,6 +282,23 @@ func (job FactCalculationJob) update(t time.Time) error {
 				})
 			}
 		}
+	}
+
+	for _, s := range situationsToEvaluate {
+		record, err := situation.GetFromHistory(s.ID, s.TS, s.TemplateInstanceID, false)
+		if err != nil {
+			zap.L().Error("Get situation from history", zap.Int64("situationID", record.ID), zap.Time("ts", record.TS), zap.Error(err))
+			continue
+		}
+
+		evaluatedExpressionFacts, err := evaluateExpressionFacts(*record, s.TS)
+		if err != nil {
+			zap.L().Error("cannot evaluate expression facts", zap.Error(err))
+			continue
+		}
+		record.EvaluatedExpressionFacts = evaluatedExpressionFacts
+
+		situation.UpdateExpressionFacts(*record)
 	}
 
 	situationEvaluations, err := evaluator.EvaluateSituations(situationsToEvaluate, "standart")
@@ -311,7 +332,7 @@ func (job FactCalculationJob) update(t time.Time) error {
 }
 
 func (job FactCalculationJob) calculate(t time.Time, f engine.Fact, situationID int64, templateInstanceID int64, placeholders map[string]string, update bool) error {
-	pf, err := fact.Prepare(&f, -1, -1, t, placeholders)
+	pf, err := fact.Prepare(&f, -1, -1, t, placeholders, update)
 	if err != nil {
 		zap.L().Error("Cannot prepare fact", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
 		return err
@@ -384,7 +405,7 @@ func updateSituations(situationsToUpdate map[string]situation.HistoryRecord) ([]
 		}
 		record.FactsIDS = factsHistory
 
-		evaluatedExpressionFacts, err := evaluateExpressionFacts(record)
+		evaluatedExpressionFacts, err := evaluateExpressionFacts(record, record.TS)
 		if err != nil {
 			zap.L().Error("cannot evaluate expression facts", zap.Error(err))
 			continue
@@ -408,14 +429,8 @@ func updateSituations(situationsToUpdate map[string]situation.HistoryRecord) ([]
 	return situationsToEvalute, nil
 }
 
-func evaluateExpressionFacts(record situation.HistoryRecord) (map[string]interface{}, error) {
+func evaluateExpressionFacts(record situation.HistoryRecord, t time.Time) (map[string]interface{}, error) {
 	evaluatedExpressionFacts := make(map[string]interface{}, 0)
-
-	data, err := flattenSituationData(record)
-	if err != nil {
-		zap.L().Error("cannot flatten situation data", zap.Error(err))
-		return evaluatedExpressionFacts, err
-	}
 
 	s, found, err := situation.R().Get(record.ID, groups.GetTokenAllGroups())
 	if err != nil {
@@ -424,13 +439,25 @@ func evaluateExpressionFacts(record situation.HistoryRecord) (map[string]interfa
 	if !found {
 		return evaluatedExpressionFacts, fmt.Errorf("situation not found with ID = %d", record.ID)
 	}
+
+	data, err := flattenSituationData(record)
+	if err != nil {
+		zap.L().Error("cannot flatten situation data", zap.Error(err))
+		return evaluatedExpressionFacts, err
+	}
+
+	//Add date keywords in situation data
+	for key, value := range expression.GetDateKeywords(t) {
+		data[key] = value
+	}
+
 	for _, expressionFact := range s.ExpressionFacts {
 		result, err := expression.Process(expression.LangEval, expressionFact.Expression, data)
 		if err != nil {
 			zap.L().Debug("Cannot process gval factExpression", zap.Error(err))
 			continue
 		}
-		if expressionIsInvalidNumber(result) {
+		if expression.IsInvalidNumber(result) {
 			continue
 		}
 
@@ -438,22 +465,6 @@ func evaluateExpressionFacts(record situation.HistoryRecord) (map[string]interfa
 		evaluatedExpressionFacts[expressionFact.Name] = result
 	}
 	return evaluatedExpressionFacts, nil
-}
-
-func expressionIsInvalidNumber(result interface{}) bool {
-	switch r := result.(type) {
-	case float64:
-		if math.IsInf(r, 1) {
-			return true
-		}
-		if math.IsNaN(r) {
-			return true
-		}
-		if math.IsInf(r, -1) {
-			return true
-		}
-	}
-	return false
 }
 
 func flattenSituationData(record situation.HistoryRecord) (map[string]interface{}, error) {

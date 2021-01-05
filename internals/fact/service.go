@@ -22,10 +22,11 @@ import (
 // Prepare enrich a fact by specifying the offset and the number of hits returned
 // It also specify the target index based on the fact model
 // The
-func Prepare(f *engine.Fact, nhit int, offset int, t time.Time, placeholders map[string]string) (*builder.EsSearch, error) {
+func Prepare(f *engine.Fact, nhit int, offset int, t time.Time, placeholders map[string]string, update bool) (*builder.EsSearch, error) {
 	if f.AdvancedSource != "" {
 		var data map[string]interface{}
-		err := json.Unmarshal([]byte(f.AdvancedSource), &data)
+		var err error
+		err = json.Unmarshal([]byte(f.AdvancedSource), &data)
 		if err != nil {
 			return nil, err
 		}
@@ -65,7 +66,13 @@ func Prepare(f *engine.Fact, nhit int, offset int, t time.Time, placeholders map
 	}
 
 	// TODO: remove viper.GetString (and use a real configuration object)
-	indices, err := FindIndicesWithDynamicDepth(postgres.DB(), viper.GetString("INSTANCE_NAME"), f.Model, t, f.CalculationDepth)
+	var indices []string
+	if update {
+		indices, err = FindIndicesWithDynamicDepth(postgres.DB(), viper.GetString("INSTANCE_NAME"), f.Model, time.Now(), f.CalculationDepth+int64(time.Now().Sub(t).Hours()/24)+5)
+	} else {
+		indices, err = FindIndicesWithDynamicDepth(postgres.DB(), viper.GetString("INSTANCE_NAME"), f.Model, t, f.CalculationDepth)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -88,6 +95,7 @@ func Prepare(f *engine.Fact, nhit int, offset int, t time.Time, placeholders map
 
 	return esSearch, nil
 }
+
 
 // Execute calculate a fact a specific time and returns the result in a standard format
 func Execute(esSearch *builder.EsSearch) (*reader.WidgetData, error) {

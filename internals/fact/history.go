@@ -214,26 +214,33 @@ func GetFactRangeFromHistory(factID int64, situationID int64, templateInstanceID
 }
 
 //GetFactSituationInstances get the situation instances for fact instances between to and from
-func GetFactSituationInstances(factIDs []int64, from time.Time, to time.Time) ([]HistoryRecord, error) {
+func GetFactSituationInstances(factIDs []int64, from time.Time, to time.Time, lastDailyValue bool) ([]HistoryRecord, error) {
 	mapRecords := make(map[string]HistoryRecord, 0)
 
 	if postgres.DB() == nil {
 		return nil, errors.New("DB Client is not initialized")
 	}
 
-	query := `SELECT fd.definition, f.id, f.ts, f.situation_id, f.situation_instance_id, s.id, s.ts, s.situation_instance_id, s.parameters 
-		FROM (SELECT id, ts, situation_id, situation_instance_id FROM fact_history_v1 WHERE id = ANY (:fact_ids) AND ts >= :tsFrom AND ts <= :tsTo) as f 
-		INNER JOIN situation_history_v1 as s 
-		ON (f.situation_id = s.id OR f.situation_id = 0) AND (f.situation_instance_id = s.situation_instance_id OR f.situation_instance_id = 0) AND 
-		CAST(s.facts_ids ->> CAST(f.id AS TEXT) AS TIMESTAMP) = f.ts
-		INNER JOIN fact_definition_v1 as fd ON fd.id = f.id;`
-
-	params := map[string]interface{}{
-		"fact_ids": pq.Array(factIDs),
-		"tsFrom":   from,
-		"tsTo":     to,
+	var factsFilterQuery string
+	if lastDailyValue {
+		factsFilterQuery = `SELECT DISTINCT ON (id, situation_id, situation_instance_id, interval) 
+								id, ts, situation_id, situation_instance_id, FLOOR(DATE_PART('epoch', ts - $2)/86400) AS interval 
+							FROM fact_history_v1 WHERE id = ANY ($1) AND ts >= $2 AND ts <= $3 
+							ORDER by id, situation_id, situation_instance_id, interval, ts DESC`
+	} else {
+		factsFilterQuery = `SELECT id, ts, situation_id, situation_instance_id 
+							FROM fact_history_v1 WHERE id = ANY ($1) AND ts >= $2 AND ts <= $3 
+							ORDER by id, situation_id, situation_instance_id, ts DESC`
 	}
-	rows, err := postgres.DB().NamedQuery(query, params)
+
+	query := `SELECT fd.definition, f.id, f.ts, f.situation_id, f.situation_instance_id, s.id, s.ts, s.situation_instance_id, s.parameters 
+				FROM (` + factsFilterQuery + `) as f
+				INNER JOIN (SELECT id, ts, situation_instance_id, parameters, facts_ids FROM situation_history_v1 WHERE ts >= $2 AND ts <= $3) as s 
+				ON (f.situation_id = s.id OR f.situation_id = 0) AND (f.situation_instance_id = s.situation_instance_id OR f.situation_instance_id = 0) AND 
+					(s.facts_ids ->> CAST(f.id AS TEXT))::timestamptz = f.ts
+				INNER JOIN fact_definition_v1 as fd ON fd.id = f.id;`
+
+	rows, err := postgres.DB().Query(query, pq.Array(factIDs), from, to)
 	if err != nil {
 		return nil, err
 	}
@@ -280,6 +287,7 @@ func GetFactSituationInstances(factIDs []int64, from time.Time, to time.Time) ([
 			if err != nil {
 				return nil, err
 			}
+			fact.ID = factID
 
 			mapRecords[key] = HistoryRecord{
 				Fact:               fact,
@@ -288,7 +296,7 @@ func GetFactSituationInstances(factIDs []int64, from time.Time, to time.Time) ([
 				SituationID:        factSID,
 				TemplateInstanceID: factSTemplateID,
 				SituationInstances: []SituationHistoryRecord{
-					{
+					SituationHistoryRecord{
 						ID:                 situationID,
 						TS:                 situationTS,
 						TemplateInstanceID: situationTemplateID,

@@ -341,7 +341,7 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 			zap.L().Debug("Debugging fact", zap.Any("f", f))
 		}
 
-		pf, err := fact.Prepare(&f, nhit, offset, t, placeholders)
+		pf, err := fact.Prepare(&f, nhit, offset, t, placeholders, false)
 		if err != nil {
 			zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
 			render.Error(w, r, render.ErrAPIResourceInvalid, err)
@@ -453,7 +453,7 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 		zap.L().Debug("Debugging fact", zap.Any("newFact", newFact))
 	}
 
-	pf, err := fact.Prepare(&newFact, nhit, offset, t, placeholders)
+	pf, err := fact.Prepare(&newFact, nhit, offset, t, placeholders, false)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("newFact", newFact))
 		render.Error(w, r, render.ErrAPIResourceInvalid, err)
@@ -616,7 +616,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 	// Change the behaviour of the Fact
 	f.Intent.Operator = engine.Select
 
-	pf, err := fact.Prepare(&f, nhit, offset, t, placeholders)
+	pf, err := fact.Prepare(&f, nhit, offset, t, placeholders, false)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
 		render.Error(w, r, render.ErrAPIResourceInvalid, err)
@@ -710,7 +710,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		zap.L().Debug("Debugging fact", zap.Any("f", f))
 	}
 
-	pf, err := fact.Prepare(&f, nhit, offset, t, placeholders)
+	pf, err := fact.Prepare(&f, nhit, offset, t, placeholders, false)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
 		render.Error(w, r, render.ErrAPIResourceInvalid, err)
