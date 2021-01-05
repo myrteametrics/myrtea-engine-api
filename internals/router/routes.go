@@ -149,6 +149,8 @@ func serviceRouter() http.Handler {
 	r := chi.NewRouter()
 
 	r.Post("/objects", handlers.PostObjects)
+	r.Post("/aggregates", handlers.PostAggregates)
+
 
 	return r
 }
