@@ -73,7 +73,7 @@ func New(config Config) *chi.Mux {
 			AllowedOrigins:   []string{"*"},
 			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-			ExposedHeaders:   []string{"Link"},
+			ExposedHeaders:   []string{"Link", "Authenticate-To"},
 			AllowCredentials: true,
 			MaxAge:           300, // Maximum value not ignored by any of major browsers
 		})
@@ -104,7 +104,7 @@ func New(config Config) *chi.Mux {
 		zap.L().Panic("Cannot initialize API routes", zap.String("AuthenticationMode", config.AuthenticationMode), zap.Error(err))
 	}
 
-	r.Route("/api/v3", routes)
+	r.Route("/api/v4", routes)
 
 	return r
 }

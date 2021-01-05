@@ -139,7 +139,7 @@ func ValidateModel(w http.ResponseWriter, r *http.Request) {
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
-// @Router /modeler/models [post]
+// @Router /engine/models [post]
 func PostModel(w http.ResponseWriter, r *http.Request) {
 	var newModel modeler.Model
 	err := json.NewDecoder(r.Body).Decode(&newModel)
@@ -189,7 +189,7 @@ func PostModel(w http.ResponseWriter, r *http.Request) {
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
-// @Router /modeler/models/{id} [put]
+// @Router /engine/models/{id} [put]
 func PutModel(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idModel, err := strconv.ParseInt(id, 10, 64)
@@ -245,7 +245,7 @@ func PutModel(w http.ResponseWriter, r *http.Request) {
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
-// @Router /modeler/models/{id} [delete]
+// @Router /engine/models/{id} [delete]
 func DeleteModel(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idModel, err := strconv.ParseInt(id, 10, 64)
