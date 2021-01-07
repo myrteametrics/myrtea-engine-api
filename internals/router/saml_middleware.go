@@ -201,8 +201,8 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		isAdmin := 0
-		for member := range userMemberOf {
+		var isAdmin int64 = 0
+		for _, member := range userMemberOf {
 			if member.Name == viper.GetString("AUTHENTICATION_SAML_ADMIN_GROUP_NAME") {
 				isAdmin = 1
 			}
