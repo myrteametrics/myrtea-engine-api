@@ -37,6 +37,8 @@ version
 *.plugin
 
 # Security files (certs, private keys, metadatas)
+resources/saml/certs/sp
+resources/saml/certs/source
 resources/saml/certs/*.key
 resources/saml/certs/*.crt
 resources/saml/metadata/*.xml
