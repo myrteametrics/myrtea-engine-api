@@ -107,6 +107,26 @@ POSTGRESQL_CONN_MAX_LIFETIME = "0"
 # Default value: "true"
 ENABLE_CRONS_ON_START = "true"
 
+# Enable or disable the explainer API on fact object
+# Default value: "false"
+ENABLE_EXPLAINER_API = "false"
+
+# Specify the explainer API URL (only if EXPLAINER_API_ENABLE = "true")
+# Default value: "http://localhost:9005"
+EXPLAINER_API_SERVICE_URL = "http://localhost:9005"
+
+# Specify the explainer API dataset name (only if EXPLAINER_API_ENABLE = "true")
+# Default value: "object"
+EXPLAINER_API_DATASET_NAME = "object"
+
+# Specify the explainer API dataset fields (only if EXPLAINER_API_ENABLE = "true")
+# Default value: ["field1", "field2"]
+EXPLAINER_API_DATASET_FIELDS = ["field1", "field2"]
+
+# Specify the explainer API machine learning model name (only if EXPLAINER_API_ENABLE = "true")
+# Default value: "randomforest"
+EXPLAINER_API_ML_MODEL_NAME = "randomforest"
+
 # Specify the authentication mode
 # Can either be "BASIC" or "SAML"
 # In case of SAML, some more parameters are required to ensure proper functionning

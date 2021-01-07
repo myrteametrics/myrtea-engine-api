@@ -3,9 +3,11 @@ package processor
 import (
 	"strings"
 
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/analyzer"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	sdk_models "github.com/myrteametrics/myrtea-sdk/v4/models"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -35,6 +37,25 @@ func ReceiveObjects(factObjectName string, documents []sdk_models.Document) erro
 			return err
 		}
 		source["id"] = document.ID
+
+		if viper.GetBool("ENABLE_EXPLAINER_API") {
+			prediction, err := analyzer.Predict(source)
+			if err != nil {
+				continue
+			}
+
+			var topPrediction string
+			var topScore float64 = 0
+			for class, score := range prediction.Classes {
+				if score > topScore {
+					topPrediction = class
+					topScore = score
+				}
+			}
+			source["risk"] = topPrediction
+			source["risk_score"] = topScore
+			zap.L().Debug("scored object", zap.Any("source", source))
+		}
 
 		// Not working ATM (Field are flatten + array theorically not supported)
 		// source = filterSource(factObject, source)
