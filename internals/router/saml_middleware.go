@@ -17,6 +17,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"github.com/myrteametrics/myrtea-sdk/v4/security"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -200,10 +201,18 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		isAdmin := 0
+		for member := range userMemberOf {
+			if member.Name == viper.GetString("AUTHENTICATION_SAML_ADMIN_GROUP_NAME") {
+				isAdmin = 1
+			}
+		}
+
 		ug := groups.UserWithGroups{
 			User: security.User{
 				Login:    userID,
 				LastName: userDisplayName,
+				Role:     isAdmin,
 			},
 			Groups: userMemberOf,
 		}
