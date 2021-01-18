@@ -234,7 +234,7 @@ func buildRoutesV3SAML(config Config) (func(r chi.Router), error) {
 			if config.Security {
 				rg.Use(samlSPMiddleware.RequireAccount)
 				rg.Use(samlSPMiddleware.ContextMiddleware)
-				rg.Use(security.AdminAuthentificator)
+				rg.Use(samlSPMiddleware.AdminAuthentificator)
 			}
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
