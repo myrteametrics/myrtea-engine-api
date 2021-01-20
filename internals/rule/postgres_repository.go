@@ -139,6 +139,41 @@ func (r *PostgresRulesRepository) Get(id int64) (Rule, bool, error) {
 	return Rule{}, false, nil
 }
 
+// GetByVersion search and returns an entity from the repository by its id
+func (r *PostgresRulesRepository) GetByVersion(id int64, version int64) (Rule, bool, error) {
+	query := `SELECT rules_v1.id, (SELECT data FROM rule_versions_v1 WHERE rule_id = id AND version_number = :version)
+				FROM rules_v1
+				WHERE rules_v1.id = :id`
+	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
+		"id":      id,
+		"version": version,
+	})
+	if err != nil {
+		return Rule{}, false, errors.New("Couldn't retrieve the Rule with id: " + fmt.Sprint(id) + " : " + err.Error())
+	}
+	defer rows.Close()
+
+	var rule Rule
+	var data string
+	var ruleID int64
+	if rows.Next() {
+		err := rows.Scan(&ruleID, &data)
+		if err != nil {
+			return Rule{}, false, errors.New("Couldn't scan the retrieved data: " + err.Error())
+		}
+		err = json.Unmarshal([]byte(data), &rule)
+		if err != nil {
+			return Rule{}, false, errors.New("Malformed Data, rule ID: " + fmt.Sprint(id) + " error: " + err.Error())
+		}
+
+		//Set the id coming from the DB
+		rule.ID = ruleID
+
+		return rule, true, nil
+	}
+	return Rule{}, false, nil
+}
+
 //GetByName search and returns an entity from the repository by its name
 func (r *PostgresRulesRepository) GetByName(name string) (Rule, bool, error) {
 	query := `SELECT rules_v1.id, (SELECT data FROM rule_versions_v1 WHERE rule_id = id ORDER BY version_number DESC LIMIT 1)

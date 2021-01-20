@@ -12,6 +12,7 @@ type Repository interface {
 	CheckByName(name string) (bool, error)
 	Create(rule Rule) (int64, error)
 	Get(id int64) (Rule, bool, error)
+	GetByVersion(id int64, version int64) (Rule, bool, error)
 	GetByName(name string) (Rule, bool, error)
 	Update(rule Rule) error
 	Delete(id int64) error
