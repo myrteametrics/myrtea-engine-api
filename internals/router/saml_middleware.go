@@ -14,6 +14,7 @@ import (
 	"github.com/crewjam/saml/samlsp"
 	gorillacontext "github.com/gorilla/context"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"github.com/myrteametrics/myrtea-sdk/v4/security"
@@ -165,6 +166,8 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session := samlsp.SessionFromContext(r.Context()).(samlsp.SessionWithAttributes)
 
+		zap.L().Debug("session", zap.Any("session", session))
+
 		userID := samlsp.AttributeFromContext(r.Context(), m.Config.AttributeUserID)
 		if userID == "" {
 			zap.L().Error("Missing userID from session after SAML authentication")
@@ -196,7 +199,7 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 		}
 
 		if m.Config.EnableMemberOfValidation && len(userMemberOf) == 0 {
-			zap.L().Warn("User access denied", zap.String("reason", "no valid group found"), zap.String("userID", userID))
+			zap.L().Warn("User access denied", zap.String("reason", "no valid group found"), zap.String("userID", userID), zap.Strings("userGroups", userGroups))
 			render.Error(w, r, render.ErrAPISecurityNoRights, errors.New("Access denied"))
 			return
 		}
@@ -219,10 +222,22 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 
 		loggerR := r.Context().Value(models.ContextKeyLoggerR)
 		if loggerR != nil {
-			gorillacontext.Set(loggerR.(*http.Request), models.UserLogin, fmt.Sprintf("%s(%d)", ug.User.Login, ug.User.ID))
+			gorillacontext.Set(loggerR.(*http.Request), models.UserLogin, fmt.Sprintf("%s(%d)(%d)", ug.User.Login, ug.User.ID, ug.User.Role))
 		}
 
 		ctx := context.WithValue(r.Context(), models.ContextKeyUser, ug)
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// AdminAuthentificator is a middle which check if the user is administrator (role=1)
+func (m *SamlSPMiddleware) AdminAuthentificator(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := handlers.GetUserFromContext(r)
+		if user.Role != int64(1) {
+			http.Error(w, http.StatusText(403), 403)
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
 }

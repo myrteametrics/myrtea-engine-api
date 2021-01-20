@@ -83,6 +83,7 @@ func engineRouter() http.Handler {
 
 	r.Get("/rules", handlers.GetRules)
 	r.Get("/rules/{id}", handlers.GetRule)
+	r.Get("/rules/{id}/versions/{versionid}", handlers.GetRuleByVersion)
 	r.Post("/rules/validate", handlers.ValidateRule)
 	r.Post("/rules", handlers.PostRule)
 	r.Put("/rules/{id}", handlers.PutRule)
@@ -150,7 +151,6 @@ func serviceRouter() http.Handler {
 
 	r.Post("/objects", handlers.PostObjects)
 	r.Post("/aggregates", handlers.PostAggregates)
-
 
 	return r
 }

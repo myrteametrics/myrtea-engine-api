@@ -90,12 +90,12 @@ POSTGRESQL_USERNAME = "postgres"
 POSTGRESQL_PASSWORD = "postgres"
 
 # Specify the postgresql connection pool maximum open connection
-# Default value: "6"
-POSTGRESQL_CONN_POOL_MAX_OPEN = "6"
+# Default value: "10"
+POSTGRESQL_CONN_POOL_MAX_OPEN = "10"
 
 # Specify the postgresql connection pool maximum idle connection
-# Default value: "3"
-POSTGRESQL_CONN_POOL_MAX_IDLE = "3"
+# Default value: "10"
+POSTGRESQL_CONN_POOL_MAX_IDLE = "10"
 
 # Specify the postgresql connection pool maximum idle connection
 # Expressed as a Golang duration

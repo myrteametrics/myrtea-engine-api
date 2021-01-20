@@ -76,6 +76,48 @@ func GetRule(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, rule)
 }
 
+// GetRuleByVersion godoc
+// @Summary Get a rule
+// @Description Get a specific rule by it's ID
+// @Tags Rules
+// @Produce json
+// @Param id path string true "Rule ID"
+// @Security Bearer
+// @Success 200 {object} rule.Rule "rule"
+// @Failure 500 "internal server error"
+// @Router /engine/rules/{id}/versions/{versionid} [get]
+func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	idRule, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Warn("Parsing rule id", zap.String("RuleID", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	versionID := chi.URLParam(r, "versionid")
+	idVersion, err := strconv.ParseInt(versionID, 10, 64)
+	if err != nil {
+		zap.L().Warn("Parsing rule id", zap.String("RuleID", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	rule, found, err := rule.R().GetByVersion(idRule, idVersion)
+	if err != nil {
+		zap.L().Error("Get rule from repository", zap.Int64("id", idRule), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("Rule does not exists", zap.String("ruleid", id))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	render.JSON(w, r, rule)
+}
+
 // ValidateRule godoc
 // @Summary validate a new rule definition
 // @Description validate a new rule definition
