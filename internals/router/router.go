@@ -244,11 +244,11 @@ func buildRoutesV3SAML(config Config) (func(r chi.Router), error) {
 		// System intra services Protection routes
 		r.Group(func(rg chi.Router) {
 			//TODO: change to be intra APIs
-			if config.Security {
-				rg.Use(samlSPMiddleware.RequireAccount)
-				rg.Use(samlSPMiddleware.ContextMiddleware)
-				rg.Use(security.AdminAuthentificator)
-			}
+			// if config.Security {
+			// 	rg.Use(samlSPMiddleware.RequireAccount)
+			// 	rg.Use(samlSPMiddleware.ContextMiddleware)
+			// 	rg.Use(security.AdminAuthentificator)
+			// }
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
 			rg.Mount("/service", serviceRouter())
