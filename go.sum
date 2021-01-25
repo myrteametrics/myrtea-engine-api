@@ -163,8 +163,6 @@ github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJ
 github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/modern-go/reflect2 v1.0.1 h1:9f412s+6RmYXLWZSEzVVgPGK7C2PphHj5RJrvfx9AWI=
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
-github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20200911193358-bcfbc836a418 h1:nVF1fJvABAMeQE3nEH+KVh6QWSrVnTsJWBREFxulh+I=
-github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20200911193358-bcfbc836a418/go.mod h1:M0m1P7NKit82el7vort1BwsVtkTQG28qzFyXcRns1uo=
 github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20210114164007-e8dc0f493682 h1:HlYAT/bBfqDLwp2jzFdZYA2jPRMcjJKENsXIlVSfjAg=
 github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20210114164007-e8dc0f493682/go.mod h1:M0m1P7NKit82el7vort1BwsVtkTQG28qzFyXcRns1uo=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
