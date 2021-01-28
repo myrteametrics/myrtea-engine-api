@@ -317,9 +317,9 @@ func (job FactCalculationJob) update(t time.Time) error {
 
 			taskBatchs = append(taskBatchs, tasker.TaskBatch{
 				Context: map[string]interface{}{
-					"situationID":        int(situationEvaluation.ID),
+					"situationID":        situationEvaluation.ID,
 					"ts":                 situationEvaluation.TS,
-					"templateInstanceID": int(situationEvaluation.TemplateInstanceID),
+					"templateInstanceID": situationEvaluation.TemplateInstanceID,
 				},
 				Agenda: agenda,
 			})
