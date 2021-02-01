@@ -206,7 +206,7 @@ func ReceiveAggregates(aggregates []ExternalAggregate) error {
 		}
 	}
 
-	zap.L().Info("situationsToUpdate", zap.Any("situationsToUpdate", situationsToUpdate))
+	zap.L().Debug("situationsToUpdate", zap.Any("situationsToUpdate", situationsToUpdate))
 
 	situationsToEvaluate, err := scheduler.UpdateSituations(situationsToUpdate)
 	if err != nil {

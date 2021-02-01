@@ -8,27 +8,25 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
-	"github.com/myrteametrics/myrtea-sdk/v4/ruleeng"
-)
-
-var (
-	_globalREngine = make(map[string]*ruleeng.RuleEngine, 0)
-	_lastUpdate    = make(map[string]time.Time, 0)
 )
 
 //EvaluateSituations evaluates a slice of situations and return a slice with the evaluated situations
 func EvaluateSituations(situations []SituationToEvaluate, engineID string) ([]EvaluatedSituation, error) {
 	var err error
-	if _, ok := _globalREngine[engineID]; !ok {
+	if _, ok := GetEngine(engineID); !ok {
 		err = InitEngine(engineID)
 		if err != nil {
 			return nil, err
 		}
 	}
 	err = UpdateEngine(engineID)
+	if err != nil {
+		return nil, err
+	}
+
+	localRuleEngine, err := CloneEngine(engineID, true, false)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +44,8 @@ func EvaluateSituations(situations []SituationToEvaluate, engineID string) ([]Ev
 			return nil, fmt.Errorf("Error geting knowledge for situation instance (%d, %s, %d): %s", s.ID, s.TS, s.TemplateInstanceID, err.Error())
 		}
 
-		_globalREngine[engineID].Reset()
-		_globalREngine[engineID].GetKnowledgeBase().SetFacts(sKnowledge)
+		localRuleEngine.Reset()
+		localRuleEngine.GetKnowledgeBase().SetFacts(sKnowledge)
 
 		ruleIDsInt := make([]int64, 0)
 		for _, id := range ruleIDs {
@@ -56,8 +54,8 @@ func EvaluateSituations(situations []SituationToEvaluate, engineID string) ([]Ev
 				ruleIDsInt = append(ruleIDsInt, id)
 			}
 		}
-		_globalREngine[engineID].ExecuteRules(ruleIDsInt)
-		agenda := _globalREngine[engineID].GetResults()
+		localRuleEngine.ExecuteRules(ruleIDsInt)
+		agenda := localRuleEngine.GetResults()
 
 		situation.SetAsEvaluated(s.ID, s.TS, s.TemplateInstanceID)
 
@@ -89,6 +87,11 @@ func EvaluateObjectSituations(situations []SituationToEvaluate, factObject engin
 		return nil, err
 	}
 
+	localRuleEngine, err := CloneEngine(engineID, true, false)
+	if err != nil {
+		return nil, err
+	}
+
 	evaluatedSituations := make([]EvaluatedSituation, 0)
 	for _, s := range situations {
 
@@ -112,13 +115,13 @@ func EvaluateObjectSituations(situations []SituationToEvaluate, factObject engin
 
 		for _, object := range objects {
 
-			_globalREngine[engineID].Reset()
-			_globalREngine[engineID].GetKnowledgeBase().SetFacts(sKnowledge)
-			_globalREngine[engineID].GetKnowledgeBase().InsertFact(factObject.Name, object)
+			localRuleEngine.Reset()
+			localRuleEngine.GetKnowledgeBase().SetFacts(sKnowledge)
+			localRuleEngine.GetKnowledgeBase().InsertFact(factObject.Name, object)
 
-			_globalREngine[engineID].ExecuteRules(ruleIDsInt)
+			localRuleEngine.ExecuteRules(ruleIDsInt)
 
-			agenda := _globalREngine[engineID].GetResults()
+			agenda := localRuleEngine.GetResults()
 			if len(agenda) > 0 {
 
 				ts := time.Now().UTC()
@@ -138,52 +141,6 @@ func EvaluateObjectSituations(situations []SituationToEvaluate, factObject engin
 	}
 
 	return evaluatedSituations, nil
-}
-
-//InitEngine inits an engine if it does not exist
-func InitEngine(engineID string) error {
-	if _, ok := _globalREngine[engineID]; ok {
-		return fmt.Errorf("Engine with ID %s already exists", engineID)
-	}
-
-	_globalREngine[engineID] = ruleeng.NewRuleEngine()
-	_lastUpdate[engineID] = time.Now()
-
-	rules, err := rule.R().GetAll()
-	if err != nil {
-		return errors.New("Couldn't read rules " + err.Error())
-	}
-
-	for _, rule := range rules {
-		if rule.Enabled {
-			_globalREngine[engineID].InsertRule(rule)
-		}
-	}
-
-	return nil
-}
-
-//UpdateEngine updates an engine if it exists
-func UpdateEngine(engineID string) error {
-	if _, ok := _globalREngine[engineID]; !ok {
-		return fmt.Errorf("Engine with ID %s does not exist", engineID)
-	}
-
-	now := time.Now()
-	rules, err := rule.R().GetAllModifiedFrom(_lastUpdate[engineID])
-	if err != nil {
-		return errors.New("Couldn't read modified rules " + err.Error())
-	}
-	_lastUpdate[engineID] = now
-	for _, rule := range rules {
-		if rule.Enabled {
-			_globalREngine[engineID].InsertRule(rule)
-		} else {
-			_globalREngine[engineID].RemoveRule(rule.ID)
-		}
-	}
-
-	return nil
 }
 
 func getSituationKnowledge(situationInstance SituationToEvaluate) (map[string]interface{}, error) {
