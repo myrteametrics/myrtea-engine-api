@@ -39,6 +39,7 @@ func FuncLogin() {}
 // @Description Get current logging level
 // @Tags Logs
 // @Produce json
+// @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /log_level [get]
@@ -53,6 +54,7 @@ func FuncGetLogLevel() {}
 // @Consumme json
 // @Produce json
 // @Param level body interface{} true "Level (json)"
+// @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /log_level [put]
