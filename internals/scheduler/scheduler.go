@@ -9,9 +9,10 @@ import (
 
 // InternalScheduler represents an instance of a scheduler used for fact processing
 type InternalScheduler struct {
+	mu          sync.RWMutex
 	C           *cron.Cron
 	Jobs        map[int64]cron.EntryID
-	RunningJobs map[int64]bool
+	runningJobs map[int64]bool
 	RuleEngine  chan string
 }
 
@@ -44,7 +45,7 @@ func NewScheduler() *InternalScheduler {
 	scheduler := &InternalScheduler{
 		C:           c,
 		Jobs:        make(map[int64]cron.EntryID, 0),
-		RunningJobs: make(map[int64]bool, 0),
+		runningJobs: make(map[int64]bool, 0),
 	}
 	return scheduler
 }
@@ -89,4 +90,26 @@ func (s *InternalScheduler) Init() error {
 		}
 	}
 	return nil
+}
+
+// ExistingRunningJob check if a job is already running
+func (s *InternalScheduler) ExistingRunningJob(scheduleID int64) bool {
+	s.mu.RLock()
+	_, ok := s.runningJobs[scheduleID]
+	s.mu.RUnlock()
+	return ok
+}
+
+// AddRunningJob add a job ID to the running job list
+func (s *InternalScheduler) AddRunningJob(scheduleID int64) {
+	s.mu.Lock()
+	s.runningJobs[scheduleID] = true
+	s.mu.Unlock()
+}
+
+// RemoveRunningJob remove a job ID to the running job list
+func (s *InternalScheduler) RemoveRunningJob(scheduleID int64) {
+	s.mu.Lock()
+	delete(s.runningJobs, scheduleID)
+	s.mu.Unlock()
 }

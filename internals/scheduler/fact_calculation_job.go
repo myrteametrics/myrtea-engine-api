@@ -115,8 +115,8 @@ func (job FactCalculationJob) IsValid() (bool, error) {
 
 // Run contains all the business logic of the job
 func (job FactCalculationJob) Run() {
-	if _, ok := S().RunningJobs[job.ScheduleID]; !ok {
-		S().RunningJobs[job.ScheduleID] = true
+	if !S().ExistingRunningJob(job.ScheduleID) {
+		S().AddRunningJob(job.ScheduleID)
 
 		t := time.Now().Truncate(1 * time.Second).UTC()
 		//Update the calendar base with last modifications
@@ -130,13 +130,13 @@ func (job FactCalculationJob) Run() {
 				zap.L().Error("Error updating fact instances", zap.Error(err))
 			}
 			zap.L().Info("FactScheduleJob Ended", zap.Int64s("ids", job.FactIds))
-			delete(S().RunningJobs, job.ScheduleID)
+			S().RemoveRunningJob(job.ScheduleID)
 			return
 		}
 
 		if fact.R() == nil {
 			zap.L().Error("Fact Repository is not initialized")
-			delete(S().RunningJobs, job.ScheduleID)
+			S().RemoveRunningJob(job.ScheduleID)
 			return
 		}
 		situationsToUpdate := make(map[string]situation.HistoryRecord, 0)
@@ -161,7 +161,7 @@ func (job FactCalculationJob) Run() {
 			//If no situation within a valid calendar, then no fact calculation at all
 			if len(factSituationsHistory) == 0 {
 				zap.L().Info("No situation within valid calendar period for the Fact, skipping fact calculation...", zap.Int64("factID", factID))
-				delete(S().RunningJobs, job.ScheduleID)
+				S().RemoveRunningJob(job.ScheduleID)
 				return
 			}
 
@@ -216,7 +216,7 @@ func (job FactCalculationJob) Run() {
 		situationsToEvaluate, err := UpdateSituations(situationsToUpdate)
 		if err != nil {
 			zap.L().Error("Cannot update situations", zap.Error(err))
-			delete(S().RunningJobs, job.ScheduleID)
+			S().RemoveRunningJob(job.ScheduleID)
 			return
 		}
 
@@ -238,7 +238,7 @@ func (job FactCalculationJob) Run() {
 		}
 
 		zap.L().Info("FactScheduleJob Ended", zap.Int64s("ids", job.FactIds))
-		delete(S().RunningJobs, job.ScheduleID)
+		S().RemoveRunningJob(job.ScheduleID)
 	} else {
 		zap.L().Info("Skepping FactScheduleJob because last execution is still running", zap.Int64s("ids", job.FactIds))
 	}

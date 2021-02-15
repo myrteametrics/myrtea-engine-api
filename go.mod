@@ -19,7 +19,7 @@ require (
 	github.com/json-iterator/go v1.1.8
 	github.com/lib/pq v1.0.0
 	github.com/mailru/easyjson v0.7.6 // indirect
-	github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20210114164007-e8dc0f493682
+	github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20210215085853-4e4f5b992e4f
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/prataprc/goparsec v0.0.0-20180806094145-2600a2a4a410
 	github.com/robfig/cron/v3 v3.0.0
@@ -28,6 +28,7 @@ require (
 	github.com/spf13/viper v1.3.1
 	github.com/swaggo/http-swagger v0.0.0-20200308142732-58ac5e232fba
 	github.com/swaggo/swag v1.6.3
+	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.9.1
 	golang.org/x/net v0.0.0-20200904194848-62affa334b73
 	golang.org/x/tools v0.0.0-20200904185747-39188db58858 // indirect
