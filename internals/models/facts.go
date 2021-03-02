@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -42,6 +43,29 @@ func (factValue *SingleValue) GetDeepness() int32 {
 }
 
 //*****************************************************************************
+
+// ObjectValue is a factValue implementation dedicated to object facts
+type ObjectValue struct {
+	Attributes map[string]interface{} `json:"attributes"`
+}
+
+func (factValue *ObjectValue) String() string {
+	b, _ := json.Marshal(factValue.Attributes)
+	return string(b)
+}
+
+// SetCurrent set the IsCurrent boolean
+func (factValue *ObjectValue) SetCurrent(current bool) {}
+
+// GetType get fact value type
+func (factValue *ObjectValue) GetType() string {
+	return "object"
+}
+
+// GetDeepness get deepness
+func (factValue *ObjectValue) GetDeepness() int32 {
+	return 0
+}
 
 //NotSupportedValue value for not supported history facts
 type NotSupportedValue struct {
