@@ -85,14 +85,6 @@ func GetFactsHistory(issueID int64, groups []int64) ([]models.FrontFactHistory, 
 	from, to := getFromAndToHistoryDates(issue.SituationTS, interval)
 
 	for factHistoryID, factHistoryTS := range record.FactsIDS {
-		var factCurrentValue models.FactValue
-		factValues := make(map[time.Time]models.FactValue)
-
-		items, err := fact.GetFactRangeFromHistory(factHistoryID, record.ID, record.TemplateInstanceID, from, to)
-		if err != nil {
-			return nil, false, err
-		}
-
 		factDefinition, found, err := fact.R().Get(factHistoryID)
 		if err != nil {
 			return nil, false, err
@@ -101,33 +93,57 @@ func GetFactsHistory(issueID int64, groups []int64) ([]models.FrontFactHistory, 
 			return nil, false, fmt.Errorf("fact definition not found for id %d", factHistoryID)
 		}
 
-		for ts, item := range items {
-			factValue, err := extractFactValue(item, factDefinition)
+		frontFact := models.FrontFactHistory{
+			ID:   factHistoryID,
+			Name: factDefinition.Name,
+		}
+		if factDefinition.IsObject {
+			items, _, err := fact.GetFactResultFromHistory(factHistoryID, *factHistoryTS, issue.SituationID, 0, false, 0)
 			if err != nil {
 				return nil, false, err
 			}
-
-			if factValue.GetType() == "not_supported" {
-				factValues = nil
-				factCurrentValue = factValue
-				break
+			attributes := make(map[string]interface{}, 0)
+			for k, v := range items.Aggs {
+				attributes[k] = v.Value
 			}
-
-			if factHistoryTS.Equal(ts) {
-				factValue.SetCurrent(true)
-				factCurrentValue = factValue
+			factValue := &models.ObjectValue{
+				Attributes: attributes,
 			}
+			frontFact.Deepness = factValue.GetDeepness()
+			frontFact.Type = factValue.GetType()
+			frontFact.CurrentValue = factValue
+			frontFact.History = make(map[time.Time]models.FactValue, 0)
+		} else {
+			var factCurrentValue models.FactValue
+			factValues := make(map[time.Time]models.FactValue)
 
-			factValues[ts] = factValue
-		}
+			items, err := fact.GetFactRangeFromHistory(factHistoryID, issue.SituationID, issue.TemplateInstanceID, from, to)
+			if err != nil {
+				return nil, false, err
+			}
+			for ts, item := range items {
+				factValue, err := extractFactValue(item, factDefinition)
+				if err != nil {
+					return nil, false, err
+				}
 
-		frontFact := models.FrontFactHistory{
-			ID:           factHistoryID,
-			Name:         factDefinition.Name,
-			Deepness:     factCurrentValue.GetDeepness(),
-			Type:         factCurrentValue.GetType(),
-			CurrentValue: factCurrentValue,
-			History:      factValues,
+				if factValue.GetType() == "not_supported" {
+					factValues = nil
+					factCurrentValue = factValue
+					break
+				}
+
+				if factHistoryTS.Equal(ts) {
+					factValue.SetCurrent(true)
+					factCurrentValue = factValue
+				}
+
+				factValues[ts] = factValue
+			}
+			frontFact.Deepness = factCurrentValue.GetDeepness()
+			frontFact.Type = factCurrentValue.GetType()
+			frontFact.CurrentValue = factCurrentValue
+			frontFact.History = factValues
 		}
 
 		history = append(history, frontFact)
