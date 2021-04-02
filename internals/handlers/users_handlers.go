@@ -3,19 +3,21 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"sort"
-	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/users"
-	"github.com/myrteametrics/myrtea-sdk/v4/security"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"go.uber.org/zap"
 )
+
+// type UserWithPermissions struct {
+// 	users.User
+// 	permissions []permissions.Permission
+// }
 
 // GetUserSelf godoc
 // @Summary Get an user
@@ -35,84 +37,68 @@ func GetUserSelf(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userWithGroups := user.(groups.UserWithGroups)
-	render.JSON(w, r, userWithGroups)
+	// userWithPermissions := user.(users.UserWithPermissions)
+	// render.JSON(w, r, userWithPermissions)
 }
 
 // GetUsers godoc
-// @Summary Get users
-// @Description Gets a list of all users.
+// @Summary Get all user users
+// @Description Gets a list of all user users.
 // @Tags Users
 // @Produce json
 // @Security Bearer
-// @Success 200 {string} string "Status OK"
-// @Failure 400 {string} string "Bad Request"
+// @Success 200 {array} users.User "list of users"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/users [get]
 func GetUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := users.R().GetAll()
+	usersSlice, err := users.R().GetAll()
 	if err != nil {
-		zap.L().Warn("GetUsers", zap.Error(err))
+		zap.L().Error("GetUsers", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	usersSlice := make([]security.User, 0)
-	for _, user := range users {
-		usersSlice = append(usersSlice, user)
-	}
-
 	sort.SliceStable(usersSlice, func(i, j int) bool {
-		return usersSlice[i].ID < usersSlice[j].ID
+		return usersSlice[i].LastName < usersSlice[j].LastName
 	})
 
 	render.JSON(w, r, usersSlice)
 }
 
 // GetUser godoc
-// @Summary Get an user
-// @Description Gets un user with the specified id.
+// @Summary Get an user user
+// @Description Gets an user user with the specified id
 // @Tags Users
 // @Produce json
 // @Param id path string true "user ID"
 // @Security Bearer
-// @Success 200 {string} string "status OK"
+// @Success 200 {object} users.User "user"
 // @Failure 400 {string} string "Bad Request"
+// @Failure 404 {string} string "Not Found"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/users/{id} [get]
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	userID, err := strconv.ParseInt(id, 10, 64)
+	userID, err := uuid.Parse(id)
 	if err != nil {
-		zap.L().Warn("GetUser.Getid", zap.Error(err))
+		zap.L().Warn("Parse user id", zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
 	}
 
 	user, found, err := users.R().Get(userID)
 	if err != nil {
-		zap.L().Error("Get user failed", zap.Int64("id", userID), zap.Error(err))
+		zap.L().Error("Cannot get user", zap.String("uuid", userID.String()), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
-		zap.L().Warn("User not found", zap.Int64("id", userID))
+		zap.L().Warn("User not found", zap.String("uuid", userID.String()))
 		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	userGroups, err := groups.R().GetGroupsOfUser(user.ID)
-	if err != nil {
-		zap.L().Error("Get user failed", zap.Int64("id", userID), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
-	}
-
-	userWithGroups := groups.UserWithGroups{
-		User:   user,
-		Groups: userGroups,
-	}
-
-	render.JSON(w, r, userWithGroups)
+	render.JSON(w, r, user)
 }
 
 // ValidateUser godoc
@@ -121,53 +107,53 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param user body interface{} true "user (json)"
+// @Param user body users.User true "user (json)"
 // @Security Bearer
-// @Success 200 {string} string "status OK"
+// @Success 200 {object} users.User "user"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/users/validate [post]
 func ValidateUser(w http.ResponseWriter, r *http.Request) {
-	var user security.UserWithPassword
-	err := json.NewDecoder(r.Body).Decode(&user)
+	var newUser users.UserWithPassword
+	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
-		zap.L().Warn("ValidateUser decode json", zap.Error(err))
+		zap.L().Warn("User json decode", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
-	if ok, err := user.IsValid(); !ok {
-		zap.L().Warn("Invalid User", zap.Error(err))
+	if ok, err := newUser.IsValid(); !ok {
+		zap.L().Warn("User is not valid", zap.Error(err))
 		render.Error(w, r, render.ErrAPIResourceInvalid, err)
 		return
 	}
 
-	render.OK(w, r)
+	render.JSON(w, r, newUser)
 }
 
 // PostUser godoc
-// @Summary Create new user
-// @Description Add an user to the users
+// @Summary Create a new user
+// @Description Add an user user to the user users
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param user body interface{} true "user (json)"
+// @Param user body users.User true "user (json)"
 // @Security Bearer
-// @Success 200 {string} string "status OK"
+// @Success 200 {object} users.User "user"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/users [post]
 func PostUser(w http.ResponseWriter, r *http.Request) {
-	var user security.UserWithPassword
+	var user users.UserWithPassword
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		zap.L().Warn("ValidateUser decode json", zap.Error(err))
+		zap.L().Warn("User json decode", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := user.IsValid(); !ok {
-		zap.L().Warn("Invalid User", zap.Error(err))
+		zap.L().Warn("User is not valid", zap.Error(err))
 		render.Error(w, r, render.ErrAPIResourceInvalid, err)
 		return
 	}
@@ -181,13 +167,13 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 
 	newUser, found, err := users.R().Get(userID)
 	if err != nil {
-		zap.L().Error("Get user failed", zap.Int64("id", userID), zap.Error(err))
+		zap.L().Error("Cannot get user", zap.String("uuid", userID.String()), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
-		zap.L().Error("User not found", zap.Int64("id", userID))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, fmt.Errorf("Resouce with id %d not found after creation", userID))
+		zap.L().Error("User not found after creation", zap.String("uuid", userID.String()))
+		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
@@ -195,37 +181,38 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutUser godoc
-// @Summary Update an user
-// @Description Updates the user information concerning the user with id
+// @Summary Update user
+// @Description Updates the user user information concerning the user user with id
 // @Tags Users
 // @Accept json
 // @Produce json
 // @Param id path string true "user ID"
-// @Param user body interface{} true "user (json)"
+// @Param user body users.User true "user (json)"
 // @Security Bearer
-// @Success 200 {string} string "status OK"
+// @Success 200 {object} users.User "user"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/users/{id} [put]
 func PutUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	userID, err := strconv.ParseInt(id, 10, 64)
+	userID, err := uuid.Parse(id)
 	if err != nil {
-		zap.L().Warn("PutUser.GetId", zap.String("id", id), zap.Error(err))
+		zap.L().Warn("Parse user id", zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
 	}
 
-	var user security.User
+	var user users.User
 	err = json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		zap.L().Warn("ValidateUser decode json", zap.Error(err))
+		zap.L().Warn("User json decode", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	user.ID = userID
 
 	if ok, err := user.IsValid(); !ok {
-		zap.L().Warn("Invalid User", zap.Error(err))
+		zap.L().Warn("User is not valid", zap.Error(err))
 		render.Error(w, r, render.ErrAPIResourceInvalid, err)
 		return
 	}
@@ -237,24 +224,24 @@ func PutUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser, found, err := users.R().Get(userID)
+	user, found, err := users.R().Get(userID)
 	if err != nil {
-		zap.L().Error("Get user failed", zap.Int64("id", userID), zap.Error(err))
+		zap.L().Error("Cannot get user", zap.String("uuid", userID.String()), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
-		zap.L().Error("User not found", zap.Int64("id", userID))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, fmt.Errorf("Resouce with id %d not found after update", userID))
+		zap.L().Error("User not found after creation", zap.String("uuid", userID.String()))
+		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, newUser)
+	render.JSON(w, r, user)
 }
 
 // DeleteUser godoc
-// @Summary Delete an user
-// @Description Deletes an user from the users.
+// @Summary Delete user
+// @Description Deletes an user user
 // @Tags Users
 // @Produce json
 // @Param id path string true "user ID"
@@ -265,16 +252,69 @@ func PutUser(w http.ResponseWriter, r *http.Request) {
 // @Router /admin/security/users/{id} [delete]
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	userID, err := strconv.ParseInt(id, 10, 64)
+	userID, err := uuid.Parse(id)
 	if err != nil {
-		zap.L().Warn("DeleteUser.GetId", zap.Error(err))
+		zap.L().Warn("Parse user id", zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
 	}
 
 	err = users.R().Delete(userID)
 	if err != nil {
-		zap.L().Error("DeleteUser", zap.Error(err))
+		zap.L().Error("Cannot delete user", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		return
+	}
+
+	render.OK(w, r)
+}
+
+// SetUserPermissions godoc
+// @Summary Set roles on a user
+// @Description Set roles on a user
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path string true "user ID"
+// @Param user body []string true "List of roles UUIDs"
+// @Security Bearer
+// @Success 200 {object} users.User "user"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /admin/security/users/{id}/roles [put]
+func SetUserRoles(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		zap.L().Warn("Parse user id", zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	var rawRoleUUIDs []string
+	err = json.NewDecoder(r.Body).Decode(&rawRoleUUIDs)
+	if err != nil {
+		zap.L().Warn("Invalid UUID", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	roleUUIDs := make([]uuid.UUID, 0)
+
+	for _, rawRoleUUID := range rawRoleUUIDs {
+		roleUUID, err := uuid.Parse(rawRoleUUID)
+		if err != nil {
+			zap.L().Warn("Invalid UUID", zap.Error(err))
+			render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+			return
+		}
+		roleUUIDs = append(roleUUIDs, roleUUID)
+	}
+
+	err = users.R().SetUserRoles(userID, roleUUIDs)
+	if err != nil {
+		zap.L().Error("PutUser.Update", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
