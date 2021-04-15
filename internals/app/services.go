@@ -16,9 +16,11 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/scheduler"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/search"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/roles"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tasker"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/users"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -28,6 +30,8 @@ import (
 func initRepositories() {
 	dbClient := postgres.DB()
 	users.ReplaceGlobals(users.NewPostgresRepository(dbClient))
+	roles.ReplaceGlobals(roles.NewPostgresRepository(dbClient))
+	permissions.ReplaceGlobals(permissions.NewPostgresRepository(dbClient))
 	groups.ReplaceGlobals(groups.NewPostgresRepository(dbClient))
 	fact.ReplaceGlobals(fact.NewPostgresRepository(dbClient))
 	situation.ReplaceGlobals(situation.NewPostgresRepository(dbClient))

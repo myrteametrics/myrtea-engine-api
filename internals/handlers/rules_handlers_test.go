@@ -1,21 +1,19 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"strconv"
 	"testing"
 
-	"github.com/go-chi/chi"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
-	"github.com/myrteametrics/myrtea-sdk/v4/security"
+	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 )
 
 func dbInit(dbClient *sqlx.DB, t *testing.T) {
@@ -56,15 +54,8 @@ func TestGetRules(t *testing.T) {
 	json.Unmarshal(dataRule2, &rule2)
 	id2, _ := rule.R().Create(rule2)
 
-	req, err := http.NewRequest("GET", "/rules", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Get("/rules", GetRules)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeRule, permissions.All, permissions.ActionList), permissions.New(permissions.TypeRule, permissions.All, permissions.ActionGet)}}
+	rr := tests.BuildTestHandler(t, "GET", "/rules", ``, "/rules", GetRules, user)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
@@ -91,15 +82,8 @@ func TestPostRule(t *testing.T) {
 	dbInit(db, t)
 	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
 
-	req, err := http.NewRequest("POST", "/rules", bytes.NewBuffer(dataRule1))
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Post("/rules", PostRule)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeRule, permissions.All, permissions.ActionCreate)}}
+	rr := tests.BuildTestHandler(t, "POST", "/rules", string(dataRule1), "/rules", PostRule, user)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
@@ -128,23 +112,17 @@ func TestUpdateRules(t *testing.T) {
 
 	newRule1 := rule.Rule{}
 	json.Unmarshal(dataRule2, &newRule1)
-
-	req, err := http.NewRequest("PUT", "/rules/"+strconv.FormatInt(id1, 10), bytes.NewBuffer(dataRule2))
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Put("/rules/{id}", PutRule)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeRule, permissions.All, permissions.ActionUpdate)}}
+	rr := tests.BuildTestHandler(t, "PUT", "/rules/"+strconv.FormatInt(id1, 10), string(dataRule2), "/rules/{id}", PutRule, user)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
 	getRule1, _, _ := rule.R().Get(id1)
 	if getRule1.Name != newRule1.Name || getRule1.Version != 1 || getRule1.SameCasesAs(oldRule1) {
-		t.Errorf("The rule was not properly updated, %s", fmt.Sprint(getRule1))
+		t.Errorf("The rule was not properly updated")
+		t.Log(getRule1)
+		t.Log(newRule1)
 	}
 }
 
@@ -155,6 +133,7 @@ func TestPostRulesSituations(t *testing.T) {
 	db := tests.DBClient(t)
 	defer dbDestroy(db, t)
 	dbInit(db, t)
+	postgres.ReplaceGlobals(db)
 	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
 	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
 
@@ -173,25 +152,15 @@ func TestPostRulesSituations(t *testing.T) {
 	s2ID, _ := situation.R().Create(situation.Situation{Name: "Situation2", Groups: situatiosGroup})
 	s3ID, _ := situation.R().Create(situation.Situation{Name: "Situation3", Groups: situatiosGroup})
 
-	groupsOfUser := make([]groups.GroupOfUser, 0)
-	groupsOfUser = append(groupsOfUser, groups.GroupOfUser{
-		ID:       1,
-		Name:     "group1",
-		UserRole: 1,
-	})
-
-	user := groups.UserWithGroups{
-		User:   security.User{},
-		Groups: groupsOfUser,
-	}
-
 	//Post new situations to rules
 	situationIDs := []int64{s1ID, s2ID}
 	data, _ := json.Marshal(situationIDs)
+
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeRule, permissions.All, permissions.ActionUpdate)}}
 	rr := tests.BuildTestHandler(t, "POST", "/rules/"+fmt.Sprint(r1ID)+"/situations", string(data), "/rules/{id}/situations", PostRuleSituations, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getSituatations, _ := situation.R().GetAllByRuleID(situatiosGroup, int64(r1ID))
+	getSituatations, _ := situation.R().GetAllByRuleID(int64(r1ID))
 	if _, ok := getSituatations[s1ID]; !ok {
 		t.Errorf("The rule %d was not added to the rule list of the situation %d", r1ID, s1ID)
 	}
@@ -202,7 +171,7 @@ func TestPostRulesSituations(t *testing.T) {
 	rr = tests.BuildTestHandler(t, "POST", "/rules/"+fmt.Sprint(r2ID)+"/situations", string(data), "/rules/{id}/situations", PostRuleSituations, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getSituatations, _ = situation.R().GetAllByRuleID(situatiosGroup, int64(r2ID))
+	getSituatations, _ = situation.R().GetAllByRuleID(int64(r2ID))
 	if _, ok := getSituatations[s1ID]; !ok {
 		t.Errorf("The rule %d was not added to the rule list of the situation %d", r1ID, s1ID)
 	}
@@ -225,7 +194,7 @@ func TestPostRulesSituations(t *testing.T) {
 	rr = tests.BuildTestHandler(t, "POST", "/rules/"+fmt.Sprint(r1ID)+"/situations", string(data), "/rules/{id}/situations", PostRuleSituations, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getSituatations, _ = situation.R().GetAllByRuleID(situatiosGroup, int64(r1ID))
+	getSituatations, _ = situation.R().GetAllByRuleID(int64(r1ID))
 	if _, ok := getSituatations[s1ID]; !ok {
 		t.Errorf("The rule %d was not added to the rule list of the situation %d", r1ID, s1ID)
 	}
@@ -243,7 +212,7 @@ func TestPostRulesSituations(t *testing.T) {
 	rr = tests.BuildTestHandler(t, "POST", "/rules/"+fmt.Sprint(r1ID)+"/situations", string(data), "/rules/{id}/situations", PostRuleSituations, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getSituatations, _ = situation.R().GetAllByRuleID(situatiosGroup, int64(r1ID))
+	getSituatations, _ = situation.R().GetAllByRuleID(int64(r1ID))
 	if _, ok := getSituatations[s1ID]; !ok {
 		t.Errorf("The rule %d was not added to the rule list of the situation %d", r1ID, s1ID)
 	}

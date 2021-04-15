@@ -115,3 +115,11 @@ func (r *NativeMapRepository) GetAll() (map[int64]engine.Fact, error) {
 	r.mutex.RUnlock()
 	return factsByID, nil
 }
+
+// GetAllByIDs returns all entities in the repository
+func (r *NativeMapRepository) GetAllByIDs(ids []int64) (map[int64]engine.Fact, error) {
+	r.mutex.RLock()
+	factsByID := r.factsByID
+	r.mutex.RUnlock()
+	return factsByID, nil
+}

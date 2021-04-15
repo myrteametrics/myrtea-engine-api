@@ -136,7 +136,7 @@ func TestPostgresGet(t *testing.T) {
 	var err error
 	groups := []int64{1, 2}
 
-	situationGet, found, err := r.Get(1, groups)
+	situationGet, found, err := r.Get(1)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -151,7 +151,7 @@ func TestPostgresGet(t *testing.T) {
 		t.Error(err)
 	}
 
-	situationGet, found, err = r.Get(id, groups)
+	situationGet, found, err = r.Get(id)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -188,7 +188,7 @@ func TestPostgresCreate(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	situationGet, found, err := r.Get(id, groups)
+	situationGet, found, err := r.Get(id)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -225,7 +225,7 @@ func TestPostgresCreateMultiple(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	situationGet, found, err := r.Get(id1, groups)
+	situationGet, found, err := r.Get(id1)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -243,7 +243,7 @@ func TestPostgresCreateMultiple(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	situation2Get, found, err := r.Get(id2, groups)
+	situation2Get, found, err := r.Get(id2)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -285,7 +285,7 @@ func TestPostgresUpdate(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	situationGet, found, err := situationR.Get(id, groups)
+	situationGet, found, err := situationR.Get(id)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -343,7 +343,7 @@ func TestPostgresDelete(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, found, err := r.Get(id, groups)
+	_, found, err := r.Get(id)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -367,8 +367,7 @@ func TestPostgresDeleteNotExists(t *testing.T) {
 		t.Error("Cannot delete a non-existing situation")
 	}
 
-	groups := []int64{1, 2}
-	_, found, err := r.Get(1, groups)
+	_, found, err := r.Get(1)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -408,7 +407,7 @@ func TestPostgresGetAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	situations, err := r.GetAll(groups)
+	situations, err := r.GetAll()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -433,8 +432,7 @@ func TestPostgresGetAllEmpty(t *testing.T) {
 	dbInitRepo(db, t)
 	r := NewPostgresRepository(db)
 
-	groups := []int64{1, 2}
-	situations, err := r.GetAll(groups)
+	situations, err := r.GetAll()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

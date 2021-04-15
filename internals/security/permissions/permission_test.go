@@ -1,51 +1,53 @@
 package permissions
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestHasPermission(t *testing.T) {
 
 	testsTrue := [][]Permission{
 		{
-			{ResourceType: "*", ResourceID: "*", Action: "*"},
+			New("*", "*", "*"),
 		},
 		{
-			{ResourceType: "situation", ResourceID: "*", Action: "*"},
+			New("situation", "*", "*"),
 		},
 		{
-			{ResourceType: "situation", ResourceID: "1", Action: "*"},
+			New("situation", "1", "*"),
 		},
 		{
-			{ResourceType: "situation", ResourceID: "1", Action: "get"},
+			New("situation", "1", "get"),
 		},
 		{
-			{ResourceType: "situation", ResourceID: "*", Action: "get"},
+			New("situation", "*", "get"),
 		},
 		{
-			{ResourceType: "*", ResourceID: "*", Action: "get"},
+			New("*", "*", "get"),
 		},
 		{
-			{ResourceType: "situation", ResourceID: "1", Action: "create"},
-			{ResourceType: "situation", ResourceID: "1", Action: "update"},
-			{ResourceType: "situation", ResourceID: "1", Action: "get"},
+			New("situation", "1", "create"),
+			New("situation", "1", "update"),
+			New("situation", "1", "get"),
 		},
 	}
 
 	testsFalse := [][]Permission{
 		{
-			{ResourceType: "fact", ResourceID: "*", Action: "*"},
+			New("fact", "*", "*"),
 		},
 		{
-			{ResourceType: "*", ResourceID: "*", Action: "create"},
+			New("*", "*", "create"),
 		},
 		{
-			{ResourceType: "situation", ResourceID: "2", Action: "*"},
+			New("situation", "2", "*"),
 		},
 		{
-			{ResourceType: "situation", ResourceID: "1", Action: "list"},
+			New("situation", "1", "list"),
 		},
 	}
 
-	required := Permission{ResourceType: "situation", ResourceID: "1", Action: "get"}
+	required := New("situation", "1", "get")
 
 	for _, permissions := range testsTrue {
 		hasPermission := HasPermission(permissions, required)
@@ -61,33 +63,62 @@ func TestHasPermission(t *testing.T) {
 	}
 }
 
-func TestListPermissions1(t *testing.T) {
+func TestListMatchingPermissions1(t *testing.T) {
 	permissions := []Permission{
-		{ResourceType: "situation", ResourceID: "1", Action: "*"},
-		{ResourceType: "situation", ResourceID: "2", Action: "*"},
-		{ResourceType: "situation", ResourceID: "3", Action: "*"},
+		New("situation", "1", "*"),
+		New("situation", "2", "*"),
+		New("situation", "3", "*"),
 	}
 
-	filteredPermissions := ListPermissions(permissions, "situation", "2", "get")
+	filteredPermissions := ListMatchingPermissions(permissions, New("situation", "2", "get"))
 	if len(filteredPermissions) != 1 {
 		t.Error("invalid filtered permissions")
 	}
-	if (filteredPermissions[0] != Permission{ResourceType: "situation", ResourceID: "2", Action: "*"}) {
+	if filteredPermissions[0] != New("situation", "2", "*") {
 		t.Error("invalid filtered permissions")
 	}
 }
 
-func TestListPermissions2(t *testing.T) {
+func TestListMatchingPermissions2(t *testing.T) {
 	permissions := []Permission{
-		{ResourceType: "situation", ResourceID: "1", Action: "*"},
-		{ResourceType: "situation", ResourceID: "2", Action: "*"},
-		{ResourceType: "situation", ResourceID: "3", Action: "*"},
-		{ResourceType: "situation", ResourceID: "4", Action: "get"},
-		{ResourceType: "fact", ResourceID: "5", Action: "*"},
+		New("situation", "1", "*"),
+		New("situation", "2", "*"),
+		New("situation", "3", "*"),
+		New("situation", "4", "get"),
+		New("fact", "5", "*"),
 	}
 
-	filteredPermissions := ListPermissions(permissions, "situation", "*", "create")
+	filteredPermissions := ListMatchingPermissions(permissions, New("situation", "*", "create"))
 	if len(filteredPermissions) != 3 {
 		t.Error("invalid filtered permissions")
+	}
+}
+
+func TestListMatchingPermissions3(t *testing.T) {
+	permissions := []Permission{
+		New("situation", "1", "*"),
+		New("situation", "2", "*"),
+		New("situation", "*", "*"),
+		New("fact", "5", "*"),
+	}
+
+	filteredPermissions := ListMatchingPermissions(permissions, New("situation", "*", "create"))
+	if len(filteredPermissions) != 3 {
+		t.Error("invalid filtered permissions")
+	}
+}
+
+func TestGetResourceIDs(t *testing.T) {
+	permissions := []Permission{
+		New("situation", "1", "*"),
+		New("situation", "2", "*"),
+		New("situation", "3", "*"),
+		New("situation", "4", "get"),
+		New("fact", "5", "*"),
+	}
+
+	resourceIDs := GetRessourceIDs(ListMatchingPermissions(permissions, New("situation", "*", "create")))
+	if len(resourceIDs) != 3 {
+		t.Error("invalid resourceIDs")
 	}
 }

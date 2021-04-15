@@ -10,22 +10,15 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/action"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 )
 
 // CloseIssueWithoutFeedback close an issue without standard feedback on rootcause / action
-func CloseIssueWithoutFeedback(dbClient *sqlx.DB, issueID int64, reason string, groups []int64, user groups.UserWithGroups) error {
-	issue, found, err := issues.R().Get(issueID, groups)
-	if err != nil {
-		return err
-	}
-	if !found {
-		return fmt.Errorf("Issue with id %d not found", issueID)
-	}
+func CloseIssueWithoutFeedback(dbClient *sqlx.DB, issue models.Issue, reason string, user users.User) error {
 	if issue.State.IsClosed() {
-		return fmt.Errorf("Issue with id %d is already in a closed state", issueID)
+		return fmt.Errorf("Issue with id %d is already in a closed state", issue.ID)
 	}
 
 	tx, err := dbClient.Beginx()
@@ -33,7 +26,7 @@ func CloseIssueWithoutFeedback(dbClient *sqlx.DB, issueID int64, reason string, 
 		return err
 	}
 
-	err = updateIssueState(tx, issueID, models.ClosedNoFeedback, groups, user)
+	err = updateIssueState(tx, issue, models.ClosedNoFeedback, user)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -48,19 +41,13 @@ func CloseIssueWithoutFeedback(dbClient *sqlx.DB, issueID int64, reason string, 
 }
 
 // CloseIssueWithFeedback generate and persist an issue feedback for the rootcause/action stats and ML models
-func CloseIssueWithFeedback(dbClient *sqlx.DB, issueID int64, recommendation models.FrontRecommendation, groups []int64, user groups.UserWithGroups) error {
-	issue, found, err := issues.R().Get(issueID, groups)
-	if err != nil {
-		return err
-	}
-	if !found {
-		return fmt.Errorf("Issue with id %d not found", issueID)
-	}
+func CloseIssueWithFeedback(dbClient *sqlx.DB, issue models.Issue, recommendation models.FrontRecommendation, user users.User) error {
+
 	if issue.State.IsClosed() {
-		return fmt.Errorf("Issue with id %d is already in a closed state", issueID)
+		return fmt.Errorf("Issue with id %d is already in a closed state", issue.ID)
 	}
 
-	exists, err := checkExistsIssueResolution(dbClient, issueID)
+	exists, err := checkExistsIssueResolution(dbClient, issue.ID)
 	if err != nil {
 		return err
 	}
@@ -78,19 +65,19 @@ func CloseIssueWithFeedback(dbClient *sqlx.DB, issueID int64, recommendation mod
 		return err
 	}
 
-	err = persistIssueFeedback(tx, issueID, selectedRootCause, selectedActions)
+	err = persistIssueFeedback(tx, issue, selectedRootCause, selectedActions)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = SaveIssueDraft(tx, issueID, recommendation, groups, user)
+	err = SaveIssueDraft(tx, issue, recommendation, user)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = updateIssueState(tx, issueID, models.ClosedFeedback, groups, user)
+	err = updateIssueState(tx, issue, models.ClosedFeedback, user)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -115,17 +102,9 @@ func checkExistsIssueResolution(dbClient *sqlx.DB, issueID int64) (bool, error) 
 	return exists, nil
 }
 
-func updateIssueState(tx *sqlx.Tx, issueID int64, state models.IssueState, groups []int64, user groups.UserWithGroups) error {
-	issue, found, err := issues.R().Get(issueID, groups)
-	if err != nil {
-		return err
-	}
-	if !found {
-		return fmt.Errorf("Issue with id %d not found", issueID)
-	}
-
+func updateIssueState(tx *sqlx.Tx, issue models.Issue, state models.IssueState, user users.User) error {
 	issue.State = state
-	err = issues.R().Update(tx, issueID, issue, user)
+	err := issues.R().Update(tx, issue.ID, issue, user)
 	if err != nil {
 		return err
 	}
@@ -133,19 +112,14 @@ func updateIssueState(tx *sqlx.Tx, issueID int64, state models.IssueState, group
 }
 
 // persistIssueFeedback persist a rootcause and an ensemble of actions related to the resolution of an issue
-func persistIssueFeedback(tx *sqlx.Tx, issueID int64, selectedRootCause *models.FrontRootCause, selectedActions []*models.FrontAction) error {
-	issue, found, err := issues.R().Get(issueID, groups.GetTokenAllGroups())
-	if err != nil {
-		return err
-	}
-	if !found {
-		return errors.New("Issue not found")
-	}
+func persistIssueFeedback(tx *sqlx.Tx, issue models.Issue, selectedRootCause *models.FrontRootCause, selectedActions []*models.FrontAction) error {
+
 	situationID := issue.SituationID
 	ruleID := issue.Rule.RuleID
 
 	// Create new rootcause if needed
 	dbRootCauseID := selectedRootCause.ID
+	var err error
 	if selectedRootCause.Custom {
 		dbRootCause := models.NewRootCause(-1, selectedRootCause.Name, selectedRootCause.Description, situationID, ruleID)
 		dbRootCauseID, err = rootcause.R().Create(tx, dbRootCause)
@@ -195,7 +169,7 @@ func persistIssueFeedback(tx *sqlx.Tx, issueID int64, selectedRootCause *models.
 
 	// Persist feedback in resolutions stats table
 	for _, actionID := range dbActionIDs {
-		err := persistIssueResolutionStat(tx, issueID, dbRootCauseID, actionID)
+		err := persistIssueResolutionStat(tx, issue.ID, dbRootCauseID, actionID)
 		if err != nil {
 			return err
 		}

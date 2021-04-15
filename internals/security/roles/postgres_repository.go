@@ -29,12 +29,26 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	return ifm
 }
 
-//Get search and returns an User Role from the repository by its id
+// Get search and returns an User Role from the repository by its id
 func (r *PostgresRepository) Get(roleUUID uuid.UUID) (Role, bool, error) {
 	rows, err := r.newStatement().
 		Select(fields...).
 		From(table).
 		Where("id = ?", roleUUID).
+		Query()
+	if err != nil {
+		return Role{}, false, err
+	}
+	defer rows.Close()
+	return r.scanFirst(rows)
+}
+
+// GetByName search and returns an User Role from the repository by its id
+func (r *PostgresRepository) GetByName(name string) (Role, bool, error) {
+	rows, err := r.newStatement().
+		Select(fields...).
+		From(table).
+		Where("name = ?", name).
 		Query()
 	if err != nil {
 		return Role{}, false, err

@@ -11,6 +11,7 @@ import (
 // It allows standard CRUD operation on facts
 type Repository interface {
 	Get(uuid uuid.UUID) (Role, bool, error)
+	GetByName(name string) (Role, bool, error)
 	Create(permission Role) (uuid.UUID, error)
 	Update(permission Role) error
 	Delete(uuid uuid.UUID) error

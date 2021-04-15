@@ -18,14 +18,14 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/draft"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/myrteametrics/myrtea-sdk/v4/ruleeng"
-	"github.com/myrteametrics/myrtea-sdk/v4/security"
 )
 
 func dbIssueInitRepo(dbClient *sqlx.DB, t *testing.T) {
@@ -117,23 +117,24 @@ func TestGetIssues(t *testing.T) {
 		t.Error(err)
 	}
 
-	groupsOfUser := make([]groups.GroupOfUser, 0)
-	groupsOfUser = append(groupsOfUser, groups.GroupOfUser{
-		ID:       1,
-		Name:     "user",
-		UserRole: 1,
-	})
+	// groupsOfUser := make([]groups.GroupOfUser, 0)
+	// groupsOfUser = append(groupsOfUser, groups.GroupOfUser{
+	// 	ID:       1,
+	// 	Name:     "user",
+	// 	UserRole: 1,
+	// })
 
-	user := groups.UserWithGroups{
-		User:   security.User{},
-		Groups: groupsOfUser,
-	}
+	// user := groups.UserWithGroups{
+	// 	User:   security.User{},
+	// 	Groups: groupsOfUser,
+	// }
 
 	req, err := http.NewRequest("GET", "/issues", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeSituationIssues, "*", permissions.ActionList), permissions.New(permissions.TypeSituationIssues, "*", permissions.ActionGet)}}
 	ctx := context.WithValue(req.Context(), models.ContextKeyUser, user)
 
 	rr := httptest.NewRecorder()
@@ -152,7 +153,7 @@ func TestGetIssues(t *testing.T) {
 		t.Errorf("handler returned unexpected body")
 	}
 
-	if issues[id].ID != id {
+	if issues[id] != nil && issues[id].ID != id {
 		t.Errorf("handler returned unexpected body: got %v want %v", issues[id].ID, id)
 	}
 }
@@ -239,23 +240,24 @@ func TestGetIssuesStates(t *testing.T) {
 		t.Error(err)
 	}
 
-	groupsOfUser := make([]groups.GroupOfUser, 0)
-	groupsOfUser = append(groupsOfUser, groups.GroupOfUser{
-		ID:       1,
-		Name:     "user",
-		UserRole: 1,
-	})
+	// groupsOfUser := make([]groups.GroupOfUser, 0)
+	// groupsOfUser = append(groupsOfUser, groups.GroupOfUser{
+	// 	ID:       1,
+	// 	Name:     "user",
+	// 	UserRole: 1,
+	// })
 
-	user := groups.UserWithGroups{
-		User:   security.User{},
-		Groups: groupsOfUser,
-	}
+	// user := groups.UserWithGroups{
+	// 	User:   security.User{},
+	// 	Groups: groupsOfUser,
+	// }
 
 	req, err := http.NewRequest("GET", "/issues?states=open,closedfeedback", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionList), permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionGet)}}
 	ctx := context.WithValue(req.Context(), models.ContextKeyUser, user)
 
 	rr := httptest.NewRecorder()
@@ -329,22 +331,24 @@ func TestGetIssue(t *testing.T) {
 		t.Error(err)
 	}
 
-	groupsOfUser := make([]groups.GroupOfUser, 0)
-	groupsOfUser = append(groupsOfUser, groups.GroupOfUser{
-		ID:       1,
-		Name:     "user",
-		UserRole: 1,
-	})
-	user := groups.UserWithGroups{
-		User:   security.User{},
-		Groups: groupsOfUser,
-	}
+	// groupsOfUser := make([]groups.GroupOfUser, 0)
+	// groupsOfUser = append(groupsOfUser, groups.GroupOfUser{
+	// 	ID:       1,
+	// 	Name:     "user",
+	// 	UserRole: 1,
+	// })
+
+	// user := groups.UserWithGroups{
+	// 	User:   security.User{},
+	// 	Groups: groupsOfUser,
+	// }
 
 	req, err := http.NewRequest("GET", "/issues/"+strconv.FormatInt(id, 10), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeSituationIssues, "1", permissions.ActionGet)}}
 	ctx := context.WithValue(req.Context(), models.ContextKeyUser, user)
 
 	rr := httptest.NewRecorder()
@@ -419,10 +423,13 @@ func TestPostIssue(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionCreate)}}
+	ctx := context.WithValue(req.Context(), models.ContextKeyUser, user)
+
 	rr := httptest.NewRecorder()
 	r := chi.NewRouter()
 	r.Post("/issues", PostIssue)
-	r.ServeHTTP(rr, req)
+	r.ServeHTTP(rr, req.WithContext(ctx))
 
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
@@ -433,7 +440,7 @@ func TestPostIssue(t *testing.T) {
 
 	id := int64(1)
 
-	issues, err := issues.R().GetAll(groups)
+	issues, err := issues.R().GetAll()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -535,17 +542,17 @@ func TestIssueLifecycle(t *testing.T) {
 		t.Error(err)
 	}
 
-	user := groups.UserWithGroups{
-		User: security.User{
-			FirstName: "user_first_name",
-			LastName:  "user_last_name",
-		},
-		Groups: []groups.GroupOfUser{{
-			ID:       1,
-			Name:     "group1",
-			UserRole: 1,
-		}},
-	}
+	// user := groups.UserWithGroups{
+	// 	User: security.User{
+	// 		FirstName: "user_first_name",
+	// 		LastName:  "user_last_name",
+	// 	},
+	// 	Groups: []groups.GroupOfUser{{
+	// 		ID:       1,
+	// 		Name:     "group1",
+	// 		UserRole: 1,
+	// 	}},
+	// }
 
 	draft := models.FrontDraft{
 		Tree: []*models.FrontRootCause{
@@ -565,16 +572,18 @@ func TestIssueLifecycle(t *testing.T) {
 	}
 	b, _ := json.Marshal(draft)
 
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionGet)}}
+
 	rr := tests.BuildTestHandler(t, "POST", fmt.Sprintf("/issues/%d/draft", issue1ID), string(b), "/issues/{id}/draft", PostIssueDraft, user)
 	if rr.Code != http.StatusOK {
 		t.Error("Unexpected error posting issue resolution draft")
 	}
 
-	getIssue, _, _ := issues.R().Get(issue1ID, groupsIDS)
+	getIssue, _, _ := issues.R().Get(issue1ID)
 	if *getIssue.AssignedTo != user.Login || getIssue.AssignedAt.IsZero() {
 		t.Error("Unexpected recomendation tree")
 	}
-	recomendation, _ := explainer.GetRecommendationTree(issue1ID)
+	recomendation, _ := explainer.GetRecommendationTree(getIssue)
 	recomendation.Tree[0].Selected = true
 	recomendation.Tree[0].Actions[0].Selected = true
 	b, _ = json.Marshal(recomendation)
@@ -583,7 +592,7 @@ func TestIssueLifecycle(t *testing.T) {
 	if rr.Code != http.StatusOK {
 		t.Error("Unexpected error closing issue with feedback")
 	}
-	getIssue, _, _ = issues.R().Get(issue1ID, groupsIDS)
+	getIssue, _, _ = issues.R().Get(issue1ID)
 	if getIssue.CloseBy == nil || *getIssue.CloseBy != user.Login ||
 		getIssue.ClosedAt == nil || getIssue.ClosedAt.IsZero() || getIssue.State != models.ClosedFeedback {
 		t.Error("Unexpected obtained issue")
@@ -593,7 +602,7 @@ func TestIssueLifecycle(t *testing.T) {
 	if rr.Code != http.StatusOK {
 		t.Error("Unexpected error closing issue without feedback")
 	}
-	getIssue, _, _ = issues.R().Get(issue2ID, groupsIDS)
+	getIssue, _, _ = issues.R().Get(issue2ID)
 	if getIssue.CloseBy == nil || *getIssue.CloseBy != user.Login ||
 		getIssue.ClosedAt == nil || getIssue.ClosedAt.IsZero() || getIssue.State != models.ClosedNoFeedback {
 		t.Error("Unexpected obtained issue")

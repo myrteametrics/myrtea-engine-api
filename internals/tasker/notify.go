@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier/notification"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
@@ -78,7 +77,7 @@ func (task NotifyTask) Perform(key string, context ContextData) error {
 
 	zap.L().Debug("Perform NotifyTask")
 
-	s, found, err := situation.R().Get(int64(context.SituationID), groups.GetTokenAllGroups())
+	s, found, err := situation.R().Get(int64(context.SituationID))
 	if err != nil {
 		return err
 	}

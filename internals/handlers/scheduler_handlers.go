@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/scheduler"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
 	"go.uber.org/zap"
 )
 
@@ -20,6 +22,12 @@ import (
 // @Security Bearer
 // @Router /engine/scheduler/start [POST]
 func StartScheduler(w http.ResponseWriter, r *http.Request) {
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.All)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	scheduler.S().C.Start()
 	render.OK(w, r)
 }
@@ -38,6 +46,13 @@ func StartScheduler(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/scheduler/trigger [post]
 func TriggerJobSchedule(w http.ResponseWriter, r *http.Request) {
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var newSchedule scheduler.InternalSchedule
 	err := json.NewDecoder(r.Body).Decode(&newSchedule)
 	if err != nil {
@@ -67,6 +82,12 @@ func TriggerJobSchedule(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "internal server error"
 // @Router /engine/scheduler/jobs [get]
 func GetJobSchedules(w http.ResponseWriter, r *http.Request) {
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	schedules, err := scheduler.R().GetAll()
 	if err != nil {
 		zap.L().Error("Cannot get schedules", zap.Error(err))
@@ -102,6 +123,12 @@ func GetJobSchedule(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Parsing JobSchedule id", zap.String("JobScheduleID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeScheduler, strconv.FormatInt(idJob, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
 		return
 	}
 
@@ -162,6 +189,12 @@ func ValidateJobSchedule(w http.ResponseWriter, r *http.Request) {
 // @Failure 500	"Status Internal Server Error"
 // @Router /engine/scheduler/jobs [post]
 func PostJobSchedule(w http.ResponseWriter, r *http.Request) {
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var newSchedule scheduler.InternalSchedule
 	err := json.NewDecoder(r.Body).Decode(&newSchedule)
 	if err != nil {
@@ -233,6 +266,12 @@ func PutJobSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeScheduler, strconv.FormatInt(idJob, 10), permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var newSchedule scheduler.InternalSchedule
 	err = json.NewDecoder(r.Body).Decode(&newSchedule)
 	if err != nil {
@@ -294,6 +333,12 @@ func DeleteJobSchedule(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Parsing JobSchedule id", zap.String("JobScheduleID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeScheduler, strconv.FormatInt(idJob, 10), permissions.ActionDelete)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
 		return
 	}
 

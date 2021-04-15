@@ -12,6 +12,7 @@ require (
 	github.com/go-chi/jwtauth v3.3.0+incompatible
 	github.com/go-openapi/spec v0.19.9 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
+	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang/protobuf v1.4.2
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/context v1.1.1

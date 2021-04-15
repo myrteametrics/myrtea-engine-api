@@ -2,8 +2,11 @@ package users
 
 import (
 	"errors"
+	"strconv"
 
 	uuid "github.com/google/uuid"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/roles"
 )
 
 // User is used as the main user struct
@@ -56,4 +59,61 @@ func (user *UserWithPassword) IsValid() (bool, error) {
 		return false, errors.New("Password is too short (less than 6 characters)")
 	}
 	return true, nil
+}
+
+type UserWithPermissions struct {
+	User
+	Roles       []roles.Role
+	Permissions []permissions.Permission
+}
+
+func (u UserWithPermissions) GetRolesUUIDs() []uuid.UUID {
+	uuids := make([]uuid.UUID, 0)
+	for _, role := range u.Roles {
+		uuids = append(uuids, role.ID)
+	}
+	return uuids
+}
+
+func (u UserWithPermissions) GetPermissionUUIDs() []uuid.UUID {
+	uuids := make([]uuid.UUID, 0)
+	for _, permission := range u.Permissions {
+		uuids = append(uuids, permission.ID)
+	}
+	return uuids
+}
+
+func (u UserWithPermissions) HasPermission(required permissions.Permission) bool {
+	return permissions.HasPermission(u.Permissions, required)
+}
+
+func (u UserWithPermissions) HasPermissionAtLeastOne(requiredAtLeastOne []permissions.Permission) bool {
+	return permissions.HasPermissionAtLeastOne(u.Permissions, requiredAtLeastOne)
+}
+
+func (u UserWithPermissions) HasPermissionAll(requiredAll []permissions.Permission) bool {
+	return permissions.HasPermissionAll(u.Permissions, requiredAll)
+}
+
+func (u UserWithPermissions) ListMatchingPermissions(match permissions.Permission) []permissions.Permission {
+	return permissions.ListMatchingPermissions(u.Permissions, match)
+}
+
+func (u UserWithPermissions) GetMatchingResourceIDs(match permissions.Permission) []string {
+	return permissions.GetRessourceIDs(permissions.ListMatchingPermissions(u.Permissions, match))
+}
+
+func (u UserWithPermissions) GetMatchingResourceIDsInt64(match permissions.Permission) []int64 {
+	ids := make([]int64, 0)
+	for _, resourceID := range permissions.GetRessourceIDs(permissions.ListMatchingPermissions(u.Permissions, match)) {
+		if resourceID == permissions.All {
+			continue
+		}
+		id, err := strconv.ParseInt(resourceID, 10, 64)
+		if err != nil {
+			continue
+		}
+		ids = append(ids, id)
+	}
+	return ids
 }

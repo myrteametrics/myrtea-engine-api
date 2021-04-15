@@ -8,11 +8,11 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
-	"github.com/myrteametrics/myrtea-sdk/v4/security"
 )
 
 func situationDbInit(dbClient *sqlx.DB, t *testing.T) {
@@ -53,21 +53,11 @@ func TestPostSituation(t *testing.T) {
 	}
 	b, _ := json.Marshal(s)
 
-	user := groups.UserWithGroups{
-		User: security.User{},
-		Groups: []groups.GroupOfUser{
-			{
-				ID:       1,
-				Name:     "group1",
-				UserRole: 1,
-			},
-		},
-	}
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeSituation, "*", permissions.ActionCreate)}}
 	rr := tests.BuildTestHandler(t, "POST", "/situations", string(b), "/situations", PostSituation, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, `{"id":1,"groups":[1,2],"name":"test_situation","facts":[1],"expressionFacts":null,"calendarId":0,"parameters":null,"isTemplate":false,"isObject":false}`+"\n")
 
-	situations, err := situation.R().GetAll([]int64{1, 2})
+	situations, err := situation.R().GetAll()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -91,22 +81,12 @@ func TestPutSituationTemplateInstances(t *testing.T) {
 	situatiosGroup := []int64{1}
 	s1ID, _ := situation.R().Create(situation.Situation{Name: "Situation1", Groups: situatiosGroup, IsTemplate: true})
 
-	groupsOfUser := make([]groups.GroupOfUser, 0)
-	groupsOfUser = append(groupsOfUser, groups.GroupOfUser{
-		ID:       1,
-		Name:     "group1",
-		UserRole: 1,
-	})
-
-	user := groups.UserWithGroups{
-		User:   security.User{},
-		Groups: groupsOfUser,
-	}
-
 	//Situation template instances
 	instance1 := situation.TemplateInstance{Name: "Instance 1"}
 	instance2 := situation.TemplateInstance{Name: "Instance 2"}
 	instance3 := situation.TemplateInstance{Name: "Instance 3"}
+
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeSituation, "*", permissions.ActionUpdate)}}
 
 	//Put situation template instances
 	data, _ := json.Marshal([]situation.TemplateInstance{instance1, instance2})

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 
@@ -22,6 +23,12 @@ import (
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/permissions [get]
 func GetPermissions(w http.ResponseWriter, r *http.Request) {
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypePermission, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	permissionsSlice, err := permissions.R().GetAll()
 	if err != nil {
 		zap.L().Error("GetPermissions", zap.Error(err))
@@ -54,6 +61,12 @@ func GetPermission(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Parse role id", zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypePermission, permissionID.String(), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
 		return
 	}
 
@@ -115,6 +128,12 @@ func ValidatePermission(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/permissions [post]
 func PostPermission(w http.ResponseWriter, r *http.Request) {
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypePermission, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var newPermission permissions.Permission
 	err := json.NewDecoder(r.Body).Decode(&newPermission)
 	if err != nil {
@@ -173,6 +192,12 @@ func PutPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypePermission, permissionID.String(), permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var newPermission permissions.Permission
 	err = json.NewDecoder(r.Body).Decode(&newPermission)
 	if err != nil {
@@ -227,6 +252,12 @@ func DeletePermission(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Parse role id", zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypePermission, permissionID.String(), permissions.ActionDelete)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
 		return
 	}
 

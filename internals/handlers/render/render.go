@@ -70,8 +70,8 @@ var (
 	// or the context is invalid (invalid jwt, user not found, etc.)
 	// This is a specific case when the least details are added for security reason
 	ErrAPISecurityMissingContext = APIError{Status: http.StatusUnauthorized, ErrType: "SecurityError", Code: 6000, Message: `Security error. Please contact an administrator`}
-	// ErrAPISecurityNoRights must be used when the used is properly authenticated but doesn't have the required rights to access the resource
-	ErrAPISecurityNoRights = APIError{Status: http.StatusUnauthorized, ErrType: "SecurityError", Code: 6001, Message: `Security error. Please contact an administrator`}
+	// ErrAPISecurityNoPermissions must be used when the user is properly authenticated but doesn't have the required rights to access the resource
+	ErrAPISecurityNoPermissions = APIError{Status: http.StatusUnauthorized, ErrType: "SecurityError", Code: 6001, Message: `Security error. Please contact an administrator`}
 )
 
 // OK returns a HTTP status 200 with an empty body

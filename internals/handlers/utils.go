@@ -9,8 +9,8 @@ import (
 
 	"net/http"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"go.uber.org/zap"
 )
 
@@ -108,31 +108,13 @@ func ParseSortBy(rawSortByStr string, allowedFields []string) ([]models.SortOpti
 }
 
 // GetUserFromContext extract the logged user from the request context
-func GetUserFromContext(r *http.Request) *groups.UserWithGroups {
+func GetUserFromContext(r *http.Request) (users.UserWithPermissions, bool) {
 	c := r.Context()
 	_user := c.Value(models.ContextKeyUser)
 	if _user == nil {
 		zap.L().Warn("No context user provided")
-		return nil
+		return users.UserWithPermissions{}, false
 	}
-	user := _user.(groups.UserWithGroups)
-	return &user
-}
-
-// GetUserGroupsFromUser extracts group IDs from a user
-func GetUserGroupsFromUser(user *groups.UserWithGroups) []int64 {
-	groupsID := make([]int64, 0)
-	for _, group := range user.Groups {
-		groupsID = append(groupsID, group.ID)
-	}
-	return groupsID
-}
-
-// GetUserGroupsFromContext extract the logged user groups from the request context
-func GetUserGroupsFromContext(r *http.Request) []int64 {
-	user := GetUserFromContext(r)
-	if user == nil {
-		return nil
-	}
-	return GetUserGroupsFromUser(user)
+	user := _user.(users.UserWithPermissions)
+	return user, true
 }

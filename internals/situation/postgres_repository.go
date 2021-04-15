@@ -28,13 +28,12 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Get retrieve the specified situation definition
-func (r *PostgresRepository) Get(id int64, groupsIDS []int64) (Situation, bool, error) {
+func (r *PostgresRepository) Get(id int64) (Situation, bool, error) {
 	query := `SELECT definition,
 				ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = :id) as fact_ids
-				FROM situation_definition_v1 WHERE id = :id and groups && :groups`
+				FROM situation_definition_v1 WHERE id = :id`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
-		"id":     id,
-		"groups": pq.Array(groupsIDS),
+		"id": id,
 	})
 
 	if err != nil {
@@ -70,13 +69,12 @@ func (r *PostgresRepository) Get(id int64, groupsIDS []int64) (Situation, bool, 
 }
 
 // GetByName retrieve the specified situation definition by it's name
-func (r *PostgresRepository) GetByName(name string, groupsIDS []int64) (Situation, bool, error) {
+func (r *PostgresRepository) GetByName(name string) (Situation, bool, error) {
 	query := `SELECT id, definition,
 				ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = id) as fact_ids
-				FROM situation_definition_v1 WHERE name = :name and groups && :groups`
+				FROM situation_definition_v1 WHERE name = :name`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
-		"name":   name,
-		"groups": pq.Array(groupsIDS),
+		"name": name,
 	})
 	if err != nil {
 		return Situation{}, false, err
@@ -406,12 +404,27 @@ func (r *PostgresRepository) GetFacts(id int64) ([]int64, error) {
 }
 
 // GetAll returns all entities in the repository
-func (r *PostgresRepository) GetAll(groupsIDS []int64) (map[int64]Situation, error) {
+func (r *PostgresRepository) GetAll() (map[int64]Situation, error) {
 	query := `SELECT id, definition,
 			ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = situation_definition_v1.id) as fact_ids
-			FROM situation_definition_v1 WHERE groups && :groups`
+			FROM situation_definition_v1`
+	params := map[string]interface{}{}
+	rows, err := r.conn.NamedQuery(query, params)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return parseAllRows(rows)
+}
+
+// GetAllByIDs returns all entities filtered by IDs in the repository
+func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]Situation, error) {
+	query := `SELECT id, definition,
+			ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = situation_definition_v1.id) as fact_ids
+			FROM situation_definition_v1 WHERE id = ANY(:ids)`
 	params := map[string]interface{}{
-		"groups": pq.Array(groupsIDS),
+		"ids": pq.Array(ids),
 	}
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
@@ -423,13 +436,12 @@ func (r *PostgresRepository) GetAll(groupsIDS []int64) (map[int64]Situation, err
 }
 
 // GetAllByRuleID returns all entities in the repository based on a rule ID
-func (r *PostgresRepository) GetAllByRuleID(groupsIDS []int64, ruleID int64) (map[int64]Situation, error) {
+func (r *PostgresRepository) GetAllByRuleID(ruleID int64) (map[int64]Situation, error) {
 
 	query := `SELECT id, definition, ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = situation_definition_v1.id) as fact_ids
 		FROM situation_definition_v1 INNER JOIN situation_rules_v1 ON situation_definition_v1.id = situation_rules_v1.situation_id
-		WHERE groups && :groups AND situation_rules_v1.rule_id = :rule_id`
+		WHERE situation_rules_v1.rule_id = :rule_id`
 	params := map[string]interface{}{
-		"groups":  pq.Array(groupsIDS),
 		"rule_id": ruleID,
 	}
 	rows, err := r.conn.NamedQuery(query, params)

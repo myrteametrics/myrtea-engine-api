@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier/notification"
@@ -94,7 +93,7 @@ func (task CreateIssueTask) Perform(key string, context ContextData) error {
 	if issueID > 0 && task.IsNotification {
 		ctx := map[string]interface{}{"issueId": issueID}
 
-		s, found, err := situation.R().Get(int64(context.SituationID), groups.GetTokenAllGroups())
+		s, found, err := situation.R().Get(int64(context.SituationID))
 		if err != nil {
 			return err
 		}

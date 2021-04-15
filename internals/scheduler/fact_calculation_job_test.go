@@ -12,7 +12,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/search"
@@ -218,7 +217,7 @@ func TestExpressionFact(t *testing.T) {
 			},
 		},
 	)
-	s, _, _ := situation.R().Get(1, groups.GetTokenAllGroups())
+	s, _, _ := situation.R().Get(1)
 
 	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
 	fact.R().Create(engine.Fact{ID: 1, Name: "a", Intent: &engine.IntentFragment{Operator: engine.Count, Term: "test"}})

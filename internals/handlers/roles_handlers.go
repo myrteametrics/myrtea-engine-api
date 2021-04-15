@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/roles"
 	"go.uber.org/zap"
 )
@@ -22,6 +24,12 @@ import (
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/roles [get]
 func GetRoles(w http.ResponseWriter, r *http.Request) {
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeRole, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	rolesSlice, err := roles.R().GetAll()
 	if err != nil {
 		zap.L().Error("GetRoles", zap.Error(err))
@@ -54,6 +62,12 @@ func GetRole(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Parse role id", zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
 		return
 	}
 
@@ -115,6 +129,12 @@ func ValidateRole(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/roles [post]
 func PostRole(w http.ResponseWriter, r *http.Request) {
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeRole, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var newRole roles.Role
 	err := json.NewDecoder(r.Body).Decode(&newRole)
 	if err != nil {
@@ -170,6 +190,12 @@ func PutRole(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Parse role id", zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
 		return
 	}
 
@@ -230,6 +256,12 @@ func DeleteRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionDelete)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	err = roles.R().Delete(roleID)
 	if err != nil {
 		zap.L().Error("Cannot delete role", zap.Error(err))
@@ -262,6 +294,12 @@ func SetRolePermissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var rawPermissionUUIDs []string
 	err = json.NewDecoder(r.Body).Decode(&rawPermissionUUIDs)
 	if err != nil {
@@ -271,7 +309,6 @@ func SetRolePermissions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	permissionUUIDs := make([]uuid.UUID, 0)
-
 	for _, rawPermissionUUID := range rawPermissionUUIDs {
 		permissionUUID, err := uuid.Parse(rawPermissionUUID)
 		if err != nil {

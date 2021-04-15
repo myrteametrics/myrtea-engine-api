@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"go.uber.org/zap"
 )
@@ -66,7 +65,7 @@ func (e ErrResourceNotFound) Error() string {
 // Execute executes the query and return a QueryResult or an error
 func (q Query) Execute() (QueryResult, error) {
 
-	s, found, err := situation.R().Get(q.SituationID, groups.GetTokenAllGroups())
+	s, found, err := situation.R().Get(q.SituationID)
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", q.SituationID), zap.Error(err))
 		return nil, NewErrDatabase(err.Error())

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	model "github.com/myrteametrics/myrtea-engine-api/v4/internals/modeler"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
 	"go.uber.org/zap"
 )
@@ -23,6 +25,12 @@ import (
 // @Failure 500 "internal server error"
 // @Router /engine/models [get]
 func GetModels(w http.ResponseWriter, r *http.Request) {
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeModel, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	models, err := model.R().GetAll()
 	if err != nil {
 		zap.L().Error("Error getting models", zap.Error(err))
@@ -95,6 +103,14 @@ func GetModel(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Might be a security Issue (because we lookup for the fact ID / Name before any control)
+	// Should be better to just remove the "lookup by name" feature (which is not used anymore, and has no sense in this API)
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeModel, strconv.FormatInt(m.ID, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	render.JSON(w, r, m)
 }
 
@@ -141,6 +157,12 @@ func ValidateModel(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/models [post]
 func PostModel(w http.ResponseWriter, r *http.Request) {
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeModel, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var newModel modeler.Model
 	err := json.NewDecoder(r.Body).Decode(&newModel)
 	if err != nil {
@@ -199,6 +221,12 @@ func PutModel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeModel, strconv.FormatInt(idModel, 10), permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var newModel modeler.Model
 	err = json.NewDecoder(r.Body).Decode(&newModel)
 	if err != nil {
@@ -252,6 +280,12 @@ func DeleteModel(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Error("Error on parsing model id", zap.String("modelID", id))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeModel, strconv.FormatInt(idModel, 10), permissions.ActionDelete)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
 		return
 	}
 

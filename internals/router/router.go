@@ -157,7 +157,7 @@ func buildRoutesV3Basic(config Config) (func(r chi.Router), error) {
 					rg.Use(jwtauth.Verifier(jwtauth.New(jwt.SigningMethodHS256.Name, signingKey, nil)))
 					rg.Use(CustomAuthenticator)
 				}
-				rg.Use(security.AdminAuthentificator)
+				// rg.Use(security.AdminAuthentificator)
 				rg.Use(ContextMiddleware)
 			}
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
@@ -234,7 +234,7 @@ func buildRoutesV3SAML(config Config) (func(r chi.Router), error) {
 			if config.Security {
 				rg.Use(samlSPMiddleware.RequireAccount)
 				rg.Use(samlSPMiddleware.ContextMiddleware)
-				rg.Use(samlSPMiddleware.AdminAuthentificator)
+				// rg.Use(samlSPMiddleware.AdminAuthentificator)
 			}
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 

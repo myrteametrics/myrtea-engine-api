@@ -9,9 +9,9 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/queryutils"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"go.uber.org/zap"
 )
 
@@ -31,16 +31,14 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 //Get use to retrieve an issue by id
-func (r *PostgresRepository) Get(id int64, groups []int64) (models.Issue, bool, error) {
+func (r *PostgresRepository) Get(id int64) (models.Issue, bool, error) {
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
 			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
 			  FROM issues_v1 as i
-	 		  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
-			  WHERE  i.id = :id and situation_definition_v1.groups && :groups`
+			  WHERE  i.id = :id`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
-		"id":     id,
-		"groups": pq.Array(groups),
+		"id": id,
 	})
 
 	if err != nil {
@@ -105,7 +103,7 @@ func (r *PostgresRepository) Create(issue models.Issue) (int64, error) {
 }
 
 //Update method used to update an issue
-func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, user groups.UserWithGroups) error {
+func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, user users.User) error {
 	LastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
 	//Here we exclude some fields that are not to be updated
@@ -152,42 +150,6 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, u
 	return nil
 }
 
-//GetByStates method used to get all issues for an user
-func (r *PostgresRepository) GetByStates(issueStates []string, groups []int64) (map[int64]models.Issue, error) {
-	issues := make(map[int64]models.Issue, 0)
-
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
-			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
-			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
-			  FROM issues_v1 as i
-			  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
-			  WHERE  situation_definition_v1.groups && :groups `
-	params := map[string]interface{}{
-		"groups": pq.Array(groups),
-	}
-
-	if len(issueStates) > 0 {
-		query += ` and i.state = ANY (:states)`
-		params["states"] = pq.Array(issueStates)
-	}
-
-	rows, err := r.conn.NamedQuery(query, params)
-	if err != nil {
-		zap.L().Error("Couldn't retrieve the issues states and groups ", zap.Error(err))
-		return nil, errors.New("Couldn't retrieve the issues from situation id " + err.Error())
-	}
-	defer rows.Close()
-	for rows.Next() {
-		issue, err := scanIssue(rows)
-		if err != nil {
-			return nil, err
-		}
-		issues[issue.ID] = issue
-	}
-
-	return issues, nil
-}
-
 //GetCloseToTimeoutByKey get all issues that belong to the same situation and their
 //creation time are within the timeout duration
 func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS time.Time) (map[int64]models.Issue, error) {
@@ -208,35 +170,6 @@ func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS
 	})
 	if err != nil {
 		return nil, errors.New("Couldn't retrieve the issues with key and first situation date: " + err.Error())
-	}
-	defer rows.Close()
-	for rows.Next() {
-		issue, err := scanIssue(rows)
-		if err != nil {
-			return nil, err
-		}
-		issues[issue.ID] = issue
-	}
-
-	return issues, nil
-}
-
-// GetAll method used to get all issues
-func (r *PostgresRepository) GetAll(groups []int64) (map[int64]models.Issue, error) {
-	issues := make(map[int64]models.Issue, 0)
-
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
-			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
-			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
-			  FROM issues_v1 as i
-			  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
-			  WHERE situation_definition_v1.groups && :groups`
-	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
-		"groups": pq.Array(groups),
-	})
-
-	if err != nil {
-		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -287,8 +220,174 @@ func (r *PostgresRepository) ChangeState(key string, fromStates []models.IssueSt
 	return nil
 }
 
+// GetAll method used to get all issues
+func (r *PostgresRepository) GetAll() (map[int64]models.Issue, error) {
+	issues := make(map[int64]models.Issue, 0)
+
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
+			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
+			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
+			  FROM issues_v1 as i`
+	rows, err := r.conn.NamedQuery(query, map[string]interface{}{})
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, err
+		}
+		issues[issue.ID] = issue
+	}
+
+	return issues, nil
+}
+
+func (r *PostgresRepository) GetAllBySituationIDs(situationIDs []int64) (map[int64]models.Issue, error) {
+	issues := make(map[int64]models.Issue, 0)
+
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
+		  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
+		  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
+		  FROM issues_v1 as i
+		  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
+		  WHERE situation_definition_v1.id = ANY(:situation_ids)`
+	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
+		"situation_ids": pq.Array(situationIDs),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, err
+		}
+		issues[issue.ID] = issue
+	}
+
+	return issues, nil
+}
+
+//GetByStates method used to get all issues for an user
+func (r *PostgresRepository) GetByStates(issueStates []string) (map[int64]models.Issue, error) {
+	issues := make(map[int64]models.Issue, 0)
+
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
+			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
+			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
+			  FROM issues_v1 as i`
+	params := map[string]interface{}{}
+
+	if len(issueStates) > 0 {
+		query += ` WHERE i.state = ANY (:states)`
+		params["states"] = pq.Array(issueStates)
+	}
+
+	rows, err := r.conn.NamedQuery(query, params)
+	if err != nil {
+		zap.L().Error("Couldn't retrieve the issues states and groups ", zap.Error(err))
+		return nil, errors.New("Couldn't retrieve the issues from situation id " + err.Error())
+	}
+	defer rows.Close()
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, err
+		}
+		issues[issue.ID] = issue
+	}
+
+	return issues, nil
+}
+
+//GetByStates method used to get all issues for an user
+func (r *PostgresRepository) GetByStatesBySituationIDs(issueStates []string, situationIDs []int64) (map[int64]models.Issue, error) {
+	issues := make(map[int64]models.Issue, 0)
+
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
+			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
+			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
+			  FROM issues_v1 as i
+			  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
+			  WHERE situation_definition_v1.id = ANY(:situation_ids)`
+	params := map[string]interface{}{
+		"situation_ids": pq.Array(situationIDs),
+	}
+
+	if len(issueStates) > 0 {
+		query += ` and i.state = ANY (:states)`
+		params["states"] = pq.Array(issueStates)
+	}
+
+	rows, err := r.conn.NamedQuery(query, params)
+	if err != nil {
+		zap.L().Error("Couldn't retrieve the issues states and groups ", zap.Error(err))
+		return nil, errors.New("Couldn't retrieve the issues from situation id " + err.Error())
+	}
+	defer rows.Close()
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, err
+		}
+		issues[issue.ID] = issue
+	}
+
+	return issues, nil
+}
+
 // GetByStateByPage method used to get all issues
-func (r *PostgresRepository) GetByStateByPage(issueStates []string, options models.SearchOptions, groups []int64) ([]models.Issue, int, error) {
+func (r *PostgresRepository) GetByStateByPage(issueStates []string, options models.SearchOptions) ([]models.Issue, int, error) {
+	issues := make([]models.Issue, 0)
+	query := `SELECT issues_v1.id, issues_v1.key, issues_v1.name, issues_v1.level,
+		issues_v1.situation_id, situation_instance_id, issues_v1.situation_date,
+		issues_v1.expiration_date, issues_v1.rule_data, issues_v1.state, issues_v1.created_at, issues_v1.last_modified,
+		issues_v1.detection_rating_avg, issues_v1.assigned_at, issues_v1.assigned_to, issues_v1.closed_at, issues_v1.closed_by
+	FROM issues_v1`
+	params := map[string]interface{}{}
+	if len(issueStates) > 0 {
+		query += ` WHERE issues_v1.state = ANY (:states)`
+		params["states"] = pq.Array(issueStates)
+	}
+	if len(options.SortBy) == 0 {
+		options.SortBy = []models.SortOption{{Field: "id", Order: models.Asc}}
+	}
+
+	var err error
+	query, params, err = queryutils.AppendSearchOptions(query, params, options, "issues_v1")
+	if err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.conn.NamedQuery(query, params)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		issues = append(issues, issue)
+	}
+
+	total, err := r.CountByStateByPage(issueStates)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return issues, total, nil
+}
+
+// GetByStateByPage method used to get all issues
+func (r *PostgresRepository) GetByStateByPageBySituationIDs(issueStates []string, options models.SearchOptions, situationIDs []int64) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
 
 	query := `SELECT issues_v1.id, issues_v1.key, issues_v1.name, issues_v1.level,
@@ -296,10 +395,10 @@ func (r *PostgresRepository) GetByStateByPage(issueStates []string, options mode
 		issues_v1.expiration_date, issues_v1.rule_data, issues_v1.state, issues_v1.created_at, issues_v1.last_modified,
 		issues_v1.detection_rating_avg, issues_v1.assigned_at, issues_v1.assigned_to, issues_v1.closed_at, issues_v1.closed_by
 	FROM issues_v1
-			  inner join situation_definition_v1 on situation_definition_v1.id = issues_v1.situation_id
-			  WHERE situation_definition_v1.groups && :groups`
+	inner join situation_definition_v1 on situation_definition_v1.id = issues_v1.situation_id
+	WHERE situation_definition_v1.id = ANY(:situation_ids)`
 	params := map[string]interface{}{
-		"groups": pq.Array(groups),
+		"situation_ids": pq.Array(situationIDs),
 	}
 	if len(issueStates) > 0 {
 		query += ` and issues_v1.state = ANY (:states)`
@@ -329,7 +428,7 @@ func (r *PostgresRepository) GetByStateByPage(issueStates []string, options mode
 		issues = append(issues, issue)
 	}
 
-	total, err := r.CountByStateByPage(issueStates, groups)
+	total, err := r.CountByStateByPageBySituationIDs(issueStates, situationIDs)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -338,17 +437,43 @@ func (r *PostgresRepository) GetByStateByPage(issueStates []string, options mode
 }
 
 // CountByStateByPage method used to count all issues
-func (r *PostgresRepository) CountByStateByPage(issueStates []string, groups []int64) (int, error) {
+func (r *PostgresRepository) CountByStateByPage(issueStates []string) (int, error) {
 
 	query := `select count(*)
-		FROM issues_v1 as i
-		inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
-		WHERE situation_definition_v1.groups && :groups`
+		FROM issues_v1`
+	params := map[string]interface{}{}
+	if len(issueStates) > 0 {
+		query += ` WHERE issues_v1.state = ANY (:states)`
+		params["states"] = pq.Array(issueStates)
+	}
+	rows, err := r.conn.NamedQuery(query, params)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	var count int
+	if rows.Next() {
+		err := rows.Scan(&count)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return count, nil
+}
+
+// CountByStateByPage method used to count all issues
+func (r *PostgresRepository) CountByStateByPageBySituationIDs(issueStates []string, situationIDs []int64) (int, error) {
+
+	query := `select count(*)
+		FROM issues_v1
+		inner join situation_definition_v1 on situation_definition_v1.id = issues_v1.situation_id
+		WHERE situation_definition_v1.id = ANY(:situation_ids)`
 	params := map[string]interface{}{
-		"groups": pq.Array(groups),
+		"situation_ids": pq.Array(situationIDs),
 	}
 	if len(issueStates) > 0 {
-		query += ` and i.state = ANY (:states)`
+		query += ` and issues_v1.state = ANY (:states)`
 		params["states"] = pq.Array(issueStates)
 	}
 	rows, err := r.conn.NamedQuery(query, params)

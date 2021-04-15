@@ -12,13 +12,14 @@ import (
 
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
+	"github.com/google/uuid"
 	gorillacontext "github.com/gorilla/context"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-sdk/v4/security"
-	"github.com/spf13/viper"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/roles"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"go.uber.org/zap"
 )
 
@@ -179,11 +180,11 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 
 		userGroups := session.GetAttributes()[m.Config.AttributeUserMemberOf] // .Get(<name>) doesn't work with slice
 		userGroups = sliceDeduplicate(userGroups)
-		userMemberOf := make([]groups.GroupOfUser, 0)
+		userRoles := make([]roles.Role, 0)
 		for _, userGroupName := range userGroups {
-			g, found, err := groups.R().GetByName(userGroupName)
+			role, found, err := roles.R().GetByName(userGroupName)
 			if err != nil {
-				zap.L().Error("Cannot get group", zap.Error(err), zap.String("groupName", userGroupName))
+				zap.L().Error("Cannot get roles", zap.Error(err), zap.String("groupName", userGroupName))
 				render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
 				return
 			}
@@ -191,50 +192,55 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 				continue
 			}
 
-			userMemberOf = append(userMemberOf, groups.GroupOfUser{
-				ID:       g.ID,
-				Name:     g.Name,
-				UserRole: 1,
-			})
+			userRoles = append(userRoles, role)
 		}
 
-		if m.Config.EnableMemberOfValidation && len(userMemberOf) == 0 {
-			zap.L().Warn("User access denied", zap.String("reason", "no valid group found"), zap.String("userID", userID), zap.Strings("userGroups", userGroups))
-			render.Error(w, r, render.ErrAPISecurityNoRights, errors.New("Access denied"))
+		userRoleUUIDs := make([]uuid.UUID, 0)
+		for _, userRole := range userRoles {
+			userRoleUUIDs = append(userRoleUUIDs, userRole.ID)
+		}
+
+		userPermissions, err := permissions.R().GetAllForRoles(userRoleUUIDs)
+		if err != nil {
+			zap.L().Error("Cannot get permissions", zap.Error(err))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
 			return
 		}
 
-		var isAdmin int64 = 0
-		for _, member := range userMemberOf {
-			if member.Name == viper.GetString("AUTHENTICATION_SAML_ADMIN_GROUP_NAME") {
-				isAdmin = 1
-			}
+		if m.Config.EnableMemberOfValidation && len(userRoles) == 0 {
+			zap.L().Warn("User access denied", zap.String("reason", "no valid group found"), zap.String("userID", userID), zap.Strings("userGroups", userGroups))
+			render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Access denied"))
+			return
 		}
 
-		ug := groups.UserWithGroups{
-			User: security.User{
+		up := users.UserWithPermissions{
+			User: users.User{
 				Login:    userID,
 				LastName: userDisplayName,
-				Role:     isAdmin,
 			},
-			Groups: userMemberOf,
+			Roles:       userRoles,
+			Permissions: userPermissions,
 		}
 
 		loggerR := r.Context().Value(models.ContextKeyLoggerR)
 		if loggerR != nil {
-			gorillacontext.Set(loggerR.(*http.Request), models.UserLogin, fmt.Sprintf("%s(%d)(%d)", ug.User.Login, ug.User.ID, ug.User.Role))
+			gorillacontext.Set(loggerR.(*http.Request), models.UserLogin, fmt.Sprintf("%s(%d)", up.User.Login, up.User.ID))
 		}
 
-		ctx := context.WithValue(r.Context(), models.ContextKeyUser, ug)
+		ctx := context.WithValue(r.Context(), models.ContextKeyUser, up)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-// AdminAuthentificator is a middle which check if the user is administrator (role=1)
+// AdminAuthentificator is a middle which check if the user is administrator (* * *)
 func (m *SamlSPMiddleware) AdminAuthentificator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := handlers.GetUserFromContext(r)
-		if user.Role != int64(1) {
+		user, found := handlers.GetUserFromContext(r)
+		if !found {
+			http.Error(w, http.StatusText(401), 403)
+			return
+		}
+		if !user.HasPermission(permissions.New(permissions.All, permissions.All, permissions.All)) {
 			http.Error(w, http.StatusText(403), 403)
 			return
 		}
