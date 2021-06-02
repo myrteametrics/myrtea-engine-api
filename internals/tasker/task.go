@@ -47,6 +47,14 @@ func ApplyTasks(batch TaskBatch) (err error) {
 			}
 			taskContext := buildContextData(action.GetMetaData(), batch.Context)
 			task.Perform(buildTaskKey(taskContext, task), taskContext)
+		case "situation-reporting":
+			task, err := buildSituationReportingTask(action.GetParameters())
+			if err != nil {
+				zap.L().Warn("Error building SituationReportingTask: ", zap.Any("Parameters:", action.GetParameters()), zap.Error(err))
+				continue
+			}
+			taskContext := buildContextData(action.GetMetaData(), batch.Context)
+			task.Perform(buildTaskKey(taskContext, task), taskContext)
 		default:
 			continue
 		}
