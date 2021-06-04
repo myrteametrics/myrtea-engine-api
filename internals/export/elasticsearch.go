@@ -28,7 +28,7 @@ func ExportFactHitsFull(factID int64) ([]reader.Hit, error) {
 		if len(hits) < 10000 {
 			break
 		}
-		offset = 10000
+		offset += 10000
 	}
 
 	return fullHits, nil
