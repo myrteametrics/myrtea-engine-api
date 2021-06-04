@@ -12,7 +12,6 @@ import (
 func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string) ([]byte, error) {
 	b := new(bytes.Buffer)
 	w := csv.NewWriter(b)
-	w.Comma = ';'
 
 	w.Write(columnsLabel)
 	for _, hit := range hits {

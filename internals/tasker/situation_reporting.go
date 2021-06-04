@@ -69,13 +69,18 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 			if factID, err := strconv.ParseInt(factIDStr, 10, 64); err == nil {
 				task.AttachmentFactIDs = append(task.AttachmentFactIDs, factID)
 			} else {
-				return task, errors.New("Missing or invalid 'attachmentFactIds' parameter (string is not an integer)")
+				return task, errors.New("Missing or invalid 'attachmentFactIDs' parameter (string is not an integer)")
 			}
 		}
 	}
-
+	if len(task.AttachmentFileNames) > 1 {
+		return task, errors.New("Parameter 'attachmentFileName' must only contains one value (for now)")
+	}
+	if len(task.AttachmentFactIDs) > 1 {
+		return task, errors.New("Parameter 'attachmentFactID' must only contains one value (for now)")
+	}
 	if len(task.AttachmentFileNames) != len(task.AttachmentFactIDs) {
-		return task, errors.New("Parameters 'attachmentFileName' and 'attachmentFactId' have different length")
+		return task, errors.New("Parameters 'attachmentFileName' and 'attachmentFactID' have different length")
 	}
 
 	if val, ok := parameters["columns"].(string); ok && val != "" {
@@ -116,7 +121,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 		return err
 	}
 
-	attachments := make(map[string][]byte)
+	attachments := make([]email.MessageAttachment, 0)
 	for i, attachmentFactID := range task.AttachmentFactIDs {
 		fullHits, err := export.ExportFactHitsFull(attachmentFactID)
 		if err != nil {
@@ -128,14 +133,16 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 			return err
 		}
 
-		attachments[task.AttachmentFileNames[i]] = csvAttachment
+		attachments = append(attachments, email.MessageAttachment{
+			FileName: task.AttachmentFileNames[i],
+			Mime:     "application/octet-stream",
+			Content:  csvAttachment,
+		})
 	}
 
 	message := email.NewMessage(task.Subject, "text/html", string(body))
 	message.To = task.To
 	message.Attachments = attachments
-
-	fmt.Println(string(message.ToBytes()))
 
 	sender := email.NewSender(task.SMTPUsername, task.SMTPPassword, task.SMTPHost, task.SMTPPort)
 	err = sender.Send(message)

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
-	"net/http"
 	"path/filepath"
 	"strings"
 )
@@ -18,7 +17,13 @@ type Message struct {
 	Subject         string
 	BodyContentType string // text/plain, text/html
 	Body            string
-	Attachments     map[string][]byte
+	Attachments     []MessageAttachment
+}
+
+type MessageAttachment struct {
+	FileName string
+	Mime     string
+	Content  []byte
 }
 
 func NewMessage(subject string, bodyContentType string, body string) Message {
@@ -26,21 +31,24 @@ func NewMessage(subject string, bodyContentType string, body string) Message {
 		Subject:         subject,
 		BodyContentType: bodyContentType,
 		Body:            body,
-		Attachments:     make(map[string][]byte),
+		Attachments:     make([]MessageAttachment, 0),
 	}
 }
 
-func (m *Message) AttachFileBytes(fileName string, b []byte) {
-	m.Attachments[fileName] = b
+func (m *Message) AttachFileBytes(fileName string, mime string, content []byte) {
+	m.Attachments = append(m.Attachments, MessageAttachment{FileName: fileName, Mime: mime, Content: content})
 }
 
-func (m *Message) AttachFile(src string) error {
+func (m *Message) AttachFile(src string, mime string, fileName string) error {
 	b, err := ioutil.ReadFile(src)
 	if err != nil {
 		return err
 	}
-	_, fileName := filepath.Split(src)
-	m.AttachFileBytes(fileName, b)
+	_fileName := fileName
+	if _fileName == "" {
+		_, _fileName = filepath.Split(src)
+	}
+	m.AttachFileBytes(_fileName, mime, b)
 	return nil
 }
 
@@ -58,31 +66,33 @@ func (m *Message) ToBytes() []byte {
 
 	writer := multipart.NewWriter(buf)
 	boundary := writer.Boundary()
-	// if len(m.Attachments) > 0 {
-	// 	buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s\n", boundary))
-	// }
 	buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s\n", boundary))
 
 	buf.WriteString(fmt.Sprintf("\n\n--%s\n", boundary))
 	buf.WriteString(fmt.Sprintf("Content-Type: %s; charset=\"UTF-8\"\n", m.BodyContentType))
 	buf.WriteString("Content-Transfer-Encoding: quoted-printable\n")
+	buf.WriteString("\n")
 	buf.WriteString(m.Body)
+	buf.WriteString("\n")
 
 	if len(m.Attachments) > 0 {
-		for k, v := range m.Attachments {
-			buf.WriteString(fmt.Sprintf("\n\n\n--%s\n", boundary))
-			buf.WriteString(fmt.Sprintf("Content-Type: %s\n", http.DetectContentType(v)))
-			buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=%s\n", k))
+		for _, attachment := range m.Attachments {
+			buf.WriteString("\n")
+			buf.WriteString("\n")
+			buf.WriteString(fmt.Sprintf("--%s\n", boundary))
+			buf.WriteString(fmt.Sprintf("Content-Type: %s; name=\"%s\"\n", attachment.Mime, attachment.FileName))
+			buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"\n", attachment.FileName))
 			buf.WriteString("Content-Transfer-Encoding: base64\n")
-
-			b := make([]byte, base64.StdEncoding.EncodedLen(len(v)))
-			base64.StdEncoding.Encode(b, v)
+			buf.WriteString("\n")
+			b := make([]byte, base64.StdEncoding.EncodedLen(len(attachment.Content)))
+			base64.StdEncoding.Encode(b, attachment.Content)
 			buf.Write(b)
-			// buf.WriteString(fmt.Sprintf("\n--%s", boundary))
+			buf.WriteString("\n")
 		}
-		// buf.WriteString("--")
-		buf.WriteString(fmt.Sprintf("\n\n\n--%s--", boundary))
 	}
+
+	buf.WriteString("\n")
+	buf.WriteString(fmt.Sprintf("--%s--", boundary))
 
 	return buf.Bytes()
 }

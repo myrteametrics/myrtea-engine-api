@@ -31,3 +31,13 @@ func (s *Sender) Send(m Message) error {
 		m.ToBytes(),
 	)
 }
+
+func (s *Sender) SendBytes(to []string, b []byte) error {
+	return smtp.SendMail(
+		fmt.Sprintf("%s:%s", s.host, s.port),
+		s.auth,
+		s.username,
+		to,
+		b,
+	)
+}
