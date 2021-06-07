@@ -26,10 +26,10 @@ type SituationReportingTask struct {
 	AttachmentFactIDs   []int64  `json:"attachmentFactIds"`
 	Columns             []string `json:"columns"`
 	ColumnsLabel        []string `json:"columnsLabel"`
-	SMTPUsername        string   `json:"smtpUsername"`
-	SMTPPassword        string   `json:"smtpPassword"`
 	SMTPHost            string   `json:"smtpHost"`
 	SMTPPort            string   `json:"smtpPort"`
+	SMTPUsername        string   `json:"smtpUsername"`
+	SMTPPassword        string   `json:"smtpPassword"`
 }
 
 func buildSituationReportingTask(parameters map[string]interface{}) (SituationReportingTask, error) {
@@ -93,6 +93,18 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 
 	if len(task.Columns) != len(task.ColumnsLabel) {
 		return task, errors.New("Parameters 'attachmentFileName' and 'attachmentFactId' have different length")
+	}
+
+	if val, ok := parameters["smtpHost"].(string); ok && val != "" {
+		task.SMTPHost = val
+	} else {
+		return task, errors.New("Missing or invalid 'smtpHost' parameter (string not empty required)")
+	}
+
+	if val, ok := parameters["smtpPort"].(string); ok && val != "" {
+		task.SMTPPort = val
+	} else {
+		return task, errors.New("Missing or invalid 'smtpPort' parameter (string not empty required)")
 	}
 
 	return task, nil
