@@ -34,8 +34,8 @@ func TestBuildSituationReportingTask(t *testing.T) {
 		"subject":             "My top CSV export",
 		"bodyTemplate":        `{{- range index . "fact-name-1" }} <tr> <td>{{ .key }}</td> <td>{{ .value }}</td> </tr> {{- end }}`,
 		"to":                  "to1@gmail.com,to2@gmail.com,to3@gmail.com",
-		"attachmentFileNames": "file1.csv,file2.csv",
-		"attachmentFactIds":   "1,2",
+		"attachmentFileNames": "file1.csv",
+		"attachmentFactIds":   "1",
 		"columns":             "a,b,c,d.e",
 		"columnsLabel":        "Label A,Label B,Label C,Label D.E",
 		"smtpUsername":        "",
@@ -100,6 +100,7 @@ func TestBuildMessageBody(t *testing.T) {
 }
 
 func TestSituationReportingTask(t *testing.T) {
+	t.Skip() // Development test
 	parameters := map[string]interface{}{
 		"id":                  "export-2",
 		"subject":             "My top CSV export",

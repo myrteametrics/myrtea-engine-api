@@ -37,6 +37,7 @@ func mockMessage(t *testing.T) Message {
 }
 
 func TestSenderSend(t *testing.T) {
+	t.Skip() // Development test
 	host := os.Getenv("TEST_SMTP_HOST")
 	port := os.Getenv("TEST_SMTP_PORT")
 	username := os.Getenv("TEST_SMTP_USERNAME")
@@ -51,6 +52,7 @@ func TestSenderSend(t *testing.T) {
 }
 
 func TestSenderSendGmail(t *testing.T) {
+	t.Skip() // Development test
 	username := os.Getenv("TEST_SMTP_USERNAME")
 	password := os.Getenv("TEST_SMTP_PASSWORD")
 	host := "smtp.gmail.com"
