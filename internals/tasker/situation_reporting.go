@@ -48,7 +48,7 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 	}
 
 	if val, ok := parameters["bodyTemplate"].(string); ok && val != "" {
-		task.BodyTemplate = val
+		task.BodyTemplate = strings.ReplaceAll(val, "'", "\"")
 	} else {
 		return task, errors.New("Missing or invalid 'bodyTemplate' parameter (string not empty required)")
 	}
