@@ -14,7 +14,7 @@ type Sender struct {
 
 func NewSender(username string, password string, host string, port string) *Sender {
 	var auth smtp.Auth
-	if username != "" {
+	if username != "" && password != "" {
 		auth = smtp.PlainAuth("", username, password, host)
 	}
 	return &Sender{
