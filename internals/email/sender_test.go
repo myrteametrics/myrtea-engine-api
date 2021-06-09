@@ -29,7 +29,7 @@ func mockMessage(t *testing.T) Message {
 		BCC:             []string{},
 		Subject:         "Complex subject title - 123456",
 		BodyContentType: "text/html",
-		Body:            "<div>hello<div><div><table><tr><th>Code</th><th>Value</th></tr><tr><td>A</td><td>20</td></tr><tr><td>B</td><td>40</td></tr><tr><td>C</td><td>2500</td></tr></table><div>",
+		Body:            `<table cellspacing="0" cellpadding="1" style="border-collapse: collapse;"><tr><th style="border: 1px solid rgb(0,0,0);padding: 5px;font-weight: bold;">Code Site</th><th style="border: 1px solid rgb(0,0,0);padding: 5px;font-weight: bold;">Nb colis manquant</th></tr><tr><td style="border: 1px solid rgb(0,0,0);padding: 5px;">bucket1</td><td style="border: 1px solid rgb(0,0,0);padding: 5px;">10</td></tr><tr><td style="border: 1px solid rgb(0,0,0);padding: 5px;">bucket2</td><td style="border: 1px solid rgb(0,0,0);padding: 5px;">10</td></tr><tr><td style="border: 1px solid rgb(0,0,0);padding: 5px;">bucket3</td><td style="border: 1px solid rgb(0,0,0);padding: 5px;">10</td></tr></table>`,
 		Attachments:     attachments,
 	}
 

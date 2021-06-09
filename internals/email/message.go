@@ -72,7 +72,7 @@ func (m *Message) ToBytes() []byte {
 	buf.WriteString(fmt.Sprintf("Content-Type: %s; charset=\"UTF-8\"\n", m.BodyContentType))
 	buf.WriteString("Content-Transfer-Encoding: quoted-printable\n")
 	buf.WriteString("\n")
-	buf.WriteString(m.Body)
+	buf.WriteString(strings.ReplaceAll(m.Body, "=\"", "=3D\""))
 	buf.WriteString("\n")
 
 	if len(m.Attachments) > 0 {
