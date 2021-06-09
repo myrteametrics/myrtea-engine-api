@@ -1,6 +1,7 @@
 package tasker
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -53,26 +54,26 @@ func TestBuildSituationReportingTask(t *testing.T) {
 
 func TestBuildMessageBody(t *testing.T) {
 	dataItem := map[string]*reader.Item{
-		"fact-1": {
+		"missing_scheduling": {
 			Key:         "",
 			KeyAsString: "",
-			Aggs:        map[string]*reader.ItemAgg{"total": {Value: 10}},
+			Aggs:        map[string]*reader.ItemAgg{"doc_count": {Value: 10}},
 			Buckets: map[string][]*reader.Item{
-				"ByCustomBucket": {
+				"BySite": {
 					{
 						Key:         "bucket1",
 						KeyAsString: "bucket1",
-						Aggs:        map[string]*reader.ItemAgg{"total": {Value: 10}},
+						Aggs:        map[string]*reader.ItemAgg{"doc_count": {Value: 10}},
 					},
 					{
 						Key:         "bucket2",
 						KeyAsString: "bucket2",
-						Aggs:        map[string]*reader.ItemAgg{"total": {Value: 10}},
+						Aggs:        map[string]*reader.ItemAgg{"doc_count": {Value: 10}},
 					},
 					{
 						Key:         "bucket3",
 						KeyAsString: "bucket3",
-						Aggs:        map[string]*reader.ItemAgg{"total": {Value: 10}},
+						Aggs:        map[string]*reader.ItemAgg{"doc_count": {Value: 10}},
 					},
 				},
 			},
@@ -87,11 +88,9 @@ func TestBuildMessageBody(t *testing.T) {
 		}
 		templateData[k] = d
 	}
-	b, err := BuildMessageBody(`
-		{{ range index . "fact-1" "buckets" "ByCustomBucket" }} 
-			{{ .key }} -> {{ index . "aggs" "total" "value" }}			
-		{{ end }}
-	`, templateData)
+	templateBody := "\"\u003ctable cellspacing='0' cellpadding='1' style='border-collapse: collapse;'\u003e\u003ctr\u003e\u003cth style='border: 1px solid rgb(0,0,0);padding: 5px;font-weight: bold;'\u003eCode Site\u003c/th\u003e\u003cth style='border: 1px solid rgb(0,0,0);padding: 5px;font-weight: bold;'\u003eNb colis manquant\u003c/th\u003e\u003c/tr\u003e{{ range index . 'missing_scheduling' 'buckets' 'BySite' }}\u003ctr\u003e\u003ctd style='border: 1px solid rgb(0,0,0);padding: 5px;'\u003e{{ .key }}\u003c/td\u003e\u003ctd style='border: 1px solid rgb(0,0,0);padding: 5px;'\u003e{{ index . 'aggs' 'doc_count' 'value' }}\u003c/td\u003e\u003c/tr\u003e{{ end }}\u003c/table\u003e\""
+	templateBody = strings.ReplaceAll(templateBody, "'", "\"")
+	b, err := BuildMessageBody(templateBody, templateData)
 	if err != nil {
 		t.Log(err)
 		t.FailNow()
