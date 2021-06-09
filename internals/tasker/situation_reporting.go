@@ -121,17 +121,19 @@ func (task SituationReportingTask) GetID() string {
 
 // Perform executes the task
 func (task SituationReportingTask) Perform(key string, context ContextData) error {
-	zap.L().Debug("Perform SituationReportingTask")
+	zap.L().Info("Perform SituationReportingTask", zap.Any("task", task), zap.Any("key", key), zap.Any("context", context))
 
 	situationData, err := GetSituationKnowledge(context.SituationID, context.TemplateInstanceID, context.TS)
 	if err != nil {
 		return err
 	}
+	zap.L().Info("GetSituationKnowledge()", zap.Any("situationData", situationData))
 
 	body, err := BuildMessageBody(task.BodyTemplate, situationData)
 	if err != nil {
 		return err
 	}
+	zap.L().Info("BuildMessageBody()", zap.Any("situationData", situationData))
 
 	attachments := make([]email.MessageAttachment, 0)
 	for i, attachmentFactID := range task.AttachmentFactIDs {
@@ -150,17 +152,22 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 			Mime:     "application/octet-stream",
 			Content:  csvAttachment,
 		})
+		zap.L().Info("Attachments Added", zap.Any("factID", attachmentFactID))
 	}
 
 	message := email.NewMessage(task.Subject, "text/html", string(body))
 	message.To = task.To
 	message.Attachments = attachments
+	zap.L().Info("Message ready to be sent")
 
 	sender := email.NewSender(task.SMTPUsername, task.SMTPPassword, task.SMTPHost, task.SMTPPort)
+	zap.L().Info("Email sender ready")
+
 	err = sender.Send(message)
 	if err != nil {
 		return err
 	}
+	zap.L().Info("Message sent !")
 
 	return nil
 }
