@@ -107,6 +107,16 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 		return task, errors.New("Missing or invalid 'smtpPort' parameter (string not empty required)")
 	}
 
+	if val, ok := parameters["smtpUsername"].(string); ok && val != "" {
+		task.SMTPHost = val
+	} else {
+		return task, errors.New("Missing or invalid 'smtpUsername' parameter (string not empty required)")
+	}
+
+	if val, ok := parameters["smtpPassword"].(string); ok && val != "" {
+		task.SMTPPort = val
+	}
+
 	return task, nil
 }
 
