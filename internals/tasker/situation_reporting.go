@@ -111,7 +111,7 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 }
 
 func (task SituationReportingTask) String() string {
-	return fmt.Sprint("close today issues with id: ", task.ID)
+	return fmt.Sprint("situation reporting with id: ", task.ID)
 }
 
 // GetID returns the task key
