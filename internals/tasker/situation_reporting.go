@@ -114,7 +114,7 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 	}
 
 	if val, ok := parameters["smtpPassword"].(string); ok && val != "" {
-		task.SMTPPort = val
+		task.SMTPPassword = val
 	}
 
 	return task, nil
