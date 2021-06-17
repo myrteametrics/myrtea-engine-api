@@ -139,9 +139,10 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 	}
 	zap.L().Info("GetSituationKnowledge()", zap.Any("situationData", situationData))
 
-	body, err := BuildMessageBody(task.BodyTemplate, situationData)
+	var body []byte
+	body, err = BuildMessageBody(task.BodyTemplate, situationData)
 	if err != nil {
-		return err
+		body = []byte("<p>Error Building MessageBody</p>")
 	}
 	zap.L().Info("BuildMessageBody()", zap.Any("situationData", situationData))
 
