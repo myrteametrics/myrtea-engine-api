@@ -142,6 +142,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 	var body []byte
 	body, err = BuildMessageBody(task.BodyTemplate, situationData)
 	if err != nil {
+		zap.L().Error("Error Building MessageBody", zap.Error(err))
 		body = []byte("<p>Error Building MessageBody</p>")
 	}
 	zap.L().Info("BuildMessageBody()", zap.Any("situationData", situationData))
