@@ -88,7 +88,26 @@ func TestBuildMessageBody(t *testing.T) {
 		}
 		templateData[k] = d
 	}
-	templateBody := "\"\u003ctable cellspacing='0' cellpadding='1' style='border-collapse: collapse;'\u003e\u003ctr\u003e\u003cth style='border: 1px solid rgb(0,0,0);padding: 5px;font-weight: bold;'\u003eCode Site\u003c/th\u003e\u003cth style='border: 1px solid rgb(0,0,0);padding: 5px;font-weight: bold;'\u003eNb colis manquant\u003c/th\u003e\u003c/tr\u003e{{ range index . 'missing_scheduling' 'buckets' 'BySite' }}\u003ctr\u003e\u003ctd style='border: 1px solid rgb(0,0,0);padding: 5px;'\u003e{{ .key }}\u003c/td\u003e\u003ctd style='border: 1px solid rgb(0,0,0);padding: 5px;'\u003e{{ index . 'aggs' 'doc_count' 'value' }}\u003c/td\u003e\u003c/tr\u003e{{ end }}\u003c/table\u003e\""
+
+	templateBody := `"
+	{{ if le (index . 'missing_scheduling' 'aggs' 'doc_count' 'value') 1.0 }}
+	<table cellspacing='0' cellpadding='1' style='border-collapse: collapse'>
+		<tr>
+			<th style='border: 1px solid rgb(0, 0, 0); padding: 5px; font-weight: bold'>Code Site</th>
+			<th style='border: 1px solid rgb(0, 0, 0); padding: 5px; font-weight: bold'>Nb colis manquant</th>
+		</tr>
+		{{ range index . 'missing_scheduling' 'buckets' 'BySite' }}
+		<tr>
+			<td style='border: 1px solid rgb(0, 0, 0); padding: 5px'>{{ .key }}</td>
+			<td style='border: 1px solid rgb(0, 0, 0); padding: 5px'>{{ index . 'aggs' 'doc_count' 'value' }}</td>
+		</tr>
+		{{ end }}
+	</table>
+	{{ else }}
+	<div>Aucun site n'est concerné aujourd'hui</div>
+	{{ end }}"
+	`
+
 	templateBody = strings.ReplaceAll(templateBody, "'", "\"")
 	b, err := BuildMessageBody(templateBody, templateData)
 	if err != nil {
