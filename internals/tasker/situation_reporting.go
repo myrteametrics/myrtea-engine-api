@@ -185,7 +185,11 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 }
 
 func BuildMessageBody(templateBody string, templateData map[string]interface{}) ([]byte, error) {
-	tmpl, err := template.New("htmlEmail").Parse(templateBody)
+	tmpl, err := template.New("htmlEmail").Funcs(template.FuncMap{
+		"split": func(input string, separator string) []string {
+			return strings.Split(input, separator)
+		},
+	}).Parse(templateBody)
 	if err != nil {
 		return nil, err
 	}
