@@ -10,6 +10,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v4/expression"
 )
 
 //EvaluateSituations evaluates a slice of situations and return a slice with the evaluated situations
@@ -42,6 +43,10 @@ func EvaluateSituations(situations []SituationToEvaluate, engineID string) ([]Ev
 		sKnowledge, err := getSituationKnowledge(s)
 		if err != nil {
 			return nil, fmt.Errorf("Error geting knowledge for situation instance (%d, %s, %d): %s", s.ID, s.TS, s.TemplateInstanceID, err.Error())
+		}
+		//Add date keywords in sKnowledge
+		for key, value := range expression.GetDateKeywords(s.TS) {
+			sKnowledge[key] = value
 		}
 
 		localRuleEngine.Reset()
