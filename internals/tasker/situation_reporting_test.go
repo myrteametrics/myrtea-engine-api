@@ -18,10 +18,10 @@ func TestBuildSituationReportingTask(t *testing.T) {
 		"attachmentFactIds":   "",
 		"columns":             "",
 		"columnsLabel":        "",
-		"smtpUsername":        "",
+		"smtpUsername":        "from@gmail.com",
 		"smtpPassword":        "",
-		"smtpHost":            "",
-		"smtpPort":            "",
+		"smtpHost":            "testsmtp",
+		"smtpPort":            "999",
 	}
 	task, err := buildSituationReportingTask(parameters)
 	if err != nil {
@@ -39,10 +39,10 @@ func TestBuildSituationReportingTask(t *testing.T) {
 		"attachmentFactIds":   "1",
 		"columns":             "a,b,c,d.e",
 		"columnsLabel":        "Label A,Label B,Label C,Label D.E",
-		"smtpUsername":        "",
+		"smtpUsername":        "from@gmail.com",
 		"smtpPassword":        "",
-		"smtpHost":            "",
-		"smtpPort":            "",
+		"smtpHost":            "testsmtp",
+		"smtpPort":            "999",
 	}
 	task, err = buildSituationReportingTask(parameters)
 	if err != nil {
