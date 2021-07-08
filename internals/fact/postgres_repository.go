@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 )
@@ -162,7 +163,6 @@ func (r *PostgresRepository) Update(id int64, fact engine.Fact) error {
 // Delete deletes an entity from the repository by its name
 func (r *PostgresRepository) Delete(id int64) error {
 	query := `DELETE FROM fact_definition_v1 WHERE id = :id`
-
 	res, err := r.conn.NamedExec(query, map[string]interface{}{
 		"id": id,
 	})
@@ -192,6 +192,40 @@ func (r *PostgresRepository) GetAll() (map[int64]engine.Fact, error) {
 	}
 	defer rows.Close()
 
+	for rows.Next() {
+		var factID int64
+		var factDef string
+		var fact engine.Fact
+		err := rows.Scan(&factID, &factDef)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal([]byte(factDef), &fact)
+		if err != nil {
+			return nil, err
+		}
+		//This is necessary because within the definition we don't have the id
+		fact.ID = factID
+
+		facts[factID] = fact
+	}
+	return facts, nil
+
+}
+
+// GetAllByIDs returns all entities filtered by IDs in the repository
+func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]engine.Fact, error) {
+
+	query := `SELECT id, definition FROM fact_definition_v1 WHERE id = ANY(:ids)`
+	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
+		"ids": pq.Array(ids),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	facts := make(map[int64]engine.Fact, 0)
 	for rows.Next() {
 		var factID int64
 		var factDef string

@@ -58,16 +58,7 @@ func isNewIssue(issue models.Issue) (bool, error) {
 }
 
 //GetFactsHistory get the history of facts for an issue
-func GetFactsHistory(issueID int64, groups []int64) ([]models.FrontFactHistory, bool, error) {
-	issue, found, err := issues.R().Get(issueID, groups)
-	if err != nil {
-		return nil, false, err
-	}
-	if !found {
-		zap.L().Warn("Issue doesn't exists or not in groups")
-		return nil, false, nil
-	}
-
+func GetFactsHistory(issue models.Issue) ([]models.FrontFactHistory, bool, error) {
 	history := make([]models.FrontFactHistory, 0)
 
 	record, err := situation.GetFromHistory(issue.SituationID, issue.SituationTS, issue.TemplateInstanceID, false)

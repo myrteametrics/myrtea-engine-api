@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
 )
@@ -109,7 +109,7 @@ func TestPostgresCreateAndGet(t *testing.T) {
 
 	var err error
 	groups := []int64{1, 2}
-	issueGet, found, err := r.Get(1, groups)
+	issueGet, found, err := r.Get(1)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -143,7 +143,7 @@ func TestPostgresCreateAndGet(t *testing.T) {
 		t.Error(err)
 	}
 
-	issueGet, found, err = r.Get(id, groups)
+	issueGet, found, err = r.Get(id)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -208,12 +208,12 @@ func TestPostgresUpdate(t *testing.T) {
 
 	issue.State = models.ClosedNoFeedback
 
-	err = r.Update(nil, id, issue, groups.UserWithGroups{})
+	err = r.Update(nil, id, issue, users.User{})
 	if err != nil {
 		t.Error(err)
 	}
 
-	issueGet, found, err := r.Get(id, groupList)
+	issueGet, found, err := r.Get(id)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -276,7 +276,7 @@ func TestPostgresGetByStates(t *testing.T) {
 		t.Error(err)
 	}
 
-	issues, err := r.GetByStates([]string{models.ClosedFeedback.String()}, groups)
+	issues, err := r.GetByStates([]string{models.ClosedFeedback.String()})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -335,7 +335,7 @@ func TestPostgresGetAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	issues, err := r.GetAll(groups)
+	issues, err := r.GetAll()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -415,7 +415,7 @@ func TestPostgresGetByStateByPage(t *testing.T) {
 		t.Error(err)
 	}
 
-	issues, total, err := r.GetByStateByPage([]string{"open"}, models.SearchOptions{Limit: 2, Offset: 0}, groups)
+	issues, total, err := r.GetByStateByPage([]string{"open"}, models.SearchOptions{Limit: 2, Offset: 0})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -431,7 +431,7 @@ func TestPostgresGetByStateByPage(t *testing.T) {
 		t.Log(issues)
 	}
 
-	issues, total, err = r.GetByStateByPage([]string{"open"}, models.SearchOptions{Limit: 2, Offset: 2}, groups)
+	issues, total, err = r.GetByStateByPage([]string{"open"}, models.SearchOptions{Limit: 2, Offset: 2})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -447,7 +447,7 @@ func TestPostgresGetByStateByPage(t *testing.T) {
 		t.Log(issues)
 	}
 
-	issues, total, err = r.GetByStateByPage([]string{"open"}, models.SearchOptions{Limit: 3, Offset: 3}, groups)
+	issues, total, err = r.GetByStateByPage([]string{"open"}, models.SearchOptions{Limit: 3, Offset: 3})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -463,7 +463,7 @@ func TestPostgresGetByStateByPage(t *testing.T) {
 		t.Log(issues)
 	}
 
-	issues, total, err = r.GetByStateByPage([]string{"open"}, models.SearchOptions{Limit: 2, Offset: 4}, groups)
+	issues, total, err = r.GetByStateByPage([]string{"open"}, models.SearchOptions{Limit: 2, Offset: 4})
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

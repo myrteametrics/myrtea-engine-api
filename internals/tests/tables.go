@@ -294,4 +294,42 @@ const (
 		ts timestamptz not null,
 		success boolean
 	);`
+
+	UsersDropTableV4   string = `drop table if exists users_v4;`
+	UsersCreateTableV4 string = `create table users_v4 (
+		id uuid primary key not null,
+		login varchar(100) not null unique,
+		password varchar(100) not null,
+		created timestamptz not null,
+		last_name varchar(100) not null,
+		first_name varchar(100) not null,
+		email varchar(100) not null,
+		phone varchar(100)
+	);`
+
+	RolesDropTableV4   string = `drop table if exists roles_v4;`
+	RolesCreateTableV4 string = `create table roles_v4 (
+		id uuid primary key,
+		name varchar(100) not null UNIQUE
+	);`
+
+	PermissionsDropTableV4   string = `drop table if exists permissions_v4;`
+	PermissionsCreateTableV4 string = `create table permissions_v4 (
+		id uuid primary key,
+		resource_type varchar(100) not null,
+		resource_id varchar(100) not null,
+		action varchar(100) not null
+	);`
+
+	UsersRolesDropTableV4   string = `drop table if exists users_roles_v4;`
+	UsersRolesCreateTableV4 string = `create table users_roles_v4 (
+		user_id uuid REFERENCES users_v4 (id),
+		role_id uuid REFERENCES roles_v4 (id)
+	);`
+
+	RolesPermissionsDropTableV4   string = `drop table if exists roles_permissions_v4;`
+	RolesPermissionsCreateTableV4 string = `create table roles_permissions_v4 (
+		role_id uuid REFERENCES roles_v4 (id),
+		permission_id uuid REFERENCES permissions_v4 (id)
+	);`
 )

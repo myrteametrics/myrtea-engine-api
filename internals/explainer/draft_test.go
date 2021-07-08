@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/draft"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
 )
 
@@ -29,7 +30,7 @@ func TestSaveIssueDraftNotExists(t *testing.T) {
 			}},
 		},
 	}
-	err := SaveIssueDraft(nil, 99, newDraft, []int64{1, 2}, groups.UserWithGroups{})
+	err := SaveIssueDraft(nil, models.Issue{ID: 99}, newDraft, users.User{})
 	if err == nil {
 		t.Error("Draft shoule not be saved on a non existing issue")
 	}
@@ -64,7 +65,9 @@ func TestSaveIssueDraftNewOne(t *testing.T) {
 			}},
 		},
 	}
-	err := SaveIssueDraft(nil, 1, newDraft, []int64{1, 2}, groups.UserWithGroups{})
+
+	issue, _, _ := issues.R().Get(1)
+	err := SaveIssueDraft(nil, issue, newDraft, users.User{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -98,7 +101,9 @@ func TestSaveIssueDraftUpdateOne(t *testing.T) {
 			}},
 		},
 	}
-	err := SaveIssueDraft(nil, 1, newDraft, []int64{1, 2}, groups.UserWithGroups{})
+
+	issue, _, _ := issues.R().Get(1)
+	err := SaveIssueDraft(nil, issue, newDraft, users.User{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -111,9 +116,11 @@ func TestSaveIssueDraftUpdateOne(t *testing.T) {
 		t.Error("A draft should have been saved with id 1")
 	}
 
+	issue, _, _ = issues.R().Get(1)
+
 	newDraft.Tree[0].Selected = true
 	newDraft.ConcurrencyUUID = draftGetV1.ConcurrencyUUID
-	err = SaveIssueDraft(nil, 1, newDraft, []int64{1, 2}, groups.UserWithGroups{})
+	err = SaveIssueDraft(nil, issue, newDraft, users.User{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -153,15 +160,18 @@ func TestSaveIssueDraftUpdateWithoutConcurrencUUID(t *testing.T) {
 			}},
 		},
 	}
+
+	issue, _, _ := issues.R().Get(1)
+
 	// Creation
-	err := SaveIssueDraft(nil, 1, newDraft, []int64{1, 2}, groups.UserWithGroups{})
+	err := SaveIssueDraft(nil, issue, newDraft, users.User{})
 	if err != nil {
 		t.Error("Draft should have been saved")
 	}
 
 	// Update (without concurrencyUUID)
 	newDraft.Tree[0].Selected = true
-	err = SaveIssueDraft(nil, 1, newDraft, []int64{1, 2}, groups.UserWithGroups{})
+	err = SaveIssueDraft(nil, issue, newDraft, users.User{})
 	if err == nil {
 		t.Error("Draft update cannot be saved without concurrencyUUID")
 	}

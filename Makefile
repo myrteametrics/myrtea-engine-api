@@ -143,3 +143,11 @@ docker-save:
 .PHONY: docker-clean ## Delete the docker image from the local cache
 docker-clean:
 	docker image rm $(DOCKER_IMAGE) $(docker images -f dangling=true -q) || true
+
+.PHONY: docker-run-postgres-tests
+docker-run-postgres-tests:
+	docker run -d --rm --name myrtea-postgres-integration-tests --network host --env POSTGRES_USER=postgres --env POSTGRES_PASSWORD=postgres --env POSTGRES_DB=postgres postgres:13
+
+.PHONY: docker-stop-postgres-tests
+docker-stop-postgres-tests:
+	docker stop myrtea-postgres-integration-tests

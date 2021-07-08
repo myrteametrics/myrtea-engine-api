@@ -12,6 +12,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v4/plugins/baseline"
 	"github.com/myrteametrics/myrtea-sdk/v4/builder"
@@ -29,7 +30,20 @@ import (
 // @Failure 500 "internal server error"
 // @Router /engine/facts [get]
 func GetFacts(w http.ResponseWriter, r *http.Request) {
-	facts, err := fact.R().GetAll()
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
+	var facts map[int64]engine.Fact
+	var err error
+	if user.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionGet)) {
+		facts, err = fact.R().GetAll()
+	} else {
+		resourceIDs := user.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionGet))
+		facts, err = fact.R().GetAllByIDs(resourceIDs)
+	}
 	if err != nil {
 		zap.L().Error("Error getting facts", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -70,6 +84,14 @@ func GetFact(w http.ResponseWriter, r *http.Request) {
 	f, apiError, err := lookupFact(byName, id)
 	if err != nil {
 		render.Error(w, r, apiError, err)
+		return
+	}
+
+	// Might be a security Issue (because we lookup for the fact ID / Name before any control)
+	// Should be better to just remove the "lookup by name" feature (which is not used anymore, and has no sense in this API)
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(f.ID, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
 		return
 	}
 
@@ -120,6 +142,12 @@ func ValidateFact(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/facts [post]
 func PostFact(w http.ResponseWriter, r *http.Request) {
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
 
 	var newFact engine.Fact
 	err := json.NewDecoder(r.Body).Decode(&newFact)
@@ -179,6 +207,12 @@ func PutFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(idFact, 10), permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var newFact engine.Fact
 	err = json.NewDecoder(r.Body).Decode(&newFact)
 	if err != nil {
@@ -232,6 +266,12 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Error on parsing fact id", zap.String("factID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(idFact, 10), permissions.ActionDelete)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
 		return
 	}
 
@@ -319,6 +359,14 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Might be a security Issue (because we lookup for the fact ID / Name before any control)
+	// Should be better to just remove the "lookup by name" feature (which is not used anymore, and has no sense in this API)
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(f.ID, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var data *reader.WidgetData
 	if useCache {
 		zap.L().Debug("Use history cache to resolve query")
@@ -400,6 +448,12 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/facts/execute [post]
 func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
 
 	debug := false
 	_debug := r.URL.Query().Get("debug")
@@ -556,6 +610,14 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Might be a security Issue (because we lookup for the fact ID / Name before any control)
+	// Should be better to just remove the "lookup by name" feature (which is not used anymore, and has no sense in this API)
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(idFact, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var data *reader.WidgetData
 	placeholders := make(map[string]string)
 
@@ -568,8 +630,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		groups := GetUserGroupsFromContext(r)
-		situationn, found, err := situation.R().Get(idSituation, groups)
+		situationn, found, err := situation.R().Get(idSituation)
 		if err != nil {
 			zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 			render.Error(w, r, render.ErrAPIDBSelectFailed, err)

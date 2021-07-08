@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"go.uber.org/zap"
 )
@@ -23,8 +25,20 @@ import (
 // @Failure 500 "internal server error"
 // @Router /engine/situations [get]
 func GetSituations(w http.ResponseWriter, r *http.Request) {
-	groups := GetUserGroupsFromContext(r)
-	situations, err := situation.R().GetAll(groups)
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
+	var situations map[int64]situation.Situation
+	var err error
+	if user.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionGet)) {
+		situations, err = situation.R().GetAll()
+	} else {
+		resourceIDs := user.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionGet))
+		situations, err = situation.R().GetAllByIDs(resourceIDs)
+	}
 	if err != nil {
 		zap.L().Warn("Cannot retrieve situations", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -61,8 +75,13 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups := GetUserGroupsFromContext(r)
-	situation, found, err := situation.R().Get(idSituation, groups)
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
+	situation, found, err := situation.R().Get(idSituation)
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -121,6 +140,13 @@ func ValidateSituation(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/situations [post]
 func PostSituation(w http.ResponseWriter, r *http.Request) {
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	factsByName := false
 	_factByName := r.URL.Query().Get("factsByName")
 	if _factByName == "true" {
@@ -193,8 +219,7 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups := GetUserGroupsFromContext(r)
-	situation, found, err := situation.R().Get(idSituation, groups)
+	situation, found, err := situation.R().Get(idSituation)
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -231,6 +256,12 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		return
+	}
+
 	var newSituation situation.Situation
 	err = json.NewDecoder(r.Body).Decode(&newSituation)
 	if err != nil {
@@ -253,8 +284,7 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups := GetUserGroupsFromContext(r)
-	situation, found, err := situation.R().Get(idSituation, groups)
+	situation, found, err := situation.R().Get(idSituation)
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -284,6 +314,12 @@ func DeleteSituation(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Error on parsing situation id", zap.String("situationID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	user, _ := GetUserFromContext(r)
+	if !user.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionDelete)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
 		return
 	}
 

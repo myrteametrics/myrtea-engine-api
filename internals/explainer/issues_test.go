@@ -358,9 +358,10 @@ func TestIssueGetFactsHistory(t *testing.T) {
 		t.Error(err)
 		t.FailNow()
 	}
+	issue1.ID = issueID
 
 	//Facts and their history for the issue
-	issueFactsHistory, found, err := GetFactsHistory(issueID, groups)
+	issueFactsHistory, found, err := GetFactsHistory(issue1)
 	if err != nil || !found {
 		t.Error(err)
 		t.FailNow()

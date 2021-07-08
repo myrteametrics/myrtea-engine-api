@@ -9,9 +9,9 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/draft"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
 )
@@ -165,7 +165,7 @@ func TestFeedbackWithoutSelectedRootCause(t *testing.T) {
 		},
 	}
 
-	err := CloseIssueWithFeedback(db, 3, recommendation, []int64{1, 2}, groups.UserWithGroups{})
+	err := CloseIssueWithFeedback(db, models.Issue{ID: 3}, recommendation, users.User{})
 	if err == nil {
 		t.Error("Should return an error 'A feedback must have one rootcause selected'")
 	}
@@ -194,7 +194,7 @@ func TestFeedbackWithMoreThanOneRootCause(t *testing.T) {
 		},
 	}
 
-	err := CloseIssueWithFeedback(db, 3, recommendation, []int64{1, 2}, groups.UserWithGroups{})
+	err := CloseIssueWithFeedback(db, models.Issue{ID: 3}, recommendation, users.User{})
 	if err == nil {
 		t.Error("Should return an error 'A feedback can't have multiple selected rootcause'")
 	}
@@ -223,7 +223,7 @@ func TestFeedbackWithoutSelectedAction(t *testing.T) {
 		},
 	}
 
-	err := CloseIssueWithFeedback(db, 3, recommendation, []int64{1, 2}, groups.UserWithGroups{})
+	err := CloseIssueWithFeedback(db, models.Issue{ID: 3}, recommendation, users.User{})
 	if err == nil {
 		t.Error("Should return an error 'A feedback must have at least one action selected'")
 	}
@@ -252,7 +252,8 @@ func TestFeedbackOneExistingAction(t *testing.T) {
 		},
 	}
 
-	err := CloseIssueWithFeedback(db, 3, recommendation, []int64{1, 2}, groups.UserWithGroups{})
+	issue, _, _ := issues.R().Get(3)
+	err := CloseIssueWithFeedback(db, issue, recommendation, users.User{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -281,7 +282,8 @@ func TestFeedbackMultipleExistingActions(t *testing.T) {
 		},
 	}
 
-	err := CloseIssueWithFeedback(db, 3, recommendation, []int64{1, 2}, groups.UserWithGroups{})
+	issue, _, _ := issues.R().Get(3)
+	err := CloseIssueWithFeedback(db, issue, recommendation, users.User{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -314,7 +316,8 @@ func TestFeedbackCustomRootCauseAndOneAction(t *testing.T) {
 		},
 	}
 
-	err := CloseIssueWithFeedback(db, 3, recommendation, []int64{1, 2}, groups.UserWithGroups{})
+	issue, _, _ := issues.R().Get(3)
+	err := CloseIssueWithFeedback(db, issue, recommendation, users.User{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -349,7 +352,8 @@ func TestFeedbackCustomRootCauseAndMultipleActions(t *testing.T) {
 		},
 	}
 
-	err := CloseIssueWithFeedback(db, 3, recommendation, []int64{1, 2}, groups.UserWithGroups{})
+	issue, _, _ := issues.R().Get(3)
+	err := CloseIssueWithFeedback(db, issue, recommendation, users.User{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -380,7 +384,8 @@ func TestFeedbackCustomAndExistingMultipleActions(t *testing.T) {
 		},
 	}
 
-	err := CloseIssueWithFeedback(db, 3, recommendation, []int64{1, 2}, groups.UserWithGroups{})
+	issue, _, _ := issues.R().Get(3)
+	err := CloseIssueWithFeedback(db, issue, recommendation, users.User{})
 	if err != nil {
 		t.Error(err)
 	}

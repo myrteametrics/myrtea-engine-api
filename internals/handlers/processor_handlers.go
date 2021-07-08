@@ -9,7 +9,6 @@ import (
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/processor"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
@@ -114,7 +113,7 @@ func ReceiveAggregates(aggregates []ExternalAggregate) error {
 			return errors.New("not found")
 		}
 
-		s, found, err := situation.R().Get(agg.SituationID, groups.GetTokenAllGroups())
+		s, found, err := situation.R().Get(agg.SituationID)
 		if err != nil {
 			return err
 		}

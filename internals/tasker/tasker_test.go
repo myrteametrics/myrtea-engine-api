@@ -266,7 +266,7 @@ func TestIssueTasks(t *testing.T) {
 	T().BatchReceiver <- taskBatchs
 	time.Sleep(100 * time.Millisecond)
 
-	createdIssues, _ := issues.R().GetAll([]int64{0})
+	createdIssues, _ := issues.R().GetAll()
 	if createdIssues[1].Key != "1-1-task1" || createdIssues[1].State != models.Open {
 		t.Errorf("The created Issue is not as expected")
 	}
@@ -322,7 +322,7 @@ func TestIssueTasks(t *testing.T) {
 		t.Errorf("The task is not as expected")
 	}
 
-	createdIssues, _ = issues.R().GetAll([]int64{0})
+	createdIssues, _ = issues.R().GetAll()
 	if createdIssues[1].Key != "1-1-task1" || createdIssues[1].State != models.ClosedDiscard {
 		t.Errorf("The created Issue is not as expected")
 	}
@@ -433,7 +433,7 @@ func TestTimeZoneInCloseIssueTask(t *testing.T) {
 	T().BatchReceiver <- taskBatchs
 	time.Sleep(100 * time.Millisecond)
 
-	createdIssues, _ := issues.R().GetAll([]int64{0})
+	createdIssues, _ := issues.R().GetAll()
 	if createdIssues[1].Key != "1-1-task1" || createdIssues[1].State != models.Open {
 		t.Errorf("The created Issue is not as expected")
 	}
@@ -492,7 +492,7 @@ func TestTimeZoneInCloseIssueTask(t *testing.T) {
 		t.Errorf("The task is not as expected")
 	}
 
-	createdIssues, _ = issues.R().GetAll([]int64{0})
+	createdIssues, _ = issues.R().GetAll()
 	if createdIssues[1].Key != "1-1-task1" || createdIssues[1].State != models.Open {
 		t.Errorf("The created Issue is not as expected")
 	}
@@ -523,7 +523,7 @@ func TestTimeZoneInCloseIssueTask(t *testing.T) {
 		t.Errorf("The task is not as expected")
 	}
 
-	createdIssues, _ = issues.R().GetAll([]int64{0})
+	createdIssues, _ = issues.R().GetAll()
 	if createdIssues[1].Key != "1-1-task1" || createdIssues[1].State != models.ClosedDiscard {
 		t.Errorf("The created Issue is not as expected")
 	}

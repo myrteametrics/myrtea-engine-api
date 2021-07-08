@@ -193,7 +193,7 @@ func TestEvalProcessor(t *testing.T) {
 		t.FailNow()
 	}
 
-	issues, err := issues.R().GetAll(groups)
+	issues, err := issues.R().GetAll()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
