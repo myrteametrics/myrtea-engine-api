@@ -19,8 +19,8 @@ var (
 // GetEngine return a specific engine
 func GetEngine(engineID string) (*ruleeng.RuleEngine, bool) {
 	_globalMu.RLock()
+	defer _globalMu.RUnlock()
 	re, ok := _globalREngine[engineID]
-	_globalMu.RUnlock()
 	if ok {
 		return re, true
 	}
@@ -50,6 +50,8 @@ func InitEngine(engineID string) error {
 	}
 
 	_globalMu.Lock()
+	defer _globalMu.Unlock()
+
 	_globalREngine[engineID] = ruleeng.NewRuleEngine()
 	_lastUpdate[engineID] = time.Now()
 
@@ -63,7 +65,6 @@ func InitEngine(engineID string) error {
 			_globalREngine[engineID].InsertRule(rule)
 		}
 	}
-	_globalMu.Unlock()
 	return nil
 }
 
@@ -74,6 +75,8 @@ func UpdateEngine(engineID string) error {
 	}
 
 	_globalMu.Lock()
+	defer _globalMu.Unlock()
+
 	now := time.Now()
 	rules, err := rule.R().GetAllModifiedFrom(_lastUpdate[engineID])
 	if err != nil {
@@ -87,8 +90,6 @@ func UpdateEngine(engineID string) error {
 			_globalREngine[engineID].RemoveRule(rule.ID)
 		}
 	}
-
-	_globalMu.Unlock()
 
 	return nil
 }

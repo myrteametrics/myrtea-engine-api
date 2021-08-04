@@ -29,6 +29,7 @@ func NewCalendarBase() *Base {
 // InPeriodFromCalendarID ..
 func (cBase *Base) InPeriodFromCalendarID(id int64, t time.Time) (bool, bool, error) {
 	cBase.localMu.RLock()
+	defer cBase.localMu.RUnlock()
 
 	calendar, found := cBase.resolvedCalendars[id]
 	if !found {
@@ -36,21 +37,23 @@ func (cBase *Base) InPeriodFromCalendarID(id int64, t time.Time) (bool, bool, er
 	}
 	valid, _, _, _ := calendar.contains(t)
 
-	cBase.localMu.RUnlock()
 	return found, valid, nil
 }
 
 // GetResolved get calendar resolved from global CBase
 func (cBase *Base) GetResolved(id int64) (Calendar, bool, error) {
 	cBase.localMu.RLock()
+	defer cBase.localMu.RUnlock()
+
 	calendar, found := cBase.resolvedCalendars[id]
-	cBase.localMu.RUnlock()
 	return calendar, found, nil
 }
 
 // Update Updates the calendar map (read the new calendar from database)
 func (cBase *Base) Update() {
 	cBase.localMu.RLock()
+	defer cBase.localMu.RUnlock()
+
 	allCalendars, err := R().GetAll()
 	if err != nil {
 		zap.L().Error("Cannot update calendar base", zap.Error(err))
@@ -89,6 +92,4 @@ func (cBase *Base) Update() {
 			zap.L().Warn("Cyclic reference detected for calendar: ", zap.Int64("calendarID", calendarID))
 		}
 	}
-
-	cBase.localMu.RUnlock()
 }

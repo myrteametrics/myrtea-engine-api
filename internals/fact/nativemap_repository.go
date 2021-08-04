@@ -39,8 +39,9 @@ func NewNativeMapRepository() Repository {
 // Get search and returns an entity from the repository by its id
 func (r *NativeMapRepository) Get(id int64) (engine.Fact, bool, error) {
 	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
 	fact, found := r.factsByID[id]
-	r.mutex.RUnlock()
 	if !found {
 		return engine.Fact{}, false, nil
 	}
@@ -50,8 +51,9 @@ func (r *NativeMapRepository) Get(id int64) (engine.Fact, bool, error) {
 // GetByName search and returns an entity from the repository by its name
 func (r *NativeMapRepository) GetByName(name string) (engine.Fact, bool, error) {
 	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
 	fact, found := r.factsByName[name]
-	r.mutex.RUnlock()
 	if !found {
 		return engine.Fact{}, false, nil
 	}
@@ -83,6 +85,7 @@ func (r *NativeMapRepository) Create(fact engine.Fact) (int64, error) {
 func (r *NativeMapRepository) Update(id int64, fact engine.Fact) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
+
 	if _, ok := r.factsByID[id]; !ok {
 		return errors.New("Fact does not exists for the ID:" + strconv.FormatInt(id, 10))
 	}
@@ -111,7 +114,8 @@ func (r *NativeMapRepository) Delete(id int64) error {
 // GetAll returns all entities in the repository
 func (r *NativeMapRepository) GetAll() (map[int64]engine.Fact, error) {
 	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
 	factsByID := r.factsByID
-	r.mutex.RUnlock()
 	return factsByID, nil
 }

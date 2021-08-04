@@ -14,17 +14,19 @@ var (
 // T is used to access the global tasker singleton
 func T() *Tasker {
 	_globalTaskerMu.RLock()
+	defer _globalTaskerMu.RUnlock()
+
 	tasker := _globalTasker
-	_globalTaskerMu.RUnlock()
 	return tasker
 }
 
 // ReplaceGlobals affect a new tasker to the global manager singleton
 func ReplaceGlobals(tasker *Tasker) func() {
 	_globalTaskerMu.Lock()
+	defer _globalTaskerMu.Unlock()
+
 	prev := _globalTasker
 	_globalTasker = tasker
-	_globalTaskerMu.Unlock()
 	return func() { ReplaceGlobals(prev) }
 }
 
