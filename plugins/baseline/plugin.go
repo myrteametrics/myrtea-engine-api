@@ -22,8 +22,9 @@ var (
 // P is used to access the global plugin singleton
 func P() (*BaselinePlugin, error) {
 	_globalPluginMu.RLock()
+	defer _globalPluginMu.RUnlock()
+
 	plugin := _globalPlugin
-	_globalPluginMu.RUnlock()
 	if plugin == nil {
 		return nil, errors.New("No Baseline plugin found, feature is not available")
 	}
@@ -32,9 +33,10 @@ func P() (*BaselinePlugin, error) {
 
 func Register(plugin *BaselinePlugin) func() {
 	_globalPluginMu.Lock()
+	defer _globalPluginMu.Unlock()
+
 	prev := _globalPlugin
 	_globalPlugin = plugin
-	_globalPluginMu.Unlock()
 	return func() { Register(prev) }
 }
 
