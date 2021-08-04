@@ -39,8 +39,9 @@ func NewNativeMapRepository() Repository {
 // Get search and returns an entity from the repository by its id
 func (r *NativeMapRepository) Get(id int64) (modeler.Model, bool, error) {
 	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
 	model, found := r.modelsByID[id]
-	r.mutex.RUnlock()
 	if !found {
 		return modeler.Model{}, false, nil
 	}
@@ -50,8 +51,9 @@ func (r *NativeMapRepository) Get(id int64) (modeler.Model, bool, error) {
 // GetByName search and returns an entity from the repository by its name
 func (r *NativeMapRepository) GetByName(name string) (modeler.Model, bool, error) {
 	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
 	model, found := r.modelsByName[name]
-	r.mutex.RUnlock()
 	if !found {
 		return modeler.Model{}, false, nil
 	}
@@ -83,6 +85,7 @@ func (r *NativeMapRepository) Create(model modeler.Model) (int64, error) {
 func (r *NativeMapRepository) Update(id int64, model modeler.Model) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
+
 	if _, ok := r.modelsByID[id]; !ok {
 		return errors.New("Model does not exists for the ID:" + strconv.FormatInt(id, 10))
 	}
@@ -99,6 +102,7 @@ func (r *NativeMapRepository) Update(id int64, model modeler.Model) error {
 func (r *NativeMapRepository) Delete(id int64) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
+
 	if _, ok := r.modelsByID[id]; !ok {
 		return errors.New("Model does not exists for the ID:" + strconv.FormatInt(id, 10))
 	}
@@ -111,7 +115,8 @@ func (r *NativeMapRepository) Delete(id int64) error {
 // GetAll returns all entities in the repository
 func (r *NativeMapRepository) GetAll() (map[int64]modeler.Model, error) {
 	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
 	modelsByID := r.modelsByID
-	r.mutex.RUnlock()
 	return modelsByID, nil
 }
