@@ -9,9 +9,10 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
 )
 
-func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string) ([]byte, error) {
+func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string, separator rune) ([]byte, error) {
 	b := new(bytes.Buffer)
 	w := csv.NewWriter(b)
+	w.Comma = separator
 
 	w.Write(columnsLabel)
 	for _, hit := range hits {

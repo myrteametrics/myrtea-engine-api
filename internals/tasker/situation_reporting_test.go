@@ -29,6 +29,10 @@ func TestBuildSituationReportingTask(t *testing.T) {
 		t.FailNow()
 	}
 	t.Log(task)
+	if task.Separator != ',' {
+		t.Log("Unexpected Separator")
+		t.FailNow()
+	}
 
 	parameters = map[string]interface{}{
 		"id":                  "export-2",
@@ -39,6 +43,7 @@ func TestBuildSituationReportingTask(t *testing.T) {
 		"attachmentFactIds":   "1",
 		"columns":             "a,b,c,d.e",
 		"columnsLabel":        "Label A,Label B,Label C,Label D.E",
+		"separator":           ";*&",
 		"smtpUsername":        "from@gmail.com",
 		"smtpPassword":        "",
 		"smtpHost":            "testsmtp",
@@ -50,6 +55,10 @@ func TestBuildSituationReportingTask(t *testing.T) {
 		t.FailNow()
 	}
 	t.Log(task)
+	if task.Separator != ';' {
+		t.Log("Unexpected Separator")
+		t.FailNow()
+	}
 }
 
 func TestBuildMessageBody(t *testing.T) {

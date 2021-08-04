@@ -15,7 +15,7 @@ func TestConvertHitsToCSV(t *testing.T) {
 	}
 	columns := []string{"a", "b", "c", "d.e"}
 	columnsLabel := []string{"Label A", "Label B", "Label C", "Label D.E"}
-	csv, err := ConvertHitsToCSV(hits, columns, columnsLabel)
+	csv, err := ConvertHitsToCSV(hits, columns, columnsLabel, ',')
 	if err != nil {
 		t.Log(err)
 		t.FailNow()
