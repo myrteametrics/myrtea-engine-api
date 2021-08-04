@@ -26,6 +26,7 @@ type SituationReportingTask struct {
 	AttachmentFactIDs   []int64  `json:"attachmentFactIds"`
 	Columns             []string `json:"columns"`
 	ColumnsLabel        []string `json:"columnsLabel"`
+	Separator           rune     `json:"separator"`
 	SMTPHost            string   `json:"smtpHost"`
 	SMTPPort            string   `json:"smtpPort"`
 	SMTPUsername        string   `json:"smtpUsername"`
@@ -91,6 +92,12 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 		task.ColumnsLabel = strings.Split(val, ",")
 	}
 
+	if val, ok := parameters["separator"].(string); ok && val != "" {
+		task.Separator = []rune(val)[0]
+	} else {
+		task.Separator = ','
+	}
+
 	if len(task.Columns) != len(task.ColumnsLabel) {
 		return task, errors.New("Parameters 'attachmentFileName' and 'attachmentFactId' have different length")
 	}
@@ -154,7 +161,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 			return err
 		}
 
-		csvAttachment, err := export.ConvertHitsToCSV(fullHits, task.Columns, task.ColumnsLabel)
+		csvAttachment, err := export.ConvertHitsToCSV(fullHits, task.Columns, task.ColumnsLabel, task.Separator)
 		if err != nil {
 			return err
 		}
