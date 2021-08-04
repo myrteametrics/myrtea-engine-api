@@ -20,17 +20,19 @@ var (
 // L is used to access the global lexer singleton
 func L() *Lexer {
 	_globalMu.RLock()
+	defer _globalMu.RUnlock()
+
 	lexer := _globalLexer
-	_globalMu.RUnlock()
 	return lexer
 }
 
 // ReplaceGlobals affect a new repository to the global lexer singleton
 func ReplaceGlobals(lexer *Lexer) func() {
 	_globalMu.Lock()
+	defer _globalMu.Unlock()
+
 	prev := _globalLexer
 	_globalLexer = lexer
-	_globalMu.Unlock()
 	return func() { ReplaceGlobals(prev) }
 }
 

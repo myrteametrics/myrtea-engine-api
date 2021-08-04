@@ -16,17 +16,19 @@ var (
 // C is used to access the global notifier singleton
 func C() *Notifier {
 	_globalNotifierMu.RLock()
+	defer _globalNotifierMu.RUnlock()
+
 	notifier := _globalNotifier
-	_globalNotifierMu.RUnlock()
 	return notifier
 }
 
 // ReplaceGlobals affect a new notifier to the global notifier singleton
 func ReplaceGlobals(notifier *Notifier) func() {
 	_globalNotifierMu.Lock()
+	defer _globalNotifierMu.Unlock()
+
 	prev := _globalNotifier
 	_globalNotifier = notifier
-	_globalNotifierMu.Unlock()
 	return func() { ReplaceGlobals(prev) }
 }
 
