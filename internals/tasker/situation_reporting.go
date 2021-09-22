@@ -16,6 +16,17 @@ import (
 	"go.uber.org/zap"
 )
 
+// Temp solution before proper task condition trigger
+var cache map[string]time.Time = make(map[string]time.Time, 0)
+
+func verifyCache(key string, timeout time.Duration) bool {
+	if val, ok := cache[key]; ok && time.Now().UTC().Before(val) {
+		return false
+	}
+	cache[key] = time.Now().UTC().Add(timeout)
+	return true
+}
+
 // SituationReportingTask struct for close issues created in the current day from the BRMS
 type SituationReportingTask struct {
 	ID                  string   `json:"id"`
@@ -31,6 +42,7 @@ type SituationReportingTask struct {
 	SMTPPort            string   `json:"smtpPort"`
 	SMTPUsername        string   `json:"smtpUsername"`
 	SMTPPassword        string   `json:"smtpPassword"`
+	Timeout             string   `json:"timeout"`
 }
 
 func buildSituationReportingTask(parameters map[string]interface{}) (SituationReportingTask, error) {
@@ -124,6 +136,12 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 		task.SMTPPassword = val
 	}
 
+	if val, ok := parameters["timeout"].(string); ok && val != "" {
+		task.Timeout = val
+	} else {
+		return task, errors.New("Missing or not valid 'timeout' parameter (string not empty required)")
+	}
+
 	return task, nil
 }
 
@@ -139,6 +157,17 @@ func (task SituationReportingTask) GetID() string {
 // Perform executes the task
 func (task SituationReportingTask) Perform(key string, context ContextData) error {
 	zap.L().Info("Perform SituationReportingTask", zap.Any("task", task), zap.Any("key", key), zap.Any("context", context))
+
+	//	Parsing the timeout from string to duration
+	timeoutDuration, err := time.ParseDuration(task.Timeout)
+	if err != nil {
+		return err
+	}
+
+	if !verifyCache(key, timeoutDuration) {
+		zap.L().Debug("SituationReportingTask skipped - timeout not reached")
+		return nil
+	}
 
 	situationData, err := GetSituationKnowledge(context.SituationID, context.TemplateInstanceID, context.TS)
 	if err != nil {
