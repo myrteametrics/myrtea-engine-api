@@ -127,7 +127,7 @@ func TestBuildMessageBody(t *testing.T) {
 }
 
 func TestSituationReportingTask(t *testing.T) {
-	t.Skip() // Development test
+	// t.Skip() // Development test
 	parameters := map[string]interface{}{
 		"id":                  "export-2",
 		"subject":             "My top CSV export",
@@ -137,10 +137,11 @@ func TestSituationReportingTask(t *testing.T) {
 		"attachmentFactIds":   "1",
 		"columns":             "a,b,c,d.e",
 		"columnsLabel":        "Label A,Label B,Label C,Label D.E",
-		"smtpUsername":        "",
+		"smtpUsername":        "a",
 		"smtpPassword":        "",
-		"smtpHost":            "",
-		"smtpPort":            "",
+		"smtpHost":            "a",
+		"smtpPort":            "1",
+		"timeout":             "1h",
 	}
 	contextData := ContextData{
 		SituationID:        1,
@@ -158,9 +159,21 @@ func TestSituationReportingTask(t *testing.T) {
 		t.FailNow()
 	}
 
+	// cache[taskExecutionKey] = time.Now().Add(1 * time.Hour)
+
 	err = task.Perform(taskExecutionKey, contextData)
 	if err != nil {
 		t.Log(err)
-		t.FailNow()
+		// t.FailNow()
+	} else {
+		t.Log("1) executed")
+	}
+
+	err = task.Perform(taskExecutionKey, contextData)
+	if err != nil {
+		t.Log(err)
+		// t.FailNow()
+	} else {
+		t.Log("2) executed")
 	}
 }
