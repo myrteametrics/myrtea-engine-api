@@ -22,6 +22,7 @@ func TestBuildSituationReportingTask(t *testing.T) {
 		"smtpPassword":        "",
 		"smtpHost":            "testsmtp",
 		"smtpPort":            "999",
+		"timeout":             "12h",
 	}
 	task, err := buildSituationReportingTask(parameters)
 	if err != nil {
@@ -48,6 +49,7 @@ func TestBuildSituationReportingTask(t *testing.T) {
 		"smtpPassword":        "",
 		"smtpHost":            "testsmtp",
 		"smtpPort":            "999",
+		"timeout":             "12h",
 	}
 	task, err = buildSituationReportingTask(parameters)
 	if err != nil {
