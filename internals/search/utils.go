@@ -20,6 +20,9 @@ func extractFactHistoryRecordValues(rawResults []byte, out *FactHistoryRecord, d
 		for k, v := range item.Aggs {
 			if k == "doc_count" {
 				out.DocCount = v.Value
+				if out.Value == nil {
+					out.Value = v.Value
+				}
 			} else {
 				out.Value = v.Value
 			}
@@ -39,6 +42,9 @@ func extractFactHistoryRecordValues(rawResults []byte, out *FactHistoryRecord, d
 			for k, v := range item.Aggs {
 				if k == "doc_count" {
 					data["doc_count"] = v.Value
+					if data["value"] == nil {
+						data["value"] = v.Value
+					}
 				} else {
 					data["value"] = v.Value
 				}
