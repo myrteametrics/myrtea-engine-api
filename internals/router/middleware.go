@@ -6,12 +6,17 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/crewjam/saml/samlsp"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/jwtauth"
+	"github.com/google/uuid"
 	gorillacontext "github.com/gorilla/context"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+
+	// "github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/roles"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"go.uber.org/zap"
 )
@@ -67,7 +72,8 @@ func ContextMiddleware(next http.Handler) http.Handler {
 			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Invalid JWT"))
 			return
 		}
-		userID := int64(rawUserID.(float64))
+		// userID := int64(rawUserID.(float64))
+		userID, _ := uuid.Parse(rawUserID.(string))
 
 		user, found, err := users.R().Get(userID)
 		if err != nil {
@@ -76,29 +82,80 @@ func ContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		if !found {
-			zap.L().Error("User not found", zap.Int64("id", userID))
+			zap.L().Error("User not found", zap.String("userID", rawUserID.(string)))
+			// zap.L().Error("User not found", zap.Int64("id", userID))
 			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Invalid JWT"))
 			return
 		}
 
-		gr, err := groups.R().GetGroupsOfUser(user.ID)
+		session := samlsp.SessionFromContext(r.Context()).(samlsp.SessionWithAttributes)
+		userGroups := session.GetAttributes()[m.Config.AttributeUserMemberOf] // .Get(<name>) doesn't work with slice
+		userGroups = sliceDeduplicate(userGroups)
+		userRoles := make([]roles.Role, 0)
+		for _, userGroupName := range userGroups {
+			role, found, err := roles.R().GetByName(userGroupName)
+			if err != nil {
+				zap.L().Error("Cannot get roles", zap.Error(err), zap.String("groupName", userGroupName))
+				render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
+				return
+			}
+			if !found {
+				continue
+			}
+
+			userRoles = append(userRoles, role)
+		}
+
+		userRoleUUIDs := make([]uuid.UUID, 0)
+		for _, userRole := range userRoles {
+			userRoleUUIDs = append(userRoleUUIDs, userRole.ID)
+		}
+
+		userPermissions, err := permissions.R().GetAllForRoles(userRoleUUIDs)
 		if err != nil {
-			zap.L().Error("Find Groups", zap.Error(err))
+			zap.L().Error("Cannot get permissions", zap.Error(err))
 			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
 			return
 		}
 
-		ug := groups.UserWithGroups{
-			User:   user,
-			Groups: gr,
+		// roles, err := roles.R().GetAllForUser(user.ID)
+		// if err != nil {
+		// 	zap.L().Error("Find Roles", zap.Error(err))
+		// 	render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
+		// 	return
+		// }
+
+		// perm, err := permissions.R().GetAllForRoles(roles)
+		// if err != nil {
+		// 	zap.L().Error("Cannot get permissions", zap.Error(err))
+		// 	render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
+		// 	return
+		// }
+
+		up := users.UserWithPermissions{
+			User:        user,
+			Roles:       roles,
+			Permissions: userPermissions,
 		}
+
+		// gr, err := groups.R().GetGroupsOfUser(user.ID)
+		// if err != nil {
+		// 	zap.L().Error("Find Groups", zap.Error(err))
+		// 	render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
+		// 	return
+		// }
+
+		// ug := groups.UserWithGroups{
+		// 	User:   user,
+		// 	Groups: gr,
+		// }
 
 		loggerR := r.Context().Value(models.ContextKeyLoggerR)
 		if loggerR != nil {
-			gorillacontext.Set(loggerR.(*http.Request), models.UserLogin, fmt.Sprintf("%s(%d)", ug.User.Login, ug.User.ID))
+			gorillacontext.Set(loggerR.(*http.Request), models.UserLogin, fmt.Sprintf("%s(%d)", up.User.Login, up.User.ID))
 		}
 
-		ctx := context.WithValue(r.Context(), models.ContextKeyUser, ug)
+		ctx := context.WithValue(r.Context(), models.ContextKeyUser, up)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
