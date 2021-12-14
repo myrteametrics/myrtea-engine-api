@@ -80,9 +80,11 @@ func ApplyTasks(batch TaskBatch) (err error) {
 			continue
 		}
 	}
-	err = persistTask.Perform("", buildContextData(batch.Context))
-	if err != nil {
-		zap.L().Warn("Error while performing task xxxx", zap.Error(err))
+	if len(persistTask.Data) > 0 {
+		err = persistTask.Perform("", buildContextData(batch.Context))
+		if err != nil {
+			zap.L().Warn("Error while performing task xxxx", zap.Error(err))
+		}
 	}
 
 	return nil

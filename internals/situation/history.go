@@ -8,6 +8,7 @@ import (
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+	"go.uber.org/zap"
 )
 
 // HistoryRecord represents a single and unique situation history entry
@@ -189,10 +190,15 @@ func GetFromHistory(situationID int64, t time.Time, templateInstanceID int64, cl
 
 // UpdateHistoryMetadata updates a situation entry in postgresql and update its metadatas
 func UpdateHistoryMetadata(situationID int64, t time.Time, templateInstanceID int64, metaDatas []models.MetaData) error {
+	if len(metaDatas) == 0 {
+		zap.L().Warn("Trying to update new empty metadatas", zap.Int64("situationID", situationID), zap.Int64("templateInstanceID", templateInstanceID))
+		return nil
+	}
 
 	currentMetaDatas, err := GetHistoryMetadata(situationID, t, templateInstanceID)
 	if err != nil {
-		return errors.New("Error in UpdateHistoryMetadata: " + err.Error())
+		zap.L().Error("GetHistoryMetadata", zap.Int64("situationID", situationID), zap.Int64("templateInstanceID", templateInstanceID), zap.Error(err))
+		return err
 	}
 
 	newMetaDatas := make([]models.MetaData, 0)
