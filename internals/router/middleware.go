@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/crewjam/saml/samlsp"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/jwtauth"
 	"github.com/google/uuid"
@@ -88,26 +87,15 @@ func ContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		session := samlsp.SessionFromContext(r.Context()).(samlsp.SessionWithAttributes)
-		userGroups := session.GetAttributes()[m.Config.AttributeUserMemberOf] // .Get(<name>) doesn't work with slice
-		userGroups = sliceDeduplicate(userGroups)
-		userRoles := make([]roles.Role, 0)
-		for _, userGroupName := range userGroups {
-			role, found, err := roles.R().GetByName(userGroupName)
-			if err != nil {
-				zap.L().Error("Cannot get roles", zap.Error(err), zap.String("groupName", userGroupName))
-				render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
-				return
-			}
-			if !found {
-				continue
-			}
-
-			userRoles = append(userRoles, role)
+		roles, err := roles.R().GetAllForUser(user.ID)
+		if err != nil {
+			zap.L().Error("Find Roles", zap.Error(err))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
+			return
 		}
 
 		userRoleUUIDs := make([]uuid.UUID, 0)
-		for _, userRole := range userRoles {
+		for _, userRole := range roles {
 			userRoleUUIDs = append(userRoleUUIDs, userRole.ID)
 		}
 
@@ -118,37 +106,11 @@ func ContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// roles, err := roles.R().GetAllForUser(user.ID)
-		// if err != nil {
-		// 	zap.L().Error("Find Roles", zap.Error(err))
-		// 	render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
-		// 	return
-		// }
-
-		// perm, err := permissions.R().GetAllForRoles(roles)
-		// if err != nil {
-		// 	zap.L().Error("Cannot get permissions", zap.Error(err))
-		// 	render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
-		// 	return
-		// }
-
 		up := users.UserWithPermissions{
 			User:        user,
 			Roles:       roles,
 			Permissions: userPermissions,
 		}
-
-		// gr, err := groups.R().GetGroupsOfUser(user.ID)
-		// if err != nil {
-		// 	zap.L().Error("Find Groups", zap.Error(err))
-		// 	render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
-		// 	return
-		// }
-
-		// ug := groups.UserWithGroups{
-		// 	User:   user,
-		// 	Groups: gr,
-		// }
 
 		loggerR := r.Context().Value(models.ContextKeyLoggerR)
 		if loggerR != nil {
