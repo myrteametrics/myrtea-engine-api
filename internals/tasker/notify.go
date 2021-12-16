@@ -3,11 +3,7 @@ package tasker
 import (
 	"errors"
 	"fmt"
-	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier/notification"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"go.uber.org/zap"
 )
 
@@ -77,23 +73,24 @@ func (task NotifyTask) Perform(key string, context ContextData) error {
 
 	zap.L().Debug("Perform NotifyTask")
 
-	s, found, err := situation.R().Get(int64(context.SituationID))
-	if err != nil {
-		return err
-	}
-	if !found {
-		return fmt.Errorf("Invalid situation ID or groups not found within the situation")
-	}
-	notif := notification.NewMockNotification(task.Level, s.Name, task.Name, task.Description,
-		time.Now().Truncate(1*time.Millisecond).UTC(), nil, task.Context)
-	notif.Type = "generic"
+	// TODO: find another way to send notification to a specific "population" after permission system refactoring
+	// s, found, err := situation.R().Get(int64(context.SituationID))
+	// if err != nil {
+	// 	return err
+	// }
+	// if !found {
+	// 	return fmt.Errorf("Invalid situation ID or groups not found within the situation")
+	// }
+	// notif := notification.NewMockNotification(task.Level, s.Name, task.Name, task.Description,
+	// 	time.Now().Truncate(1*time.Millisecond).UTC(), nil, task.Context)
+	// notif.Type = "generic"
 
-	timeout, err := time.ParseDuration(task.Timeout)
-	if err != nil {
-		return err
-	}
+	// timeout, err := time.ParseDuration(task.Timeout)
+	// if err != nil {
+	// 	return err
+	// }
 
-	notifier.C().SendToGroups(key, timeout, notif, s.Groups)
+	// notifier.C().SendToRoles(key, timeout, notif, s.Groups)
 
 	return nil
 }

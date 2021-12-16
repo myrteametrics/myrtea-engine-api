@@ -9,7 +9,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/connector"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
 )
 
@@ -54,11 +54,11 @@ func TestGetlastConnectorExecutionDateTime(t *testing.T) {
 	logConnectorExecution(t, db, "connector_2", "connection_1", ts1, false)
 	logConnectorExecution(t, db, "connector_2", "connection_2", ts1, false)
 
-	rr := tests.BuildTestHandler(t, "GET", "/connector/connector_1/executions/last?successOnly=true", "", "/connector/{id}/executions/last", GetlastConnectorExecutionDateTime, groups.UserWithGroups{})
+	rr := tests.BuildTestHandler(t, "GET", "/connector/connector_1/executions/last?successOnly=true", "", "/connector/{id}/executions/last", GetlastConnectorExecutionDateTime, users.UserWithPermissions{})
 	tests.CheckTestHandler(t, rr, http.StatusOK, string(expectedResult)+"\n")
 	t.Log(rr.Body.String())
 
-	rr = tests.BuildTestHandler(t, "GET", "/connector/connector_2/executions/last?successOnly=true", "", "/connector/{id}/executions/last", GetlastConnectorExecutionDateTime, groups.UserWithGroups{})
+	rr = tests.BuildTestHandler(t, "GET", "/connector/connector_2/executions/last?successOnly=true", "", "/connector/{id}/executions/last", GetlastConnectorExecutionDateTime, users.UserWithPermissions{})
 	tests.CheckTestHandler(t, rr, http.StatusOK, string(expectedResult)+"\n")
 	t.Log(rr.Body.String())
 
@@ -68,11 +68,11 @@ func TestGetlastConnectorExecutionDateTime(t *testing.T) {
 	}
 	expectedResult, _ = json.Marshal(expectedMap)
 
-	rr = tests.BuildTestHandler(t, "GET", "/connector/connector_1/executions/last", "", "/connector/{id}/executions/last", GetlastConnectorExecutionDateTime, groups.UserWithGroups{})
+	rr = tests.BuildTestHandler(t, "GET", "/connector/connector_1/executions/last", "", "/connector/{id}/executions/last", GetlastConnectorExecutionDateTime, users.UserWithPermissions{})
 	tests.CheckTestHandler(t, rr, http.StatusOK, string(expectedResult)+"\n")
 	t.Log(rr.Body.String())
 
-	rr = tests.BuildTestHandler(t, "GET", "/connector/connector_2/executions/last?successOnly=false", "", "/connector/{id}/executions/last", GetlastConnectorExecutionDateTime, groups.UserWithGroups{})
+	rr = tests.BuildTestHandler(t, "GET", "/connector/connector_2/executions/last?successOnly=false", "", "/connector/{id}/executions/last", GetlastConnectorExecutionDateTime, users.UserWithPermissions{})
 	tests.CheckTestHandler(t, rr, http.StatusOK, string(expectedResult)+"\n")
 	t.Log(rr.Body.String())
 }

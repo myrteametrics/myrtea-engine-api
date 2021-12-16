@@ -12,7 +12,7 @@ import (
 
 const table = "users_v4"
 
-var fields = []string{"id", "login", "password", "created", "last_name", "first_name", "email", "phone"}
+var fields = []string{"id", "login", "created", "last_name", "first_name", "email", "phone"}
 
 // PostgresRepository is a repository containing the user users data based on a PSQL database and
 // implementing the repository interface
@@ -169,7 +169,7 @@ func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
 func (r *PostgresRepository) scanFirst(rows *sql.Rows) (User, bool, error) {
 	if rows.Next() {
 		user, err := r.scan(rows)
-		return user, err == nil, nil
+		return user, err == nil, err
 	}
 	return User{}, false, nil
 }
@@ -199,7 +199,7 @@ func (r *PostgresRepository) checkRowAffected(result sql.Result, nbRows int64) e
 
 func (r *PostgresRepository) scan(rows *sql.Rows) (User, error) {
 	user := User{}
-	err := rows.Scan(&user.ID, &user.Login, &user.LastName, &user.FirstName, &user.Email, &user.Phone)
+	err := rows.Scan(&user.ID, &user.Login, &user.Created, &user.LastName, &user.FirstName, &user.Email, &user.Phone)
 	if err != nil {
 		return User{}, errors.New("Couldn't scan the retrieved data: " + err.Error())
 	}

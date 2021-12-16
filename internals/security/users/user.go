@@ -3,6 +3,7 @@ package users
 import (
 	"errors"
 	"strconv"
+	"time"
 
 	uuid "github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
@@ -13,6 +14,7 @@ import (
 type User struct {
 	ID        uuid.UUID `json:"id"`
 	Login     string    `json:"login"`
+	Created   time.Time `json:"created"`
 	LastName  string    `json:"lastName"`
 	FirstName string    `json:"firstName"`
 	Email     string    `json:"email"`

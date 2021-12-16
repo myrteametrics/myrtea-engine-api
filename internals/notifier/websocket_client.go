@@ -3,7 +3,7 @@ package notifier
 import (
 	"net/http"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	uuid "github.com/satori/go.uuid"
 	"go.uber.org/zap"
 
@@ -18,7 +18,7 @@ type WebsocketClient struct {
 }
 
 // NewWebsocketClient creates a new client object containing the new connection
-func NewWebsocketClient(conn *websocket.Conn, user *groups.UserWithGroups) *WebsocketClient {
+func NewWebsocketClient(conn *websocket.Conn, user *users.UserWithPermissions) *WebsocketClient {
 	return &WebsocketClient{
 		GenericClient: GenericClient{
 			ID:   uuid.NewV4().String(),
@@ -37,7 +37,7 @@ var upgrader = &websocket.Upgrader{
 }
 
 // BuildWebsocketClient renders a new client after getting a new connection established
-func BuildWebsocketClient(w http.ResponseWriter, r *http.Request, user *groups.UserWithGroups) (*WebsocketClient, error) {
+func BuildWebsocketClient(w http.ResponseWriter, r *http.Request, user *users.UserWithPermissions) (*WebsocketClient, error) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return nil, err

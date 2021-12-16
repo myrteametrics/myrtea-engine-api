@@ -147,7 +147,7 @@ func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
 func (r *PostgresRepository) scanFirst(rows *sql.Rows) (Permission, bool, error) {
 	if rows.Next() {
 		permission, err := r.scan(rows)
-		return permission, err == nil, nil
+		return permission, err == nil, err
 	}
 	return Permission{}, false, nil
 }

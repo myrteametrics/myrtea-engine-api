@@ -114,7 +114,7 @@ func (r *PostgresRepository) GetAllForUser(userUUID uuid.UUID) ([]Role, error) {
 	rows, err := r.newStatement().
 		Select(fields...).
 		From(table).
-		InnerJoin("users_roles_v4 on roles_v4.user_id = users_roles_v4.user_id").
+		InnerJoin("users_roles_v4 on roles_v4.id = users_roles_v4.role_id").
 		Where("users_roles_v4.user_id = ?", userUUID).
 		Query()
 	if err != nil {
@@ -161,7 +161,7 @@ func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
 func (r *PostgresRepository) scanFirst(rows *sql.Rows) (Role, bool, error) {
 	if rows.Next() {
 		role, err := r.scan(rows)
-		return role, err == nil, nil
+		return role, err == nil, err
 	}
 	return Role{}, false, nil
 }
