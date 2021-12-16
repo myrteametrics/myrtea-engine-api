@@ -7,9 +7,6 @@ import (
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier/notification"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"go.uber.org/zap"
 )
 
@@ -90,25 +87,27 @@ func (task CreateIssueTask) Perform(key string, context ContextData) error {
 		return err
 	}
 
-	if issueID > 0 && task.IsNotification {
-		ctx := map[string]interface{}{"issueId": issueID}
+	_ = issueID
+	// TODO: find another way to send notification to a specific "population" after permission system refactoring
+	// if issueID > 0 && task.IsNotification {
+	// 	ctx := map[string]interface{}{"issueId": issueID}
 
-		s, found, err := situation.R().Get(int64(context.SituationID))
-		if err != nil {
-			return err
-		}
-		if !found {
-			return fmt.Errorf("Invalid situation ID or groups not found within the situation")
-		}
+	// 	s, found, err := situation.R().Get(int64(context.SituationID))
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if !found {
+	// 		return fmt.Errorf("Invalid situation ID or groups not found within the situation")
+	// 	}
 
-		//notification description no needed
-		description := ""
-		notif := notification.NewMockNotification(task.Level, "", task.Name, description,
-			time.Now().Truncate(1*time.Millisecond).UTC(), nil, ctx)
-		notif.Type = "case"
+	// 	//notification description no needed
+	// 	description := ""
+	// 	notif := notification.NewMockNotification(task.Level, "", task.Name, description,
+	// 		time.Now().Truncate(1*time.Millisecond).UTC(), nil, ctx)
+	// 	notif.Type = "case"
 
-		notifier.C().SendToGroups(key, timeoutDuration, notif, s.Groups)
-	}
+	// 	notifier.C().SendToRoles(key, timeoutDuration, notif, s.Groups)
+	// }
 
 	return nil
 }

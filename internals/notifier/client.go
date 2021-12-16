@@ -1,10 +1,11 @@
 package notifier
 
-import "github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+// import "github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+import "github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 
 // Client is used as an abstract notifier client, which could use SSE or WS implementations
 type Client interface {
-	GetUser() *groups.UserWithGroups
+	GetUser() *users.UserWithPermissions
 	GetSendChannel() chan []byte
 	Read()
 	Write()
@@ -14,7 +15,7 @@ type Client interface {
 type GenericClient struct {
 	ID   string
 	Send chan []byte
-	User *groups.UserWithGroups
+	User *users.UserWithPermissions
 }
 
 // GetSendChannel returns Send channel
@@ -23,6 +24,6 @@ func (c *GenericClient) GetSendChannel() chan []byte {
 }
 
 // GetUser returns current client user
-func (c *GenericClient) GetUser() *groups.UserWithGroups {
+func (c *GenericClient) GetUser() *users.UserWithPermissions {
 	return c.User
 }

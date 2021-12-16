@@ -8,7 +8,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"go.uber.org/zap"
 )
 
@@ -63,7 +62,7 @@ func (r *PostgresRepository) Get(id int64) (Situation, bool, error) {
 	situation.ID = id
 
 	//Need to delete at any get of situation the universal token group
-	situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
+	// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
 
 	return situation, true, nil
 }
@@ -104,24 +103,24 @@ func (r *PostgresRepository) GetByName(name string) (Situation, bool, error) {
 	situation.ID = id
 
 	//Need to delete at any get of situation the universal token group
-	situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
+	// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
 
 	return situation, true, nil
 }
 
 // Create creates a new situation in the database using the given situation object
 func (r *PostgresRepository) Create(situation Situation) (int64, error) {
-	isAllGroup := false
-	for _, group := range situation.Groups {
-		if group == groups.AllGroups {
-			zap.L().Error("Situation shouldn't have the universal token group")
-			isAllGroup = true
-		}
-	}
+	// isAllGroup := false
+	// for _, group := range situation.Groups {
+	// 	if group == groups.AllGroups {
+	// 		zap.L().Error("Situation shouldn't have the universal token group")
+	// 		isAllGroup = true
+	// 	}
+	// }
 
-	if !isAllGroup {
-		situation.Groups = append(situation.Groups, groups.AllGroups)
-	}
+	// if !isAllGroup {
+	// 	situation.Groups = append(situation.Groups, groups.AllGroups)
+	// }
 
 	situationData, err := json.Marshal(situation)
 	if err != nil {
@@ -371,7 +370,7 @@ func (r *PostgresRepository) GetSituationsByFactID(factID int64, ignoreIsObject 
 		situation.ID = situationID
 
 		//Need to delete at any get of situation the universal token group
-		situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
+		// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
 
 		situations = append(situations, situation)
 	}
@@ -473,7 +472,7 @@ func parseAllRows(rows *sqlx.Rows) (map[int64]Situation, error) {
 		situation.ID = situationID
 
 		//Need to delete at any get of situation the universal token group
-		situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
+		// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
 
 		situations[situation.ID] = situation
 	}

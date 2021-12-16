@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -15,7 +15,7 @@ type SSEClient struct {
 }
 
 // BuildSSEClient build and returns a new SSEClient
-func BuildSSEClient(w http.ResponseWriter, user *groups.UserWithGroups) (*SSEClient, error) {
+func BuildSSEClient(w http.ResponseWriter, user *users.UserWithPermissions) (*SSEClient, error) {
 	return &SSEClient{
 		GenericClient: GenericClient{
 			ID:   uuid.NewV4().String(),

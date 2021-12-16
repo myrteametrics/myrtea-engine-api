@@ -9,7 +9,8 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/rootcause"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+
+	// "github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/modeler"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier/notification"
@@ -32,7 +33,7 @@ func initRepositories() {
 	users.ReplaceGlobals(users.NewPostgresRepository(dbClient))
 	roles.ReplaceGlobals(roles.NewPostgresRepository(dbClient))
 	permissions.ReplaceGlobals(permissions.NewPostgresRepository(dbClient))
-	groups.ReplaceGlobals(groups.NewPostgresRepository(dbClient))
+	// groups.ReplaceGlobals(groups.NewPostgresRepository(dbClient))
 	fact.ReplaceGlobals(fact.NewPostgresRepository(dbClient))
 	situation.ReplaceGlobals(situation.NewPostgresRepository(dbClient))
 	scheduler.ReplaceGlobalRepository(scheduler.NewPostgresRepository(dbClient))

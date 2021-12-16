@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/dbutils"
@@ -27,7 +28,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Create creates a new Notification definition in the repository
-func (r *PostgresRepository) Create(groups []int64, notif Notification) (int64, error) {
+func (r *PostgresRepository) Create(roles []uuid.UUID, notif Notification) (int64, error) {
 
 	data, err := json.Marshal(notif)
 	if err != nil {
@@ -35,9 +36,9 @@ func (r *PostgresRepository) Create(groups []int64, notif Notification) (int64, 
 	}
 
 	ts := time.Now().Truncate(1 * time.Millisecond).UTC()
-	query := `INSERT INTO notifications_history_v1 (id, groups, data, created_at) VALUES (DEFAULT, :groups, :data, :created_at) RETURNING id`
+	query := `INSERT INTO notifications_history_v1 (id, groups, data, created_at) VALUES (DEFAULT, :roles, :data, :created_at) RETURNING id`
 	params := map[string]interface{}{
-		"groups":     pq.Array(groups),
+		"roles":      pq.Array(roles),
 		"data":       data,
 		"created_at": ts,
 	}
@@ -101,16 +102,16 @@ func (r *PostgresRepository) Get(id int64) *FrontNotification {
 	return nil
 }
 
-// GetByGroups returns all notifications related to a certain list of groups
-func (r *PostgresRepository) GetByGroups(groupIds []int64, queryOptionnal dbutils.DBQueryOptionnal) ([]FrontNotification, error) {
-	if groupIds == nil || len(groupIds) < 1 {
-		return nil, errors.New("Should pass at least one group id")
+// GetByRoles returns all notifications related to a certain list of roles
+func (r *PostgresRepository) GetByRoles(roleIds []uuid.UUID, queryOptionnal dbutils.DBQueryOptionnal) ([]FrontNotification, error) {
+	if roleIds == nil || len(roleIds) < 1 {
+		return nil, errors.New("should pass at least one role id")
 	}
 
 	// TODO: "ORDER BY" should be an option in dbutils.DBQueryOptionnal
-	query := `SELECT id, data, isread FROM notifications_history_v1 WHERE groups && :groups`
+	query := `SELECT id, data, isread FROM notifications_history_v1 WHERE groups && :roles`
 	params := map[string]interface{}{
-		"groups": pq.Array(groupIds),
+		"roles": pq.Array(roleIds),
 	}
 	if queryOptionnal.MaxAge > 0 {
 		query += ` AND created_at > :created_at`
@@ -128,7 +129,7 @@ func (r *PostgresRepository) GetByGroups(groupIds []int64, queryOptionnal dbutil
 
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
-		return nil, errors.New("Couldn't retrieve any notification with these groups. The query is equal to: " + err.Error())
+		return nil, errors.New("Couldn't retrieve any notification with these roles. The query is equal to: " + err.Error())
 	}
 	defer rows.Close()
 

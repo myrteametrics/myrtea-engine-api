@@ -18,18 +18,8 @@ func adminRouter() http.Handler {
 	r.Post("/security/users", handlers.PostUser)
 	r.Put("/security/users/{id}", handlers.PutUser)
 	r.Delete("/security/users/{id}", handlers.DeleteUser)
+	// r.Get("/security/users/{id}/roles", handlers.GetUserRoles)
 	r.Put("/security/users/{id}/roles", handlers.SetUserRoles)
-
-	// r.Get("/security/groups", handlers.GetGroups)
-	// r.Get("/security/groups/{id}", handlers.GetGroup)
-	// r.Post("/security/groups/validate", handlers.ValidateGroup)
-	// r.Post("/security/groups", handlers.PostGroup)
-	// r.Put("/security/groups/{id}", handlers.PutGroup)
-	// r.Delete("/security/groups/{id}", handlers.DeleteGroup)
-
-	// r.Get("/security/groups/{groupid}/users", handlers.GetUsersOfGroup)
-	// r.Put("/security/groups/{groupid}/users/{userid}", handlers.PutMembership)
-	// r.Delete("/security/groups/{groupid}/users/{userid}", handlers.DeleteMembership)
 
 	r.Get("/security/roles", handlers.GetRoles)
 	r.Get("/security/roles/{id}", handlers.GetRole)
@@ -37,6 +27,7 @@ func adminRouter() http.Handler {
 	r.Post("/security/roles", handlers.PostRole)
 	r.Put("/security/roles/{id}", handlers.PutRole)
 	r.Delete("/security/roles/{id}", handlers.DeleteRole)
+	r.Get("/security/roles/{id}/permissions", handlers.GetRolePermissions)
 	r.Put("/security/roles/{id}/permissions", handlers.SetRolePermissions)
 
 	r.Get("/security/permissions", handlers.GetPermissions)

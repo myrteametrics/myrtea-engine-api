@@ -5,11 +5,12 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
+	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/dbutils"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier/notification"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"go.uber.org/zap"
 )
 
@@ -27,6 +28,7 @@ import (
 // @Router /engine/notifications [get]
 func GetNotifications(w http.ResponseWriter, r *http.Request) {
 
+	// FIXME: DON'T FORGET TO FIX THIS !
 	maxAge, err := ParseDuration(r.URL.Query().Get("maxage"))
 	if err != nil {
 		zap.L().Warn("Parse duration input maxage", zap.Error(err), zap.String("rawMaxAge", r.URL.Query().Get("maxage")))
@@ -53,11 +55,11 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 		zap.L().Warn("No context user provided")
 		return
 	}
-	user := _user.(groups.UserWithGroups)
+	user := _user.(users.UserWithPermissions)
 
-	groupsID := make([]int64, 0)
-	for _, group := range user.Groups {
-		groupsID = append(groupsID, group.ID)
+	roleIDs := make([]uuid.UUID, 0)
+	for _, role := range user.Roles {
+		roleIDs = append(roleIDs, role.ID)
 	}
 
 	queryOptionnal := dbutils.DBQueryOptionnal{
@@ -65,7 +67,7 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 		Offset: offset,
 		MaxAge: maxAge,
 	}
-	notifications, err := notification.R().GetByGroups(groupsID, queryOptionnal)
+	notifications, err := notification.R().GetByRoles(roleIDs, queryOptionnal)
 	if err != nil {
 		zap.L().Error("Error getting notifications", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)

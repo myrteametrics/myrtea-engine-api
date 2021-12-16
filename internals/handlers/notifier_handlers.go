@@ -1,15 +1,12 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
-	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier/notification"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"go.uber.org/zap"
 )
 
@@ -32,7 +29,7 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 		zap.L().Warn("No context user provided")
 		return
 	}
-	user := _user.(groups.UserWithGroups)
+	user := _user.(users.UserWithPermissions)
 
 	client, err := notifier.BuildWebsocketClient(w, r, &user)
 	if err != nil {
@@ -46,6 +43,7 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	go client.Write()
+
 	// go client.Read() // Disabled until proper usage
 }
 
@@ -68,7 +66,7 @@ func NotificationsSSERegister(w http.ResponseWriter, r *http.Request) {
 		zap.L().Warn("No context user provided")
 		return
 	}
-	user := _user.(groups.UserWithGroups)
+	user := _user.(users.UserWithPermissions)
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
@@ -121,18 +119,18 @@ func NotificationsSSERegister(w http.ResponseWriter, r *http.Request) {
 // @Router /engine/notifications/trigger [post]
 func TriggerNotification(w http.ResponseWriter, r *http.Request) {
 
-	cacheKey := r.URL.Query().Get("key")
+	// cacheKey := r.URL.Query().Get("key")
 
-	var notif notification.MockNotification
-	err := json.NewDecoder(r.Body).Decode(&notif)
-	if err != nil {
-		zap.L().Warn("Notification json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
-		return
-	}
-	notif.CreationDate = time.Now().Truncate(1 * time.Millisecond).UTC()
+	// var notif notification.MockNotification
+	// err := json.NewDecoder(r.Body).Decode(&notif)
+	// if err != nil {
+	// 	zap.L().Warn("Notification json decode", zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+	// 	return
+	// }
+	// notif.CreationDate = time.Now().Truncate(1 * time.Millisecond).UTC()
 
-	notifier.C().SendToGroups(cacheKey, 1*time.Second, notif, notif.Groups)
+	// notifier.C().SendToRoles(cacheKey, 1*time.Second, notif, notif.Groups)
 
 	render.OK(w, r)
 }

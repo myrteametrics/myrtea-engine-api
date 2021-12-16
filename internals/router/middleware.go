@@ -40,14 +40,14 @@ func UnverifiedAuthenticator(next http.Handler) http.Handler {
 		}
 		if tokenStr == "" {
 			zap.L().Warn("No JWT string found in request")
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Missing JWT"))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("missing JWT"))
 			return
 		}
 
 		token, _, err := parser.ParseUnverified(tokenStr, jwt.MapClaims{})
 		if err != nil {
 			zap.L().Warn("JWT string cannot be parsed") // , zap.String("jwt", tokenStr)) // Security issue if logged without check ?
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Invalid JWT"))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
 			return
 		}
 		ctx = jwtauth.NewContext(ctx, token, err)
@@ -61,36 +61,35 @@ func ContextMiddleware(next http.Handler) http.Handler {
 		_, claims, err := jwtauth.FromContext(r.Context())
 		if err != nil {
 			zap.L().Warn("Get JWT infos from context", zap.Error(err))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Invalid JWT"))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
 			return
 		}
 
 		rawUserID := claims["id"]
 		if rawUserID == nil {
 			zap.L().Warn("Token found without user ID", zap.Any("claims", claims))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Invalid JWT"))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
 			return
 		}
-		// userID := int64(rawUserID.(float64))
+
 		userID, _ := uuid.Parse(rawUserID.(string))
 
 		user, found, err := users.R().Get(userID)
 		if err != nil {
 			zap.L().Error("Cannot get user", zap.Error(err))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal Error"))
 			return
 		}
 		if !found {
 			zap.L().Error("User not found", zap.String("userID", rawUserID.(string)))
-			// zap.L().Error("User not found", zap.Int64("id", userID))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Invalid JWT"))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
 			return
 		}
 
 		roles, err := roles.R().GetAllForUser(user.ID)
 		if err != nil {
 			zap.L().Error("Find Roles", zap.Error(err))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal Error"))
 			return
 		}
 
@@ -102,7 +101,7 @@ func ContextMiddleware(next http.Handler) http.Handler {
 		userPermissions, err := permissions.R().GetAllForRoles(userRoleUUIDs)
 		if err != nil {
 			zap.L().Error("Cannot get permissions", zap.Error(err))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal Error"))
 			return
 		}
 
@@ -114,7 +113,7 @@ func ContextMiddleware(next http.Handler) http.Handler {
 
 		loggerR := r.Context().Value(models.ContextKeyLoggerR)
 		if loggerR != nil {
-			gorillacontext.Set(loggerR.(*http.Request), models.UserLogin, fmt.Sprintf("%s(%d)", up.User.Login, up.User.ID))
+			gorillacontext.Set(loggerR.(*http.Request), models.UserLogin, fmt.Sprintf("%s(%s)", up.User.Login, up.User.ID))
 		}
 
 		ctx := context.WithValue(r.Context(), models.ContextKeyUser, up)
