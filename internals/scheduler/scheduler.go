@@ -25,17 +25,19 @@ var (
 // S is used to access the global fact scheduler singleton
 func S() *InternalScheduler {
 	_globalInternalSchedulerMu.RLock()
+	defer _globalInternalSchedulerMu.RUnlock()
+
 	factScheduler := _globalInternalScheduler
-	_globalInternalSchedulerMu.RUnlock()
 	return factScheduler
 }
 
 // ReplaceGlobals affect a new repository to the global fact scheduler singleton
 func ReplaceGlobals(scheduler *InternalScheduler) func() {
 	_globalInternalSchedulerMu.Lock()
+	defer _globalInternalSchedulerMu.Unlock()
+
 	prev := _globalInternalScheduler
 	_globalInternalScheduler = scheduler
-	_globalInternalSchedulerMu.Unlock()
 	return func() { ReplaceGlobals(prev) }
 }
 
@@ -95,21 +97,24 @@ func (s *InternalScheduler) Init() error {
 // ExistingRunningJob check if a job is already running
 func (s *InternalScheduler) ExistingRunningJob(scheduleID int64) bool {
 	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	_, ok := s.runningJobs[scheduleID]
-	s.mu.RUnlock()
 	return ok
 }
 
 // AddRunningJob add a job ID to the running job list
 func (s *InternalScheduler) AddRunningJob(scheduleID int64) {
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.runningJobs[scheduleID] = true
-	s.mu.Unlock()
 }
 
 // RemoveRunningJob remove a job ID to the running job list
 func (s *InternalScheduler) RemoveRunningJob(scheduleID int64) {
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	delete(s.runningJobs, scheduleID)
-	s.mu.Unlock()
 }

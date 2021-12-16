@@ -26,16 +26,18 @@ var (
 // R is used to access the global repository singleton
 func R() Repository {
 	_globalRepositoryMu.RLock()
+	defer _globalRepositoryMu.RUnlock()
+
 	repository := _globalRepository
-	_globalRepositoryMu.RUnlock()
 	return repository
 }
 
 // ReplaceGlobals affects a new repository to the global repository singleton
 func ReplaceGlobals(repository Repository) func() {
 	_globalRepositoryMu.Lock()
+	defer _globalRepositoryMu.Unlock()
+
 	prev := _globalRepository
 	_globalRepository = repository
-	_globalRepositoryMu.Unlock()
 	return func() { ReplaceGlobals(prev) }
 }

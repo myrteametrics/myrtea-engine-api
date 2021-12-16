@@ -23,35 +23,69 @@ func ApplyTasks(batch TaskBatch) (err error) {
 		switch action.GetName() {
 		case "set":
 			persistTask.addData(action.GetParameters(), buildContextData(action.GetMetaData(), batch.Context))
+
 		case "create-issue":
 			task, err := buildCreateIssueTask(action.GetParameters())
 			if err != nil {
 				zap.L().Warn("Error building CreateIssueTask: ", zap.Any("Parameters:", action.GetParameters()), zap.Error(err))
 				continue
 			}
+
 			taskContext := buildContextData(action.GetMetaData(), batch.Context)
-			task.Perform(buildTaskKey(taskContext, task), taskContext)
+			err = task.Perform(buildTaskKey(taskContext, task), taskContext)
+			if err != nil {
+				zap.L().Warn("Error while performing task CreateIssueTask", zap.Error(err))
+			}
+
 		case "close-today-issues":
 			task, err := buildCloseTodayIssuesTask(action.GetParameters())
 			if err != nil {
 				zap.L().Warn("Error building CloseTodayIssuesTask: ", zap.Any("Parameters:", action.GetParameters()), zap.Error(err))
 				continue
 			}
+
 			taskContext := buildContextData(action.GetMetaData(), batch.Context)
-			task.Perform(buildTaskKey(taskContext, task), taskContext)
+			err = task.Perform(buildTaskKey(taskContext, task), taskContext)
+			if err != nil {
+				zap.L().Warn("Error while performing task CloseTodayIssuesTask", zap.Error(err))
+			}
+
 		case "notify":
 			task, err := buildNotifyTask(action.GetParameters())
 			if err != nil {
 				zap.L().Warn("Error building NotifyTask: ", zap.Any("Parameters:", action.GetParameters()), zap.Error(err))
 				continue
 			}
+
 			taskContext := buildContextData(action.GetMetaData(), batch.Context)
-			task.Perform(buildTaskKey(taskContext, task), taskContext)
+			err = task.Perform(buildTaskKey(taskContext, task), taskContext)
+			if err != nil {
+				zap.L().Warn("Error while performing task NotifyTask", zap.Error(err))
+			}
+
+		case "situation-reporting":
+			task, err := buildSituationReportingTask(action.GetParameters())
+			if err != nil {
+				zap.L().Warn("Error building SituationReportingTask: ", zap.Any("Parameters:", action.GetParameters()), zap.Error(err))
+				continue
+			}
+
+			taskContext := buildContextData(action.GetMetaData(), batch.Context)
+			err = task.Perform(buildTaskKey(taskContext, task), taskContext)
+			if err != nil {
+				zap.L().Warn("Error while performing task SituationReportingTask", zap.Error(err))
+			}
+
 		default:
 			continue
 		}
 	}
-	persistTask.Perform("", buildContextData(batch.Context))
+	if len(persistTask.Data) > 0 {
+		err = persistTask.Perform("", buildContextData(batch.Context))
+		if err != nil {
+			zap.L().Warn("Error while performing task xxxx", zap.Error(err))
+		}
+	}
 
 	return nil
 }
