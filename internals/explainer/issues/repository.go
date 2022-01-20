@@ -20,7 +20,8 @@ type Repository interface {
 	GetByStateByPage(issuesStates []string, options models.SearchOptions, groups []int64) ([]models.Issue, int, error)
 	GetCloseToTimeoutByKey(key string, firstSituationTS time.Time) (map[int64]models.Issue, error)
 	GetAll(groups []int64) (map[int64]models.Issue, error)
-	ChangeState(key string, fromStates []models.IssueState, toState models.IssueState, from time.Time, to time.Time) error
+	ChangeState(key string, fromStates []models.IssueState, toState models.IssueState) error
+	ChangeStateBetweenDates(key string, fromStates []models.IssueState, toState models.IssueState, from time.Time, to time.Time) error
 }
 
 var (
