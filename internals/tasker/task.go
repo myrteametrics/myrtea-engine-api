@@ -50,6 +50,19 @@ func ApplyTasks(batch TaskBatch) (err error) {
 				zap.L().Warn("Error while performing task CloseTodayIssuesTask", zap.Error(err))
 			}
 
+		case "close-all-issues":
+			task, err := buildCloseAllIssuesTask(action.GetParameters())
+			if err != nil {
+				zap.L().Warn("Error building CloseAllIssuesTask: ", zap.Any("Parameters:", action.GetParameters()), zap.Error(err))
+				continue
+			}
+
+			taskContext := buildContextData(action.GetMetaData(), batch.Context)
+			err = task.Perform(buildTaskKey(taskContext, task), taskContext)
+			if err != nil {
+				zap.L().Warn("Error while performing task CloseAllIssuesTask", zap.Error(err))
+			}
+
 		case "notify":
 			task, err := buildNotifyTask(action.GetParameters())
 			if err != nil {

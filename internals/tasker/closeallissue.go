@@ -3,17 +3,17 @@ package tasker
 import (
 	"errors"
 	"fmt"
-	"time"
+	"strings"
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"go.uber.org/zap"
 )
 
-//CloseAllIssuesTask struct for close issues created in the current day from the BRMS
+//CloseAllIssuesTask struct for close issues created from the BRMS
 type CloseAllIssuesTask struct {
-	ID       string `json:"id"`
-	TimeZone string `json:"timeZone"`
+	ID            string `json:"id"`
+	StatesToClose string `json:"statesToClose"`
 }
 
 func buildCloseAllIssuesTask(parameters map[string]interface{}) (CloseAllIssuesTask, error) {
@@ -25,12 +25,10 @@ func buildCloseAllIssuesTask(parameters map[string]interface{}) (CloseAllIssuesT
 		return task, errors.New("Missing or not valid 'id' parameter (string not empty required)")
 	}
 
-	if val, ok := parameters["timeZone"].(string); ok && val != "" {
-		task.TimeZone = val
-		_, err := time.LoadLocation(task.TimeZone)
-		if err != nil {
-			return task, errors.New("Invalid time zone")
-		}
+	if val, ok := parameters["statesToClose"].(string); ok && val != "" {
+		task.StatesToClose = val
+	} else {
+		return task, errors.New("Missing or not valid 'statesToClose' parameter (at least 1 value (open, draft) required)")
 	}
 
 	return task, nil
@@ -49,11 +47,15 @@ func (task CloseAllIssuesTask) GetID() string {
 func (task CloseAllIssuesTask) Perform(key string, context ContextData) error {
 	zap.L().Debug("Perform close all issues")
 
-	"open,draft".split(',')
+	var states []models.IssueState
 
-	state := models.ToIssueState("open") // == models.Open
+	statesToClose := strings.Split(task.StatesToClose, ",")
 
-	err := issues.R().ChangeState(key, []models.IssueState{models.Open}, models.ClosedDiscard)
+	for _, s := range statesToClose {
+		states = append(states, models.ToIssueState(s))
+	}
+
+	err := issues.R().ChangeState(key, states, models.ClosedDiscard)
 	if err != nil {
 		return err
 	}

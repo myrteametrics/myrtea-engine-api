@@ -167,8 +167,11 @@ create table issues_v1 (
 	assigned_at timestamptz,
 	assigned_to varchar(100),
 	closed_at timestamptz,
-	closed_by varchar(100)
+	closed_by varchar(100),
+	comment text
 );
+--adding comment field manually
+--ALTER TABLE issues_v1 ADD COLUMN comment text;
 
 CREATE TABLE job_schedules_v1 (
 	id serial primary key,
