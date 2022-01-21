@@ -16,6 +16,7 @@ type Repository interface {
 	Get(id int64, groups []int64) (models.Issue, bool, error)
 	Create(issue models.Issue) (int64, error)
 	Update(tx *sqlx.Tx, id int64, issue models.Issue, user groups.UserWithGroups) error
+	UpdateIssueComment(dbClient *sqlx.DB, id int64, comment string, user groups.UserWithGroups) error
 	GetByStates(issueStates []string, groups []int64) (map[int64]models.Issue, error)
 	GetByStateByPage(issuesStates []string, options models.SearchOptions, groups []int64) ([]models.Issue, int, error)
 	GetCloseToTimeoutByKey(key string, firstSituationTS time.Time) (map[int64]models.Issue, error)

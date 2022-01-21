@@ -105,6 +105,65 @@ func (r *PostgresRepository) Create(issue models.Issue) (int64, error) {
 	return id, nil
 }
 
+//UpdateIssueComment method used to update an issue
+func (r *PostgresRepository) UpdateIssueComment(dbClient *sqlx.DB, id int64, comment string, user groups.UserWithGroups) error {
+	LastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
+
+	//Here we exclude some fields that are not to be updated
+	query := `UPDATE issues_v1 SET last_modified = :last_modified, comment = :comment`
+
+	query = query + ` WHERE id = :id`
+
+	params := map[string]interface{}{
+		"id":            id,
+		"last_modified": LastModificationTS,
+		"ts":            LastModificationTS,
+		"user":          user.Login,
+		"comment":       comment,
+	}
+
+	var res sql.Result
+	var err error
+	//var err2 error
+	//var rows int64
+	tx, err := dbClient.Beginx()
+	if err != nil {
+		return err
+	}
+
+	if tx != nil {
+		res, err = tx.NamedExec(query, params)
+		//zap.L().Info("update comment query ", zap.Any("query", query), zap.Any("params", params))
+		//rows, err2 = res.RowsAffected()
+		//if err2 == nil {
+		//	zap.L().Info("update comment ", zap.Any("rows", rows))
+		//}
+
+	} else {
+		res, err = r.conn.NamedExec(query, params)
+	}
+
+	if err != nil {
+		return errors.New("Couldn't query the database:" + err.Error())
+	}
+
+	i, err := res.RowsAffected()
+	if err != nil {
+		return errors.New("Error with the affected res:" + err.Error())
+	}
+	if i != 1 {
+		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
 //Update method used to update an issue
 func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, user groups.UserWithGroups) error {
 	LastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
@@ -134,6 +193,7 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, u
 
 	var res sql.Result
 	var err error
+
 	if tx != nil {
 		res, err = tx.NamedExec(query, params)
 	} else {
