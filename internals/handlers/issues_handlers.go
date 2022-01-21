@@ -466,3 +466,23 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 
 	render.OK(w, r)
 }
+
+// UpdateIssueComment godoc
+// @Summary Update an issue comment
+// @Description Update an issue comment
+// @Tags Issues
+// @Accept json
+// @Produce json
+// @Param id path string true "Issue ID"
+// @Param reason body interface{} false "Comment to update"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Failure 500 "Status" internal server error"
+// @Router /engine/issues/{id}/comment [put]
+func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
+
+	// TODO
+
+	render.OK(w, r)
+}
