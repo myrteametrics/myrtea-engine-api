@@ -100,6 +100,7 @@ func engineRouter() http.Handler {
 	r.Post("/issues/{id}/draft", handlers.PostIssueDraft)
 	r.Post("/issues/{id}/close", handlers.PostIssueCloseWithoutFeedback)
 	r.Post("/issues/{id}/detection/feedback", handlers.PostIssueDetectionFeedback)
+	r.Put("/issues/{id}/comment", handlers.UpdateIssueComment)
 
 	r.Post("/scheduler/start", handlers.StartScheduler)
 	r.Post("/scheduler/trigger", handlers.TriggerJobSchedule)

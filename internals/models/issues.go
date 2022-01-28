@@ -89,6 +89,7 @@ type Issue struct {
 	AssignedTo         *string    `json:"assignedTo,omitempty"`
 	ClosedAt           *time.Time `json:"closedAt,omitempty"`
 	CloseBy            *string    `json:"closedBy,omitempty"`
+	Comment            *string    `json:"comment,omitempty"`
 }
 
 //RuleData rule identification

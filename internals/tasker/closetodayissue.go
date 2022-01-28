@@ -60,7 +60,7 @@ func (task CloseTodayIssuesTask) Perform(key string, context ContextData) error 
 	from := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	to := from.Add(24 * time.Hour)
 
-	err = issues.R().ChangeState(key, []models.IssueState{models.Open}, models.ClosedDiscard, from, to)
+	err = issues.R().ChangeStateBetweenDates(key, []models.IssueState{models.Open}, models.ClosedDiscard, from, to)
 
 	if err != nil {
 		return err

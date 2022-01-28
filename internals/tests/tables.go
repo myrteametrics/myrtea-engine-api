@@ -173,7 +173,8 @@ const (
 		assigned_at timestamptz,
 		assigned_to varchar(100),
 		closed_at timestamptz,
-		closed_by varchar(100)
+		closed_by varchar(100),
+		comment text
 	);`
 
 	// RefRootCauseDropTableV1 SQL statement for table drop

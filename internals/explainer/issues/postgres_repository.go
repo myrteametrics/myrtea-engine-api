@@ -34,7 +34,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 func (r *PostgresRepository) Get(id int64, groups []int64) (models.Issue, bool, error) {
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
-			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
+			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i
 	 		  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
 			  WHERE  i.id = :id and situation_definition_v1.groups && :groups`
@@ -64,15 +64,15 @@ func (r *PostgresRepository) Get(id int64, groups []int64) (models.Issue, bool, 
 //Create method used to create an issue
 func (r *PostgresRepository) Create(issue models.Issue) (int64, error) {
 	creationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
-	LastModificationTS := creationTS
+	lastModificationTS := creationTS
 
 	ruleData, err := json.Marshal(issue.Rule)
 	if err != nil {
 		return -1, err
 	}
 
-	query := `INSERT into issues_v1 (id, key, name, level, situation_id, situation_instance_id, situation_date, expiration_date, rule_data, state, created_at, last_modified, detection_rating_avg)
-			  values (DEFAULT, :key, :name, :level, :situation_id, :situation_instance_id, :situation_date, :expiration_date, :rule_data, :state, :created_at, :last_modified, :detection_rating_avg) RETURNING id`
+	query := `INSERT into issues_v1 (id, key, name, level, situation_id, situation_instance_id, situation_date, expiration_date, rule_data, state, created_at, last_modified, detection_rating_avg, comment)
+			  values (DEFAULT, :key, :name, :level, :situation_id, :situation_instance_id, :situation_date, :expiration_date, :rule_data, :state, :created_at, :last_modified, :detection_rating_avg, :comment) RETURNING id`
 	params := map[string]interface{}{
 		"key":                   issue.Key,
 		"name":                  issue.Name,
@@ -84,8 +84,9 @@ func (r *PostgresRepository) Create(issue models.Issue) (int64, error) {
 		"rule_data":             string(ruleData),
 		"state":                 issue.State.String(),
 		"created_at":            creationTS,
-		"last_modified":         LastModificationTS,
+		"last_modified":         lastModificationTS,
 		"detection_rating_avg":  -1,
+		"comment":               issue.Comment,
 	}
 
 	rows, err := r.conn.NamedQuery(query, params)
@@ -104,13 +105,41 @@ func (r *PostgresRepository) Create(issue models.Issue) (int64, error) {
 	return id, nil
 }
 
+//UpdateComment method used to update an issue
+func (r *PostgresRepository) UpdateComment(dbClient *sqlx.DB, id int64, comment string, user groups.UserWithGroups) error {
+	lastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
+
+	query := `UPDATE issues_v1 SET last_modified = :last_modified, comment = :comment WHERE id = :id`
+
+	params := map[string]interface{}{
+		"id":            id,
+		"last_modified": lastModificationTS,
+		"comment":       comment,
+	}
+
+	res, err := r.conn.NamedExec(query, params)
+	if err != nil {
+		return errors.New("Couldn't query the database:" + err.Error())
+	}
+
+	i, err := res.RowsAffected()
+	if err != nil {
+		return errors.New("Error with the affected res:" + err.Error())
+	}
+	if i != 1 {
+		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+	}
+
+	return nil
+}
+
 //Update method used to update an issue
 func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, user groups.UserWithGroups) error {
-	LastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
+	lastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
 	//Here we exclude some fields that are not to be updated
 	query := `UPDATE issues_v1 SET name = :name, expiration_date = :expiration_date,
-	state = :state, last_modified = :last_modified`
+	state = :state, last_modified = :last_modified, comment = :comment`
 
 	if issue.State == models.ClosedNoFeedback || issue.State == models.ClosedFeedback {
 		query = query + `, closed_at = :ts, closed_by = :user`
@@ -125,13 +154,15 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, u
 		"name":            issue.Name,
 		"expiration_date": issue.ExpirationTS,
 		"state":           issue.State.String(),
-		"last_modified":   LastModificationTS,
-		"ts":              LastModificationTS,
+		"last_modified":   lastModificationTS,
+		"ts":              lastModificationTS,
 		"user":            user.Login,
+		"comment":         issue.Comment,
 	}
 
 	var res sql.Result
 	var err error
+
 	if tx != nil {
 		res, err = tx.NamedExec(query, params)
 	} else {
@@ -158,7 +189,7 @@ func (r *PostgresRepository) GetByStates(issueStates []string, groups []int64) (
 
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
-			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
+			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i
 			  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
 			  WHERE  situation_definition_v1.groups && :groups `
@@ -196,7 +227,7 @@ func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS
 	//TODO: list of closed states should be provided and not hardcoded !!!
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
-			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
+			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i
 			  WHERE key = :key and :first_situation_date < expiration_date
 			  and NOT ( i.state = ANY ( :closed_states ))`
@@ -227,7 +258,7 @@ func (r *PostgresRepository) GetAll(groups []int64) (map[int64]models.Issue, err
 
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
-			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
+			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i
 			  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
 			  WHERE situation_definition_v1.groups && :groups`
@@ -251,8 +282,43 @@ func (r *PostgresRepository) GetAll(groups []int64) (map[int64]models.Issue, err
 }
 
 //ChangeState method used to change the issues state with key and created_date between from and to
-func (r *PostgresRepository) ChangeState(key string, fromStates []models.IssueState, toState models.IssueState, from time.Time, to time.Time) error {
-	LastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
+func (r *PostgresRepository) ChangeState(key string, fromStates []models.IssueState, toState models.IssueState) error {
+	lastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
+
+	//Here we exclude some fields that are not to be updated
+	query := `UPDATE issues_v1 SET state = :to_state, last_modified = :last_modified
+			  WHERE key = :key AND state = ANY ( :from_states )`
+
+	var states []string
+	for _, state := range fromStates {
+		states = append(states, state.String())
+	}
+
+	params := map[string]interface{}{
+		"key":           key,
+		"from_states":   pq.Array(states),
+		"to_state":      toState.String(),
+		"last_modified": lastModificationTS,
+	}
+
+	var res sql.Result
+	var err error
+	res, err = r.conn.NamedExec(query, params)
+
+	if err != nil {
+		return errors.New("Couldn't query the database:" + err.Error())
+	}
+
+	_, err = res.RowsAffected()
+	if err != nil {
+		return errors.New("Error with the affected res:" + err.Error())
+	}
+	return nil
+}
+
+//ChangeStateBetweenDates method used to change the issues state with key and created_date between from and to
+func (r *PostgresRepository) ChangeStateBetweenDates(key string, fromStates []models.IssueState, toState models.IssueState, from time.Time, to time.Time) error {
+	lastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
 	//Here we exclude some fields that are not to be updated
 	query := `UPDATE issues_v1 SET state = :to_state, last_modified = :last_modified
@@ -269,7 +335,7 @@ func (r *PostgresRepository) ChangeState(key string, fromStates []models.IssueSt
 		"to_state":      toState.String(),
 		"from":          from,
 		"to":            to,
-		"last_modified": LastModificationTS,
+		"last_modified": lastModificationTS,
 	}
 
 	var res sql.Result
@@ -291,18 +357,18 @@ func (r *PostgresRepository) ChangeState(key string, fromStates []models.IssueSt
 func (r *PostgresRepository) GetByStateByPage(issueStates []string, options models.SearchOptions, groups []int64) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
 
-	query := `SELECT issues_v1.id, issues_v1.key, issues_v1.name, issues_v1.level,
-		issues_v1.situation_id, situation_instance_id, issues_v1.situation_date,
-		issues_v1.expiration_date, issues_v1.rule_data, issues_v1.state, issues_v1.created_at, issues_v1.last_modified,
-		issues_v1.detection_rating_avg, issues_v1.assigned_at, issues_v1.assigned_to, issues_v1.closed_at, issues_v1.closed_by
-	FROM issues_v1
-			  inner join situation_definition_v1 on situation_definition_v1.id = issues_v1.situation_id
+	query := `SELECT i.id, i.key, i.name, i.level,
+		i.situation_id, situation_instance_id, i.situation_date,
+		i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
+		i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
+	FROM issues_v1 as i
+			  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
 			  WHERE situation_definition_v1.groups && :groups`
 	params := map[string]interface{}{
 		"groups": pq.Array(groups),
 	}
 	if len(issueStates) > 0 {
-		query += ` and issues_v1.state = ANY (:states)`
+		query += ` and i.state = ANY (:states)`
 		params["states"] = pq.Array(issueStates)
 	}
 	if len(options.SortBy) == 0 {
@@ -310,7 +376,7 @@ func (r *PostgresRepository) GetByStateByPage(issueStates []string, options mode
 	}
 
 	var err error
-	query, params, err = queryutils.AppendSearchOptions(query, params, options, "issues_v1")
+	query, params, err = queryutils.AppendSearchOptions(query, params, options, "i")
 	if err != nil {
 		return nil, 0, err
 	}
@@ -375,7 +441,7 @@ func scanIssue(rows *sqlx.Rows) (models.Issue, error) {
 
 	err := rows.Scan(&issue.ID, &issue.Key, &issue.Name, &issueLevelString, &issue.SituationID, &issue.TemplateInstanceID,
 		&issue.SituationTS, &issue.ExpirationTS, &ruleData, &issueStateString, &issue.CreationTS,
-		&issue.LastModificationTS, &issue.DetectionRatingAvg, &issue.AssignedAt, &issue.AssignedTo, &issue.ClosedAt, &issue.CloseBy)
+		&issue.LastModificationTS, &issue.DetectionRatingAvg, &issue.AssignedAt, &issue.AssignedTo, &issue.ClosedAt, &issue.CloseBy, &issue.Comment)
 	if err != nil {
 		return models.Issue{}, err
 	}
