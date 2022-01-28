@@ -508,9 +508,9 @@ func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//zap.L().Info("UpdateIssueComment", zap.String("comment", comment.Comment))
+	//zap.L().Info("UpdateComment", zap.String("comment", comment.Comment))
 
-	err = issues.R().UpdateIssueComment(postgres.DB(), idIssue, comment.Comment, *user)
+	err = issues.R().UpdateComment(postgres.DB(), idIssue, comment.Comment, *user)
 	if err != nil {
 		zap.L().Error("Cannot update issue comment", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
