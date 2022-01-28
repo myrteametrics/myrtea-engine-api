@@ -466,3 +466,56 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 
 	render.OK(w, r)
 }
+
+// UpdateIssueComment godoc
+// @Summary Update an issue comment
+// @Description Update an issue comment
+// @Tags Issues
+// @Accept json
+// @Produce json
+// @Param id path string true "Issue ID"
+// @Param reason body interface{} false "Comment to update"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Failure 500 "Status" internal server error"
+// @Router /engine/issues/{id}/comment [put]
+func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
+
+	user := GetUserFromContext(r)
+	if user == nil {
+		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+	idIssue, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	type IssueComment struct {
+		Comment string `json:"comment"`
+	}
+
+	var comment IssueComment
+	err = json.NewDecoder(r.Body).Decode(&comment)
+	if err != nil {
+		zap.L().Warn("Body decode", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	//zap.L().Info("UpdateComment", zap.String("comment", comment.Comment))
+
+	err = issues.R().UpdateComment(postgres.DB(), idIssue, comment.Comment, *user)
+	if err != nil {
+		zap.L().Error("Cannot update issue comment", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	render.OK(w, r)
+}
