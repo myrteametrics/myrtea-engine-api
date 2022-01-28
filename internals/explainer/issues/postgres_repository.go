@@ -114,8 +114,6 @@ func (r *PostgresRepository) UpdateComment(dbClient *sqlx.DB, id int64, comment 
 	params := map[string]interface{}{
 		"id":            id,
 		"last_modified": lastModificationTS,
-		"ts":            lastModificationTS,
-		"user":          user.Login,
 		"comment":       comment,
 	}
 
