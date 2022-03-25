@@ -138,7 +138,7 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 	defer rows.Close()
 
 	result := make(QueryResult, 0)
-	mapResult := make(mapResult, 0)
+	mapResult := make(mapResult)
 
 	rawSituationRecords := make([]RawSituationRecord, 0)
 	for rows.Next() {
@@ -184,34 +184,34 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 
 		facts, err := r.getFactHistoryRecords(rawSituationRecord.RawFactIDs, s.ID, rawSituationRecord.InstanceID, start.Location(), factSource, downSampling.Operation)
 		if err != nil {
-			zap.L().Error("Error getting situation instance history facts", zap.Int64("situationID", s.ID), zap.Int64("SituationInstanceID", templateInstanceID), zap.Time("timestamp", ts), zap.Error(err))
+			zap.L().Error("Error getting situation instance history facts", zap.Int64("situationID", s.ID), zap.Int64("SituationInstanceID", templateInstanceID), zap.Time("timestamp", rawSituationRecord.TS), zap.Error(err))
 		}
-		if facts != nil && len(facts) > 0 {
+		if len(facts) > 0 {
 			record.Facts = facts
 		}
 
-		var expressionFacts = make(map[string]interface{}, 0)
+		var expressionFacts = make(map[string]interface{})
 		err = extractExpressionFacts(rawSituationRecord.RawExpressionFacts, expressionFacts, expressionFactsSource, downSampling.Operation)
 		if err != nil {
-			zap.L().Error("Error unmarshalling situation instance history ExpressionFacts", zap.Int64("situationID", s.ID), zap.Int64("SituationInstanceID", templateInstanceID), zap.Time("timestamp", ts), zap.Error(err))
+			zap.L().Error("Error unmarshalling situation instance history ExpressionFacts", zap.Int64("situationID", s.ID), zap.Int64("SituationInstanceID", templateInstanceID), zap.Time("timestamp", rawSituationRecord.TS), zap.Error(err))
 		}
 		if len(expressionFacts) > 0 {
 			record.ExpressionFacts = expressionFacts
 		}
 
-		var params = make(map[string]interface{}, 0)
+		var params = make(map[string]interface{})
 		err = extractParameters(rawSituationRecord.RawParams, params, parametersSource, downSampling.Operation)
 		if err != nil {
-			zap.L().Error("Error unmarshalling situation instance history parameters", zap.Int64("situationID", s.ID), zap.Int64("SituationInstanceID", templateInstanceID), zap.Time("timestamp", ts), zap.Error(err))
+			zap.L().Error("Error unmarshalling situation instance history parameters", zap.Int64("situationID", s.ID), zap.Int64("SituationInstanceID", templateInstanceID), zap.Time("timestamp", rawSituationRecord.TS), zap.Error(err))
 		}
 		if len(params) > 0 {
 			record.Parameters = params
 		}
 
-		var metaData = make(map[string]interface{}, 0)
+		var metaData = make(map[string]interface{})
 		err = extractMetaData(rawSituationRecord.RawMetadatas, metaData, metaDataSource, downSampling.Operation)
 		if err != nil {
-			zap.L().Error("Error extracting situation instance history metadatas", zap.Int64("situationID", s.ID), zap.Int64("SituationInstanceID", templateInstanceID), zap.Time("timestamp", ts), zap.Error(err))
+			zap.L().Error("Error extracting situation instance history metadatas", zap.Int64("situationID", s.ID), zap.Int64("SituationInstanceID", templateInstanceID), zap.Time("timestamp", rawSituationRecord.TS), zap.Error(err))
 		}
 		if len(metaData) > 0 {
 			record.MetaData = metaData
