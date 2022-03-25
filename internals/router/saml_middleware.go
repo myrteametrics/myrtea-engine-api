@@ -64,6 +64,9 @@ func NewSamlSP(spRootURLStr string, entityID string, keyFile string, crtFile str
 		SignRequest: true,
 		ForceAuthn:  false,
 	}
+	if config.CookieMaxAge > 0 {
+		opts.CookieMaxAge = config.CookieMaxAge
+	}
 
 	// for backwards compatibility, support IDPMetadataURL
 	if opts.IDPMetadataURL != nil && opts.IDPMetadata == nil {
