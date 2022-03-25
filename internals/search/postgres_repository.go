@@ -165,6 +165,7 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 			InstanceName:       instanceName,
 		})
 	}
+	rows.Close()
 
 	for _, rawSituationRecord := range rawSituationRecords {
 		situationInstanceName := ""
