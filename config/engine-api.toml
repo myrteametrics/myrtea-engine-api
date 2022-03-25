@@ -162,3 +162,7 @@ AUTHENTICATION_SAML_ATTRIBUTE_USER_MEMBEROF = "memberOf"
 # Specify the SAML user group name for admins
 # Default value: "administrators"
 AUTHENTICATION_SAML_ADMIN_GROUP_NAME = "administrators"
+
+# Specify the SAML cookie max age
+# Default value: "1h"
+AUTHENTICATION_SAML_COOKIE_MAX_AGE = "1h"

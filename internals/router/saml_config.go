@@ -3,6 +3,7 @@ package router
 import (
 	"errors"
 	"fmt"
+	"time"
 )
 
 // SamlSPMiddlewareConfig wraps multiple parameters for SAML authentication
@@ -14,6 +15,7 @@ type SamlSPMiddlewareConfig struct {
 	AttributeUserDisplayName string
 	EnableMemberOfValidation bool
 	AttributeUserMemberOf    string
+	CookieMaxAge             time.Duration
 }
 
 // IsValid check if the config is valid
