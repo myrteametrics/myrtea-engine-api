@@ -168,12 +168,12 @@ func buildRoutesV3Basic(config Config) (func(r chi.Router), error) {
 		// System intra services Protection routes
 		r.Group(func(rg chi.Router) {
 			//TODO: change to be intra APIs
-			if config.Security {
-				rg.Use(jwtauth.Verifier(jwtauth.New(jwt.SigningMethodHS256.Name, signingKey, nil)))
-				rg.Use(CustomAuthenticator)
-				rg.Use(ContextMiddleware)
-			}
-			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
+			// if config.Security {
+			// 	rg.Use(jwtauth.Verifier(jwtauth.New(jwt.SigningMethodHS256.Name, signingKey, nil)))
+			// 	rg.Use(CustomAuthenticator)
+			// 	rg.Use(ContextMiddleware)
+			// }
+			// rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
 			rg.Mount("/service", serviceRouter())
 		})

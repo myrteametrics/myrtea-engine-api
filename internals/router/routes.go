@@ -90,6 +90,7 @@ func engineRouter() http.Handler {
 	r.Delete("/rules/{id}", handlers.DeleteRule)
 	r.Get("/rules/{id}/situations", handlers.GetRuleSituations)
 	r.Post("/rules/{id}/situations", handlers.PostRuleSituations)
+	r.Get("/rules/{id}/debug", handlers.TestRule)
 
 	r.Get("/issues", handlers.GetIssuesByStatesByPage)
 	r.Get("/issues/{id}", handlers.GetIssue)

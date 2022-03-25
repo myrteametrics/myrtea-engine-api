@@ -8,9 +8,11 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"github.com/myrteametrics/myrtea-sdk/v4/expression"
+	"go.uber.org/zap"
 )
 
 //EvaluateSituations evaluates a slice of situations and return a slice with the evaluated situations
@@ -37,12 +39,12 @@ func EvaluateSituations(situations []SituationToEvaluate, engineID string) ([]Ev
 
 		ruleIDs, err := situation.R().GetRules(s.ID)
 		if err != nil {
-			return nil, fmt.Errorf("Error geting rules for situation instance (%d, %s, %d): %s", s.ID, s.TS, s.TemplateInstanceID, err.Error())
+			return nil, fmt.Errorf("error geting rules for situation instance (%d, %s, %d): %s", s.ID, s.TS, s.TemplateInstanceID, err.Error())
 		}
 
-		sKnowledge, err := getSituationKnowledge(s)
+		sKnowledge, err := GetSituationKnowledge(s)
 		if err != nil {
-			return nil, fmt.Errorf("Error geting knowledge for situation instance (%d, %s, %d): %s", s.ID, s.TS, s.TemplateInstanceID, err.Error())
+			return nil, fmt.Errorf("error geting knowledge for situation instance (%d, %s, %d): %s", s.ID, s.TS, s.TemplateInstanceID, err.Error())
 		}
 		//Add date keywords in sKnowledge
 		for key, value := range expression.GetDateKeywords(s.TS) {
@@ -54,11 +56,22 @@ func EvaluateSituations(situations []SituationToEvaluate, engineID string) ([]Ev
 
 		ruleIDsInt := make([]int64, 0)
 		for _, id := range ruleIDs {
-			found, valid, _ := calendar.CBase().InPeriodFromCalendarID(id, s.TS)
-			if !found || valid {
+			r, found, err := rule.R().Get(id)
+			if err != nil {
+				zap.L().Error("Get Rule", zap.Int64("id", id), zap.Error(err))
+				continue
+			}
+			if !found {
+				zap.L().Warn("Rule is missing", zap.Int64("id", id))
+				continue
+			}
+
+			cfound, valid, _ := calendar.CBase().InPeriodFromCalendarID(int64(r.CalendarID), s.TS)
+			if !cfound || valid {
 				ruleIDsInt = append(ruleIDsInt, id)
 			}
 		}
+
 		localRuleEngine.ExecuteRules(ruleIDsInt)
 		agenda := localRuleEngine.GetResults()
 
@@ -148,7 +161,7 @@ func EvaluateObjectSituations(situations []SituationToEvaluate, factObject engin
 	return evaluatedSituations, nil
 }
 
-func getSituationKnowledge(situationInstance SituationToEvaluate) (map[string]interface{}, error) {
+func GetSituationKnowledge(situationInstance SituationToEvaluate) (map[string]interface{}, error) {
 
 	situationData := make(map[string]interface{}, 0)
 	record, err := situation.GetFromHistory(situationInstance.ID, situationInstance.TS, situationInstance.TemplateInstanceID, false)

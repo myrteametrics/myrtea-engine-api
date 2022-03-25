@@ -148,9 +148,11 @@ func ReceiveAggregates(aggregates []ExternalAggregate) error {
 
 		factSituationsHistory, err := scheduler.GetFactSituations(f, t)
 		if err != nil {
+			zap.L().Warn("getFactSituations", zap.Int64("factID", f.ID), zap.Error(err))
 			continue
 		}
 		if len(factSituationsHistory) == 0 {
+			zap.L().Warn("fact has no situation history", zap.Int64("factID", f.ID))
 			continue
 		}
 
