@@ -13,6 +13,16 @@ import (
 
 type mapResult map[time.Time][]SituationHistoryRecord
 
+type RawSituationRecord struct {
+	RawFactIDs         []byte
+	RawParams          []byte
+	RawExpressionFacts []byte
+	RawMetadatas       []byte
+	TS                 time.Time
+	InstanceID         int64
+	InstanceName       interface{}
+}
+
 // PostgresRepository is a repository containing the situation definition based on a PSQL database and
 //implementing the repository interface
 type PostgresRepository struct {
@@ -130,6 +140,7 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 	result := make(QueryResult, 0)
 	mapResult := make(mapResult, 0)
 
+	rawSituationRecords := make([]RawSituationRecord, 0)
 	for rows.Next() {
 		var rawFactIDs []byte
 		var rawParams []byte
@@ -144,22 +155,33 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 			zap.L().Info("q", zap.String("query", query))
 			return nil, err
 		}
+		rawSituationRecords = append(rawSituationRecords, RawSituationRecord{
+			RawFactIDs:         rawFactIDs,
+			RawParams:          rawParams,
+			RawExpressionFacts: rawExpressionFacts,
+			RawMetadatas:       rawMetadatas,
+			TS:                 ts,
+			InstanceID:         instanceID,
+			InstanceName:       instanceName,
+		})
+	}
 
+	for _, rawSituationRecord := range rawSituationRecords {
 		situationInstanceName := ""
-		if instanceName != nil {
-			situationInstanceName = instanceName.(string)
+		if rawSituationRecord.InstanceName != nil {
+			situationInstanceName = rawSituationRecord.InstanceName.(string)
 		}
 
 		record := SituationHistoryRecord{
 			SituationID:           s.ID,
 			SituationName:         s.Name,
-			SituationInstanceID:   instanceID,
+			SituationInstanceID:   rawSituationRecord.InstanceID,
 			SituationInstanceName: situationInstanceName,
 			MetaData:              nil,
-			DateTime:              ts.In(start.Location()),
+			DateTime:              rawSituationRecord.TS.In(start.Location()),
 		}
 
-		facts, err := r.getFactHistoryRecords(rawFactIDs, s.ID, instanceID, start.Location(), factSource, downSampling.Operation)
+		facts, err := r.getFactHistoryRecords(rawSituationRecord.RawFactIDs, s.ID, rawSituationRecord.InstanceID, start.Location(), factSource, downSampling.Operation)
 		if err != nil {
 			zap.L().Error("Error getting situation instance history facts", zap.Int64("situationID", s.ID), zap.Int64("SituationInstanceID", templateInstanceID), zap.Time("timestamp", ts), zap.Error(err))
 		}
@@ -168,7 +190,7 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 		}
 
 		var expressionFacts = make(map[string]interface{}, 0)
-		err = extractExpressionFacts(rawExpressionFacts, expressionFacts, expressionFactsSource, downSampling.Operation)
+		err = extractExpressionFacts(rawSituationRecord.RawExpressionFacts, expressionFacts, expressionFactsSource, downSampling.Operation)
 		if err != nil {
 			zap.L().Error("Error unmarshalling situation instance history ExpressionFacts", zap.Int64("situationID", s.ID), zap.Int64("SituationInstanceID", templateInstanceID), zap.Time("timestamp", ts), zap.Error(err))
 		}
@@ -177,7 +199,7 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 		}
 
 		var params = make(map[string]interface{}, 0)
-		err = extractParameters(rawParams, params, parametersSource, downSampling.Operation)
+		err = extractParameters(rawSituationRecord.RawParams, params, parametersSource, downSampling.Operation)
 		if err != nil {
 			zap.L().Error("Error unmarshalling situation instance history parameters", zap.Int64("situationID", s.ID), zap.Int64("SituationInstanceID", templateInstanceID), zap.Time("timestamp", ts), zap.Error(err))
 		}
@@ -186,7 +208,7 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 		}
 
 		var metaData = make(map[string]interface{}, 0)
-		err = extractMetaData(rawMetadatas, metaData, metaDataSource, downSampling.Operation)
+		err = extractMetaData(rawSituationRecord.RawMetadatas, metaData, metaDataSource, downSampling.Operation)
 		if err != nil {
 			zap.L().Error("Error extracting situation instance history metadatas", zap.Int64("situationID", s.ID), zap.Int64("SituationInstanceID", templateInstanceID), zap.Time("timestamp", ts), zap.Error(err))
 		}
