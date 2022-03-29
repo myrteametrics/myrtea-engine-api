@@ -43,28 +43,63 @@ func Persist(record HistoryRecord, evaluated bool) error {
 		return err
 	}
 
-	query := `INSERT INTO situation_history_v1 (id, ts, situation_instance_id, facts_ids, expression_facts, parameters, metadatas, evaluated) 
-				VALUES (:situationid, :ts, :situation_instance_id, :factids, :expression_facts, :parameters, :metadatas, :evaluated)`
-	params := map[string]interface{}{
-		"situationid":           record.ID,
-		"ts":                    record.TS.UTC(),
-		"situation_instance_id": record.TemplateInstanceID,
-		"factids":               string(jsonIDs),
-		"parameters":            string(jsonParams),
-		"expression_facts":      string(jsonEvaluatedExpressionFacts),
-		"metadatas":             nil,
-		"evaluated":             evaluated,
-	}
-	res, err := postgres.DB().NamedExec(query, params)
+	existingRecord, err := GetFromHistory(record.ID, record.TS, record.TemplateInstanceID, false)
 	if err != nil {
 		return err
 	}
-	i, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+	if existingRecord == nil {
+		query := `INSERT INTO situation_history_v1 (id, ts, situation_instance_id, facts_ids, expression_facts, parameters, metadatas, evaluated) 
+			VALUES (:situationid, :ts, :situation_instance_id, :factids, :expression_facts, :parameters, :metadatas, :evaluated)`
+		params := map[string]interface{}{
+			"situationid":           record.ID,
+			"ts":                    record.TS.UTC(),
+			"situation_instance_id": record.TemplateInstanceID,
+			"factids":               string(jsonIDs),
+			"parameters":            string(jsonParams),
+			"expression_facts":      string(jsonEvaluatedExpressionFacts),
+			"metadatas":             nil,
+			"evaluated":             evaluated,
+		}
+		res, err := postgres.DB().NamedExec(query, params)
+		if err != nil {
+			return err
+		}
+		i, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if i != 1 {
+			return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
+		}
+	} else {
+		query := `UPDATE situation_history_v1 SET  
+			facts_ids = :factids,
+			expression_facts = :expression_facts,
+			parameters = :parameters,
+			metadatas = :metadatas,
+			evaluated = :evaluated
+			WHERE id = :situationid AND ts = :ts AND situation_instance_id = :situation_instance_id`
+		params := map[string]interface{}{
+			"situationid":           record.ID,
+			"ts":                    record.TS.UTC(),
+			"situation_instance_id": record.TemplateInstanceID,
+			"factids":               string(jsonIDs),
+			"parameters":            string(jsonParams),
+			"expression_facts":      string(jsonEvaluatedExpressionFacts),
+			"metadatas":             nil,
+			"evaluated":             evaluated,
+		}
+		res, err := postgres.DB().NamedExec(query, params)
+		if err != nil {
+			return err
+		}
+		i, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if i != 1 {
+			return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		}
 	}
 	return nil
 }
@@ -87,7 +122,7 @@ func SetAsEvaluated(situationID int64, t time.Time, templateInstanceID int64) er
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -115,7 +150,7 @@ func UpdateExpressionFacts(record HistoryRecord) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
