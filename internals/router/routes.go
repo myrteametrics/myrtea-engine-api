@@ -81,6 +81,12 @@ func engineRouter() http.Handler {
 	r.Put("/situations/{id}/instances", handlers.PutSituationTemplateInstances)
 	r.Delete("/situations/{id}/instances/{instanceid}", handlers.DeleteSituationTemplateInstance)
 
+	r.Get("/externalconfigs", handlers.GetExternalConfigs)
+	r.Get("/externalconfigs/{name}", handlers.GetExternalConfig)
+	r.Post("/externalconfigs", handlers.PostExternalConfig)
+	r.Put("/externalconfigs/{name}", handlers.PutExternalConfig)
+	r.Delete("/externalconfigs/{name}", handlers.DeleteExternalConfig)
+
 	r.Get("/rules", handlers.GetRules)
 	r.Get("/rules/{id}", handlers.GetRule)
 	r.Get("/rules/{id}/versions/{versionid}", handlers.GetRuleByVersion)
@@ -153,6 +159,9 @@ func serviceRouter() http.Handler {
 
 	r.Post("/objects", handlers.PostObjects)
 	r.Post("/aggregates", handlers.PostAggregates)
+
+	r.Get("/externalconfigs", handlers.GetExternalConfigs)
+	r.Get("/externalconfigs/{name}", handlers.GetExternalConfig)
 
 	return r
 }
