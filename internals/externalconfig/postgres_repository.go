@@ -33,7 +33,7 @@ func (r *PostgresRepository) Get(name string) (models.ExternalConfig, bool, erro
 
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
-		return models.ExternalConfig{}, false, fmt.Errorf("Couldn't retrieve the action with name %d: %s", name, err.Error())
+		return models.ExternalConfig{}, false, fmt.Errorf("couldn't retrieve the action with name %s: %s", name, err.Error())
 	}
 	defer rows.Close()
 
@@ -41,7 +41,7 @@ func (r *PostgresRepository) Get(name string) (models.ExternalConfig, bool, erro
 	if rows.Next() {
 		err := rows.Scan(&data)
 		if err != nil {
-			return models.ExternalConfig{}, false, fmt.Errorf("Couldn't scan the action with name %d: %s", name, err.Error())
+			return models.ExternalConfig{}, false, fmt.Errorf("couldn't scan the action with name %s: %s", name, err.Error())
 		}
 	} else {
 		return models.ExternalConfig{}, false, nil
@@ -70,15 +70,15 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, externalConfig models.ExternalC
 		res, err = r.conn.NamedExec(query, params)
 	}
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 
 	i, err := res.RowsAffected()
 	if err != nil {
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -99,15 +99,15 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, name string, externalConfig mod
 		res, err = r.conn.NamedExec(query, params)
 	}
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 
 	i, err := res.RowsAffected()
 	if err != nil {
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -127,7 +127,7 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, name string) error {
 		res, err = r.conn.NamedExec(query, params)
 	}
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 
 	i, err := res.RowsAffected()
@@ -135,14 +135,14 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, name string) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
 
 // GetAll method used to get all externalConfigs
 func (r *PostgresRepository) GetAll() (map[string]models.ExternalConfig, error) {
-	externalConfigs := make(map[string]models.ExternalConfig, 0)
+	externalConfigs := make(map[string]models.ExternalConfig)
 
 	query := `SELECT name, data FROM external_generic_config_v1`
 	rows, err := r.conn.Query(query)
