@@ -107,9 +107,10 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 
 //Get search and returns an entity from the repository by its id
 func (r *PostgresRulesRepository) Get(id int64) (Rule, bool, error) {
-	query := `SELECT rules_v1.id, (SELECT data FROM rule_versions_v1 WHERE rule_id = id ORDER BY version_number DESC LIMIT 1)
-				FROM rules_v1
-				WHERE rules_v1.id = :id`
+	query := `select rules_v1.id, rule_versions_v1.version_number, rule_versions_v1.data 
+			from rules_v1 inner join rule_versions_v1 on rules_v1.id = rule_versions_v1.rule_id 
+			where rules.v1.id = :id 
+			order by version_number desc LIMIT 1`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
 		"id": id,
 	})
@@ -119,10 +120,11 @@ func (r *PostgresRulesRepository) Get(id int64) (Rule, bool, error) {
 	defer rows.Close()
 
 	var rule Rule
-	var data string
 	var ruleID int64
+	var ruleVersionNumber int64
+	var data string
 	if rows.Next() {
-		err := rows.Scan(&ruleID, &data)
+		err := rows.Scan(&ruleID, &ruleVersionNumber, &data)
 		if err != nil {
 			return Rule{}, false, errors.New("Couldn't scan the retrieved data: " + err.Error())
 		}
@@ -133,6 +135,7 @@ func (r *PostgresRulesRepository) Get(id int64) (Rule, bool, error) {
 
 		//Set the id coming from the DB
 		rule.ID = ruleID
+		rule.Version = ruleVersionNumber
 
 		return rule, true, nil
 	}
@@ -141,9 +144,9 @@ func (r *PostgresRulesRepository) Get(id int64) (Rule, bool, error) {
 
 // GetByVersion search and returns an entity from the repository by its id
 func (r *PostgresRulesRepository) GetByVersion(id int64, version int64) (Rule, bool, error) {
-	query := `SELECT rules_v1.id, (SELECT data FROM rule_versions_v1 WHERE rule_id = id AND version_number = :version)
-				FROM rules_v1
-				WHERE rules_v1.id = :id`
+	query := `select rules_v1.id, rule_versions_v1.version_number, rule_versions_v1.data 
+			from rules_v1 inner join rule_versions_v1 on rules_v1.id = rule_versions_v1.rule_id 
+			where rules_v1.id = :id and rule_versions_v1.version_number = :version`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
 		"id":      id,
 		"version": version,
@@ -154,10 +157,11 @@ func (r *PostgresRulesRepository) GetByVersion(id int64, version int64) (Rule, b
 	defer rows.Close()
 
 	var rule Rule
-	var data string
 	var ruleID int64
+	var ruleVersionNumber int64
+	var data string
 	if rows.Next() {
-		err := rows.Scan(&ruleID, &data)
+		err := rows.Scan(&ruleID, &ruleVersionNumber, &data)
 		if err != nil {
 			return Rule{}, false, errors.New("Couldn't scan the retrieved data: " + err.Error())
 		}
@@ -168,6 +172,7 @@ func (r *PostgresRulesRepository) GetByVersion(id int64, version int64) (Rule, b
 
 		//Set the id coming from the DB
 		rule.ID = ruleID
+		rule.Version = ruleVersionNumber
 
 		return rule, true, nil
 	}
@@ -176,9 +181,10 @@ func (r *PostgresRulesRepository) GetByVersion(id int64, version int64) (Rule, b
 
 //GetByName search and returns an entity from the repository by its name
 func (r *PostgresRulesRepository) GetByName(name string) (Rule, bool, error) {
-	query := `SELECT rules_v1.id, (SELECT data FROM rule_versions_v1 WHERE rule_id = id ORDER BY version_number DESC LIMIT 1)
-				FROM rules_v1
-				WHERE rules_v1.name = :name`
+	query := `select rules_v1.id, rule_versions_v1.version_number, rule_versions_v1.data 
+		from rules_v1 inner join rule_versions_v1 on rules_v1.id = rule_versions_v1.rule_id 
+		where rules_v1.name = :name 
+		order by version_number desc LIMIT 1`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
 		"name": name,
 	})
@@ -188,10 +194,11 @@ func (r *PostgresRulesRepository) GetByName(name string) (Rule, bool, error) {
 	defer rows.Close()
 
 	var rule Rule
-	var data string
 	var ruleID int64
+	var ruleVersionNumber int64
+	var data string
 	if rows.Next() {
-		err := rows.Scan(&ruleID, &data)
+		err := rows.Scan(&ruleID, &ruleVersionNumber, &data)
 		if err != nil {
 			return Rule{}, false, errors.New("Couldn't scan the retrieved data: " + err.Error())
 		}
@@ -202,6 +209,7 @@ func (r *PostgresRulesRepository) GetByName(name string) (Rule, bool, error) {
 
 		//Set the id coming from the DB
 		rule.ID = ruleID
+		rule.Version = ruleVersionNumber
 
 		return rule, true, nil
 	}
