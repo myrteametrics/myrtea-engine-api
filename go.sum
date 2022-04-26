@@ -173,6 +173,8 @@ github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20220408100104-3d0ca2264023 h1:Qy2
 github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20220408100104-3d0ca2264023/go.mod h1:M0m1P7NKit82el7vort1BwsVtkTQG28qzFyXcRns1uo=
 github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20220413080843-f479385207be h1:HT6om28WJsBm90jo40h1yQW5ec2rM6tfc+A9YuWd29Q=
 github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20220413080843-f479385207be/go.mod h1:M0m1P7NKit82el7vort1BwsVtkTQG28qzFyXcRns1uo=
+github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20220426075408-b2847d4060df h1:e2aejvMm/9O4DzLlVCotOrLaoOgOfZUB6uae6pS3b4Y=
+github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20220426075408-b2847d4060df/go.mod h1:M0m1P7NKit82el7vort1BwsVtkTQG28qzFyXcRns1uo=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/oklog/run v1.0.0 h1:Ru7dDtJNOyC66gQ5dQmaCa0qIsAUFY3sFpK1Xk8igrw=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
