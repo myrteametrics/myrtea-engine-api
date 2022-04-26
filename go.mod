@@ -19,7 +19,7 @@ require (
 	github.com/json-iterator/go v1.1.8
 	github.com/lib/pq v1.0.0
 	github.com/mailru/easyjson v0.7.6 // indirect
-	github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20220413080843-f479385207be
+	github.com/myrteametrics/myrtea-sdk/v4 v4.0.0-20220426075408-b2847d4060df
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/prataprc/goparsec v0.0.0-20180806094145-2600a2a4a410
 	github.com/robfig/cron/v3 v3.0.0
