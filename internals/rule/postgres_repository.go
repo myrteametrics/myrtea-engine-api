@@ -109,7 +109,7 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 func (r *PostgresRulesRepository) Get(id int64) (Rule, bool, error) {
 	query := `select rules_v1.id, rule_versions_v1.version_number, rule_versions_v1.data 
 			from rules_v1 inner join rule_versions_v1 on rules_v1.id = rule_versions_v1.rule_id 
-			where rules.v1.id = :id 
+			where rules_v1.id = :id 
 			order by version_number desc LIMIT 1`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
 		"id": id,
