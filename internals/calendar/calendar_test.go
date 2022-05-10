@@ -26,6 +26,7 @@ func TestCalendarResolution(t *testing.T) {
 
 	_ = resolved
 	t.Log(resolved)
+
 }
 
 func TestCalendarResolutionCircularReference(t *testing.T) {
@@ -38,8 +39,7 @@ func TestCalendarResolutionCircularReference(t *testing.T) {
 }
 
 func checkCalendarPeriod(t *testing.T, c Calendar, ti time.Time, mustBeInPeriod bool) error {
-	// status := c.contains(t)
-	status, statusMonth, statusDay, statusTime := c.contains(ti)
+	status, statusMonth, statusDay, statusTime := c.containsWithTz(ti)
 	if mustBeInPeriod && !status {
 		t.Logf("status=%v : month=%s, day=%s, time=%s\n", status, statusMonth.String(), statusDay.String(), statusTime.String())
 		return fmt.Errorf("%s should be in period %+v", ti, c.Periods)
@@ -53,7 +53,7 @@ func checkCalendarPeriod(t *testing.T, c Calendar, ti time.Time, mustBeInPeriod 
 
 func TestCalendarSimpleInclude(t *testing.T) {
 	// include only dayOfMonth == 1
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{{Included: true, DaysOfMonth: &dayInterval{From: 1, To: 1}}}}
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{{Included: true, DaysOfMonth: &dayInterval{From: 1, To: 1}}}}
 	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 1, 12, 30, 0, 0, time.UTC), true); err != nil {
 		t.Error(err)
 	}
@@ -61,9 +61,10 @@ func TestCalendarSimpleInclude(t *testing.T) {
 		t.Error(err)
 	}
 }
+
 func TestCalendarSimpleExclude(t *testing.T) {
 	// exclude only dayOfMonth == 1 (calendar is empty by default, no date should be valid)
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{{Included: false, DaysOfMonth: &dayInterval{From: 1, To: 1}}}}
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{{Included: false, DaysOfMonth: &dayInterval{From: 1, To: 1}}}}
 	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 1, 12, 30, 0, 0, time.UTC), false); err != nil {
 		t.Error(err)
 	}
@@ -73,7 +74,7 @@ func TestCalendarSimpleExclude(t *testing.T) {
 }
 
 func TestCalendarEmpty(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{}}
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{}}
 	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 1, 12, 30, 0, 0, time.UTC), false); err != nil {
 		t.Error(err)
 	}
@@ -83,7 +84,7 @@ func TestCalendarEmpty(t *testing.T) {
 }
 
 func TestCalendarMultipleInclude(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: true, DaysOfMonth: &dayInterval{From: 1, To: 1}},
 		{Included: true, DaysOfMonth: &dayInterval{From: 3, To: 3}},
 		{Included: true, DaysOfMonth: &dayInterval{From: 5, To: 5}},
@@ -109,7 +110,7 @@ func TestCalendarMultipleInclude(t *testing.T) {
 }
 
 func TestCalendarIncludeCombo(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: true, MonthsOfYear: &monthInterval{From: 1, To: 1}, DaysOfMonth: &dayInterval{From: 1, To: 1}},
 	}}
 	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 1, 12, 30, 0, 0, time.UTC), true); err != nil {
@@ -124,7 +125,7 @@ func TestCalendarIncludeCombo(t *testing.T) {
 }
 
 func TestCalendarIncludeCombo2(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: true, MonthsOfYear: &monthInterval{From: 1, To: 1}, DaysOfMonth: &dayInterval{From: 1, To: 1}, HoursOfDay: &hoursInterval{FromHour: 12, ToHour: 13}},
 	}}
 	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 1, 12, 30, 0, 0, time.UTC), true); err != nil {
@@ -139,7 +140,7 @@ func TestCalendarIncludeCombo2(t *testing.T) {
 }
 
 func TestCalendarIncludeExclude(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: true, DaysOfMonth: &dayInterval{From: 1, To: 3}},
 		{Included: false, DaysOfMonth: &dayInterval{From: 2, To: 4}},
 	}}
@@ -158,7 +159,7 @@ func TestCalendarIncludeExclude(t *testing.T) {
 }
 
 func TestCalendarIncludeExclude2(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: false, DaysOfMonth: &dayInterval{From: 2, To: 4}},
 		{Included: true, DaysOfMonth: &dayInterval{From: 1, To: 3}},
 	}}
@@ -177,7 +178,7 @@ func TestCalendarIncludeExclude2(t *testing.T) {
 }
 
 func TestCalendarIncludeMonthsExcludeDays(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: true, MonthsOfYear: &monthInterval{From: 1, To: 12}},
 		{Included: false, DaysOfMonth: &dayInterval{From: 1, To: 31}},
 	}}
@@ -187,7 +188,7 @@ func TestCalendarIncludeMonthsExcludeDays(t *testing.T) {
 }
 
 func TestCalendarExcludeDaysIncludeMonths(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: true, MonthsOfYear: &monthInterval{From: 1, To: 12}},
 		{Included: false, DaysOfMonth: &dayInterval{From: 1, To: 31}},
 	}}
@@ -197,7 +198,7 @@ func TestCalendarExcludeDaysIncludeMonths(t *testing.T) {
 }
 
 func TestCalendarIncludeDaysExcludeMonths(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: true, DaysOfMonth: &dayInterval{From: 1, To: 31}},
 		{Included: false, MonthsOfYear: &monthInterval{From: 1, To: 12}},
 	}}
@@ -207,7 +208,7 @@ func TestCalendarIncludeDaysExcludeMonths(t *testing.T) {
 }
 
 func TestCalendarIncludeDaysExcludeMonths2(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: true, DaysOfMonth: &dayInterval{From: 1, To: 31}},
 		{Included: false, MonthsOfYear: &monthInterval{From: 1, To: 6}},
 		{Included: true, MonthsOfYear: &monthInterval{From: 1, To: 1}},
@@ -224,7 +225,7 @@ func TestCalendarIncludeDaysExcludeMonths2(t *testing.T) {
 }
 
 func TestCalendarExcludeAllIncludeSpecific1(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: false, MonthsOfYear: &monthInterval{From: 1, To: 12}, DaysOfMonth: &dayInterval{From: 1, To: 31}},
 		{Included: false, HoursOfDay: &hoursInterval{FromHour: 0, ToHour: 24}},
 		{Included: true, MonthsOfYear: &monthInterval{From: 1, To: 1}, DaysOfMonth: &dayInterval{From: 1, To: 1}, HoursOfDay: &hoursInterval{FromHour: 12, ToHour: 13}},
@@ -235,7 +236,7 @@ func TestCalendarExcludeAllIncludeSpecific1(t *testing.T) {
 }
 
 func TestCalendarExcludeAllIncludeSpecific2(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: false, MonthsOfYear: &monthInterval{From: 1, To: 12}, DaysOfMonth: &dayInterval{From: 1, To: 31}},
 		{Included: false, HoursOfDay: &hoursInterval{FromHour: 0, ToHour: 24}},
 		{Included: true, MonthsOfYear: &monthInterval{From: 1, To: 1}, DaysOfMonth: &dayInterval{From: 1, To: 1}},
@@ -246,12 +247,35 @@ func TestCalendarExcludeAllIncludeSpecific2(t *testing.T) {
 }
 
 func TestCalendarExcludeAllIncludeSpecific3(t *testing.T) {
-	cal := Calendar{ID: 1, Name: "cal", UnionCalendarIDs: []int64{}, Periods: []Period{
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: false, MonthsOfYear: &monthInterval{From: 1, To: 12}, DaysOfMonth: &dayInterval{From: 1, To: 31}},
 		{Included: false, HoursOfDay: &hoursInterval{FromHour: 0, ToHour: 24}},
 		{Included: true, MonthsOfYear: &monthInterval{From: 1, To: 1}},
 	}}
 	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 1, 12, 30, 0, 0, time.UTC), false); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestCalendarWithTimezone(t *testing.T) {
+	cal := Calendar{ID: 1, Name: "cal", Timezone: "Europe/Paris", UnionCalendarIDs: []int64{}, Periods: []Period{
+		{Included: true, DaysOfMonth: &dayInterval{From: 2, To: 3}},
+	}}
+
+	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC), true); err != nil {
+		t.Error(err)
+	}
+	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 1, 23, 30, 0, 0, time.UTC), true); err != nil {
+		t.Error(err)
+	}
+	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 1, 21, 30, 0, 0, time.UTC), false); err != nil {
+		t.Error(err)
+	}
+
+	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 3, 21, 30, 0, 0, time.UTC), true); err != nil {
+		t.Error(err)
+	}
+	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 3, 23, 30, 0, 0, time.UTC), false); err != nil {
 		t.Error(err)
 	}
 }
