@@ -2,7 +2,7 @@ language: go
 sudo: false
 
 go:
-  - "1.14"
+  - "1.18"
 
 cache:
   directories:

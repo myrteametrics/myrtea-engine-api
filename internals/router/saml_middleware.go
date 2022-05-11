@@ -64,28 +64,12 @@ func NewSamlSP(spRootURLStr string, entityID string, keyFile string, crtFile str
 		SignRequest: true,
 		ForceAuthn:  false,
 	}
-	if config.CookieMaxAge > 0 {
-		opts.CookieMaxAge = config.CookieMaxAge
-	}
-
-	// for backwards compatibility, support IDPMetadataURL
-	if opts.IDPMetadataURL != nil && opts.IDPMetadata == nil {
-		httpClient := opts.HTTPClient
-		if httpClient == nil {
-			httpClient = http.DefaultClient
-		}
-		metadata, err := samlsp.FetchMetadata(context.TODO(), httpClient, *opts.IDPMetadataURL)
-		if err != nil {
-			return nil, err
-		}
-		opts.IDPMetadata = metadata
-	}
 
 	defaultMiddleware := &samlsp.Middleware{
 		ServiceProvider: CustomServiceProvider(opts),
 		Binding:         "",
 		OnError:         onError,
-		Session:         samlsp.DefaultSessionProvider(opts),
+		Session:         CustomSessionProvider(opts, config.CookieMaxAge),
 	}
 	defaultMiddleware.RequestTracker = CustomRequestTracker(opts, &defaultMiddleware.ServiceProvider)
 
@@ -141,7 +125,7 @@ func (m *SamlSPMiddleware) HandleStartAuthFlow(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	authReq, err := m.ServiceProvider.MakeAuthenticationRequest(bindingLocation)
+	authReq, err := m.ServiceProvider.MakeAuthenticationRequest(bindingLocation, binding, m.ResponseBinding)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -157,7 +141,12 @@ func (m *SamlSPMiddleware) HandleStartAuthFlow(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	redirectURL := authReq.Redirect(relayState)
+	redirectURL, err := authReq.Redirect(relayState, &m.ServiceProvider)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Add("Authenticate-To", redirectURL.String())
 	w.Header().Add("Content-type", "application/json")
 	w.WriteHeader(http.StatusUnauthorized)
