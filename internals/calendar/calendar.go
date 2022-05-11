@@ -12,6 +12,7 @@ type Calendar struct {
 	ID               int64    `json:"id,omitempty"`
 	Name             string   `json:"name"`
 	Description      string   `json:"description"`
+	Timezone         string   `json:"timezone"`
 	Periods          []Period `json:"periods"`
 	UnionCalendarIDs []int64  `json:"unionCalendarIDs,omitempty"`
 	Enabled          bool     `json:"enabled"`
@@ -33,6 +34,51 @@ func (c Calendar) contains(t time.Time) (bool, PeriodStatus, PeriodStatus, Perio
 
 	for _, period := range c.Periods {
 		month, day, time := period.contains(t)
+		if month == OutOfPeriod || day == OutOfPeriod || time == OutOfPeriod {
+			month = OutOfPeriod
+			day = OutOfPeriod
+			time = OutOfPeriod
+		}
+		if month == InPeriod {
+			statusMonth = includedToStatus(period.Included)
+		}
+		if day == InPeriod {
+			statusDay = includedToStatus(period.Included)
+		}
+		if time == InPeriod {
+			statusTime = includedToStatus(period.Included)
+		}
+	}
+
+	status := true
+	if statusMonth == NoInfo && statusDay == NoInfo && statusTime == NoInfo {
+		status = false
+	}
+	if statusMonth == OutOfPeriod || statusDay == OutOfPeriod || statusTime == OutOfPeriod {
+		status = false
+	}
+	return status, statusMonth, statusDay, statusTime
+}
+
+// containsWithTz check if a calendar contains a specific time (based on inclusion and exclusion periods)
+// This function only checks the calendar periods (but not the unioned calendars)
+// Therefore, the calendar MUST have been resolved / flatten before calling this function
+func (c Calendar) containsWithTz(t time.Time) (bool, PeriodStatus, PeriodStatus, PeriodStatus) {
+
+	statusMonth := NoInfo
+	statusDay := NoInfo
+	statusTime := NoInfo
+
+	tz := time.UTC
+	if c.Timezone != "" {
+		var err error
+		tz, err = time.LoadLocation(c.Timezone)
+		if err != nil {
+			zap.L().Warn("Invalid timezone", zap.Any("timezone", c.Timezone))
+		}
+	}
+	for _, period := range c.Periods {
+		month, day, time := period.containsWithTz(t, tz)
 		if month == OutOfPeriod || day == OutOfPeriod || time == OutOfPeriod {
 			month = OutOfPeriod
 			day = OutOfPeriod

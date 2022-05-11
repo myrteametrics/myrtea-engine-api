@@ -35,7 +35,7 @@ func (cBase *Base) InPeriodFromCalendarID(id int64, t time.Time) (bool, bool, er
 	if !found {
 		return found, false, errors.New("calendar not found")
 	}
-	valid, _, _, _ := calendar.contains(t)
+	valid, _, _, _ := calendar.containsWithTz(t)
 
 	return found, valid, nil
 }
