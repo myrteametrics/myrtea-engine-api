@@ -95,7 +95,7 @@ lint2: $(GOLANGCILINT)
 	golangci-lint run
 
 $(SWAG):
-	go get github.com/swaggo/swag/cmd/swag@v1.5.1
+	go install github.com/swaggo/swag/cmd/swag@v1.5.1
 
 .PHONY: swag ## Generate swagger documentation
 swag: $(SWAG)
