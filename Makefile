@@ -149,3 +149,9 @@ docker-save:
 .PHONY: docker-clean ## Delete the docker image from the local cache
 docker-clean:
 	docker image rm $(DOCKER_IMAGE) $(docker images -f dangling=true -q) || true
+
+.PHONY: security
+security:
+	curl -X GET -H "Authorization: Bearer zzz$token" http://localhost:9000/api/v4/engine/facts
+	TOKEN=$(curl -s -X POST -d '{"login":"admin","password":"myrtea"}' http://localhost:9000/api/v4/login | jq -r '.token')
+	curl -X GET -H "Authorization: Bearer $token" http://localhost:9000/api/v4/engine/facts

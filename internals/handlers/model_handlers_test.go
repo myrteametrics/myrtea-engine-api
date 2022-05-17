@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	model "github.com/myrteametrics/myrtea-engine-api/v4/internals/modeler"
 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
 )
