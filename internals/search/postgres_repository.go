@@ -73,8 +73,12 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 						situation_history_v1.parameters,
 						situation_history_v1.metadatas
 					FROM 
-						situation_template_instances_v1
-						INNER JOIN situation_history_v1 ON situation_template_instances_v1.id = situation_history_v1.situation_instance_id 
+						situation_definition_v1
+						left join situation_template_instances_v1 on situation_definition_v1.id = situation_template_instances_v1.situation_id 
+						inner join situation_history_v1 on (
+							situation_definition_v1.id = situation_history_v1.id 
+							and (situation_history_v1.situation_instance_id = situation_template_instances_v1.id OR situation_history_v1.situation_instance_id = 0)
+						)
 					WHERE 
 						situation_template_instances_v1.instance_id = :situation_id 
 						AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
@@ -115,8 +119,12 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 						situation_history_v1.expression_facts,
 						situation_history_v1.parameters, situation_history_v1.metadatas
 					FROM 
-						situation_template_instances_v1
-						INNER JOIN situation_history_v1 ON situation_template_instances_v1.id = situation_history_v1.situation_instance_id 
+						situation_definition_v1
+						left join situation_template_instances_v1 on situation_definition_v1.id = situation_template_instances_v1.situation_id 
+						inner join situation_history_v1 on (
+							situation_definition_v1.id = situation_history_v1.id 
+							and (situation_history_v1.situation_instance_id = situation_template_instances_v1.id OR situation_history_v1.situation_instance_id = 0)
+						)
 					WHERE 
 						situation_template_instances_v1.instance_id = :situation_id 
 						AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
@@ -139,8 +147,12 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 					JSON_AGG(situation_history_v1.parameters), 
 					JSON_AGG(situation_history_v1.metadatas)
 				FROM 
-					situation_template_instances_v1
-					INNER JOIN situation_history_v1 ON situation_template_instances_v1.id = situation_history_v1.situation_instance_id 
+					situation_definition_v1
+					left join situation_template_instances_v1 on situation_definition_v1.id = situation_template_instances_v1.situation_id 
+					inner join situation_history_v1 on (
+						situation_definition_v1.id = situation_history_v1.id 
+						and (situation_history_v1.situation_instance_id = situation_template_instances_v1.id OR situation_history_v1.situation_instance_id = 0)
+					)
 				WHERE 
 					situation_template_instances_v1.instance_id = :situation_id 
 					AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
@@ -163,8 +175,12 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 					situation_history_v1.parameters, 
 					situation_history_v1.metadatas
 				FROM
-					situation_template_instances_v1
-					INNER JOIN situation_history_v1 ON situation_template_instances_v1.id = situation_history_v1.situation_instance_id 
+					situation_definition_v1
+					left join situation_template_instances_v1 on situation_definition_v1.id = situation_template_instances_v1.situation_id 
+					inner join situation_history_v1 on (
+						situation_definition_v1.id = situation_history_v1.id 
+						and (situation_history_v1.situation_instance_id = situation_template_instances_v1.id OR situation_history_v1.situation_instance_id = 0)
+					)
 				WHERE
 					situation_template_instances_v1.situation_id = :situation_id
 					AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
@@ -183,8 +199,12 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 					situation_history_v1.parameters,
 					situation_history_v1.metadatas
 				FROM 
-					situation_template_instances_v1
-					INNER JOIN situation_history_v1 ON situation_template_instances_v1.id = situation_history_v1.situation_instance_id 
+					situation_definition_v1
+					left join situation_template_instances_v1 on situation_definition_v1.id = situation_template_instances_v1.situation_id 
+					inner join situation_history_v1 on (
+						situation_definition_v1.id = situation_history_v1.id 
+						and (situation_history_v1.situation_instance_id = situation_template_instances_v1.id OR situation_history_v1.situation_instance_id = 0)
+					)
 				WHERE 
 					situation_template_instances_v1.situation_id = :situation_id 
 					AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
