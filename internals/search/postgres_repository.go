@@ -53,14 +53,33 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 				order = "ASC"
 			}
 
-			query = `SELECT DISTINCT ON (situation_instance_id, name, interval) situation_instance_id, name, ts, facts_ids, expression_facts, parameters, metadatas
+			query = `
+				SELECT DISTINCT ON (situation_instance_id, name, interval) 
+					situation_instance_id,
+					name,
+					ts,
+					facts_ids,
+					expression_facts,
+					parameters,
+					metadatas
 				FROM (
-					SELECT situation_history_v1.situation_instance_id, situation_template_instances_v1.name, ts,
-					date_trunc('` + downSampling.GranularitySpecial + `', ts) AS interval,
-					situation_history_v1.facts_ids, situation_history_v1.expression_facts, situation_history_v1.parameters, situation_history_v1.metadatas
-					FROM situation_history_v1 LEFT JOIN situation_template_instances_v1 ON situation_history_v1.situation_instance_id = situation_template_instances_v1.id
-					WHERE situation_history_v1.id = :situation_id AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
-					AND ts >= :tsFrom AND ts <= :tsTo
+					SELECT 
+						situation_template_instances.id,
+						situation_template_instances_v1.name,
+						situation_history_v1.ts,
+						date_trunc('` + downSampling.GranularitySpecial + `', situation_history_v1.ts) AS interval,
+						situation_history_v1.facts_ids,
+						situation_history_v1.expression_facts, 
+						situation_history_v1.parameters,
+						situation_history_v1.metadatas
+					FROM 
+						situation_template_instances_v1
+						INNER JOIN situation_history_v1 ON situation_template_instances_v1.id = situation_history_v1.situation_instance_id 
+					WHERE 
+						situation_template_instances_v1.instance_id = :situation_id 
+						AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
+						AND situation_history_v1.ts >= :tsFrom 
+						AND situation_history_v1.ts <= :tsTo
 				) AS t
 				ORDER BY
 					situation_instance_id ` + order + `,
@@ -77,14 +96,32 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 				order = "ASC"
 			}
 
-			query = `SELECT DISTINCT ON (situation_instance_id, name, interval) situation_instance_id, name, ts, facts_ids, expression_facts, parameters, metadatas
+			query = `
+				SELECT DISTINCT ON (situation_instance_id, name, interval) 
+					situation_instance_id,
+					name,
+					ts,
+					facts_ids,
+					expression_facts,
+					parameters,
+					metadatas
 				FROM (
-					SELECT situation_history_v1.situation_instance_id, situation_template_instances_v1.name, ts,
-					FLOOR(DATE_PART('epoch', ts- :tsFrom)/:granularity) AS interval,
-					situation_history_v1.facts_ids, situation_history_v1.expression_facts, situation_history_v1.parameters, situation_history_v1.metadatas
-					FROM situation_history_v1 LEFT JOIN situation_template_instances_v1 ON situation_history_v1.situation_instance_id = situation_template_instances_v1.id
-					WHERE situation_history_v1.id = :situation_id AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
-					AND ts >= :tsFrom AND ts <= :tsTo
+					SELECT 
+						situation_template_instances.id,
+						situation_template_instances_v1.name,
+						situation_history_v1.ts,
+						FLOOR(DATE_PART('epoch', ts- :tsFrom)/:granularity) AS interval,
+						situation_history_v1.facts_ids,
+						situation_history_v1.expression_facts,
+						situation_history_v1.parameters, situation_history_v1.metadatas
+					FROM 
+						situation_template_instances_v1
+						INNER JOIN situation_history_v1 ON situation_template_instances_v1.id = situation_history_v1.situation_instance_id 
+					WHERE 
+						situation_template_instances_v1.instance_id = :situation_id 
+						AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
+						AND situation_history_v1.ts >= :tsFrom 
+						AND situation_history_v1.ts <= :tsTo
 				) AS t
 				ORDER BY
 					situation_instance_id ` + order + `,
@@ -92,32 +129,69 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 					interval ` + order + `,
 					ts ` + order
 		} else {
-			query = `SELECT situation_history_v1.situation_instance_id, situation_template_instances_v1.name,
-				CAST(:tsFrom AS TIMESTAMP) + INTERVAL '1 second' * :granularity * FLOOR(DATE_PART('epoch', ts- :tsFrom)/:granularity) AS timestamp,
-				JSON_AGG(situation_history_v1.facts_ids), JSON_AGG(situation_history_v1.expression_facts), JSON_AGG(situation_history_v1.parameters), JSON_AGG(situation_history_v1.metadatas)
-				FROM situation_history_v1 LEFT JOIN situation_template_instances_v1 ON situation_history_v1.situation_instance_id = situation_template_instances_v1.id
-				WHERE situation_history_v1.id = :situation_id AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
-				AND ts >= :tsFrom AND ts <= :tsTo
-				GROUP BY (situation_history_v1.situation_instance_id, situation_template_instances_v1.name, timestamp)
-				ORDER BY timestamp ASC`
+			query = `
+				SELECT 
+					situation_template_instances.id,
+					situation_template_instances_v1.name,
+					CAST(:tsFrom AS TIMESTAMP) + INTERVAL '1 second' * :granularity * FLOOR(DATE_PART('epoch', ts- :tsFrom)/:granularity) AS timestamp,
+					JSON_AGG(situation_history_v1.facts_ids), 
+					JSON_AGG(situation_history_v1.expression_facts), 
+					JSON_AGG(situation_history_v1.parameters), 
+					JSON_AGG(situation_history_v1.metadatas)
+				FROM 
+					situation_template_instances_v1
+					INNER JOIN situation_history_v1 ON situation_template_instances_v1.id = situation_history_v1.situation_instance_id 
+				WHERE 
+					situation_template_instances_v1.instance_id = :situation_id 
+					AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
+					AND situation_history_v1.ts >= :tsFrom 
+					AND situation_history_v1.ts <= :tsTo
+				GROUP BY 
+					situation_template_instances.id, situation_template_instances_v1.name, timestamp
+				ORDER BY 
+					timestamp ASC`
 		}
 	} else {
 		if !t.IsZero() {
-			query = `SELECT DISTINCT ON (situation_history_v1.situation_instance_id)
-					situation_history_v1.situation_instance_id, situation_template_instances_v1.name, situation_history_v1.ts,
-					situation_history_v1.facts_ids, situation_history_v1.expression_facts, situation_history_v1.parameters, situation_history_v1.metadatas
-					FROM situation_history_v1 LEFT JOIN situation_template_instances_v1 ON situation_history_v1.situation_instance_id = situation_template_instances_v1.id
-					WHERE situation_history_v1.id = :situation_id AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
-					AND ts <= :ts
-					ORDER BY situation_history_v1.situation_instance_id, situation_history_v1.ts DESC`
-
+			query = `
+				SELECT DISTINCT ON (situation_template_instances_v1.id) 
+					situation_template_instances_v1.id, 
+					situation_template_instances_v1.name, 
+					situation_history_v1.ts,
+					situation_history_v1.facts_ids, 
+					situation_history_v1.expression_facts, 
+					situation_history_v1.parameters, 
+					situation_history_v1.metadatas
+				FROM
+					situation_template_instances_v1
+					INNER JOIN situation_history_v1 ON situation_template_instances_v1.id = situation_history_v1.situation_instance_id 
+				WHERE
+					situation_template_instances_v1.situation_id = :situation_id
+					AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
+					AND situation_history_v1.ts <= :ts
+				ORDER BY 
+					situation_template_instances_v1.id ASC,
+					situation_history_v1.ts DESC;`
 		} else {
-			query = `SELECT situation_instance_id, situation_template_instances_v1.name, situation_history_v1.ts, situation_history_v1.facts_ids,
-					situation_history_v1.expression_facts, situation_history_v1.parameters, situation_history_v1.metadatas
-					FROM situation_history_v1 LEFT JOIN situation_template_instances_v1 ON situation_history_v1.situation_instance_id = situation_template_instances_v1.id
-					WHERE situation_history_v1.id = :situation_id AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
-					AND ts >= :tsFrom AND ts <= :tsTo
-					ORDER BY situation_history_v1.ts ASC`
+			query = `
+				SELECT 
+					situation_template_instances_v1.id,
+					situation_template_instances_v1.name,
+					situation_history_v1.ts,
+					situation_history_v1.facts_ids,
+					situation_history_v1.expression_facts,
+					situation_history_v1.parameters,
+					situation_history_v1.metadatas
+				FROM 
+					situation_template_instances_v1
+					INNER JOIN situation_history_v1 ON situation_template_instances_v1.id = situation_history_v1.situation_instance_id 
+				WHERE 
+					situation_template_instances_v1.situation_id = :situation_id 
+					AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
+					AND situation_history_v1.ts >= :tsFrom 
+					AND situation_history_v1.ts <= :tsTo
+				ORDER BY 
+					situation_history_v1.ts ASC`
 		}
 	}
 
