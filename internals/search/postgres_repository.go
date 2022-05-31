@@ -165,7 +165,6 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 		}
 	} else {
 		if !t.IsZero() {
-			fmt.Println("imhere")
 			query = `
 				SELECT DISTINCT ON (situation_history_v1.situation_instance_id) 
 					situation_history_v1.situation_instance_id, 
