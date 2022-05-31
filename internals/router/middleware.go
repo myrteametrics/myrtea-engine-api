@@ -6,17 +6,15 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/go-chi/jwtauth"
+	"github.com/go-chi/jwtauth/v5"
 	gorillacontext "github.com/gorilla/context"
+	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/users"
 	"go.uber.org/zap"
 )
-
-var parser = &jwt.Parser{}
 
 // UnverifiedAuthenticator doc
 // WARNING: Don't use this method unless you know what you're doing
@@ -40,12 +38,13 @@ func UnverifiedAuthenticator(next http.Handler) http.Handler {
 			return
 		}
 
-		token, _, err := parser.ParseUnverified(tokenStr, jwt.MapClaims{})
+		token, err := jwt.Parse([]byte(tokenStr))
 		if err != nil {
 			zap.L().Warn("JWT string cannot be parsed") // , zap.String("jwt", tokenStr)) // Security issue if logged without check ?
 			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Invalid JWT"))
 			return
 		}
+
 		ctx = jwtauth.NewContext(ctx, token, err)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -116,7 +115,8 @@ func CustomAuthenticator(next http.Handler) http.Handler {
 			return
 		}
 
-		if token == nil || !token.Valid {
+		// if token == nil || !token.Valid {
+		if token == nil {
 			render.Error(w, r, render.ErrAPISecurityMissingContext, nil)
 			return
 		}

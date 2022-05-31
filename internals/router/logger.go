@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	chimiddleware "github.com/go-chi/chi/middleware"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	gorillacontext "github.com/gorilla/context"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 )
