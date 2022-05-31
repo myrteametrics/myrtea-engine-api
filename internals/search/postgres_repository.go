@@ -64,7 +64,7 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 					metadatas
 				FROM (
 					SELECT 
-						situation_template_instances.id,
+						situation_history_v1.situation_instance_id,
 						situation_template_instances_v1.name,
 						situation_history_v1.ts,
 						date_trunc('` + downSampling.GranularitySpecial + `', situation_history_v1.ts) AS interval,
@@ -80,8 +80,8 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 							and (situation_history_v1.situation_instance_id = situation_template_instances_v1.id OR situation_history_v1.situation_instance_id = 0)
 						)
 					WHERE 
-						situation_template_instances_v1.instance_id = :situation_id 
-						AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
+						situation_history_v1.id = :situation_id 
+						AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
 						AND situation_history_v1.ts >= :tsFrom 
 						AND situation_history_v1.ts <= :tsTo
 				) AS t
@@ -111,7 +111,7 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 					metadatas
 				FROM (
 					SELECT 
-						situation_template_instances.id,
+						situation_history_v1.situation_instance_id,
 						situation_template_instances_v1.name,
 						situation_history_v1.ts,
 						FLOOR(DATE_PART('epoch', ts- :tsFrom)/:granularity) AS interval,
@@ -126,8 +126,8 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 							and (situation_history_v1.situation_instance_id = situation_template_instances_v1.id OR situation_history_v1.situation_instance_id = 0)
 						)
 					WHERE 
-						situation_template_instances_v1.instance_id = :situation_id 
-						AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
+						situation_history_v1.id = :situation_id 
+						AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
 						AND situation_history_v1.ts >= :tsFrom 
 						AND situation_history_v1.ts <= :tsTo
 				) AS t
@@ -139,7 +139,7 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 		} else {
 			query = `
 				SELECT 
-					situation_template_instances.id,
+					situation_history_v1.situation_instance_id,
 					situation_template_instances_v1.name,
 					CAST(:tsFrom AS TIMESTAMP) + INTERVAL '1 second' * :granularity * FLOOR(DATE_PART('epoch', ts- :tsFrom)/:granularity) AS timestamp,
 					JSON_AGG(situation_history_v1.facts_ids), 
@@ -154,20 +154,21 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 						and (situation_history_v1.situation_instance_id = situation_template_instances_v1.id OR situation_history_v1.situation_instance_id = 0)
 					)
 				WHERE 
-					situation_template_instances_v1.instance_id = :situation_id 
-					AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
+					situation_history_v1.id = :situation_id 
+					AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
 					AND situation_history_v1.ts >= :tsFrom 
 					AND situation_history_v1.ts <= :tsTo
 				GROUP BY 
-					situation_template_instances.id, situation_template_instances_v1.name, timestamp
+					situation_history_v1.situation_instance_id, situation_template_instances_v1.name, timestamp
 				ORDER BY 
 					timestamp ASC`
 		}
 	} else {
 		if !t.IsZero() {
+			fmt.Println("imhere")
 			query = `
-				SELECT DISTINCT ON (situation_template_instances_v1.id) 
-					situation_template_instances_v1.id, 
+				SELECT DISTINCT ON (situation_history_v1.situation_instance_id) 
+					situation_history_v1.situation_instance_id, 
 					situation_template_instances_v1.name, 
 					situation_history_v1.ts,
 					situation_history_v1.facts_ids, 
@@ -182,16 +183,16 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 						and (situation_history_v1.situation_instance_id = situation_template_instances_v1.id OR situation_history_v1.situation_instance_id = 0)
 					)
 				WHERE
-					situation_template_instances_v1.situation_id = :situation_id
-					AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
+					situation_history_v1.id = :situation_id
+					AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
 					AND situation_history_v1.ts <= :ts
 				ORDER BY 
-					situation_template_instances_v1.id ASC,
+					situation_history_v1.situation_instance_id ASC,
 					situation_history_v1.ts DESC;`
 		} else {
 			query = `
 				SELECT 
-					situation_template_instances_v1.id,
+					situation_history_v1.situation_instance_id,
 					situation_template_instances_v1.name,
 					situation_history_v1.ts,
 					situation_history_v1.facts_ids,
@@ -206,8 +207,8 @@ func (r *PostgresRepository) GetSituationHistoryRecords(s situation.Situation, t
 						and (situation_history_v1.situation_instance_id = situation_template_instances_v1.id OR situation_history_v1.situation_instance_id = 0)
 					)
 				WHERE 
-					situation_template_instances_v1.situation_id = :situation_id 
-					AND (:situation_instance_id = 0 OR situation_template_instances_v1.id = :situation_instance_id)
+					situation_history_v1.id = :situation_id 
+					AND (:situation_instance_id = 0 OR situation_history_v1.situation_instance_id = :situation_instance_id)
 					AND situation_history_v1.ts >= :tsFrom 
 					AND situation_history_v1.ts <= :tsTo
 				ORDER BY 
