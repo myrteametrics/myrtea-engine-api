@@ -90,7 +90,8 @@ create table calendar_v1 (
 	period_data JSONB not null,
 	enabled boolean not null,
 	creation_date timestamptz not null,
-	last_modified timestamptz not null
+	last_modified timestamptz not null,
+	timezone character varying(100) DEFAULT 'Europe/Paris'::character varying NOT NULL
 );
 
 create table calendar_union_v1 (
