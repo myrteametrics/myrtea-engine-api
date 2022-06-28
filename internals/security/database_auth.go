@@ -32,7 +32,7 @@ func (auth *DatabaseAuth) scan(rows *sql.Rows) (users.User, error) {
 	user := users.User{}
 	err := rows.Scan(&user.ID, &user.Login, &user.Created, &user.LastName, &user.FirstName, &user.Email, &user.Phone)
 	if err != nil {
-		return users.User{}, errors.New("Couldn't scan the retrieved data: " + err.Error())
+		return users.User{}, errors.New("couldn't scan the retrieved data: " + err.Error())
 	}
 	return user, nil
 }
@@ -81,7 +81,7 @@ func (auth *DatabaseAuth) Authenticate(login string, password string) (users.Use
 // 	// 	break
 // 	// }
 // 	// if i == 0 {
-// 	// 	return false, users.User{}, errors.New("Invalid credentials")
+// 	// 	return false, users.User{}, errors.New("invalid credentials")
 // 	// }
 
 // 	return true, user, nil

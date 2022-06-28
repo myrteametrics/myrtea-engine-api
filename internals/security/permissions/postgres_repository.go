@@ -7,6 +7,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	uuid "github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 )
 
 const table = "permissions_v4"
@@ -157,8 +158,10 @@ func (r *PostgresRepository) scanAll(rows *sql.Rows) ([]Permission, error) {
 	for rows.Next() {
 		permission, err := r.scan(rows)
 		if err != nil {
+			zap.L().Warn("error", zap.Error(err))
 			return []Permission{}, err
 		}
+		zap.L().Info("p", zap.Any("permission", permission), zap.Any("rows", rows))
 		permissions = append(permissions, permission)
 	}
 	return permissions, nil
@@ -170,16 +173,16 @@ func (r *PostgresRepository) checkRowAffected(result sql.Result, nbRows int64) e
 		return err
 	}
 	if i != nbRows {
-		return errors.New("No row deleted (or multiple row deleted) instead of 1 row")
+		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
 	return nil
 }
 
 func (r *PostgresRepository) scan(rows *sql.Rows) (Permission, error) {
 	permission := Permission{}
-	err := rows.Scan(&permission.ID, &permission.ResourceID, &permission.ResourceType, &permission.Action)
+	err := rows.Scan(&permission.ID, &permission.ResourceType, &permission.ResourceID, &permission.Action)
 	if err != nil {
-		return Permission{}, errors.New("Couldn't scan the retrieved data: " + err.Error())
+		return Permission{}, errors.New("couldn't scan the retrieved data: " + err.Error())
 	}
 	return permission, nil
 }

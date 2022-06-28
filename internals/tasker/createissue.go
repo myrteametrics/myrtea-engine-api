@@ -25,31 +25,31 @@ func buildCreateIssueTask(parameters map[string]interface{}) (CreateIssueTask, e
 	if val, ok := parameters["id"].(string); ok && val != "" {
 		task.ID = val
 	} else {
-		return task, errors.New("Missing or not valid 'id' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'id' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["name"].(string); ok && val != "" {
 		task.Name = val
 	} else {
-		return task, errors.New("Missing or not valid 'name' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'name' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["level"].(string); ok && val != "" {
 		task.Level = val
 	} else {
-		return task, errors.New("Missing or not valid 'level' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'level' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["timeout"].(string); ok && val != "" {
 		task.Timeout = val
 	} else {
-		return task, errors.New("Missing or not valid 'timeout' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'timeout' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["isNotification"].(bool); ok {
 		task.IsNotification = val
 	} else {
-		return task, errors.New("Missing or not valid 'isNotification' parameter (boolean required)")
+		return task, errors.New("missing or not valid 'isNotification' parameter (boolean required)")
 	}
 
 	return task, nil

@@ -52,7 +52,7 @@ func CloseIssueWithFeedback(dbClient *sqlx.DB, issue models.Issue, recommendatio
 		return err
 	}
 	if exists {
-		return errors.New("A feedback has already been done on this issue")
+		return errors.New("a feedback has already been done on this issue")
 	}
 
 	selectedRootCause, selectedActions, err := ExtractSelectedFromTree(recommendation)
@@ -132,13 +132,13 @@ func persistIssueFeedback(tx *sqlx.Tx, issue models.Issue, selectedRootCause *mo
 			return err
 		}
 		if !found {
-			return errors.New("This rootcause doesn't not exists")
+			return errors.New("this rootcause doesn't not exists")
 		}
 		if checkRC.SituationID != situationID {
-			return errors.New("This rootcause cannot be used on the current issue/situation")
+			return errors.New("this rootcause cannot be used on the current issue/situation")
 		}
 		if checkRC.RuleID != ruleID {
-			return errors.New("This rootcause cannot be used on the current issue/situation (invalid rule)")
+			return errors.New("this rootcause cannot be used on the current issue/situation (invalid rule)")
 		}
 	}
 
@@ -158,10 +158,10 @@ func persistIssueFeedback(tx *sqlx.Tx, issue models.Issue, selectedRootCause *mo
 				return err
 			}
 			if !found {
-				return errors.New("This action doesn't not exists")
+				return errors.New("this action doesn't not exists")
 			}
 			if checkAction.RootCauseID != dbRootCauseID {
-				return errors.New("This action cannot be used on the current rootcause")
+				return errors.New("this action cannot be used on the current rootcause")
 			}
 		}
 		dbActionIDs = append(dbActionIDs, dbActionID)
@@ -196,7 +196,7 @@ func persistIssueResolutionStat(tx *sqlx.Tx, issueID int64, rootCauseID int64, a
 		_, err = postgres.DB().NamedExec(query, params)
 	}
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 	return nil
 }

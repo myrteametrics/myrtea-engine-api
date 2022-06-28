@@ -66,24 +66,11 @@ func NewSamlSP(spRootURLStr string, entityID string, keyFile string, crtFile str
 		ForceAuthn:  false,
 	}
 
-	// for backwards compatibility, support IDPMetadataURL
-	if opts.IDPMetadataURL != nil && opts.IDPMetadata == nil {
-		httpClient := opts.HTTPClient
-		if httpClient == nil {
-			httpClient = http.DefaultClient
-		}
-		metadata, err := samlsp.FetchMetadata(context.TODO(), httpClient, *opts.IDPMetadataURL)
-		if err != nil {
-			return nil, err
-		}
-		opts.IDPMetadata = metadata
-	}
-
 	defaultMiddleware := &samlsp.Middleware{
 		ServiceProvider: CustomServiceProvider(opts),
 		Binding:         "",
 		OnError:         onError,
-		Session:         samlsp.DefaultSessionProvider(opts),
+		Session:         CustomSessionProvider(opts, config.CookieMaxAge),
 	}
 	defaultMiddleware.RequestTracker = CustomRequestTracker(opts, &defaultMiddleware.ServiceProvider)
 
@@ -139,7 +126,7 @@ func (m *SamlSPMiddleware) HandleStartAuthFlow(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	authReq, err := m.ServiceProvider.MakeAuthenticationRequest(bindingLocation)
+	authReq, err := m.ServiceProvider.MakeAuthenticationRequest(bindingLocation, binding, m.ResponseBinding)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -155,7 +142,12 @@ func (m *SamlSPMiddleware) HandleStartAuthFlow(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	redirectURL := authReq.Redirect(relayState)
+	redirectURL, err := authReq.Redirect(relayState, &m.ServiceProvider)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Add("Authenticate-To", redirectURL.String())
 	w.Header().Add("Content-type", "application/json")
 	w.WriteHeader(http.StatusUnauthorized)
@@ -172,7 +164,7 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 		userID := samlsp.AttributeFromContext(r.Context(), m.Config.AttributeUserID)
 		if userID == "" {
 			zap.L().Error("Missing userID from session after SAML authentication")
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Invalid Session"))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("invalid Session"))
 			return
 		}
 
@@ -185,7 +177,7 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 			role, found, err := roles.R().GetByName(userGroupName)
 			if err != nil {
 				zap.L().Error("Cannot get roles", zap.Error(err), zap.String("groupName", userGroupName))
-				render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
+				render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal Error"))
 				return
 			}
 			if !found {
@@ -203,13 +195,13 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 		userPermissions, err := permissions.R().GetAllForRoles(userRoleUUIDs)
 		if err != nil {
 			zap.L().Error("Cannot get permissions", zap.Error(err))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("Internal Error"))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal Error"))
 			return
 		}
 
 		if m.Config.EnableMemberOfValidation && len(userRoles) == 0 {
 			zap.L().Warn("User access denied", zap.String("reason", "no valid group found"), zap.String("userID", userID), zap.Strings("userGroups", userGroups))
-			render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Access denied"))
+			render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("access denied"))
 			return
 		}
 

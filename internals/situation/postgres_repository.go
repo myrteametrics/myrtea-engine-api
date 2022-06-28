@@ -166,7 +166,7 @@ func (r *PostgresRepository) Create(situation Situation) (int64, error) {
 		rows.Close()
 	} else {
 		tx.Rollback()
-		return -1, errors.New("No id returning of insert situation")
+		return -1, errors.New("no id returning of insert situation")
 	}
 
 	err = r.updateSituationFacts(tx, id, situation.Facts)
@@ -196,7 +196,7 @@ func (r *PostgresRepository) Update(id int64, situation Situation) error {
 
 	situationData, err := json.Marshal(situation)
 	if err != nil {
-		return errors.New("Couldn't marshall the provided data" + err.Error())
+		return errors.New("couldn't marshall the provided data" + err.Error())
 	}
 
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
@@ -223,16 +223,16 @@ func (r *PostgresRepository) Update(id int64, situation Situation) error {
 	res, err := tx.NamedExec(query, params)
 	if err != nil {
 		tx.Rollback()
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 	i, err := res.RowsAffected()
 	if err != nil {
 		tx.Rollback()
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
 		tx.Rollback()
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 
 	err = r.updateSituationFacts(tx, id, situation.Facts)
@@ -284,7 +284,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 	}
 	if i != 1 {
 		tx.Rollback()
-		return errors.New("No row deleted (or multiple row deleted) instead of 1 row")
+		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
 	err = tx.Commit()
 	if err != nil {
@@ -593,7 +593,7 @@ func (r *PostgresRepository) CreateTemplateInstance(situationID int64, instance 
 		return -1, err
 	}
 	if !isTemplate {
-		return -1, errors.New("The Situation does not exists or it is not a template situation")
+		return -1, errors.New("the Situation does not exists or it is not a template situation")
 	}
 
 	parametersData, err := json.Marshal(instance.Parameters)
@@ -629,7 +629,7 @@ func (r *PostgresRepository) CreateTemplateInstance(situationID int64, instance 
 			return -1, err
 		}
 	} else {
-		return -1, errors.New("No id returning of insert situation")
+		return -1, errors.New("no id returning of insert situation")
 	}
 
 	return id, nil
@@ -643,7 +643,7 @@ func (r *PostgresRepository) UpdateTemplateInstance(instanceID int64, instance T
 		return err
 	}
 	if !isTemplate {
-		return errors.New("The Situation does not exists or it is not a template situation")
+		return errors.New("the Situation does not exists or it is not a template situation")
 	}
 
 	query := `UPDATE situation_template_instances_v1 SET situation_id = :situation_id,
@@ -656,7 +656,7 @@ func (r *PostgresRepository) UpdateTemplateInstance(instanceID int64, instance T
 
 	parametersData, err := json.Marshal(instance.Parameters)
 	if err != nil {
-		return errors.New("Couldn't marshall the provided situation parameters" + err.Error())
+		return errors.New("couldn't marshall the provided situation parameters" + err.Error())
 	}
 
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
@@ -677,14 +677,14 @@ func (r *PostgresRepository) UpdateTemplateInstance(instanceID int64, instance T
 	res, err := r.conn.NamedExec(query, params)
 
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 	i, err := res.RowsAffected()
 	if err != nil {
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 
 	return nil
@@ -729,7 +729,7 @@ func (r *PostgresRepository) DeleteTemplateInstance(instanceID int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }

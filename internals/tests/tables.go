@@ -173,7 +173,8 @@ const (
 		assigned_at timestamptz,
 		assigned_to varchar(100),
 		closed_at timestamptz,
-		closed_by varchar(100)
+		closed_by varchar(100),
+		comment text
 	);`
 
 	// RefRootCauseDropTableV1 SQL statement for table drop
@@ -268,6 +269,7 @@ const (
 		id serial primary key,
 		name varchar(100) not null,
 		description varchar(500) not null,
+		timezone varchar(100) not null default 'Europe/Paris',
 		period_data JSONB not null,
 		enabled boolean not null,
 		creation_date timestamptz not null,

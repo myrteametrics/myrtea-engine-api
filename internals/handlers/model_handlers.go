@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	model "github.com/myrteametrics/myrtea-engine-api/v4/internals/modeler"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
@@ -27,7 +27,7 @@ import (
 func GetModels(w http.ResponseWriter, r *http.Request) {
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeModel, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -107,7 +107,7 @@ func GetModel(w http.ResponseWriter, r *http.Request) {
 	// Should be better to just remove the "lookup by name" feature (which is not used anymore, and has no sense in this API)
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeModel, strconv.FormatInt(m.ID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -159,7 +159,7 @@ func ValidateModel(w http.ResponseWriter, r *http.Request) {
 func PostModel(w http.ResponseWriter, r *http.Request) {
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeModel, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -223,7 +223,7 @@ func PutModel(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeModel, strconv.FormatInt(idModel, 10), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -285,7 +285,7 @@ func DeleteModel(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeModel, strconv.FormatInt(idModel, 10), permissions.ActionDelete)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 

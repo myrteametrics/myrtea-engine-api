@@ -67,7 +67,7 @@ func (job *FactCalculationJob) ResolveFromAndTo(t time.Time) (time.Time, time.Ti
 		return from, to, nil
 	}
 	if job.From == "" || job.To == "" {
-		return from, to, errors.New("Missing From or To Parameter")
+		return from, to, errors.New("missing From or To Parameter")
 	}
 
 	variables := expression.GetDateKeywords(t)
@@ -104,10 +104,10 @@ func (job *FactCalculationJob) ResolveFromAndTo(t time.Time) (time.Time, time.Ti
 // IsValid checks if an internal schedule job definition is valid and has no missing mandatory fields
 func (job FactCalculationJob) IsValid() (bool, error) {
 	if job.FactIds == nil {
-		return false, errors.New("Missing FactIds")
+		return false, errors.New("missing FactIds")
 	}
 	if len(job.FactIds) <= 0 {
-		return false, errors.New("Missing FactIds")
+		return false, errors.New("missing FactIds")
 	}
 	return true, nil
 }
@@ -374,6 +374,7 @@ func (job FactCalculationJob) calculate(t time.Time, f engine.Fact, situationID 
 
 // UpdateSituations creates the new instances of the situations in the history and evaluates them
 func UpdateSituations(situationsToUpdate map[string]situation.HistoryRecord) ([]evaluator.SituationToEvaluate, error) {
+
 	situationsToEvalute := make([]evaluator.SituationToEvaluate, 0)
 	for _, record := range situationsToUpdate {
 
@@ -383,16 +384,19 @@ func UpdateSituations(situationsToUpdate map[string]situation.HistoryRecord) ([]
 			zap.L().Error("Get situation facts", zap.Int64("situationID", record.ID), zap.Error(err))
 			continue
 		}
-		factsHistory := make(map[int64]*time.Time, 0)
-		for _, factID := range situationFacts {
-			factsHistory[factID] = nil
-		}
-		// merge values fron lastHistoryRecord into factsHistory
+
+		// merge values from lastHistoryRecord into factsHistory
 		lastHistoryRecord, err := situation.GetFromHistory(record.ID, record.TS, record.TemplateInstanceID, true)
 		if err != nil {
 			zap.L().Error("Get situation from history", zap.Int64("situationID", record.ID), zap.Time("ts", record.TS), zap.Error(err))
 			continue
 		}
+
+		factsHistory := make(map[int64]*time.Time)
+		for _, factID := range situationFacts {
+			factsHistory[factID] = nil
+		}
+
 		if lastHistoryRecord != nil {
 			for factID, factTS := range lastHistoryRecord.FactsIDS {
 				factsHistory[factID] = factTS
@@ -402,11 +406,12 @@ func UpdateSituations(situationsToUpdate map[string]situation.HistoryRecord) ([]
 		for factID, factTS := range record.FactsIDS {
 			factsHistory[factID] = factTS
 		}
+
 		record.FactsIDS = factsHistory
 
 		evaluatedExpressionFacts, err := evaluateExpressionFacts(record, record.TS)
 		if err != nil {
-			zap.L().Error("cannot evaluate expression facts", zap.Error(err))
+			zap.L().Warn("cannot evaluate expression facts", zap.Error(err))
 			continue
 		}
 		record.EvaluatedExpressionFacts = evaluatedExpressionFacts
@@ -429,19 +434,20 @@ func UpdateSituations(situationsToUpdate map[string]situation.HistoryRecord) ([]
 }
 
 func evaluateExpressionFacts(record situation.HistoryRecord, t time.Time) (map[string]interface{}, error) {
-	evaluatedExpressionFacts := make(map[string]interface{}, 0)
+	evaluatedExpressionFacts := make(map[string]interface{})
 
 	s, found, err := situation.R().Get(record.ID)
 	if err != nil {
+		zap.L().Error("Get Situation", zap.Int64("situationID", record.ID), zap.Error(err))
 		return evaluatedExpressionFacts, err
 	}
 	if !found {
+		zap.L().Warn("Situation not found", zap.Int64("situationID", s.ID))
 		return evaluatedExpressionFacts, fmt.Errorf("situation not found with ID = %d", record.ID)
 	}
 
 	data, err := flattenSituationData(record)
 	if err != nil {
-		zap.L().Error("cannot flatten situation data", zap.Error(err))
 		return evaluatedExpressionFacts, err
 	}
 
@@ -467,17 +473,21 @@ func evaluateExpressionFacts(record situation.HistoryRecord, t time.Time) (map[s
 }
 
 func flattenSituationData(record situation.HistoryRecord) (map[string]interface{}, error) {
-	situationData := make(map[string]interface{}, 0)
+	situationData := make(map[string]interface{})
 	for factID, factTS := range record.FactsIDS {
 		f, found, err := fact.R().Get(factID)
 		if err != nil {
+			zap.L().Error("get fact", zap.Error(err))
 			return nil, err
 		}
 		if !found {
-			return nil, fmt.Errorf("Fact not found with id=%d", factID)
+			zap.L().Warn("fact not found", zap.Int64("factID", factID))
+			return nil, fmt.Errorf("fact not found with id=%d", factID)
 		}
 		if factTS == nil {
-			return nil, fmt.Errorf("At least one fact has never been calculated, id=%d, name=%s", f.ID, f.Name)
+			// zap.L().Warn("At least one fact has never been calculated", zap.Int64("id", f.ID), zap.String("name", f.Name))
+			// return nil, fmt.Errorf("at least one fact has never been calculated, id=%d, name=%s", f.ID, f.Name)
+			continue
 		}
 
 		item, _, err := fact.GetFactResultFromHistory(factID, *factTS, record.ID, record.TemplateInstanceID, false, -1)
@@ -486,6 +496,7 @@ func flattenSituationData(record situation.HistoryRecord) (map[string]interface{
 		}
 		itemData, err := item.ToAbstractMap()
 		if err != nil {
+			zap.L().Error("Convert item to abstractmap", zap.Error(err))
 			return nil, err
 		}
 

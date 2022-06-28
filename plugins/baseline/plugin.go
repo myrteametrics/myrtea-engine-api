@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-plugin"
 	"go.uber.org/zap"
 )
@@ -26,7 +26,7 @@ func P() (*BaselinePlugin, error) {
 
 	plugin := _globalPlugin
 	if plugin == nil {
-		return nil, errors.New("No Baseline plugin found, feature is not available")
+		return nil, errors.New("no Baseline plugin found, feature is not available")
 	}
 	return plugin, nil
 }

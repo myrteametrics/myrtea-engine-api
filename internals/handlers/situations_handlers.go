@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
@@ -27,16 +27,16 @@ import (
 func GetSituations(w http.ResponseWriter, r *http.Request) {
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	var situations map[int64]situation.Situation
 	var err error
-	if user.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionGet)) {
+	if user.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionGet)) {
 		situations, err = situation.R().GetAll()
 	} else {
-		resourceIDs := user.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionGet))
+		resourceIDs := user.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionGet))
 		situations, err = situation.R().GetAllByIDs(resourceIDs)
 	}
 	if err != nil {
@@ -77,7 +77,7 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -143,7 +143,7 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -258,7 +258,7 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -319,7 +319,7 @@ func DeleteSituation(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionDelete)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 

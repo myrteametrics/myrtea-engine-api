@@ -51,25 +51,25 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 	if val, ok := parameters["id"].(string); ok && val != "" {
 		task.ID = val
 	} else {
-		return task, errors.New("Missing or invalid 'id' parameter (string not empty required)")
+		return task, errors.New("missing or invalid 'id' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["subject"].(string); ok && val != "" {
 		task.Subject = val
 	} else {
-		return task, errors.New("Missing or invalid 'subject' parameter (string not empty required)")
+		return task, errors.New("missing or invalid 'subject' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["bodyTemplate"].(string); ok && val != "" {
 		task.BodyTemplate = strings.ReplaceAll(val, "'", "\"")
 	} else {
-		return task, errors.New("Missing or invalid 'bodyTemplate' parameter (string not empty required)")
+		return task, errors.New("missing or invalid 'bodyTemplate' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["to"].(string); ok && val != "" {
 		task.To = strings.Split(val, ",")
 	} else {
-		return task, errors.New("Missing or invalid 'to' parameter (string not empty required)")
+		return task, errors.New("missing or invalid 'to' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["attachmentFileNames"].(string); ok && val != "" {
@@ -82,18 +82,18 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 			if factID, err := strconv.ParseInt(factIDStr, 10, 64); err == nil {
 				task.AttachmentFactIDs = append(task.AttachmentFactIDs, factID)
 			} else {
-				return task, errors.New("Missing or invalid 'attachmentFactIDs' parameter (string is not an integer)")
+				return task, errors.New("missing or invalid 'attachmentFactIDs' parameter (string is not an integer)")
 			}
 		}
 	}
 	if len(task.AttachmentFileNames) > 1 {
-		return task, errors.New("Parameter 'attachmentFileName' must only contains one value (for now)")
+		return task, errors.New("parameter 'attachmentFileName' must only contains one value (for now)")
 	}
 	if len(task.AttachmentFactIDs) > 1 {
-		return task, errors.New("Parameter 'attachmentFactID' must only contains one value (for now)")
+		return task, errors.New("parameter 'attachmentFactID' must only contains one value (for now)")
 	}
 	if len(task.AttachmentFileNames) != len(task.AttachmentFactIDs) {
-		return task, errors.New("Parameters 'attachmentFileName' and 'attachmentFactID' have different length")
+		return task, errors.New("parameters 'attachmentFileName' and 'attachmentFactID' have different length")
 	}
 
 	if val, ok := parameters["columns"].(string); ok && val != "" {
@@ -111,25 +111,25 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 	}
 
 	if len(task.Columns) != len(task.ColumnsLabel) {
-		return task, errors.New("Parameters 'columns' and 'colomns label' have different length")
+		return task, errors.New("parameters 'columns' and 'colomns label' have different length")
 	}
 
 	if val, ok := parameters["smtpHost"].(string); ok && val != "" {
 		task.SMTPHost = val
 	} else {
-		return task, errors.New("Missing or invalid 'smtpHost' parameter (string not empty required)")
+		return task, errors.New("missing or invalid 'smtpHost' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["smtpPort"].(string); ok && val != "" {
 		task.SMTPPort = val
 	} else {
-		return task, errors.New("Missing or invalid 'smtpPort' parameter (string not empty required)")
+		return task, errors.New("missing or invalid 'smtpPort' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["smtpUsername"].(string); ok && val != "" {
 		task.SMTPUsername = val
 	} else {
-		return task, errors.New("Missing or invalid 'smtpUsername' parameter (string not empty required)")
+		return task, errors.New("missing or invalid 'smtpUsername' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["smtpPassword"].(string); ok && val != "" {
@@ -139,7 +139,7 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 	if val, ok := parameters["timeout"].(string); ok && val != "" {
 		task.Timeout = val
 	} else {
-		return task, errors.New("Missing or not valid 'timeout' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'timeout' parameter (string not empty required)")
 	}
 
 	return task, nil

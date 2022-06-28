@@ -64,7 +64,7 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, issueID int64, draft models.Fro
 
 	data, err := json.Marshal(draft)
 	if err != nil {
-		return errors.New("Couldn't marshall the provided data:" + err.Error())
+		return errors.New("couldn't marshall the provided data:" + err.Error())
 	}
 
 	now := time.Now().Truncate(1 * time.Millisecond).UTC()
@@ -84,7 +84,7 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, issueID int64, draft models.Fro
 		_, err = r.conn.NamedExec(query, params)
 	}
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 	return nil
 }
@@ -93,12 +93,12 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, issueID int64, draft models.Fro
 func (r *PostgresRepository) Update(tx *sqlx.Tx, issueID int64, draft models.FrontDraft) error {
 
 	if draft.ConcurrencyUUID == "" {
-		return errors.New("No concurrency uuid specified on this draft")
+		return errors.New("no concurrency uuid specified on this draft")
 	}
 
 	data, err := json.Marshal(draft)
 	if err != nil {
-		return errors.New("Couldn't marshall the provided data:" + err.Error())
+		return errors.New("couldn't marshall the provided data:" + err.Error())
 	}
 
 	query := `UPDATE issue_resolution_draft_v1 SET last_modified = :last_modified, concurrency_uuid = :concurrency_uuid, data = :data 
@@ -118,15 +118,15 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, issueID int64, draft models.Fro
 		res, err = r.conn.NamedExec(query, params)
 	}
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 
 	i, err := res.RowsAffected()
 	if err != nil {
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }

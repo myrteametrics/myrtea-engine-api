@@ -19,16 +19,16 @@ type Rule struct {
 // IsValid checks if a rule definition is valid and has no missing mandatory fields
 func (r *Rule) IsValid() (bool, error) {
 	if r.Name == "" {
-		return false, errors.New("Missing Name")
+		return false, errors.New("missing Name")
 	}
 	if r.Description == "" {
-		return false, errors.New("Missing Title")
+		return false, errors.New("missing Title")
 	}
 	if r.Cases == nil {
-		return false, errors.New("Missing Cases")
+		return false, errors.New("missing Cases")
 	}
 	if len(r.Cases) <= 0 {
-		return false, errors.New("Missing Cases")
+		return false, errors.New("missing Cases")
 	}
 
 	return true, nil

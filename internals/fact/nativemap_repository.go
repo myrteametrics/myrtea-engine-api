@@ -66,11 +66,11 @@ func (r *NativeMapRepository) Create(fact engine.Fact) (int64, error) {
 	defer r.mutex.RUnlock()
 
 	if _, ok := r.factsByName[fact.Name]; ok {
-		return -1, errors.New("Fact already exists for the Name: " + fact.Name)
+		return -1, errors.New("fact already exists for the Name: " + fact.Name)
 	}
 	factID := r.nextInt()
 	if _, ok := r.factsByID[factID]; ok {
-		return -1, errors.New("Fact already exists for the ID:" + strconv.FormatInt(factID, 10))
+		return -1, errors.New("fact already exists for the ID:" + strconv.FormatInt(factID, 10))
 	}
 
 	//This is necessary because within the definition we don't have the id
@@ -87,7 +87,7 @@ func (r *NativeMapRepository) Update(id int64, fact engine.Fact) error {
 	defer r.mutex.Unlock()
 
 	if _, ok := r.factsByID[id]; !ok {
-		return errors.New("Fact does not exists for the ID:" + strconv.FormatInt(id, 10))
+		return errors.New("fact does not exists for the ID:" + strconv.FormatInt(id, 10))
 	}
 
 	//This is necessary because within the definition we don't have the id
@@ -103,7 +103,7 @@ func (r *NativeMapRepository) Delete(id int64) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if _, ok := r.factsByID[id]; !ok {
-		return errors.New("Fact does not exists for the ID:" + strconv.FormatInt(id, 10))
+		return errors.New("fact does not exists for the ID:" + strconv.FormatInt(id, 10))
 	}
 	f := r.factsByID[id]
 	delete(r.factsByName, f.Name)

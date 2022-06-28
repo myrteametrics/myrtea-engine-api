@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
@@ -28,7 +28,7 @@ func GetUserSelf(w http.ResponseWriter, r *http.Request) {
 	_user := r.Context().Value(models.ContextKeyUser)
 	if _user == nil {
 		zap.L().Warn("No context user provided")
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("No context user provided"))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("no context user provided"))
 		return
 	}
 

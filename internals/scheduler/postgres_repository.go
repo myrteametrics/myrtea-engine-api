@@ -31,7 +31,7 @@ func (r *PostgresRepository) Create(schedule InternalSchedule) (int64, error) {
 	timestamp := time.Now().Truncate(1 * time.Millisecond).UTC()
 	scheduleData, err := json.Marshal(schedule.Job)
 	if err != nil {
-		return -1, errors.New("Failled to marshall the InternalSchedule ID:" + fmt.Sprint(schedule.ID) +
+		return -1, errors.New("failled to marshall the InternalSchedule ID:" + fmt.Sprint(schedule.ID) +
 			"\nError from Marshal" + err.Error())
 	}
 
@@ -55,7 +55,7 @@ func (r *PostgresRepository) Create(schedule InternalSchedule) (int64, error) {
 	if rows.Next() {
 		rows.Scan(&id)
 	} else {
-		return -1, errors.New("No id returning of insert situation")
+		return -1, errors.New("no id returning of insert situation")
 	}
 	return id, nil
 }
@@ -68,7 +68,7 @@ func (r *PostgresRepository) Get(id int64) (InternalSchedule, bool, error) {
 	})
 
 	if err != nil {
-		return InternalSchedule{}, false, errors.New("Couldn't retrieve the InternalSchedule with id: " + fmt.Sprint(id) + " : " + err.Error())
+		return InternalSchedule{}, false, errors.New("couldn't retrieve the InternalSchedule with id: " + fmt.Sprint(id) + " : " + err.Error())
 	}
 	defer rows.Close()
 
@@ -77,7 +77,7 @@ func (r *PostgresRepository) Get(id int64) (InternalSchedule, bool, error) {
 		var jobData string
 		err := rows.Scan(&schedule.ID, &schedule.Name, &schedule.CronExpr, &schedule.JobType, &jobData)
 		if err != nil {
-			return InternalSchedule{}, false, errors.New("Couldn't scan the retrieved data: " + err.Error())
+			return InternalSchedule{}, false, errors.New("couldn't scan the retrieved data: " + err.Error())
 		}
 
 		job, err := UnmarshalInternalJob(schedule.JobType, []byte(jobData), schedule.ID)
@@ -88,7 +88,7 @@ func (r *PostgresRepository) Get(id int64) (InternalSchedule, bool, error) {
 
 		return schedule, true, nil
 	}
-	return InternalSchedule{}, false, errors.New("InternalSchedule not found for ID: " + fmt.Sprint(id))
+	return InternalSchedule{}, false, errors.New("internalschedule not found for ID: " + fmt.Sprint(id))
 }
 
 // Update updates a schedule in the repository by its name
@@ -97,7 +97,7 @@ func (r *PostgresRepository) Update(schedule InternalSchedule) error {
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
 	scheduleData, err := json.Marshal(schedule.Job)
 	if err != nil {
-		return errors.New("Failled to marshall the InternalSchedule ID:" + fmt.Sprint(schedule.ID) +
+		return errors.New("failled to marshall the InternalSchedule ID:" + fmt.Sprint(schedule.ID) +
 			"\nError from Marshal" + err.Error())
 	}
 
@@ -112,14 +112,14 @@ func (r *PostgresRepository) Update(schedule InternalSchedule) error {
 		"last_modified": t,
 	})
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 	i, err := res.RowsAffected()
 	if err != nil {
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -139,7 +139,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -152,7 +152,7 @@ func (r *PostgresRepository) GetAll() (map[int64]InternalSchedule, error) {
 
 	if err != nil {
 		zap.L().Error("Couldn't retrieve the InternalSchedules", zap.Error(err))
-		return nil, errors.New("Couldn't retrieve the InternalSchedules " + err.Error())
+		return nil, errors.New("couldn't retrieve the InternalSchedules " + err.Error())
 	}
 	defer rows.Close()
 
@@ -162,7 +162,7 @@ func (r *PostgresRepository) GetAll() (map[int64]InternalSchedule, error) {
 		var jobData string
 		err := rows.Scan(&schedule.ID, &schedule.Name, &schedule.CronExpr, &schedule.JobType, &jobData)
 		if err != nil {
-			return nil, errors.New("Couldn't scan the retrieved data: " + err.Error())
+			return nil, errors.New("couldn't scan the retrieved data: " + err.Error())
 		}
 
 		job, err := UnmarshalInternalJob(schedule.JobType, []byte(jobData), schedule.ID)

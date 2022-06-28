@@ -8,6 +8,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/draft"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/rootcause"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/externalconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
 
 	// "github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
@@ -47,6 +48,7 @@ func initRepositories() {
 	connector.ReplaceGlobals(connector.NewPostgresRepository(dbClient))
 	rule.ReplaceGlobals(rule.NewPostgresRepository(dbClient))
 	modeler.ReplaceGlobals(modeler.NewPostgresRepository(dbClient))
+	externalconfig.ReplaceGlobals(externalconfig.NewPostgresRepository(dbClient))
 }
 
 func initServices() {

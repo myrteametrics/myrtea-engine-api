@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/dbutils"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"

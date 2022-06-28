@@ -80,7 +80,7 @@ func (middleware *MiddlewareJWT) GetToken() http.HandlerFunc {
 
 		user, allowed, err := middleware.Auth.Authenticate(credentials.Login, credentials.Password)
 		if err != nil {
-			zap.L().Error("Authentication failed", zap.Error(err))
+			zap.L().Warn("Authentication failed", zap.Error(err))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}

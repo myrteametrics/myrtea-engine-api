@@ -23,37 +23,37 @@ func buildNotifyTask(parameters map[string]interface{}) (NotifyTask, error) {
 	if val, ok := parameters["id"].(string); ok && val != "" {
 		task.ID = val
 	} else {
-		return task, errors.New("Missing or not valid 'id' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'id' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["level"].(string); ok && val != "" {
 		task.Level = val
 	} else {
-		return task, errors.New("Missing or not valid 'level' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'level' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["name"].(string); ok && val != "" {
 		task.Name = val
 	} else {
-		return task, errors.New("Missing or not valid 'name' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'name' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["description"].(string); ok && val != "" {
 		task.Name = val
 	} else {
-		return task, errors.New("Missing or not valid 'description' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'description' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["timeout"].(string); ok && val != "" {
 		task.Timeout = val
 	} else {
-		return task, errors.New("Missing or not valid 'timeout' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'timeout' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["context"].(map[string]interface{}); ok {
 		task.Context = val
 	} else {
-		return task, errors.New("Missing or not valid 'context' parameter (map[string]interface{} required)")
+		return task, errors.New("missing or not valid 'context' parameter (map[string]interface{} required)")
 	}
 
 	return task, nil

@@ -53,7 +53,7 @@ func (r *PostgresRepository) Create(roles []uuid.UUID, notif Notification) (int6
 	if rows.Next() {
 		rows.Scan(&id)
 	} else {
-		return -1, errors.New("No id returning of insert situation")
+		return -1, errors.New("no id returning of insert situation")
 	}
 	return id, nil
 }
@@ -129,7 +129,7 @@ func (r *PostgresRepository) GetByRoles(roleIds []uuid.UUID, queryOptionnal dbut
 
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
-		return nil, errors.New("Couldn't retrieve any notification with these roles. The query is equal to: " + err.Error())
+		return nil, errors.New("couldn't retrieve any notification with these roles. The query is equal to: " + err.Error())
 	}
 	defer rows.Close()
 
@@ -144,13 +144,13 @@ func (r *PostgresRepository) GetByRoles(roleIds []uuid.UUID, queryOptionnal dbut
 
 		err := rows.Scan(&id, &data, &isRead)
 		if err != nil {
-			return nil, errors.New("Couldn't scan the notification data:" + err.Error())
+			return nil, errors.New("couldn't scan the notification data:" + err.Error())
 		}
 
 		// Retrieve data json data
 		err = json.Unmarshal([]byte(data), &notif)
 		if err != nil {
-			return nil, errors.New("Couldn't convert data content:" + err.Error())
+			return nil, errors.New("couldn't convert data content:" + err.Error())
 		}
 
 		notif.ID = id
@@ -161,7 +161,7 @@ func (r *PostgresRepository) GetByRoles(roleIds []uuid.UUID, queryOptionnal dbut
 		})
 	}
 	if err != nil {
-		return nil, errors.New("Deformed Data " + err.Error())
+		return nil, errors.New("deformed Data " + err.Error())
 	}
 	return notifications, nil
 }
@@ -181,7 +181,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -202,7 +202,7 @@ func (r *PostgresRepository) UpdateRead(id int64, status bool) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row updated (or multiple row updated) instead of 1 row")
+		return errors.New("no row updated (or multiple row updated) instead of 1 row")
 	}
 	return nil
 }

@@ -95,7 +95,7 @@ lint2: $(GOLANGCILINT)
 	golangci-lint run
 
 $(SWAG):
-	go get github.com/swaggo/swag/cmd/swag@v1.5.1
+	go install github.com/swaggo/swag/cmd/swag@v1.5.1
 
 .PHONY: swag ## Generate swagger documentation
 swag: $(SWAG)
@@ -157,3 +157,9 @@ docker-run-postgres-tests:
 .PHONY: docker-stop-postgres-tests
 docker-stop-postgres-tests:
 	docker stop myrtea-postgres-integration-tests
+
+.PHONY: security
+security:
+	TOKEN=$(curl -s -X POST -d '{"login":"admin","password":"myrtea"}' http://localhost:9000/api/v4/login | jq -r '.token')
+	curl -X GET -H "Authorization: Bearer zzz$(TOKEN)" http://localhost:9000/api/v4/engine/facts
+	curl -X GET -H "Authorization: Bearer $(TOKEN)" http://localhost:9000/api/v4/engine/facts

@@ -28,13 +28,13 @@ type User struct {
 // * LastName must not be empty
 func (user *User) IsValid() (bool, error) {
 	if user.Login == "" {
-		return false, errors.New("Missing Login")
+		return false, errors.New("missing Login")
 	}
 	if len(user.Login) < 3 {
-		return false, errors.New("Login is too short (less than 3 charaters)")
+		return false, errors.New("login is too short (less than 3 charaters)")
 	}
 	if user.LastName == "" {
-		return false, errors.New("Missing Lastname")
+		return false, errors.New("missing Lastname")
 	}
 	return true, nil
 }
@@ -55,18 +55,18 @@ func (user *UserWithPassword) IsValid() (bool, error) {
 		return false, err
 	}
 	if user.Password == "" {
-		return false, errors.New("Missing Password")
+		return false, errors.New("missing Password")
 	}
 	if len(user.Password) < 6 {
-		return false, errors.New("Password is too short (less than 6 characters)")
+		return false, errors.New("password is too short (less than 6 characters)")
 	}
 	return true, nil
 }
 
 type UserWithPermissions struct {
 	User
-	Roles       []roles.Role
-	Permissions []permissions.Permission
+	Roles       []roles.Role             `json:"roles"`
+	Permissions []permissions.Permission `json:"permissions"`
 }
 
 func (u UserWithPermissions) GetRolesUUIDs() []uuid.UUID {

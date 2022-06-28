@@ -27,19 +27,19 @@ type ExpressionFact struct {
 // IsValid checks if an internal schedule definition is valid and has no missing mandatory fields
 func (s Situation) IsValid() (bool, error) {
 	if s.Name == "" {
-		return false, errors.New("Missing Name")
+		return false, errors.New("missing Name")
 	}
 	if s.Groups == nil {
-		return false, errors.New("Missing Groups")
+		return false, errors.New("missing Groups")
 	}
 	if len(s.Groups) <= 0 {
-		return false, errors.New("Missing Groups")
+		return false, errors.New("missing Groups")
 	}
 	if s.Facts == nil {
-		return false, errors.New("Missing Facts")
+		return false, errors.New("missing Facts")
 	}
 	if len(s.Facts) <= 0 {
-		return false, errors.New("Missing Facts")
+		return false, errors.New("missing Facts")
 	}
 	return true, nil
 }

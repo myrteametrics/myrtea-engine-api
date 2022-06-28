@@ -122,7 +122,7 @@ func (r *PostgresRepository) Create(fact engine.Fact) (int64, error) {
 			return -1, err
 		}
 	} else {
-		return -1, errors.New("No id returning of insert situation")
+		return -1, errors.New("no id returning of insert situation")
 	}
 
 	return id, nil
@@ -137,7 +137,7 @@ func (r *PostgresRepository) Update(id int64, fact engine.Fact) error {
 
 	factdata, err := json.Marshal(fact)
 	if err != nil {
-		return errors.New("Couldn't marshall the provided data:" + err.Error())
+		return errors.New("couldn't marshall the provided data:" + err.Error())
 	}
 
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
@@ -148,14 +148,14 @@ func (r *PostgresRepository) Update(id int64, fact engine.Fact) error {
 		"last_modified": t,
 	})
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 	i, err := res.RowsAffected()
 	if err != nil {
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -174,7 +174,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }

@@ -71,7 +71,7 @@ func ExtractSelectedFromTree(recommendation models.FrontRecommendation) (*models
 	for _, rootCause := range recommendation.Tree {
 		if rootCause.Selected {
 			if selectedRootCause != nil {
-				return nil, nil, errors.New("A feedback can't have multiple selected rootcause")
+				return nil, nil, errors.New("a feedback can't have multiple selected rootcause")
 			}
 
 			selectedRootCause = rootCause
@@ -83,10 +83,10 @@ func ExtractSelectedFromTree(recommendation models.FrontRecommendation) (*models
 		}
 	}
 	if selectedRootCause == nil {
-		return nil, nil, errors.New("A feedback must have one rootcause selected")
+		return nil, nil, errors.New("a feedback must have one rootcause selected")
 	}
 	if len(selectedActions) == 0 {
-		return nil, nil, errors.New("A feedback must have at least one action selected")
+		return nil, nil, errors.New("a feedback must have at least one action selected")
 	}
 	return selectedRootCause, selectedActions, nil
 }

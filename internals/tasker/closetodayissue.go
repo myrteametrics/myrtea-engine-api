@@ -22,14 +22,14 @@ func buildCloseTodayIssuesTask(parameters map[string]interface{}) (CloseTodayIss
 	if val, ok := parameters["id"].(string); ok && val != "" {
 		task.ID = val
 	} else {
-		return task, errors.New("Missing or not valid 'id' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'id' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["timeZone"].(string); ok && val != "" {
 		task.TimeZone = val
 		_, err := time.LoadLocation(task.TimeZone)
 		if err != nil {
-			return task, errors.New("Invalid time zone")
+			return task, errors.New("invalid time zone")
 		}
 	}
 
@@ -60,7 +60,7 @@ func (task CloseTodayIssuesTask) Perform(key string, context ContextData) error 
 	from := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	to := from.Add(24 * time.Hour)
 
-	err = issues.R().ChangeState(key, []models.IssueState{models.Open}, models.ClosedDiscard, from, to)
+	err = issues.R().ChangeStateBetweenDates(key, []models.IssueState{models.Open}, models.ClosedDiscard, from, to)
 
 	if err != nil {
 		return err

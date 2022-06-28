@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
@@ -31,7 +31,7 @@ var allowedSortByFields = []string{"id", "created_at", "last_modified"}
 func GetIssues(w http.ResponseWriter, r *http.Request) {
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -109,7 +109,7 @@ func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -168,7 +168,7 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -210,7 +210,7 @@ func GetIssueFactsHistory(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -252,7 +252,7 @@ func PostIssue(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(newIssue.SituationID, 10), permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -302,7 +302,7 @@ func GetIssueFeedbackTree(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -352,7 +352,7 @@ func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -410,7 +410,7 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -468,7 +468,7 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -532,7 +532,7 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := GetUserFromContext(r)
 	if !user.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("Missing permission"))
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -553,6 +553,64 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("AddIssueDetectionFeedback", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		return
+	}
+
+	render.OK(w, r)
+}
+
+// UpdateIssueComment godoc
+// @Summary Update an issue comment
+// @Description Update an issue comment
+// @Tags Issues
+// @Accept json
+// @Produce json
+// @Param id path string true "Issue ID"
+// @Param reason body interface{} false "Comment to update"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Failure 500 "Status" internal server error"
+// @Router /engine/issues/{id}/comment [put]
+func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
+
+	// user, _ := GetUserFromContext(r)
+	// FIXME
+	// if user == nil {
+	// 	render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("no user found in context"))
+	// 	return
+	// }
+	// if !user.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionCreate)) {
+	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+	// 	return
+	// }
+
+	id := chi.URLParam(r, "id")
+	idIssue, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	type IssueComment struct {
+		Comment string `json:"comment"`
+	}
+
+	var comment IssueComment
+	err = json.NewDecoder(r.Body).Decode(&comment)
+	if err != nil {
+		zap.L().Warn("Body decode", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	//zap.L().Info("UpdateComment", zap.String("comment", comment.Comment))
+
+	err = issues.R().UpdateComment(postgres.DB(), idIssue, comment.Comment)
+	if err != nil {
+		zap.L().Error("Cannot update issue comment", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 		return
 	}
 

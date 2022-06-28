@@ -60,7 +60,7 @@ func (r *PostgresRepository) Get(id int64) (models.Action, bool, error) {
 // Create method used to create an action
 func (r *PostgresRepository) Create(tx *sqlx.Tx, action models.Action) (int64, error) {
 	if !checkValidity(action) {
-		return -1, errors.New("Missing action data")
+		return -1, errors.New("missing action data")
 	}
 
 	query := `INSERT into ref_action_v1 (id, name, description, rootcause_id) 
@@ -87,7 +87,7 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, action models.Action) (int64, e
 	if res.Next() {
 		res.Scan(&id)
 	} else {
-		return -1, errors.New("No id returning of insert action")
+		return -1, errors.New("no id returning of insert action")
 	}
 
 	return id, nil
@@ -96,7 +96,7 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, action models.Action) (int64, e
 // Update method used to update un action
 func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, action models.Action) error {
 	if !checkValidity(action) {
-		return errors.New("Missing action data")
+		return errors.New("missing action data")
 	}
 
 	query := `UPDATE ref_action_v1 SET name = :name, description = :description WHERE id = :id`
@@ -114,15 +114,15 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, action models.Action)
 		res, err = r.conn.NamedExec(query, params)
 	}
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 
 	i, err := res.RowsAffected()
 	if err != nil {
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -142,7 +142,7 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
 		res, err = r.conn.NamedExec(query, params)
 	}
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 
 	i, err := res.RowsAffected()
@@ -150,7 +150,7 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }

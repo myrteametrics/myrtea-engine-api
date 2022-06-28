@@ -38,7 +38,7 @@ func SaveIssueDraft(tx *sqlx.Tx, issue models.Issue, issueDraft models.FrontDraf
 			return err
 		}
 		if !existsWithUUID {
-			return errors.New("The existing draft has already been modified by someone else")
+			return errors.New("the existing draft has already been modified by someone else")
 		}
 		err = draft.R().Update(tx, issue.ID, issueDraft)
 		if err != nil {

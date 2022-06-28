@@ -27,7 +27,7 @@ const (
 type Permission struct {
 	ID           uuid.UUID `json:"id"`
 	ResourceType string    `json:"resourceType"`
-	ResourceID   string    `json:"resourceID"`
+	ResourceID   string    `json:"resourceId"`
 	Action       string    `json:"action"`
 }
 
@@ -77,15 +77,25 @@ func matchPermission(permission string, required string) bool {
 	return false
 }
 
+func matchPermissionStrict(permission string, required string) bool {
+	if permission == All {
+		return true
+	}
+	if permission == required {
+		return true
+	}
+	return false
+}
+
 func HasPermission(permissions []Permission, required Permission) bool {
 	for _, permission := range permissions {
-		if !matchResourceType(permission, required) {
+		if !matchPermissionStrict(permission.ResourceType, required.ResourceType) {
 			continue
 		}
-		if !matchResourceID(permission, required) {
+		if !matchPermissionStrict(permission.ResourceID, required.ResourceID) {
 			continue
 		}
-		if !matchResourceAction(permission, required) {
+		if !matchPermissionStrict(permission.Action, required.Action) {
 			continue
 		}
 		return true
@@ -109,16 +119,4 @@ func HasPermissionAll(permissions []Permission, requiredAll []Permission) bool {
 		}
 	}
 	return true
-}
-
-func matchResourceType(permission Permission, required Permission) bool {
-	return matchPermission(permission.ResourceType, required.ResourceType)
-}
-
-func matchResourceID(permission Permission, required Permission) bool {
-	return matchPermission(permission.ResourceID, required.ResourceID)
-}
-
-func matchResourceAction(permission Permission, required Permission) bool {
-	return matchPermission(permission.Action, required.Action)
 }

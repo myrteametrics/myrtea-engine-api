@@ -192,7 +192,7 @@ func (r *PostgresRepository) checkRowAffected(result sql.Result, nbRows int64) e
 		return err
 	}
 	if i != nbRows {
-		return errors.New("No row deleted (or multiple row deleted) instead of 1 row")
+		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
 	return nil
 }
@@ -201,7 +201,7 @@ func (r *PostgresRepository) scan(rows *sql.Rows) (User, error) {
 	user := User{}
 	err := rows.Scan(&user.ID, &user.Login, &user.Created, &user.LastName, &user.FirstName, &user.Email, &user.Phone)
 	if err != nil {
-		return User{}, errors.New("Couldn't scan the retrieved data: " + err.Error())
+		return User{}, errors.New("couldn't scan the retrieved data: " + err.Error())
 	}
 	return user, nil
 }

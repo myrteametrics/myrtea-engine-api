@@ -28,10 +28,10 @@ func NewAction(id int64, name string, description string, rootCauseID int64) Act
 // IsValid checks if an action definition is valid and has no missing mandatory fields
 func (action *Action) IsValid() (bool, error) {
 	if action.Name == "" {
-		return false, errors.New("Missing Name")
+		return false, errors.New("missing Name")
 	}
 	if action.RootCauseID == 0 {
-		return false, errors.New("Missing RootCauseID (or 0 value)")
+		return false, errors.New("missing RootCauseID (or 0 value)")
 	}
 	return true, nil
 }
@@ -59,13 +59,13 @@ func NewRootCause(id int64, name string, description string, situationID int64, 
 // IsValid checks if a rootcause definition is valid and has no missing mandatory fields
 func (rootcause *RootCause) IsValid() (bool, error) {
 	if rootcause.Name == "" {
-		return false, errors.New("Missing Name")
+		return false, errors.New("missing Name")
 	}
 	if rootcause.SituationID == 0 {
-		return false, errors.New("Missing SituationID (or 0 value)")
+		return false, errors.New("missing SituationID (or 0 value)")
 	}
 	if rootcause.RuleID == 0 {
-		return false, errors.New("Missing RuleID (or 0 value)")
+		return false, errors.New("missing RuleID (or 0 value)")
 	}
 	return true, nil
 }
@@ -89,6 +89,7 @@ type Issue struct {
 	AssignedTo         *string    `json:"assignedTo,omitempty"`
 	ClosedAt           *time.Time `json:"closedAt,omitempty"`
 	CloseBy            *string    `json:"closedBy,omitempty"`
+	Comment            *string    `json:"comment,omitempty"`
 }
 
 //RuleData rule identification

@@ -128,7 +128,7 @@ func ReceiveAggregates(aggregates []ExternalAggregate) error {
 			}
 		}
 		if !found {
-			zap.L().Error("Fact doesn't exist in situation")
+			zap.L().Warn("Fact doesn't exist in situation", zap.Int64("factID", f.ID), zap.Int64("situationID", s.ID), zap.Int64s("factIDs", s.Facts))
 			continue
 		}
 
@@ -141,15 +141,17 @@ func ReceiveAggregates(aggregates []ExternalAggregate) error {
 		}
 
 		if s.ID != si.SituationID {
-			zap.L().Error("invalid s.ID != si.SituationID")
+			zap.L().Warn("invalid s.ID != si.SituationID")
 			continue
 		}
 
 		factSituationsHistory, err := scheduler.GetFactSituations(f, t)
 		if err != nil {
+			zap.L().Warn("getFactSituations", zap.Int64("factID", f.ID), zap.Error(err))
 			continue
 		}
 		if len(factSituationsHistory) == 0 {
+			zap.L().Warn("fact has no situation history", zap.Int64("factID", f.ID))
 			continue
 		}
 

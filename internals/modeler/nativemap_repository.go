@@ -66,11 +66,11 @@ func (r *NativeMapRepository) Create(model modeler.Model) (int64, error) {
 	defer r.mutex.RUnlock()
 
 	if _, ok := r.modelsByName[model.Name]; ok {
-		return -1, errors.New("Model already exists for the Name: " + model.Name)
+		return -1, errors.New("model already exists for the Name: " + model.Name)
 	}
 	modelID := r.nextInt()
 	if _, ok := r.modelsByID[modelID]; ok {
-		return -1, errors.New("Model already exists for the ID:" + strconv.FormatInt(modelID, 10))
+		return -1, errors.New("model already exists for the ID:" + strconv.FormatInt(modelID, 10))
 	}
 
 	//This is necessary because within the definition we don't have the id
@@ -87,7 +87,7 @@ func (r *NativeMapRepository) Update(id int64, model modeler.Model) error {
 	defer r.mutex.Unlock()
 
 	if _, ok := r.modelsByID[id]; !ok {
-		return errors.New("Model does not exists for the ID:" + strconv.FormatInt(id, 10))
+		return errors.New("model does not exists for the ID:" + strconv.FormatInt(id, 10))
 	}
 
 	//This is necessary because within the definition we don't have the id
@@ -104,7 +104,7 @@ func (r *NativeMapRepository) Delete(id int64) error {
 	defer r.mutex.Unlock()
 
 	if _, ok := r.modelsByID[id]; !ok {
-		return errors.New("Model does not exists for the ID:" + strconv.FormatInt(id, 10))
+		return errors.New("model does not exists for the ID:" + strconv.FormatInt(id, 10))
 	}
 	f := r.modelsByID[id]
 	delete(r.modelsByName, f.Name)
