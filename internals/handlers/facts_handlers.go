@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
@@ -711,6 +712,8 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Fact ID"
 // @Param byName query string false "Find fact by it's name"
+// @Param situationid query string false "Optional SituationID"
+// @Param instanceid query string false "Optional InstanceID"
 // @Param time query string true "Timestamp used for the fact execution"
 // @Param cache query string false "Cache maximum age in minutes(go duration: 10m, 1h, ...). If unset, use cache with no limit of age. If set to 0, disable cache"
 // @Param nhit query int false "Hit per page"
@@ -757,6 +760,20 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	situationid, err := ParseInt(r.URL.Query().Get("situationid"))
+	if err != nil {
+		zap.L().Error("Parse input situationid", zap.Error(err), zap.String("rawsituationid", r.URL.Query().Get("situationid")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	instanceid, err := ParseInt(r.URL.Query().Get("instanceid"))
+	if err != nil {
+		zap.L().Error("Parse input instanceid", zap.Error(err), zap.String("rawinstanceid", r.URL.Query().Get("instanceid")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
 	byName := false
 	_byName := r.URL.Query().Get("byName")
 	if _byName == "true" {
@@ -770,12 +787,47 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	parameters := make(map[string]string)
+	if situationid != 0 {
+		s, found, err := situation.R().Get(int64(situationid), groups.GetTokenAllGroups())
+		if err != nil {
+			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+			return
+		}
+		if !found {
+			render.Error(w, r, render.ErrAPIDBResourceNotFound, nil)
+			return
+		}
+		for k, v := range s.Parameters {
+			parameters[k] = v
+		}
+
+		if s.IsTemplate && instanceid != 0 {
+			template, found, err := situation.R().GetTemplateInstance(int64(situationid))
+			if err != nil {
+				render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+				return
+			}
+			if !found {
+				render.Error(w, r, render.ErrAPIDBResourceNotFound, nil)
+				return
+			}
+			for k, v := range template.Parameters {
+				parameters[k] = v
+			}
+		}
+	}
+
+	for k, v := range placeholders {
+		parameters[k] = v
+	}
+
 	zap.L().Debug("Use elasticsearch to resolve query")
 	if debug {
 		zap.L().Debug("Debugging fact", zap.Any("f", f))
 	}
 
-	pf, err := fact.Prepare(&f, nhit, offset, t, placeholders, false)
+	pf, err := fact.Prepare(&f, nhit, offset, t, parameters, false)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
 		render.Error(w, r, render.ErrAPIResourceInvalid, err)
