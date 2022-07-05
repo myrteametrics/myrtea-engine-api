@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
@@ -789,7 +788,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 
 	parameters := make(map[string]string)
 	if situationid != 0 {
-		s, found, err := situation.R().Get(int64(situationid), groups.GetTokenAllGroups())
+		s, found, err := situation.R().Get(int64(situationid))
 		if err != nil {
 			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 			return
