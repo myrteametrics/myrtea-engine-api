@@ -34,8 +34,8 @@ func GetRolePermissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionGet)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}

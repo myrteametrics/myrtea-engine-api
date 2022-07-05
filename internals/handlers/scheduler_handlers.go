@@ -22,8 +22,8 @@ import (
 // @Security Bearer
 // @Router /engine/scheduler/start [POST]
 func StartScheduler(w http.ResponseWriter, r *http.Request) {
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.All)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.All)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -47,8 +47,8 @@ func StartScheduler(w http.ResponseWriter, r *http.Request) {
 // @Router /engine/scheduler/trigger [post]
 func TriggerJobSchedule(w http.ResponseWriter, r *http.Request) {
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionCreate)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionCreate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -82,8 +82,8 @@ func TriggerJobSchedule(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "internal server error"
 // @Router /engine/scheduler/jobs [get]
 func GetJobSchedules(w http.ResponseWriter, r *http.Request) {
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionList)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionList)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -126,8 +126,8 @@ func GetJobSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeScheduler, strconv.FormatInt(idJob, 10), permissions.ActionGet)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, strconv.FormatInt(idJob, 10), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -189,8 +189,8 @@ func ValidateJobSchedule(w http.ResponseWriter, r *http.Request) {
 // @Failure 500	"Status Internal Server Error"
 // @Router /engine/scheduler/jobs [post]
 func PostJobSchedule(w http.ResponseWriter, r *http.Request) {
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionCreate)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionCreate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -266,8 +266,8 @@ func PutJobSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeScheduler, strconv.FormatInt(idJob, 10), permissions.ActionUpdate)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, strconv.FormatInt(idJob, 10), permissions.ActionUpdate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -336,8 +336,8 @@ func DeleteJobSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeScheduler, strconv.FormatInt(idJob, 10), permissions.ActionDelete)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, strconv.FormatInt(idJob, 10), permissions.ActionDelete)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}

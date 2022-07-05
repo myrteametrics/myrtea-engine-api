@@ -24,8 +24,8 @@ import (
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/roles [get]
 func GetRoles(w http.ResponseWriter, r *http.Request) {
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRole, permissions.All, permissions.ActionList)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRole, permissions.All, permissions.ActionList)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -65,8 +65,8 @@ func GetRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionGet)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -129,8 +129,8 @@ func ValidateRole(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/roles [post]
 func PostRole(w http.ResponseWriter, r *http.Request) {
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRole, permissions.All, permissions.ActionCreate)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRole, permissions.All, permissions.ActionCreate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -193,8 +193,8 @@ func PutRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionUpdate)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionUpdate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -256,8 +256,8 @@ func DeleteRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionDelete)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionDelete)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -294,8 +294,8 @@ func SetRolePermissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionUpdate)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionUpdate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}

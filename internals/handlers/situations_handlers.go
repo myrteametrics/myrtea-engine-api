@@ -25,18 +25,18 @@ import (
 // @Failure 500 "internal server error"
 // @Router /engine/situations [get]
 func GetSituations(w http.ResponseWriter, r *http.Request) {
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionList)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionList)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	var situations map[int64]situation.Situation
 	var err error
-	if user.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionGet)) {
+	if userCtx.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionGet)) {
 		situations, err = situation.R().GetAll()
 	} else {
-		resourceIDs := user.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionGet))
+		resourceIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionGet))
 		situations, err = situation.R().GetAllByIDs(resourceIDs)
 	}
 	if err != nil {
@@ -75,8 +75,8 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionGet)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -141,8 +141,8 @@ func ValidateSituation(w http.ResponseWriter, r *http.Request) {
 // @Router /engine/situations [post]
 func PostSituation(w http.ResponseWriter, r *http.Request) {
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionCreate)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionCreate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -256,8 +256,8 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionUpdate)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionUpdate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -317,8 +317,8 @@ func DeleteSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionDelete)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionDelete)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}

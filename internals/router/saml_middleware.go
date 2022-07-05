@@ -227,12 +227,12 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 // AdminAuthentificator is a middle which check if the user is administrator (* * *)
 func (m *SamlSPMiddleware) AdminAuthentificator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, found := handlers.GetUserFromContext(r)
+		userCtx, found := handlers.GetUserFromContext(r)
 		if !found {
 			http.Error(w, http.StatusText(401), 403)
 			return
 		}
-		if !user.HasPermission(permissions.New(permissions.All, permissions.All, permissions.All)) {
+		if !userCtx.HasPermission(permissions.New(permissions.All, permissions.All, permissions.All)) {
 			http.Error(w, http.StatusText(403), 403)
 			return
 		}

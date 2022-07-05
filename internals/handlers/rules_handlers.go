@@ -25,8 +25,8 @@ import (
 // @Failure 500 "internal server error"
 // @Router /engine/rules [get]
 func GetRules(w http.ResponseWriter, r *http.Request) {
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionList)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionList)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -69,8 +69,8 @@ func GetRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionGet)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -109,8 +109,8 @@ func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionGet)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -181,8 +181,8 @@ func ValidateRule(w http.ResponseWriter, r *http.Request) {
 // @Failure 500	"Status Internal Server Error"
 // @Router /engine/rules [post]
 func PostRule(w http.ResponseWriter, r *http.Request) {
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionCreate)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionCreate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -257,8 +257,8 @@ func PutRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionUpdate)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionUpdate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -320,8 +320,8 @@ func DeleteRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionDelete)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionDelete)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}

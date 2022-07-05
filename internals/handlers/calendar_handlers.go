@@ -24,8 +24,8 @@ import (
 // @Failure 500 "internal server error"
 // @Router /engine/calendars [get]
 func GetCalendars(w http.ResponseWriter, r *http.Request) {
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeCalendar, permissions.All, permissions.ActionList)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, permissions.All, permissions.ActionList)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -68,8 +68,8 @@ func GetCalendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionGet)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -110,8 +110,8 @@ func GetResolvedCalendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionGet)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -153,8 +153,8 @@ func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionGet)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -194,8 +194,8 @@ func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/calendars [post]
 func PostCalendar(w http.ResponseWriter, r *http.Request) {
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeCalendar, permissions.All, permissions.ActionCreate)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, permissions.All, permissions.ActionCreate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -251,8 +251,8 @@ func PutCalendar(w http.ResponseWriter, r *http.Request) {
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionUpdate)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionUpdate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -308,8 +308,8 @@ func DeleteCalendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := GetUserFromContext(r)
-	if !user.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionDelete)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionDelete)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
