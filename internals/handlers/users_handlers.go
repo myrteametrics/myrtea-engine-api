@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"go.uber.org/zap"
 )
@@ -25,15 +25,14 @@ import (
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /engine/security/myself [get]
 func GetUserSelf(w http.ResponseWriter, r *http.Request) {
-	_user := r.Context().Value(models.ContextKeyUser)
-	if _user == nil {
+	userCtx, found := GetUserFromContext(r)
+	if !found {
 		zap.L().Warn("No context user provided")
 		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("no context user provided"))
 		return
 	}
 
-	user := _user.(users.UserWithPermissions)
-	render.JSON(w, r, user)
+	render.JSON(w, r, userCtx)
 }
 
 // GetUsers godoc
@@ -46,6 +45,12 @@ func GetUserSelf(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/users [get]
 func GetUsers(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	usersSlice, err := users.R().GetAll()
 	if err != nil {
 		zap.L().Error("GetUsers", zap.Error(err))
@@ -78,6 +83,12 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Parse user id", zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, userID.String(), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -139,6 +150,12 @@ func ValidateUser(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/users [post]
 func PostUser(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	var user users.UserWithPassword
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
@@ -194,6 +211,12 @@ func PutUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Parse user id", zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, userID.String(), permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -254,6 +277,12 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, userID.String(), permissions.ActionDelete)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	err = users.R().Delete(userID)
 	if err != nil {
 		zap.L().Error("Cannot delete user", zap.Error(err))
@@ -264,7 +293,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	render.OK(w, r)
 }
 
-// SetUserPermissions godoc
+// SetUserRoles godoc
 // @Summary Set roles on a user
 // @Description Set roles on a user
 // @Tags Users
@@ -283,6 +312,12 @@ func SetUserRoles(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Parse user id", zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, userID.String(), permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
