@@ -229,11 +229,11 @@ func (m *SamlSPMiddleware) AdminAuthentificator(next http.Handler) http.Handler 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userCtx, found := handlers.GetUserFromContext(r)
 		if !found {
-			http.Error(w, http.StatusText(401), 403)
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusForbidden)
 			return
 		}
 		if !userCtx.HasPermission(permissions.New(permissions.All, permissions.All, permissions.All)) {
-			http.Error(w, http.StatusText(403), 403)
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
 		next.ServeHTTP(w, r)

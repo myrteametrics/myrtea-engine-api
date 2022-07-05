@@ -122,7 +122,7 @@ func AdminAuthentificator(next http.Handler) http.Handler {
 		_, claims, _ := jwtauth.FromContext(r.Context())
 		// test if user haven't right to access
 		if claims["role"] != float64(1) {
-			http.Error(w, http.StatusText(403), 403)
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
 		next.ServeHTTP(w, r)
