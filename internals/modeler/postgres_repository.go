@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
 	"go.uber.org/zap"
 )
@@ -177,6 +178,44 @@ func (r *PostgresRepository) GetAll() (map[int64]modeler.Model, error) {
 
 	query := `SELECT id, definition FROM model_v1`
 	rows, err := r.conn.Query(query)
+	if err != nil {
+		zap.L().Error("Couldn't retrieve the models", zap.Error(err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var modelID int64
+		var modelDef string
+		var model modeler.Model
+		err := rows.Scan(&modelID, &modelDef)
+		if err != nil {
+			zap.L().Error("Couldn't read the model rows:", zap.Error(err))
+			return nil, err
+		}
+
+		err = json.Unmarshal([]byte(modelDef), &model)
+		if err != nil {
+			zap.L().Error("Couldn't unmarshall the model data:", zap.Error(err))
+			return nil, err
+		}
+		model.ID = modelID
+
+		models[modelID] = model
+	}
+	return models, nil
+
+}
+
+// GetAll returns all models in the repository
+func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]modeler.Model, error) {
+
+	models := make(map[int64]modeler.Model, 0)
+
+	query := `SELECT id, definition FROM model_v1 WHERE id = ANY(:ids)`
+	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
+		"ids": pq.Array(ids),
+	})
 	if err != nil {
 		zap.L().Error("Couldn't retrieve the models", zap.Error(err))
 		return nil, err

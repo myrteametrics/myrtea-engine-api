@@ -161,7 +161,6 @@ func (r *PostgresRepository) scanAll(rows *sql.Rows) ([]Permission, error) {
 			zap.L().Warn("error", zap.Error(err))
 			return []Permission{}, err
 		}
-		zap.L().Info("p", zap.Any("permission", permission), zap.Any("rows", rows))
 		permissions = append(permissions, permission)
 	}
 	return permissions, nil

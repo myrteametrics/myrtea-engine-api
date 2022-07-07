@@ -42,6 +42,8 @@ func GetSituationEvaluation(w http.ResponseWriter, r *http.Request) {
 		instanceID = 0
 	}
 
+	// FIXME: security check !
+
 	metaDatas, err := situation.GetLastHistoryMetadata(idSituation, instanceID)
 	if err != nil {
 		zap.L().Error("Error on getting situation last evaluation id", zap.String("situationID", id), zap.Error(err))
@@ -84,6 +86,7 @@ func GetSituationFacts(w http.ResponseWriter, r *http.Request) {
 	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
 	// 	return
 	// }
+	// FIXME: security check !
 
 	factIDs, err := situation.R().GetFacts(idSituation)
 	if err != nil {
@@ -146,6 +149,8 @@ func GetSituationRules(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
+	// FIXME: security check !
+
 	ruleIDs, err := situation.R().GetRules(idSituation)
 	if err != nil {
 		zap.L().Error("Error on getting situation rules", zap.String("situationID", id), zap.Error(err))
@@ -207,6 +212,8 @@ func SetSituationRules(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
+	// FIXME: security check !
+
 	var ruleIDs []int64
 	err = json.NewDecoder(r.Body).Decode(&ruleIDs)
 	if err != nil {
@@ -259,6 +266,8 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
 	// 	return
 	// }
+
+	// FIXME: security check !
 
 	var newInstance situation.TemplateInstance
 	err = json.NewDecoder(r.Body).Decode(&newInstance)
@@ -326,6 +335,8 @@ func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
 	// 	return
 	// }
+
+	// FIXME: security check !
 
 	id = chi.URLParam(r, "instanceid")
 	instanceID, err := strconv.ParseInt(id, 10, 64)
@@ -400,6 +411,8 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
 	// 	return
 	// }
+
+	// FIXME: security check !
 
 	var newInstances []situation.TemplateInstance
 	err = json.NewDecoder(r.Body).Decode(&newInstances)
@@ -494,6 +507,8 @@ func DeleteSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
+	// FIXME: security check !
+
 	id = chi.URLParam(r, "instanceid")
 	instanceID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
@@ -544,6 +559,8 @@ func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
 	// 	return
 	// }
+
+	// FIXME: security check !
 
 	instances, err := situation.R().GetAllTemplateInstances(idSituation)
 	if err != nil {

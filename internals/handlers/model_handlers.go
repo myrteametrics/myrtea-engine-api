@@ -31,12 +31,20 @@ func GetModels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	models, err := model.R().GetAll()
+	var models map[int64]modeler.Model
+	var err error
+	if userCtx.HasPermission(permissions.New(permissions.TypeModel, permissions.All, permissions.ActionGet)) {
+		models, err = model.R().GetAll()
+	} else {
+		resourceIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeModel, permissions.All, permissions.ActionGet))
+		models, err = model.R().GetAllByIDs(resourceIDs)
+	}
 	if err != nil {
 		zap.L().Error("Error getting models", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 		return
 	}
+
 	modelsSlice := make([]modeler.Model, 0)
 	for _, action := range models {
 		modelsSlice = append(modelsSlice, action)

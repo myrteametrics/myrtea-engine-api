@@ -2,10 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/search"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"go.uber.org/zap"
 )
 
@@ -28,6 +32,39 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
 		return
 	}
+
+	userCtx, _ := GetUserFromContext(r)
+	// Check Situation
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(query.SituationID, 10), permissions.ActionSearch)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	_, found, err := situation.R().Get(query.SituationID)
+	if err != nil {
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, nil)
+		return
+	}
+
+	// Check situation instance
+	if query.SituationInstanceID != 0 {
+		if !userCtx.HasPermission(permissions.New(permissions.TypeSituationInstance, strconv.FormatInt(query.SituationInstanceID, 10), permissions.ActionSearch)) {
+			render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+			return
+		}
+	}
+	// } else {
+	// 	if userCtx.HasPermission(permissions.New(permissions.TypeSituationInstance, permissions.All, permissions.ActionSearch)) {
+	// 		// OK ?
+	// 	} else {
+	// 		resourceIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeSituationInstance, permissions.All, permissions.ActionSearch))
+	// 		_ = resourceIDs
+	// 	}
+	// }
 
 	result, err := query.Execute()
 	if err != nil {

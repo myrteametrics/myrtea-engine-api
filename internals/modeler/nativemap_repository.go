@@ -120,3 +120,12 @@ func (r *NativeMapRepository) GetAll() (map[int64]modeler.Model, error) {
 	modelsByID := r.modelsByID
 	return modelsByID, nil
 }
+
+// GetAll returns all entities in the repository
+func (r *NativeMapRepository) GetAllByIDs(ids []int64) (map[int64]modeler.Model, error) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	modelsByID := r.modelsByID
+	return modelsByID, nil
+}
