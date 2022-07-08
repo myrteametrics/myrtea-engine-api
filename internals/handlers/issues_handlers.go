@@ -1,4 +1,5 @@
 package handlers
+ 	
 
 import (
 	"encoding/json"
@@ -15,6 +16,7 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"go.uber.org/zap"
 )
+
 
 var allowedSortByFields = []string{"id", "created_at", "last_modified"}
 
@@ -149,6 +151,7 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	issue, found, err := issues.R().Get(idIssue, groups)
+	
 	if err != nil {
 		zap.L().Error("Cannot retrieve issue", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -162,6 +165,28 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 
 	render.JSON(w, r, issue)
 }
+
+//GetByKey
+func GetIssueByKey(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	if user == nil {
+		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
+		return
+	}
+	groups := GetUserGroupsFromUser(user)
+
+	key := chi.URLParam(r, "key")
+       issues, err := issues.R().GetByKey(key, groups)
+	if err != nil {
+		zap.L().Error("Cannot retrieve issue", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+		
+	}
+
+	render.JSON(w, r, issues)
+}
+
 
 // GetIssueFactsHistory godoc
 // @Summary Get the facts history for an issue

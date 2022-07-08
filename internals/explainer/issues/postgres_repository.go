@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -51,6 +52,7 @@ func (r *PostgresRepository) Get(id int64, groups []int64) (models.Issue, bool, 
 	var issue models.Issue
 	if rows.Next() {
 		issue, err = scanIssue(rows)
+	
 		if err != nil {
 			return models.Issue{}, false, err
 		}
@@ -206,6 +208,35 @@ func (r *PostgresRepository) GetByStates(issueStates []string, groups []int64) (
 	if err != nil {
 		zap.L().Error("Couldn't retrieve the issues states and groups ", zap.Error(err))
 		return nil, errors.New("Couldn't retrieve the issues from situation id " + err.Error())
+	}
+	defer rows.Close()
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, err
+		}
+		issues[issue.ID] = issue
+	}
+
+	return issues, nil
+}
+
+//Get used to get issues by key
+func (r *PostgresRepository) GetByKey(key string, groups []int64) (map[int64]models.Issue, error) {
+	issues := make(map[int64]models.Issue, 0)
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
+			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
+			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
+			  FROM issues_v1 as i
+	 		  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
+			  WHERE  i.key = :key and situation_definition_v1.groups && :groups`
+	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
+		"key":     key,
+		"groups": pq.Array(groups),
+	})
+
+	if err != nil {
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
