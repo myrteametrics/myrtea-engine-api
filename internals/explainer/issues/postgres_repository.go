@@ -292,7 +292,7 @@ func (r *PostgresRepository) GetAll() (map[int64]models.Issue, error) {
 
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
-			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
+			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{})
 
@@ -316,7 +316,7 @@ func (r *PostgresRepository) GetAllBySituationIDs(situationIDs []int64) (map[int
 
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
 		  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
-		  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
+		  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 		  FROM issues_v1 as i
 		  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
 		  WHERE situation_definition_v1.id = ANY(:situation_ids)`
@@ -345,7 +345,7 @@ func (r *PostgresRepository) GetByStates(issueStates []string) (map[int64]models
 
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
-			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
+			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i`
 	params := map[string]interface{}{}
 
@@ -377,7 +377,7 @@ func (r *PostgresRepository) GetByStatesBySituationIDs(issueStates []string, sit
 
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
-			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by
+			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i
 			  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
 			  WHERE situation_definition_v1.id = ANY(:situation_ids)`
@@ -410,14 +410,14 @@ func (r *PostgresRepository) GetByStatesBySituationIDs(issueStates []string, sit
 // GetByStateByPage method used to get all issues
 func (r *PostgresRepository) GetByStateByPage(issueStates []string, options models.SearchOptions) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
-	query := `SELECT issues_v1.id, issues_v1.key, issues_v1.name, issues_v1.level,
-		issues_v1.situation_id, situation_instance_id, issues_v1.situation_date,
-		issues_v1.expiration_date, issues_v1.rule_data, issues_v1.state, issues_v1.created_at, issues_v1.last_modified,
-		issues_v1.detection_rating_avg, issues_v1.assigned_at, issues_v1.assigned_to, issues_v1.closed_at, issues_v1.closed_by
-	FROM issues_v1`
+	query := `SELECT i.id, i.key, i.name, i.level,
+		i.situation_id, situation_instance_id, i.situation_date,
+		i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
+		i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
+	FROM issues_v1 as i`
 	params := map[string]interface{}{}
 	if len(issueStates) > 0 {
-		query += ` WHERE issues_v1.state = ANY (:states)`
+		query += ` WHERE i.state = ANY (:states)`
 		params["states"] = pq.Array(issueStates)
 	}
 	if len(options.SortBy) == 0 {
@@ -425,7 +425,7 @@ func (r *PostgresRepository) GetByStateByPage(issueStates []string, options mode
 	}
 
 	var err error
-	query, params, err = queryutils.AppendSearchOptions(query, params, options, "issues_v1")
+	query, params, err = queryutils.AppendSearchOptions(query, params, options, "i")
 	if err != nil {
 		return nil, 0, err
 	}
@@ -456,12 +456,12 @@ func (r *PostgresRepository) GetByStateByPage(issueStates []string, options mode
 func (r *PostgresRepository) GetByStateByPageBySituationIDs(issueStates []string, options models.SearchOptions, situationIDs []int64) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
 
-	query := `SELECT issues_v1.id, issues_v1.key, issues_v1.name, issues_v1.level,
-		issues_v1.situation_id, situation_instance_id, issues_v1.situation_date,
-		issues_v1.expiration_date, issues_v1.rule_data, issues_v1.state, issues_v1.created_at, issues_v1.last_modified,
-		issues_v1.detection_rating_avg, issues_v1.assigned_at, issues_v1.assigned_to, issues_v1.closed_at, issues_v1.closed_by
-	FROM issues_v1
-	inner join situation_definition_v1 on situation_definition_v1.id = issues_v1.situation_id
+	query := `SELECT i.id, i.key, i.name, i.level,
+		i.situation_id, situation_instance_id, i.situation_date,
+		i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
+		i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
+	FROM issues_v1 as i
+	inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
 	WHERE situation_definition_v1.id = ANY(:situation_ids)`
 	params := map[string]interface{}{
 		"situation_ids": pq.Array(situationIDs),
@@ -564,9 +564,25 @@ func scanIssue(rows *sqlx.Rows) (models.Issue, error) {
 	var issueLevelString string
 	var issue models.Issue
 
-	err := rows.Scan(&issue.ID, &issue.Key, &issue.Name, &issueLevelString, &issue.SituationID, &issue.TemplateInstanceID,
-		&issue.SituationTS, &issue.ExpirationTS, &ruleData, &issueStateString, &issue.CreationTS,
-		&issue.LastModificationTS, &issue.DetectionRatingAvg, &issue.AssignedAt, &issue.AssignedTo, &issue.ClosedAt, &issue.CloseBy, &issue.Comment)
+	err := rows.Scan(
+		&issue.ID,
+		&issue.Key,
+		&issue.Name,
+		&issueLevelString,
+		&issue.SituationID,
+		&issue.TemplateInstanceID,
+		&issue.SituationTS,
+		&issue.ExpirationTS,
+		&ruleData,
+		&issueStateString,
+		&issue.CreationTS,
+		&issue.LastModificationTS,
+		&issue.DetectionRatingAvg,
+		&issue.AssignedAt,
+		&issue.AssignedTo,
+		&issue.ClosedAt,
+		&issue.CloseBy,
+		&issue.Comment)
 	if err != nil {
 		return models.Issue{}, err
 	}

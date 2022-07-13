@@ -10,6 +10,7 @@ const (
 	ActionUpdate = "update"
 	ActionDelete = "delete"
 	ActionSearch = "search"
+	ActionAccess = "access"
 
 	TypeUser              = "user"
 	TypePermission        = "permission"

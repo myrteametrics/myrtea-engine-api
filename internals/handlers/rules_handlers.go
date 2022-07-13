@@ -31,6 +31,17 @@ func GetRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// FIXME : Suport rule advanced security by refactoring rule repository (merge all getter in a single getter with options + getAllByIDs)
+
+	// var rulesMap map[int64]rule.Rule
+	// var err error
+	// if userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionGet)) {
+	// 	rulesMap, err = rule.R().GetAll()
+	// } else {
+	// 	resourceIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionGet))
+	// 	rulesMap, err = rule.R().GetAllByIDs(resourceIDs)
+	// }
+
 	rulesMap, err := rule.R().GetAll()
 	if err != nil {
 		zap.L().Error("Get rules", zap.Error(err))

@@ -1,0 +1,82 @@
+delete from users_roles_v4;
+delete from roles_permissions_v4;
+delete from users_v4;
+delete from roles_v4;
+delete from permissions_v4;
+insert into users_v4 (id, login, password, created, last_name, first_name, email, phone) VALUES ('00000000-0000-0000-0000-000000000000', 'admin', crypt('myrtea' ,gen_salt('md5')), current_timestamp, 'admin', 'admin', 'admin@admin.com', '0123456789');
+insert into roles_v4 (id, name) VALUES ('00000000-0000-0001-0000-000000000000', 'admin');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0000-000000000000', '*', '*', '*');
+insert into users_roles_v4 (user_id, role_id) VALUES ('00000000-0000-0000-0000-000000000000', '00000000-0000-0001-0000-000000000000');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0000-000000000000', '00000000-0000-0002-0000-000000000000');
+
+insert into users_v4 (id, login, password, created, last_name, first_name, email, phone) VALUES ('00000000-0000-0000-0001-000000000000', 'nopermission', crypt('nopermission' ,gen_salt('md5')), current_timestamp, 'nopermission', 'nopermission', 'nopermission@admin.com', '0123456789');
+insert into roles_v4 (id, name) VALUES ('00000000-0000-0001-0001-000000000000', 'nopermission');
+
+insert into users_v4 (id, login, password, created, last_name, first_name, email, phone) VALUES ('00000000-0000-0000-0002-000000000000', 'user1', crypt('user1' ,gen_salt('md5')), current_timestamp, 'user1', 'user1', 'user1@admin.com', '0123456789');
+insert into roles_v4 (id, name) VALUES ('00000000-0000-0001-0002-000000000000', 'user1');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0002-000000000000', '*', '*', 'list');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0002-000000000001', 'model', '1', 'get');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0002-000000000002', 'fact', '1', 'get');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0002-000000000003', 'situation', '1', 'get');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0002-000000000004', 'rule', '1', 'get');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0002-000000000005', 'scheduler', '1', 'get');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0002-000000000006', 'calendar', '1', 'get');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0002-000000000007', 'frontend', 'user-settings', '*');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0002-000000000008', 'frontend', 'home', '*');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0002-000000000009', 'frontend', 'settings', '*');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0002-000000000010', 'frontend', 'administration', '*');
+insert into users_roles_v4 (user_id, role_id) VALUES ('00000000-0000-0000-0002-000000000000', '00000000-0000-0001-0002-000000000000');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0002-000000000000', '00000000-0000-0002-0002-000000000000');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0002-000000000000', '00000000-0000-0002-0002-000000000001');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0002-000000000000', '00000000-0000-0002-0002-000000000002');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0002-000000000000', '00000000-0000-0002-0002-000000000003');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0002-000000000000', '00000000-0000-0002-0002-000000000004');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0002-000000000000', '00000000-0000-0002-0002-000000000005');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0002-000000000000', '00000000-0000-0002-0002-000000000006');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0002-000000000000', '00000000-0000-0002-0002-000000000007');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0002-000000000000', '00000000-0000-0002-0002-000000000008');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0002-000000000000', '00000000-0000-0002-0002-000000000009');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0002-000000000000', '00000000-0000-0002-0002-000000000010');
+
+
+insert into users_v4 (id, login, password, created, last_name, first_name, email, phone) VALUES ('00000000-0000-0000-0003-000000000000', 'user2', crypt('user2' ,gen_salt('md5')), current_timestamp, 'user2', 'user2', 'user2@admin.com', '0123456789');
+insert into roles_v4 (id, name) VALUES ('00000000-0000-0001-0003-000000000000', 'user2');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000000', '*', '*', 'list');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000001', '*', '*', 'get');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000002', 'fact', '*', 'list');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000003', 'fact', '*', 'get');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000004', 'frontend', 'user-settings', 'access');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000005', 'frontend', 'settings', 'access');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000006', 'frontend', 'supervision.integration-colis.colis360', 'access');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000007', 'frontend', 'supervision.integration-colis.search_colis', 'access');
+insert into users_roles_v4 (user_id, role_id) VALUES ('00000000-0000-0000-0003-000000000000', '00000000-0000-0001-0003-000000000000');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0003-000000000000', '00000000-0000-0002-0003-000000000000');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0003-000000000000', '00000000-0000-0002-0003-000000000001');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0003-000000000000', '00000000-0000-0002-0003-000000000002');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0003-000000000000', '00000000-0000-0002-0003-000000000003');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0003-000000000000', '00000000-0000-0002-0003-000000000004');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0003-000000000000', '00000000-0000-0002-0003-000000000005');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0003-000000000000', '00000000-0000-0002-0003-000000000006');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0003-000000000000', '00000000-0000-0002-0003-000000000007');
+
+
+insert into users_v4 (id, login, password, created, last_name, first_name, email, phone) VALUES ('00000000-0000-0000-0004-000000000000', 'user3', crypt('user3' ,gen_salt('md5')), current_timestamp, 'user3', 'user3', 'user3@admin.com', '0123456789');
+insert into roles_v4 (id, name) VALUES ('00000000-0000-0001-0004-000000000000', 'user3');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0004-000000000000', '*', '*', 'list');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0004-000000000001', '*', '*', 'get');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0004-000000000002', 'frontend', 'user-settings', 'access');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0004-000000000003', 'frontend', 'settings', 'access');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0004-000000000004', 'frontend', 'supervision.integration-colis', 'access');
+insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0004-000000000005', 'frontend', 'supervision.plateforme-tri.tri-sur-annonces', 'access');
+insert into users_roles_v4 (user_id, role_id) VALUES ('00000000-0000-0000-0004-000000000000', '00000000-0000-0001-0004-000000000000');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0004-000000000000', '00000000-0000-0002-0004-000000000000');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0004-000000000000', '00000000-0000-0002-0004-000000000001');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0004-000000000000', '00000000-0000-0002-0004-000000000002');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0004-000000000000', '00000000-0000-0002-0004-000000000003');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0004-000000000000', '00000000-0000-0002-0004-000000000004');
+insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0004-000000000000', '00000000-0000-0002-0004-000000000005');
+-- insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0004-000000000000', '00000000-0000-0002-0004-000000000006');
+-- insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0004-000000000000', '00000000-0000-0002-0004-000000000007');
+
+DELETE FROM public.external_generic_config_v1 WHERE name = 'json-config-webapp-layout';
+INSERT INTO public.external_generic_config_v1(name, data) VALUES('json-config-webapp-layout', '[{ "tabs": [{ "items": [], "label": "H1" }, { "items": [{ "list": true, "sort": [{ "col": 0, "order": "asc" }, { "col": 1, "order": "asc" }, { "col": 3, "order": "asc" }], "type": "special_flow", "label": "Supervision des flux", "situationId": 1, "factIdSource": 5, "factIdTarget": 6, "factIdMissing": 1, "parameterFlow": "flux", "parameterSource": "source", "parameterTarget": "cible", "metadataLateRate": "rate_delayed_objects", "metadataLateStatus": "status_rate_delayed_objects", "metadataMissingStatus": "status_missing_objects" }], "label": "Flux", "tab": "flux" }, { "items": [{ "type": "count_total_taux", "label": "Integration (Temps Reel)", "factIdCount": 16, "factIdTotal": 17, "situationId": 7, "metadataStatus": "statut", "expressionFactRate": "taux_integration_event", "situationInstanceId": 158 }, { "type": "count_total_taux", "label": "Integration (Veille)", "factIdCount": 16, "factIdTotal": 17, "situationId": 7, "metadataStatus": "statut", "expressionFactRate": "taux_integration_event", "situationInstanceId": 159 }, { "type": "time", "label": "Fluidité Colis Temoin", "factId": 10, "situationId": 6, "metadataStatus": "statut", "situationInstanceId": 155 }, { "list": true, "sort": [{ "col": 4, "order": "asc" }, { "col": 3, "order": "desc" }], "type": "count_total_taux", "label": "Rejets", "factIdCount": 14, "factIdTotal": 15, "situationId": 9, "metadataStatus": "statut", "expressionFactRate": "taux_reject", "situationInstanceId": 0 }], "label": "Colis360", "tab": "colis360" }, { "items": [{ "type": "count_total_taux", "label": "Integration", "factIdCount": 16, "factIdTotal": 17, "situationId": 7, "metadataStatus": "statut", "expressionFactRate": "taux_integration_event", "situationInstanceId": 160 }, { "type": "time", "label": "Fluidité", "factId": 10, "situationId": 6, "metadataStatus": "statut", "situationInstanceId": 156 }], "label": "Injecteur TTU → TTM", "tab": "injecteur-ttu-ttm" }, { "items": [{ "type": "time", "label": "Fluidité", "factId": 10, "situationId": 6, "metadataStatus": "statut", "situationInstanceId": 156 }], "label": "SearchColis", "tab": "search-colis" }, { "items": [], "label": "Delaicolis", "tab": "delai-colis" }, { "items": [], "label": "UDS", "tab": "uds" }], "label": "Intégration colis (Track and Trace)", "perimetre": "integration-colis" }, { "tabs": [{ "items": [], "label": "Surf → TTU", "tab": "surf-ttu" }, { "items": [], "label": "SurfLight → TTM", "tab": "surflight-ttm" }, { "items": [], "label": "FTLIV", "tab": "ftliv" }, { "items": [], "label": "SurfNG PSM", "tab": "surfng-psm" }, { "items": [{ "type": "count", "label": "Mission", "factId": 21, "situationId": 11, "metadataStatus": "statut", "situationInstanceId": 195 }], "label": "Mission", "tab": "mission" }, { "items": [], "label": "Postes Maitres", "tab": "postes-maitres" }], "label": "Livraison", "perimetre": "livraison" }, { "tabs": [{ "items": [], "label": "Pisteur", "tab": "pisteur" }, { "items": [{ "list": true, "sort": [{ "col": 2, "order": "asc" }, { "col": 1, "order": "asc" }], "type": "taux", "label": "Machine de tri", "factId": 7, "situationId": 3, "metadataStatus": "statut", "situationInstanceId": 0 }], "label": "Machine de Tri", "tab": "machine-de-tri" }, { "items": [{ "list": true, "sort": [{ "col": 2, "order": "asc" }], "type": "count_total_taux", "label": "Tri sur annonce", "situationId": 4, "factIdCount": 19, "factIdTotal": 20, "metadataStatus": "statut", "expressionFactRate": "tri_annon_taux", "situationInstanceId": 0 }], "label": "Tri sur Annonces", "tab": "tri-sur-annonces" }, { "items": [], "label": "YMS / C3", "tab": "yms-c3" }, { "items": [], "label": "TP", "tab": "tp" }, { "items": [], "label": "CD", "tab": "cd" }, { "items": [], "label": "PCH", "tab": "pch" }, { "items": [], "label": "TMI", "tab": "tmi" }, { "items": [], "label": "TOKUP", "tab": "tokup" }], "label": "Gestion de plateforme de Tri", "perimetre": "plateforme-tri" }, { "tabs": [], "label": "International", "perimetre": "international" }, { "tabs": [], "label": "Affranchissement", "perimetre": "affranchissement" }, { "tabs": [], "label": "Service au client", "perimetre": "service-client" }, { "tabs": [], "label": "Communiquer", "perimetre": "communiquer" }, { "tabs": [], "label": "Echanger", "perimetre": "echanger" }, { "tabs": [], "label": "Taxation facturation / Reclamation", "perimetre": "facturation-reclamation" }, { "tabs": [], "label": "Piloter", "perimetre": "piloter" }, { "tabs": [], "label": "Sécurité", "perimetre": "securite" }, { "tabs": [], "label": "Point de retrait", "perimetre": "point-retrait" }]');

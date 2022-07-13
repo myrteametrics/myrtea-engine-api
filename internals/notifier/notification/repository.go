@@ -3,7 +3,6 @@ package notification
 import (
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/dbutils"
 )
 
@@ -11,9 +10,9 @@ import (
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows standard CRUD operation on facts
 type Repository interface {
-	Create(roles []uuid.UUID, notif Notification) (int64, error)
+	Create(notif Notification) (int64, error)
 	Get(id int64) *FrontNotification
-	GetByRoles(rolesIds []uuid.UUID, queryOptionnal dbutils.DBQueryOptionnal) ([]FrontNotification, error)
+	GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]FrontNotification, error)
 	Delete(id int64) error
 	UpdateRead(id int64, state bool) error
 }

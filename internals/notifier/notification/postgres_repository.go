@@ -5,9 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/dbutils"
 	"go.uber.org/zap"
 )
@@ -28,7 +26,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Create creates a new Notification definition in the repository
-func (r *PostgresRepository) Create(roles []uuid.UUID, notif Notification) (int64, error) {
+func (r *PostgresRepository) Create(notif Notification) (int64, error) {
 
 	data, err := json.Marshal(notif)
 	if err != nil {
@@ -36,9 +34,8 @@ func (r *PostgresRepository) Create(roles []uuid.UUID, notif Notification) (int6
 	}
 
 	ts := time.Now().Truncate(1 * time.Millisecond).UTC()
-	query := `INSERT INTO notifications_history_v1 (id, groups, data, created_at) VALUES (DEFAULT, :roles, :data, :created_at) RETURNING id`
+	query := `INSERT INTO notifications_history_v1 (id, data, created_at) VALUES (DEFAULT, :data, :created_at) RETURNING id`
 	params := map[string]interface{}{
-		"roles":      pq.Array(roles),
 		"data":       data,
 		"created_at": ts,
 	}
@@ -103,18 +100,13 @@ func (r *PostgresRepository) Get(id int64) *FrontNotification {
 }
 
 // GetByRoles returns all notifications related to a certain list of roles
-func (r *PostgresRepository) GetByRoles(roleIds []uuid.UUID, queryOptionnal dbutils.DBQueryOptionnal) ([]FrontNotification, error) {
-	if roleIds == nil || len(roleIds) < 1 {
-		return nil, errors.New("should pass at least one role id")
-	}
+func (r *PostgresRepository) GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]FrontNotification, error) {
 
 	// TODO: "ORDER BY" should be an option in dbutils.DBQueryOptionnal
-	query := `SELECT id, data, isread FROM notifications_history_v1 WHERE groups && :roles`
-	params := map[string]interface{}{
-		"roles": pq.Array(roleIds),
-	}
+	query := `SELECT id, data, isread FROM notifications_history_v1`
+	params := map[string]interface{}{}
 	if queryOptionnal.MaxAge > 0 {
-		query += ` AND created_at > :created_at`
+		query += ` WHERE created_at > :created_at`
 		params["created_at"] = time.Now().UTC().Add(-1 * queryOptionnal.MaxAge)
 	}
 	query += ` ORDER BY created_at DESC`

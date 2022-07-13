@@ -67,7 +67,7 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 		Offset: offset,
 		MaxAge: maxAge,
 	}
-	notifications, err := notification.R().GetByRoles(roleIDs, queryOptionnal)
+	notifications, err := notification.R().GetAll(queryOptionnal)
 	if err != nil {
 		zap.L().Error("Error getting notifications", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)

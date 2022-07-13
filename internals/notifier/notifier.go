@@ -79,7 +79,7 @@ func (notifier *Notifier) SendToRoles(cacheKey string, timeout time.Duration, no
 		return
 	}
 
-	id, err := notification.R().Create(roles, notif)
+	id, err := notification.R().Create(notif)
 	if err != nil {
 		zap.L().Error("Add notification to history", zap.Error(err))
 		return
@@ -90,19 +90,20 @@ func (notifier *Notifier) SendToRoles(cacheKey string, timeout time.Duration, no
 		zap.L().Error("Notification not found after creation", zap.Int64("id", id))
 	}
 
-	if roles != nil && len(roles) > 0 {
-		clients := make(map[Client]bool, 0)
-		for _, roleID := range roles {
-			roleClients := notifier.findClientsByRoleID(roleID)
-			for _, client := range roleClients {
-				clients[client] = true
-			}
-		}
-		for client := range clients {
-			notifier.sendToClient(notifFull, client)
-		}
-	}
+	// FIXME: This should be fully reworking after security refactoring and removal of groups
 
+	// if roles != nil && len(roles) > 0 {
+	// 	clients := make(map[Client]bool, 0)
+	// 	for _, roleID := range roles {
+	// 		roleClients := notifier.findClientsByRoleID(roleID)
+	// 		for _, client := range roleClients {
+	// 			clients[client] = true
+	// 		}
+	// 	}
+	// 	for client := range clients {
+	// 		notifier.sendToClient(notifFull, client)
+	// 	}
+	// }
 }
 
 // sendToClient convert and send a notification to a specific client
