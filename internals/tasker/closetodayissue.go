@@ -13,7 +13,7 @@ import (
 //CloseTodayIssuesTask struct for close issues created in the current day from the BRMS
 type CloseTodayIssuesTask struct {
 	ID       string `json:"id"`
-	TimeZone string `json:"timeZone"`
+	Timezone string `json:"timezone"`
 }
 
 func buildCloseTodayIssuesTask(parameters map[string]interface{}) (CloseTodayIssuesTask, error) {
@@ -25,9 +25,9 @@ func buildCloseTodayIssuesTask(parameters map[string]interface{}) (CloseTodayIss
 		return task, errors.New("missing or not valid 'id' parameter (string not empty required)")
 	}
 
-	if val, ok := parameters["timeZone"].(string); ok && val != "" {
-		task.TimeZone = val
-		_, err := time.LoadLocation(task.TimeZone)
+	if val, ok := parameters["timezone"].(string); ok && val != "" {
+		task.Timezone = val
+		_, err := time.LoadLocation(task.Timezone)
 		if err != nil {
 			return task, errors.New("invalid time zone")
 		}
@@ -50,7 +50,7 @@ func (task CloseTodayIssuesTask) Perform(key string, context ContextData) error 
 	zap.L().Debug("Perform close today issues")
 
 	now := time.Now()
-	loc, err := time.LoadLocation(task.TimeZone)
+	loc, err := time.LoadLocation(task.Timezone)
 	if err == nil {
 		now = now.In(loc)
 	} else {

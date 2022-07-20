@@ -328,7 +328,7 @@ func TestIssueTasks(t *testing.T) {
 	}
 }
 
-func TestTimeZoneInCloseIssueTask(t *testing.T) {
+func TestTimezoneInCloseIssueTask(t *testing.T) {
 
 	if testing.Short() {
 		t.Skip("skipping postgresql test in short mode")
@@ -497,7 +497,7 @@ func TestTimeZoneInCloseIssueTask(t *testing.T) {
 		t.Errorf("The created Issue is not as expected")
 	}
 
-	rule1.Cases[1].Actions[0].Parameters["timeZone"] = "`Europe/Paris`"
+	rule1.Cases[1].Actions[0].Parameters["timezone"] = "`Europe/Paris`"
 	_ = rule.R().Update(rule1)
 
 	evaluations, _ = evaluator.EvaluateSituations(situations, "standart")
