@@ -6,7 +6,6 @@ import (
 	"errors"
 	"strings"
 	"time"
-	
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -52,7 +51,7 @@ func (r *PostgresRepository) Get(id int64, groups []int64) (models.Issue, bool, 
 	var issue models.Issue
 	if rows.Next() {
 		issue, err = scanIssue(rows)
-	
+
 		if err != nil {
 			return models.Issue{}, false, err
 		}
@@ -222,32 +221,55 @@ func (r *PostgresRepository) GetByStates(issueStates []string, groups []int64) (
 }
 
 //Get used to get issues by key
-func (r *PostgresRepository) GetByKey(key string, groups []int64) (map[int64]models.Issue, error) {
-	issues := make(map[int64]models.Issue, 0)
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
-			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
-			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
-			  FROM issues_v1 as i
-	 		  inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
-			  WHERE  i.key = :key and situation_definition_v1.groups && :groups`
-	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
-		"key":     key,
-		"groups": pq.Array(groups),
-	})
+func (r *PostgresRepository) GetByKey(key string, options models.SearchOptions, groups []int64) ([]models.Issue, int, error) {
+	issues := make([]models.Issue, 0)
 
+	query := `SELECT i.id, i.key, i.name, i.level,
+        i.situation_id, situation_instance_id, i.situation_date,
+        i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
+        i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
+    FROM issues_v1 as i
+              inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
+              WHERE situation_definition_v1.groups && :groups`
+
+	params := map[string]interface{}{
+		"groups": pq.Array(groups),
+	}
+	if key != "" {
+		query += ` and i.key = :key`
+		params["key"] = key
+
+	}
+	if len(options.SortBy) == 0 {
+		options.SortBy = []models.SortOption{{Field: "id", Order: models.Asc}}
+	}
+	var err error
+	query, params, err = queryutils.AppendSearchOptions(query, params, options, "i")
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	rows, err := r.conn.NamedQuery(query, params)
+	if err != nil {
+		return nil, 0, err
 	}
 	defer rows.Close()
+
 	for rows.Next() {
 		issue, err := scanIssue(rows)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
-		issues[issue.ID] = issue
+		issues = append(issues, issue)
 	}
 
-	return issues, nil
+	total, err := r.CountByKeyByPage(key, groups)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return issues, total, nil
+
 }
 
 //GetCloseToTimeoutByKey get all issues that belong to the same situation and their
@@ -464,6 +486,35 @@ func (r *PostgresRepository) CountByStateByPage(issueStates []string, groups []i
 	return count, nil
 }
 
+// CountByKeyByPage method used to count all issues
+func (r *PostgresRepository) CountByKeyByPage(issuesKey string, groups []int64) (int, error) {
+
+	query := `select count(*)
+        FROM issues_v1 as i
+        inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
+        WHERE situation_definition_v1.groups && :groups`
+	params := map[string]interface{}{
+		"groups": pq.Array(groups),
+	}
+	if issuesKey != "" {
+		query += ` and i.key = :issuesKey`
+		params["issuesKey"] = issuesKey
+	}
+	rows, err := r.conn.NamedQuery(query, params)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	var count int
+	if rows.Next() {
+		err := rows.Scan(&count)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return count, nil
+}
 func scanIssue(rows *sqlx.Rows) (models.Issue, error) {
 	var ruleData string
 	var issueStateString string
