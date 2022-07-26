@@ -51,7 +51,6 @@ func (r *PostgresRepository) Get(id int64, groups []int64) (models.Issue, bool, 
 	var issue models.Issue
 	if rows.Next() {
 		issue, err = scanIssue(rows)
-
 		if err != nil {
 			return models.Issue{}, false, err
 		}
@@ -230,15 +229,11 @@ func (r *PostgresRepository) GetByKey(key string, options models.SearchOptions, 
         i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
     FROM issues_v1 as i
               inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
-              WHERE situation_definition_v1.groups && :groups`
+              WHERE i.key = :key and situation_definition_v1.groups && :groups`
 
 	params := map[string]interface{}{
 		"groups": pq.Array(groups),
-	}
-	if key != "" {
-		query += ` and i.key = :key`
-		params["key"] = key
-
+		"key":    key,
 	}
 	if len(options.SortBy) == 0 {
 		options.SortBy = []models.SortOption{{Field: "id", Order: models.Asc}}
@@ -254,7 +249,6 @@ func (r *PostgresRepository) GetByKey(key string, options models.SearchOptions, 
 		return nil, 0, err
 	}
 	defer rows.Close()
-
 	for rows.Next() {
 		issue, err := scanIssue(rows)
 		if err != nil {

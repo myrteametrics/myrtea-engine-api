@@ -174,7 +174,6 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/issues/{id}/history [get]
-
 func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromContext(r)
 	if user == nil {
@@ -187,24 +186,12 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 	var limit int
 	var offset int
 	var sortOptions = make([]models.SortOption, 0)
-	
+
 	id := chi.URLParam(r, "id")
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
-		return
-	}
-
-	issue, found, err := issues.R().Get(idIssue, groups)
-	if err != nil {
-		zap.L().Error("Cannot retrieve issue", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
-	}
-	if !found {
-		zap.L().Warn("issue does not exists", zap.String("issueID", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
@@ -236,10 +223,21 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	searchOptions := models.SearchOptions{
-
 		Limit:  limit,
 		Offset: offset,
 		SortBy: sortOptions,
+	}
+
+	issue, found, err := issues.R().Get(idIssue, groups)
+	if err != nil {
+		zap.L().Error("Cannot retrieve issue", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("issue does not exists", zap.String("issueID", id))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
 	}
 
 	issuesSlice, total, err := issues.R().GetByKey(issue.Key, searchOptions, groups)
