@@ -240,7 +240,7 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	issuesSlice, total, err := issues.R().GetByKey(issue.Key, searchOptions, groups)
+	issuesSlice, total, err := issues.R().GetByKeyByPage(issue.Key, searchOptions, groups)
 	if err != nil {
 		zap.L().Error("Error on getting issues", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)

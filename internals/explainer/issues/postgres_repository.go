@@ -220,7 +220,7 @@ func (r *PostgresRepository) GetByStates(issueStates []string, groups []int64) (
 }
 
 //Get used to get issues by key
-func (r *PostgresRepository) GetByKey(key string, options models.SearchOptions, groups []int64) ([]models.Issue, int, error) {
+func (r *PostgresRepository) GetByKeyByPage(key string, options models.SearchOptions, groups []int64) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
 
 	query := `SELECT i.id, i.key, i.name, i.level,
@@ -481,7 +481,7 @@ func (r *PostgresRepository) CountByStateByPage(issueStates []string, groups []i
 }
 
 // CountByKeyByPage method used to count all issues
-func (r *PostgresRepository) CountByKeyByPage(issuesKey string, groups []int64) (int, error) {
+func (r *PostgresRepository) CountByKeyByPage(key string, groups []int64) (int, error) {
 
 	query := `select count(*)
         FROM issues_v1 as i
@@ -490,9 +490,9 @@ func (r *PostgresRepository) CountByKeyByPage(issuesKey string, groups []int64) 
 	params := map[string]interface{}{
 		"groups": pq.Array(groups),
 	}
-	if issuesKey != "" {
-		query += ` and i.key = :issuesKey`
-		params["issuesKey"] = issuesKey
+	if key != "" {
+		query += ` and i.key = :key`
+		params["key"] = key
 	}
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
