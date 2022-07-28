@@ -149,6 +149,7 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	issue, found, err := issues.R().Get(idIssue, groups)
+
 	if err != nil {
 		zap.L().Error("Cannot retrieve issue", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -161,6 +162,97 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.JSON(w, r, issue)
+}
+
+// GetIssueHistory godoc
+// @Summary Get an issue history
+// @Description Get an issue history
+// @Tags Issues
+// @Produce json
+// @Param id path string true "Issue ID"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Router /engine/issues/{id}/history [get]
+func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	if user == nil {
+		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
+		return
+	}
+	groups := GetUserGroupsFromUser(user)
+
+	var err error
+	var limit int
+	var offset int
+	var sortOptions = make([]models.SortOption, 0)
+
+	id := chi.URLParam(r, "id")
+	idIssue, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	if rawSize := r.URL.Query().Get("limit"); rawSize != "" {
+		limit, err = ParseInt(rawSize)
+		if err != nil {
+			zap.L().Warn("Parse input limit", zap.Error(err), zap.String("rawNhit", rawSize))
+			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			return
+		}
+	}
+
+	if rawOffset := r.URL.Query().Get("offset"); rawOffset != "" {
+		offset, err = ParseInt(rawOffset)
+		if err != nil {
+			zap.L().Warn("Parse input offset", zap.Error(err), zap.String("raw offset", rawOffset))
+			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			return
+		}
+	}
+
+	if rawSortBy := r.URL.Query().Get("sort_by"); rawSortBy != "" {
+		sortOptions, err = ParseSortBy(rawSortBy, allowedSortByFields)
+		if err != nil {
+			zap.L().Warn("Parse input sort_by", zap.Error(err), zap.String("raw sort_by", rawSortBy))
+			render.Error(w, r, render.ErrAPIParsingSortBy, err)
+			return
+		}
+	}
+
+	searchOptions := models.SearchOptions{
+		Limit:  limit,
+		Offset: offset,
+		SortBy: sortOptions,
+	}
+
+	issue, found, err := issues.R().Get(idIssue, groups)
+	if err != nil {
+		zap.L().Error("Cannot retrieve issue", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("issue does not exists", zap.String("issueID", id))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	issuesSlice, total, err := issues.R().GetByKeyByPage(issue.Key, searchOptions, groups)
+	if err != nil {
+		zap.L().Error("Error on getting issues", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	paginatedResource := models.PaginatedResource{
+		Total: total,
+		Items: issuesSlice,
+	}
+
+	render.JSON(w, r, paginatedResource)
 }
 
 // GetIssueFactsHistory godoc
