@@ -486,13 +486,10 @@ func (r *PostgresRepository) CountByKeyByPage(key string, groups []int64) (int, 
 	query := `select count(*)
         FROM issues_v1 as i
         inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
-        WHERE situation_definition_v1.groups && :groups`
+        WHERE i.key = :key and situation_definition_v1.groups && :groups`
 	params := map[string]interface{}{
 		"groups": pq.Array(groups),
-	}
-	if key != "" {
-		query += ` and i.key = :key`
-		params["key"] = key
+		"key":    key,
 	}
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
