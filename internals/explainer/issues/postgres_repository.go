@@ -219,6 +219,53 @@ func (r *PostgresRepository) GetByStates(issueStates []string, groups []int64) (
 	return issues, nil
 }
 
+//Get used to get issues by key
+func (r *PostgresRepository) GetByKeyByPage(key string, options models.SearchOptions, groups []int64) ([]models.Issue, int, error) {
+	issues := make([]models.Issue, 0)
+
+	query := `SELECT i.id, i.key, i.name, i.level,
+        i.situation_id, situation_instance_id, i.situation_date,
+        i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
+        i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
+    FROM issues_v1 as i
+              inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
+              WHERE i.key = :key and situation_definition_v1.groups && :groups`
+
+	params := map[string]interface{}{
+		"groups": pq.Array(groups),
+		"key":    key,
+	}
+	if len(options.SortBy) == 0 {
+		options.SortBy = []models.SortOption{{Field: "id", Order: models.Asc}}
+	}
+	var err error
+	query, params, err = queryutils.AppendSearchOptions(query, params, options, "i")
+	if err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.conn.NamedQuery(query, params)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		issues = append(issues, issue)
+	}
+
+	total, err := r.CountByKeyByPage(key, groups)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return issues, total, nil
+
+}
+
 //GetCloseToTimeoutByKey get all issues that belong to the same situation and their
 //creation time are within the timeout duration
 func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS time.Time) (map[int64]models.Issue, error) {
@@ -433,6 +480,32 @@ func (r *PostgresRepository) CountByStateByPage(issueStates []string, groups []i
 	return count, nil
 }
 
+// CountByKeyByPage method used to count all issues
+func (r *PostgresRepository) CountByKeyByPage(key string, groups []int64) (int, error) {
+
+	query := `select count(*)
+        FROM issues_v1 as i
+        inner join situation_definition_v1 on situation_definition_v1.id = i.situation_id
+        WHERE i.key = :key and situation_definition_v1.groups && :groups`
+	params := map[string]interface{}{
+		"groups": pq.Array(groups),
+		"key":    key,
+	}
+	rows, err := r.conn.NamedQuery(query, params)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	var count int
+	if rows.Next() {
+		err := rows.Scan(&count)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return count, nil
+}
 func scanIssue(rows *sqlx.Rows) (models.Issue, error) {
 	var ruleData string
 	var issueStateString string

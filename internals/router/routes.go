@@ -29,7 +29,6 @@ func adminRouter() http.Handler {
 	r.Get("/security/groups/{groupid}/users", handlers.GetUsersOfGroup)
 	r.Put("/security/groups/{groupid}/users/{userid}", handlers.PutMembership)
 	r.Delete("/security/groups/{groupid}/users/{userid}", handlers.DeleteMembership)
-
 	r.Get("/engine/issues_all", handlers.GetIssues)
 
 	return r
@@ -100,6 +99,7 @@ func engineRouter() http.Handler {
 
 	r.Get("/issues", handlers.GetIssuesByStatesByPage)
 	r.Get("/issues/{id}", handlers.GetIssue)
+	r.Get("/issues/{id}/history", handlers.GetIssueHistory)
 	r.Get("/issues/{id}/facts_history", handlers.GetIssueFactsHistory)
 	r.Post("/issues", handlers.PostIssue)
 	r.Get("/issues/{id}/recommendation", handlers.GetIssueFeedbackTree)
