@@ -107,6 +107,7 @@ func engineRouter() http.Handler {
 
 	r.Get("/issues", handlers.GetIssuesByStatesByPage)
 	r.Get("/issues/{id}", handlers.GetIssue)
+	r.Get("/issues/{id}/history", handlers.GetIssueHistory)
 	r.Get("/issues/{id}/facts_history", handlers.GetIssueFactsHistory)
 	r.Post("/issues", handlers.PostIssue)
 	r.Get("/issues/{id}/recommendation", handlers.GetIssueFeedbackTree)
