@@ -64,14 +64,14 @@ var (
 	ErrAPIElasticSelectFailed = APIError{Status: http.StatusInternalServerError, ErrType: "RessourceError", Code: 4000, Message: `Failed to execute the query`}
 
 	// ErrAPIProcessError must be used when an internal error occurred during the stack call
-	ErrAPIProcessError = APIError{Status: http.StatusUnauthorized, ErrType: "ProcessError", Code: 5000, Message: `Internal error has occurred during the process`}
+	ErrAPIProcessError = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 5000, Message: `Internal error has occurred during the process`}
 
 	// ErrAPISecurityMissingContext must be used in case no security context is found (missing credentials, missing jwt, etc.)
 	// or the context is invalid (invalid jwt, user not found, etc.)
 	// This is a specific case when the least details are added for security reason
 	ErrAPISecurityMissingContext = APIError{Status: http.StatusUnauthorized, ErrType: "SecurityError", Code: 6000, Message: `Security error. Please contact an administrator`}
-	// ErrAPISecurityNoRights must be used when the used is properly authenticated but doesn't have the required rights to access the resource
-	ErrAPISecurityNoRights = APIError{Status: http.StatusUnauthorized, ErrType: "SecurityError", Code: 6001, Message: `Security error. Please contact an administrator`}
+	// ErrAPISecurityNoPermissions must be used when the user is properly authenticated but doesn't have the required rights to access the resource
+	ErrAPISecurityNoPermissions = APIError{Status: http.StatusForbidden, ErrType: "SecurityError", Code: 6001, Message: `Security error. Please contact an administrator`}
 )
 
 // OK returns a HTTP status 200 with an empty body

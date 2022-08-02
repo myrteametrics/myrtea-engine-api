@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/dbutils"
 	"go.uber.org/zap"
 )
@@ -27,7 +26,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Create creates a new Notification definition in the repository
-func (r *PostgresRepository) Create(groups []int64, notif Notification) (int64, error) {
+func (r *PostgresRepository) Create(notif Notification) (int64, error) {
 
 	data, err := json.Marshal(notif)
 	if err != nil {
@@ -35,9 +34,8 @@ func (r *PostgresRepository) Create(groups []int64, notif Notification) (int64, 
 	}
 
 	ts := time.Now().Truncate(1 * time.Millisecond).UTC()
-	query := `INSERT INTO notifications_history_v1 (id, groups, data, created_at) VALUES (DEFAULT, :groups, :data, :created_at) RETURNING id`
+	query := `INSERT INTO notifications_history_v1 (id, data, created_at) VALUES (DEFAULT, :data, :created_at) RETURNING id`
 	params := map[string]interface{}{
-		"groups":     pq.Array(groups),
 		"data":       data,
 		"created_at": ts,
 	}
@@ -52,7 +50,7 @@ func (r *PostgresRepository) Create(groups []int64, notif Notification) (int64, 
 	if rows.Next() {
 		rows.Scan(&id)
 	} else {
-		return -1, errors.New("No id returning of insert situation")
+		return -1, errors.New("no id returning of insert situation")
 	}
 	return id, nil
 }
@@ -101,19 +99,14 @@ func (r *PostgresRepository) Get(id int64) *FrontNotification {
 	return nil
 }
 
-// GetByGroups returns all notifications related to a certain list of groups
-func (r *PostgresRepository) GetByGroups(groupIds []int64, queryOptionnal dbutils.DBQueryOptionnal) ([]FrontNotification, error) {
-	if groupIds == nil || len(groupIds) < 1 {
-		return nil, errors.New("Should pass at least one group id")
-	}
+// GetByRoles returns all notifications related to a certain list of roles
+func (r *PostgresRepository) GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]FrontNotification, error) {
 
 	// TODO: "ORDER BY" should be an option in dbutils.DBQueryOptionnal
-	query := `SELECT id, data, isread FROM notifications_history_v1 WHERE groups && :groups`
-	params := map[string]interface{}{
-		"groups": pq.Array(groupIds),
-	}
+	query := `SELECT id, data, isread FROM notifications_history_v1`
+	params := map[string]interface{}{}
 	if queryOptionnal.MaxAge > 0 {
-		query += ` AND created_at > :created_at`
+		query += ` WHERE created_at > :created_at`
 		params["created_at"] = time.Now().UTC().Add(-1 * queryOptionnal.MaxAge)
 	}
 	query += ` ORDER BY created_at DESC`
@@ -128,7 +121,7 @@ func (r *PostgresRepository) GetByGroups(groupIds []int64, queryOptionnal dbutil
 
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
-		return nil, errors.New("Couldn't retrieve any notification with these groups. The query is equal to: " + err.Error())
+		return nil, errors.New("couldn't retrieve any notification with these roles. The query is equal to: " + err.Error())
 	}
 	defer rows.Close()
 
@@ -143,13 +136,13 @@ func (r *PostgresRepository) GetByGroups(groupIds []int64, queryOptionnal dbutil
 
 		err := rows.Scan(&id, &data, &isRead)
 		if err != nil {
-			return nil, errors.New("Couldn't scan the notification data:" + err.Error())
+			return nil, errors.New("couldn't scan the notification data:" + err.Error())
 		}
 
 		// Retrieve data json data
 		err = json.Unmarshal([]byte(data), &notif)
 		if err != nil {
-			return nil, errors.New("Couldn't convert data content:" + err.Error())
+			return nil, errors.New("couldn't convert data content:" + err.Error())
 		}
 
 		notif.ID = id
@@ -160,7 +153,7 @@ func (r *PostgresRepository) GetByGroups(groupIds []int64, queryOptionnal dbutil
 		})
 	}
 	if err != nil {
-		return nil, errors.New("Deformed Data " + err.Error())
+		return nil, errors.New("deformed Data " + err.Error())
 	}
 	return notifications, nil
 }
@@ -180,7 +173,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -201,7 +194,7 @@ func (r *PostgresRepository) UpdateRead(id int64, status bool) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row updated (or multiple row updated) instead of 1 row")
+		return errors.New("no row updated (or multiple row updated) instead of 1 row")
 	}
 	return nil
 }

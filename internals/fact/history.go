@@ -34,10 +34,10 @@ type HistoryRecord struct {
 // PersistFactResult persists a fact result (related to a specific time) in postgresql
 func PersistFactResult(factID int64, t time.Time, situationID int64, templateInstanceID int64, item *reader.Item, success bool) error {
 	if postgres.DB() == nil {
-		return errors.New("DB Client is not initialized")
+		return errors.New("db Client is not initialized")
 	}
 	if item == nil {
-		return errors.New("Cannot persist nil item")
+		return errors.New("cannot persist nil item")
 	}
 
 	itemJSON, err := json.Marshal(*item)
@@ -65,7 +65,7 @@ func PersistFactResult(factID int64, t time.Time, situationID int64, templateIns
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -73,10 +73,10 @@ func PersistFactResult(factID int64, t time.Time, situationID int64, templateIns
 // UpdateFactResult updates a fact result (related to a specific time) in postgresql
 func UpdateFactResult(factID int64, t time.Time, situationID int64, templateInstanceID int64, item *reader.Item) error {
 	if postgres.DB() == nil {
-		return errors.New("DB Client is not initialized")
+		return errors.New("db Client is not initialized")
 	}
 	if item == nil {
-		return errors.New("Cannot persist nil item")
+		return errors.New("cannot persist nil item")
 	}
 
 	itemJSON, err := json.Marshal(*item)
@@ -102,7 +102,7 @@ func UpdateFactResult(factID int64, t time.Time, situationID int64, templateInst
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -111,7 +111,7 @@ func UpdateFactResult(factID int64, t time.Time, situationID int64, templateInst
 // It can be based on an exact timestamp or approximated to the closest calculated result
 func GetFactResultFromHistory(factID int64, t time.Time, situationID int64, templateInstanceID int64, closest bool, notOlderThan time.Duration) (*reader.Item, time.Time, error) {
 	if postgres.DB() == nil {
-		return nil, time.Time{}, errors.New("DB Client is not initialized")
+		return nil, time.Time{}, errors.New("db Client is not initialized")
 	}
 
 	params := map[string]interface{}{
@@ -165,7 +165,7 @@ func GetFactRangeFromHistory(factID int64, situationID int64, templateInstanceID
 	items := make(map[time.Time]reader.Item, 0)
 
 	if postgres.DB() == nil {
-		return nil, errors.New("DB Client is not initialized")
+		return nil, errors.New("db Client is not initialized")
 	}
 
 	query := `SELECT ts, result 
@@ -218,7 +218,7 @@ func GetFactSituationInstances(factIDs []int64, from time.Time, to time.Time, la
 	mapRecords := make(map[string]HistoryRecord, 0)
 
 	if postgres.DB() == nil {
-		return nil, errors.New("DB Client is not initialized")
+		return nil, errors.New("db Client is not initialized")
 	}
 
 	var factsFilterQuery string

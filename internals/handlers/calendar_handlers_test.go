@@ -8,7 +8,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/calendar"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
 )
 
@@ -49,7 +50,8 @@ func TestGetCalendars(t *testing.T) {
 		t.Error(err)
 	}
 
-	rr := tests.BuildTestHandler(t, "GET", "/calendars", "", "/calendars", GetCalendars, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeCalendar, permissions.All, permissions.ActionList)}}
+	rr := tests.BuildTestHandler(t, "GET", "/calendars", "", "/calendars", GetCalendars, user)
 
 	var calendars []calendar.Calendar
 	err = json.Unmarshal(rr.Body.Bytes(), &calendars)
@@ -87,7 +89,8 @@ func TestGetCalendar(t *testing.T) {
 		t.Error(err)
 	}
 
-	rr := tests.BuildTestHandler(t, "GET", "/calendars/"+strconv.FormatInt(id, 10), "", "/calendars/{id}", GetCalendar, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeCalendar, "1", permissions.ActionGet)}}
+	rr := tests.BuildTestHandler(t, "GET", "/calendars/"+strconv.FormatInt(id, 10), "", "/calendars/{id}", GetCalendar, user)
 
 	var calendarGet *calendar.Calendar
 	err = json.Unmarshal(rr.Body.Bytes(), &calendarGet)
@@ -121,7 +124,8 @@ func TestPostCalendar(t *testing.T) {
 
 	calendarData, _ := json.Marshal(calend)
 
-	rr := tests.BuildTestHandler(t, "POST", "/calendars", string(calendarData), "/calendars", PostCalendar, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeCalendar, permissions.All, permissions.ActionCreate)}}
+	rr := tests.BuildTestHandler(t, "POST", "/calendars", string(calendarData), "/calendars", PostCalendar, user)
 
 	var calendarPost *calendar.Calendar
 	err := json.Unmarshal(rr.Body.Bytes(), &calendarPost)
@@ -162,7 +166,8 @@ func TestPutCalendar(t *testing.T) {
 	calend.Name = "anothername"
 	calendarData, _ := json.Marshal(calend)
 
-	rr := tests.BuildTestHandler(t, "PUT", "/calendars/"+strconv.FormatInt(id, 10), string(calendarData), "/calendars/{id}", PutCalendar, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeCalendar, "1", permissions.ActionUpdate)}}
+	rr := tests.BuildTestHandler(t, "PUT", "/calendars/"+strconv.FormatInt(id, 10), string(calendarData), "/calendars/{id}", PutCalendar, user)
 
 	var calendarPut *calendar.Calendar
 	err = json.Unmarshal(rr.Body.Bytes(), &calendarPut)
@@ -200,7 +205,8 @@ func TestDeleteCalendar(t *testing.T) {
 		t.Error(err)
 	}
 
-	rr := tests.BuildTestHandler(t, "DELETE", "/calendars/"+strconv.FormatInt(id, 10), "", "/calendars/{id}", DeleteCalendar, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeCalendar, "1", permissions.ActionDelete)}}
+	rr := tests.BuildTestHandler(t, "DELETE", "/calendars/"+strconv.FormatInt(id, 10), "", "/calendars/{id}", DeleteCalendar, user)
 
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)

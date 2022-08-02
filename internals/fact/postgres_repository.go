@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 )
@@ -121,7 +122,7 @@ func (r *PostgresRepository) Create(fact engine.Fact) (int64, error) {
 			return -1, err
 		}
 	} else {
-		return -1, errors.New("No id returning of insert situation")
+		return -1, errors.New("no id returning of insert situation")
 	}
 
 	return id, nil
@@ -136,7 +137,7 @@ func (r *PostgresRepository) Update(id int64, fact engine.Fact) error {
 
 	factdata, err := json.Marshal(fact)
 	if err != nil {
-		return errors.New("Couldn't marshall the provided data:" + err.Error())
+		return errors.New("couldn't marshall the provided data:" + err.Error())
 	}
 
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
@@ -147,14 +148,14 @@ func (r *PostgresRepository) Update(id int64, fact engine.Fact) error {
 		"last_modified": t,
 	})
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 	i, err := res.RowsAffected()
 	if err != nil {
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -162,7 +163,6 @@ func (r *PostgresRepository) Update(id int64, fact engine.Fact) error {
 // Delete deletes an entity from the repository by its name
 func (r *PostgresRepository) Delete(id int64) error {
 	query := `DELETE FROM fact_definition_v1 WHERE id = :id`
-
 	res, err := r.conn.NamedExec(query, map[string]interface{}{
 		"id": id,
 	})
@@ -174,7 +174,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -192,6 +192,40 @@ func (r *PostgresRepository) GetAll() (map[int64]engine.Fact, error) {
 	}
 	defer rows.Close()
 
+	for rows.Next() {
+		var factID int64
+		var factDef string
+		var fact engine.Fact
+		err := rows.Scan(&factID, &factDef)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal([]byte(factDef), &fact)
+		if err != nil {
+			return nil, err
+		}
+		//This is necessary because within the definition we don't have the id
+		fact.ID = factID
+
+		facts[factID] = fact
+	}
+	return facts, nil
+
+}
+
+// GetAllByIDs returns all entities filtered by IDs in the repository
+func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]engine.Fact, error) {
+
+	query := `SELECT id, definition FROM fact_definition_v1 WHERE id = ANY(:ids)`
+	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
+		"ids": pq.Array(ids),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	facts := make(map[int64]engine.Fact, 0)
 	for rows.Next() {
 		var factID int64
 		var factDef string

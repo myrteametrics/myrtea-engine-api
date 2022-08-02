@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/search"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
 )
@@ -31,6 +31,6 @@ func TestSearch(t *testing.T) {
 		}
 	}`
 
-	rr := tests.BuildTestHandler(t, "POST", "/search", q, "/search", Search, groups.UserWithGroups{})
+	rr := tests.BuildTestHandler(t, "POST", "/search", q, "/search", Search, users.UserWithPermissions{})
 	tests.CheckTestHandler(t, rr, http.StatusOK, `{}`)
 }

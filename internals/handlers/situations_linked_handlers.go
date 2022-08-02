@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -43,6 +42,8 @@ func GetSituationEvaluation(w http.ResponseWriter, r *http.Request) {
 		instanceID = 0
 	}
 
+	// FIXME: security check !
+
 	metaDatas, err := situation.GetLastHistoryMetadata(idSituation, instanceID)
 	if err != nil {
 		zap.L().Error("Error on getting situation last evaluation id", zap.String("situationID", id), zap.Error(err))
@@ -73,18 +74,19 @@ func GetSituationFacts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups := GetUserGroupsFromContext(r)
-	inGroups, err := situation.R().IsInGroups(idSituation, groups)
-	if err != nil {
-		zap.L().Error("Error while validating authorization", zap.Int64("idSituation", idSituation), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
-	}
-	if !inGroups {
-		zap.L().Warn("Error while validating authorization", zap.Int64("idSituation", idSituation), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPISecurityNoRights, err)
-		return
-	}
+	// groups := GetUserGroupsFromContext(r)
+	// inGroups, err := situation.R().IsInGroups(idSituation, groups)
+	// if err != nil {
+	// 	zap.L().Error("Error while validating authorization", zap.Int64("idSituation", idSituation), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+	// 	return
+	// }
+	// if !inGroups {
+	// 	zap.L().Warn("Error while validating authorization", zap.Int64("idSituation", idSituation), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
+	// 	return
+	// }
+	// FIXME: security check !
 
 	factIDs, err := situation.R().GetFacts(idSituation)
 	if err != nil {
@@ -134,18 +136,20 @@ func GetSituationRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups := GetUserGroupsFromContext(r)
-	inGroups, err := situation.R().IsInGroups(idSituation, groups)
-	if err != nil {
-		zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
-	}
-	if !inGroups {
-		zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPISecurityNoRights, err)
-		return
-	}
+	// groups := GetUserGroupsFromContext(r)
+	// inGroups, err := situation.R().IsInGroups(idSituation, groups)
+	// if err != nil {
+	// 	zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+	// 	return
+	// }
+	// if !inGroups {
+	// 	zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
+	// 	return
+	// }
+
+	// FIXME: security check !
 
 	ruleIDs, err := situation.R().GetRules(idSituation)
 	if err != nil {
@@ -195,19 +199,20 @@ func SetSituationRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups := GetUserGroupsFromContext(r)
-	inGroups, err := situation.R().IsInGroups(idSituation, groups)
-	if err != nil {
-		zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
-	}
+	// groups := GetUserGroupsFromContext(r)
+	// inGroups, err := situation.R().IsInGroups(idSituation, groups)
+	// if err != nil {
+	// 	zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+	// 	return
+	// }
+	// if !inGroups {
+	// 	zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
+	// 	return
+	// }
 
-	if !inGroups {
-		zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPISecurityNoRights, err)
-		return
-	}
+	// FIXME: security check !
 
 	var ruleIDs []int64
 	err = json.NewDecoder(r.Body).Decode(&ruleIDs)
@@ -249,19 +254,20 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups := GetUserGroupsFromContext(r)
-	inGroups, err := situation.R().IsInGroups(idSituation, groups)
-	if err != nil {
-		zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
-	}
+	// groups := GetUserGroupsFromContext(r)
+	// inGroups, err := situation.R().IsInGroups(idSituation, groups)
+	// if err != nil {
+	// 	zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+	// 	return
+	// }
+	// if !inGroups {
+	// 	zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
+	// 	return
+	// }
 
-	if !inGroups {
-		zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPISecurityNoRights, err)
-		return
-	}
+	// FIXME: security check !
 
 	var newInstance situation.TemplateInstance
 	err = json.NewDecoder(r.Body).Decode(&newInstance)
@@ -317,19 +323,20 @@ func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups := GetUserGroupsFromContext(r)
-	inGroups, err := situation.R().IsInGroups(idSituation, groups)
-	if err != nil {
-		zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
-	}
+	// groups := GetUserGroupsFromContext(r)
+	// inGroups, err := situation.R().IsInGroups(idSituation, groups)
+	// if err != nil {
+	// 	zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+	// 	return
+	// }
+	// if !inGroups {
+	// 	zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
+	// 	return
+	// }
 
-	if !inGroups {
-		zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPISecurityNoRights, err)
-		return
-	}
+	// FIXME: security check !
 
 	id = chi.URLParam(r, "instanceid")
 	instanceID, err := strconv.ParseInt(id, 10, 64)
@@ -392,18 +399,20 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups := GetUserGroupsFromContext(r)
-	inGroups, err := situation.R().IsInGroups(idSituation, groups)
-	if err != nil {
-		zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
-	}
-	if !inGroups {
-		zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPISecurityNoRights, err)
-		return
-	}
+	// groups := GetUserGroupsFromContext(r)
+	// inGroups, err := situation.R().IsInGroups(idSituation, groups)
+	// if err != nil {
+	// 	zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+	// 	return
+	// }
+	// if !inGroups {
+	// 	zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
+	// 	return
+	// }
+
+	// FIXME: security check !
 
 	var newInstances []situation.TemplateInstance
 	err = json.NewDecoder(r.Body).Decode(&newInstances)
@@ -483,20 +492,22 @@ func DeleteSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
 		return
 	}
+	_ = idSituation
 
-	groups := GetUserGroupsFromContext(r)
-	inGroups, err := situation.R().IsInGroups(idSituation, groups)
-	if err != nil {
-		zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
-	}
+	// groups := GetUserGroupsFromContext(r)
+	// inGroups, err := situation.R().IsInGroups(idSituation, groups)
+	// if err != nil {
+	// 	zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+	// 	return
+	// }
+	// if !inGroups {
+	// 	zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
+	// 	return
+	// }
 
-	if !inGroups {
-		zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPISecurityNoRights, err)
-		return
-	}
+	// FIXME: security check !
 
 	id = chi.URLParam(r, "instanceid")
 	instanceID, err := strconv.ParseInt(id, 10, 64)
@@ -536,18 +547,20 @@ func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups := GetUserGroupsFromContext(r)
-	inGroups, err := situation.R().IsInGroups(idSituation, groups)
-	if err != nil {
-		zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
-	}
-	if !inGroups {
-		zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-		render.Error(w, r, render.ErrAPISecurityNoRights, err)
-		return
-	}
+	// groups := GetUserGroupsFromContext(r)
+	// inGroups, err := situation.R().IsInGroups(idSituation, groups)
+	// if err != nil {
+	// 	zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+	// 	return
+	// }
+	// if !inGroups {
+	// 	zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
+	// 	return
+	// }
+
+	// FIXME: security check !
 
 	instances, err := situation.R().GetAllTemplateInstances(idSituation)
 	if err != nil {

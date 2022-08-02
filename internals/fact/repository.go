@@ -18,6 +18,7 @@ type Repository interface {
 	Update(id int64, fact engine.Fact) error
 	Delete(id int64) error
 	GetAll() (map[int64]engine.Fact, error)
+	GetAllByIDs(ids []int64) (map[int64]engine.Fact, error)
 }
 
 var (

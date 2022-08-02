@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
 
 	"go.uber.org/zap"
 )
@@ -23,6 +25,23 @@ import (
 // @Failure 500 "internal server error"
 // @Router /engine/rules [get]
 func GetRules(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	// FIXME : Suport rule advanced security by refactoring rule repository (merge all getter in a single getter with options + getAllByIDs)
+
+	// var rulesMap map[int64]rule.Rule
+	// var err error
+	// if userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionGet)) {
+	// 	rulesMap, err = rule.R().GetAll()
+	// } else {
+	// 	resourceIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionGet))
+	// 	rulesMap, err = rule.R().GetAllByIDs(resourceIDs)
+	// }
+
 	rulesMap, err := rule.R().GetAll()
 	if err != nil {
 		zap.L().Error("Get rules", zap.Error(err))
@@ -61,6 +80,12 @@ func GetRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	rule, found, err := rule.R().Get(idRule)
 	if err != nil {
 		zap.L().Error("Get rule from repository", zap.Int64("id", idRule), zap.Error(err))
@@ -92,6 +117,12 @@ func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Parsing rule id", zap.String("RuleID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -161,6 +192,12 @@ func ValidateRule(w http.ResponseWriter, r *http.Request) {
 // @Failure 500	"Status Internal Server Error"
 // @Router /engine/rules [post]
 func PostRule(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	var newRule rule.Rule
 	err := json.NewDecoder(r.Body).Decode(&newRule)
 	if err != nil {
@@ -231,6 +268,12 @@ func PutRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	var newRule rule.Rule
 	err = json.NewDecoder(r.Body).Decode(&newRule)
 	if err != nil {
@@ -285,6 +328,12 @@ func DeleteRule(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Error on parsing rule id", zap.String("RuleID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionDelete)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 

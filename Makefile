@@ -150,8 +150,16 @@ docker-save:
 docker-clean:
 	docker image rm $(DOCKER_IMAGE) $(docker images -f dangling=true -q) || true
 
+.PHONY: docker-run-postgres-tests
+docker-run-postgres-tests:
+	docker run -d --rm --name myrtea-postgres-integration-tests --network host --env POSTGRES_USER=postgres --env POSTGRES_PASSWORD=postgres --env POSTGRES_DB=postgres postgres:13
+
+.PHONY: docker-stop-postgres-tests
+docker-stop-postgres-tests:
+	docker stop myrtea-postgres-integration-tests
+
 .PHONY: security
 security:
-	curl -X GET -H "Authorization: Bearer zzz$token" http://localhost:9000/api/v4/engine/facts
 	TOKEN=$(curl -s -X POST -d '{"login":"admin","password":"myrtea"}' http://localhost:9000/api/v4/login | jq -r '.token')
-	curl -X GET -H "Authorization: Bearer $token" http://localhost:9000/api/v4/engine/facts
+	curl -X GET -H "Authorization: Bearer zzz$(TOKEN)" http://localhost:9000/api/v4/engine/facts
+	curl -X GET -H "Authorization: Bearer $(TOKEN)" http://localhost:9000/api/v4/engine/facts

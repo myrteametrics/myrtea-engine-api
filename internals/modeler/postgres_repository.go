@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
 	"go.uber.org/zap"
 )
@@ -117,7 +118,7 @@ func (r *PostgresRepository) Create(model modeler.Model) (int64, error) {
 			return -1, err
 		}
 	} else {
-		return -1, errors.New("No id returning of insert situation")
+		return -1, errors.New("no id returning of insert situation")
 	}
 
 	return id, nil
@@ -127,7 +128,7 @@ func (r *PostgresRepository) Create(model modeler.Model) (int64, error) {
 func (r *PostgresRepository) Update(id int64, model modeler.Model) error {
 	modeldata, err := json.Marshal(model)
 	if err != nil {
-		return errors.New("Couldn't marshall the provided data:" + err.Error())
+		return errors.New("couldn't marshall the provided data:" + err.Error())
 	}
 
 	query := `UPDATE model_v1 SET name = :name, definition = :definition WHERE id = :id`
@@ -138,14 +139,14 @@ func (r *PostgresRepository) Update(id int64, model modeler.Model) error {
 	}
 	res, err := r.conn.NamedExec(query, params)
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 	i, err := res.RowsAffected()
 	if err != nil {
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -165,7 +166,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }
@@ -177,6 +178,44 @@ func (r *PostgresRepository) GetAll() (map[int64]modeler.Model, error) {
 
 	query := `SELECT id, definition FROM model_v1`
 	rows, err := r.conn.Query(query)
+	if err != nil {
+		zap.L().Error("Couldn't retrieve the models", zap.Error(err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var modelID int64
+		var modelDef string
+		var model modeler.Model
+		err := rows.Scan(&modelID, &modelDef)
+		if err != nil {
+			zap.L().Error("Couldn't read the model rows:", zap.Error(err))
+			return nil, err
+		}
+
+		err = json.Unmarshal([]byte(modelDef), &model)
+		if err != nil {
+			zap.L().Error("Couldn't unmarshall the model data:", zap.Error(err))
+			return nil, err
+		}
+		model.ID = modelID
+
+		models[modelID] = model
+	}
+	return models, nil
+
+}
+
+// GetAll returns all models in the repository
+func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]modeler.Model, error) {
+
+	models := make(map[int64]modeler.Model, 0)
+
+	query := `SELECT id, definition FROM model_v1 WHERE id = ANY(:ids)`
+	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
+		"ids": pq.Array(ids),
+	})
 	if err != nil {
 		zap.L().Error("Couldn't retrieve the models", zap.Error(err))
 		return nil, err

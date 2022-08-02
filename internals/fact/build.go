@@ -123,7 +123,7 @@ func ParseFact(factName string, factData map[string]interface{}) (*engine.Fact, 
 				filters := factFieldValue.(map[string]interface{})
 
 				if len(filters) > 1 {
-					return nil, errors.New("More than one conditions group on root")
+					return nil, errors.New("more than one conditions group on root")
 				}
 				if len(filters) > 0 {
 					fragsCondition, err := parseFilters(filters)
@@ -131,7 +131,7 @@ func ParseFact(factName string, factData map[string]interface{}) (*engine.Fact, 
 						return nil, err
 					}
 					if len(fragsCondition) > 1 {
-						return nil, errors.New("More than one root condition")
+						return nil, errors.New("more than one root condition")
 					}
 					condition = fragsCondition[0]
 				}
@@ -162,11 +162,11 @@ func ParseFact(factName string, factData map[string]interface{}) (*engine.Fact, 
 	}
 
 	if term == "" {
-		return nil, errors.New("Intent Term not found")
+		return nil, errors.New("intent Term not found")
 	}
 	intentFragment, err := engine.GetIntentFragment(intentOperator)
 	if err != nil {
-		return nil, errors.New("Intent Operator not found : " + intentOperator)
+		return nil, errors.New("intent Operator not found : " + intentOperator)
 	}
 	if term[:2] == "${" {
 		intentFragment.Script = true
@@ -207,7 +207,7 @@ func parseFilters(filters map[string]interface{}) ([]engine.ConditionFragment, e
 
 		case "and":
 			if reflect.ValueOf(value).Kind() != reflect.Map {
-				return nil, errors.New("AND value is not a map or has no children")
+				return nil, errors.New("and value is not a map or has no children")
 			}
 			frags, err := parseFilters(value.(map[string]interface{}))
 			if err != nil {
@@ -222,7 +222,7 @@ func parseFilters(filters map[string]interface{}) ([]engine.ConditionFragment, e
 
 		case "or":
 			if reflect.ValueOf(value).Kind() != reflect.Map {
-				return nil, errors.New("OR value is not a map or has no children")
+				return nil, errors.New("or value is not a map or has no children")
 			}
 			frags, err := parseFilters(value.(map[string]interface{}))
 			if err != nil {
@@ -237,7 +237,7 @@ func parseFilters(filters map[string]interface{}) ([]engine.ConditionFragment, e
 
 		case "not":
 			if reflect.ValueOf(value).Kind() != reflect.Map {
-				return nil, errors.New("NOT value is not a map or has no children")
+				return nil, errors.New("not value is not a map or has no children")
 			}
 			frags, err := parseFilters(value.(map[string]interface{}))
 			if err != nil {
@@ -270,11 +270,11 @@ func getConditions(conditionsStr []interface{}) ([]engine.ConditionFragment, err
 			}
 			nodes, _ := lexerC.Ast.Parsewith(lexerC.Parser, parsec.NewScanner([]byte(conditionStr.(string))))
 			if nodes == nil {
-				return nil, errors.New("Cannot parse expression : " + conditionStr.(string))
+				return nil, errors.New("cannot parse expression : " + conditionStr.(string))
 			}
 			leafCondition, err := astToLeafCondition(nodes)
 			if err != nil {
-				return nil, errors.New("Cannot convert condition AST in condition fragment")
+				return nil, errors.New("cannot convert condition AST in condition fragment")
 			}
 			leafConditions = append(leafConditions, leafCondition)
 		}
@@ -292,7 +292,7 @@ func astToLeafCondition(condition parsec.Queryable) (*engine.LeafConditionFragme
 	case "EXISTS":
 		filterFrag, err := engine.GetLeafConditionFragment(engine.Exists.String())
 		if err != nil {
-			return nil, errors.New("Fragment does not exists")
+			return nil, errors.New("fragment does not exists")
 		}
 		field := filterParts[1].GetValue()
 		filterFrag.Field = field
@@ -302,7 +302,7 @@ func astToLeafCondition(condition parsec.Queryable) (*engine.LeafConditionFragme
 	case "BETWEEN":
 		filterFrag, err := engine.GetLeafConditionFragment(engine.Between.String())
 		if err != nil {
-			return nil, errors.New("Fragment does not exists")
+			return nil, errors.New("fragment does not exists")
 		}
 		field := filterParts[2].GetValue()
 		value := filterParts[0].GetValue()
@@ -316,7 +316,7 @@ func astToLeafCondition(condition parsec.Queryable) (*engine.LeafConditionFragme
 	case "COMPARE":
 		filterFrag, err := engine.GetLeafConditionFragment(engine.For.String())
 		if err != nil {
-			return nil, errors.New("Fragment does not exists")
+			return nil, errors.New("fragment does not exists")
 		}
 		field := filterParts[0].GetValue()
 		value := filterParts[2].GetValue()
@@ -328,7 +328,7 @@ func astToLeafCondition(condition parsec.Queryable) (*engine.LeafConditionFragme
 	case "SCRIPT":
 		filterFrag, err := engine.GetLeafConditionFragment(engine.Script.String())
 		if err != nil {
-			return nil, errors.New("Fragment does not exists")
+			return nil, errors.New("fragment does not exists")
 		}
 		script := filterParts[1].GetValue()
 		filterFrag.Field = script

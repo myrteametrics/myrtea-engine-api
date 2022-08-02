@@ -36,7 +36,7 @@ func (r *PostgresRepository) GetLastConnectionReading(connectorID string, succes
 	})
 	if err != nil {
 		zap.L().Error("Couldn't retrieve the Connections reading datetime", zap.Error(err))
-		return nil, errors.New("Couldn't retrieve the connections reading " + err.Error())
+		return nil, errors.New("couldn't retrieve the connections reading " + err.Error())
 	}
 	defer rows.Close()
 
@@ -48,7 +48,7 @@ func (r *PostgresRepository) GetLastConnectionReading(connectorID string, succes
 		err = rows.Scan(&name, &ts)
 		if err != nil {
 			zap.L().Error("Couldn't read the rows:", zap.Error(err))
-			return nil, errors.New("Couldn't read the rows: " + err.Error())
+			return nil, errors.New("couldn't read the rows: " + err.Error())
 		}
 
 		lastReading[name] = ts

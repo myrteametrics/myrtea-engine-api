@@ -3,49 +3,45 @@ package explainer
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
+	"go.uber.org/zap"
 )
 
 // AddIssueDetectionFeedback add a new feedback in the detection_feedback table (or update it if the user already posted a feedback)
 // Moreover, it updates the issue average rating for convenience
-func AddIssueDetectionFeedback(dbClient *sqlx.DB, issueID int64, userID int64, rating int, groups []int64) error {
-	_, found, err := issues.R().Get(issueID, groups)
-	if err != nil {
-		return err
-	}
-	if !found {
-		return fmt.Errorf("Issue with id %d not found", issueID)
-	}
+func AddIssueDetectionFeedback(dbClient *sqlx.DB, issue models.Issue, user users.User, rating int) error {
+	// FIXME: Alter detection feedback table to allow userID uuid.UUID instead of int64
+	// tx, err := dbClient.Beginx()
+	// if err != nil {
+	// 	return err
+	// }
 
-	tx, err := dbClient.Beginx()
-	if err != nil {
-		return err
-	}
+	// err = persistDetectionFeedback(tx, issue.ID, user.ID, rating)
+	// if err != nil {
+	// 	return err
+	// }
 
-	err = persistDetectionFeedback(tx, issueID, userID, rating)
-	if err != nil {
-		return err
-	}
+	// avg, err := calculateDetectionRatingAverage(tx, issue.ID)
+	// if err != nil {
+	// 	return err
+	// }
 
-	avg, err := calculateDetectionRatingAverage(tx, issueID)
-	if err != nil {
-		return err
-	}
+	// err = updateIssueDetectionFeedbackAvg(tx, issue.ID, avg)
+	// if err != nil {
+	// 	return err
+	// }
 
-	err = updateIssueDetectionFeedbackAvg(tx, issueID, avg)
-	if err != nil {
-		return err
-	}
+	// err = tx.Commit()
+	// if err != nil {
+	// 	tx.Rollback()
+	// 	return err
+	// }
 
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
+	zap.L().Warn("AddIssueDetectionFeedback is not implemented")
 
 	return nil
 }
@@ -70,10 +66,10 @@ func persistDetectionFeedback(tx *sqlx.Tx, issueID int64, userID int64, rating i
 	}
 	i, err := res.RowsAffected()
 	if err != nil {
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 
 	return nil
@@ -116,10 +112,10 @@ func updateIssueDetectionFeedbackAvg(tx *sqlx.Tx, issueID int64, avgRating float
 	}
 	i, err := res.RowsAffected()
 	if err != nil {
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }

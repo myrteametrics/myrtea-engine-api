@@ -26,26 +26,26 @@ type InternalSchedule struct {
 // IsValid checks if an internal schedule definition is valid and has no missing mandatory fields
 func (schedule *InternalSchedule) IsValid() (bool, error) {
 	if schedule.Name == "" {
-		return false, errors.New("Missing Name")
+		return false, errors.New("missing Name")
 	}
 	if schedule.CronExpr == "" {
-		return false, errors.New("Missing CronExpr")
+		return false, errors.New("missing CronExpr")
 	}
 	if _, err := cronParser.Parse(schedule.CronExpr); err != nil {
-		return false, errors.New("Invalid CronExpr" + err.Error())
+		return false, errors.New("invalid CronExpr" + err.Error())
 	}
 	if schedule.JobType == "" {
-		return false, errors.New("Missing JobType")
+		return false, errors.New("missing JobType")
 	}
 	// if schedule.JobType != "fact" && schedule.JobType != "baseline" {
 	if schedule.JobType != "fact" {
-		return false, errors.New("Invalid JobType")
+		return false, errors.New("invalid JobType")
 	}
 	if schedule.Job == nil {
-		return false, errors.New("Missing Name")
+		return false, errors.New("missing Name")
 	}
 	if ok, err := schedule.Job.IsValid(); !ok {
-		return false, errors.New("Job is invalid:" + err.Error())
+		return false, errors.New("job is invalid:" + err.Error())
 	}
 	return true, nil
 }

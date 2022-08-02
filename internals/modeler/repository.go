@@ -16,6 +16,7 @@ type Repository interface {
 	Update(id int64, situation modeler.Model) error
 	Delete(id int64) error
 	GetAll() (map[int64]modeler.Model, error)
+	GetAllByIDs(ids []int64) (map[int64]modeler.Model, error)
 }
 
 var (

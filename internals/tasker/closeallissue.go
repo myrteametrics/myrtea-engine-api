@@ -22,13 +22,13 @@ func buildCloseAllIssuesTask(parameters map[string]interface{}) (CloseAllIssuesT
 	if val, ok := parameters["id"].(string); ok && val != "" {
 		task.ID = val
 	} else {
-		return task, errors.New("Missing or not valid 'id' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'id' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["statesToClose"].(string); ok && val != "" {
 		task.StatesToClose = val
 	} else {
-		return task, errors.New("Missing or not valid 'statesToClose' parameter (at least 1 value (open, draft) required)")
+		return task, errors.New("missing or not valid 'statesToClose' parameter (at least 1 value (open, draft) required)")
 	}
 
 	return task, nil

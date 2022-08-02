@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier/notification"
 	"go.uber.org/zap"
 )
@@ -68,17 +69,17 @@ func (notifier *Notifier) verifyCache(key string, timeout time.Duration) bool {
 	return true
 }
 
-// SendToGroups send a notification to every user related to the input list of groups
-func (notifier *Notifier) SendToGroups(cacheKey string, timeout time.Duration, notif notification.Notification, groups []int64) {
+// SendToRoles send a notification to every user related to the input list of roles
+func (notifier *Notifier) SendToRoles(cacheKey string, timeout time.Duration, notif notification.Notification, roles []uuid.UUID) {
 
-	zap.L().Debug("notifier.SendToGroups", zap.Int64s("groups", groups), zap.Any("notification", notif))
+	zap.L().Debug("notifier.SendToRoles", zap.Any("roles", roles), zap.Any("notification", notif))
 
 	if cacheKey != "" && !notifier.verifyCache(cacheKey, timeout) {
 		zap.L().Debug("Notification send skipped")
 		return
 	}
 
-	id, err := notification.R().Create(groups, notif)
+	id, err := notification.R().Create(notif)
 	if err != nil {
 		zap.L().Error("Add notification to history", zap.Error(err))
 		return
@@ -89,19 +90,20 @@ func (notifier *Notifier) SendToGroups(cacheKey string, timeout time.Duration, n
 		zap.L().Error("Notification not found after creation", zap.Int64("id", id))
 	}
 
-	if groups != nil && len(groups) > 0 {
-		clients := make(map[Client]bool, 0)
-		for _, groupID := range groups {
-			groupClients := notifier.findClientsByGroupID(groupID)
-			for _, client := range groupClients {
-				clients[client] = true
-			}
-		}
-		for client := range clients {
-			notifier.sendToClient(notifFull, client)
-		}
-	}
+	// FIXME: This should be fully reworking after security refactoring and removal of groups
 
+	// if roles != nil && len(roles) > 0 {
+	// 	clients := make(map[Client]bool, 0)
+	// 	for _, roleID := range roles {
+	// 		roleClients := notifier.findClientsByRoleID(roleID)
+	// 		for _, client := range roleClients {
+	// 			clients[client] = true
+	// 		}
+	// 	}
+	// 	for client := range clients {
+	// 		notifier.sendToClient(notifFull, client)
+	// 	}
+	// }
 }
 
 // sendToClient convert and send a notification to a specific client
@@ -124,7 +126,7 @@ func (notifier *Notifier) Broadcast(notif notification.Notification) {
 }
 
 // SendToUsers send a notification to users corresponding the input ids
-func (notifier *Notifier) SendToUsers(notif notification.Notification, users []int64) {
+func (notifier *Notifier) SendToUsers(notif notification.Notification, users []uuid.UUID) {
 	if users != nil && len(users) > 0 {
 		for _, userID := range users {
 			clients := notifier.findClientsByUserID(userID)
@@ -142,7 +144,7 @@ func (notifier *Notifier) Send(message []byte, client Client) {
 	}
 }
 
-func (notifier *Notifier) findClientsByUserID(id int64) []Client {
+func (notifier *Notifier) findClientsByUserID(id uuid.UUID) []Client {
 	clients := make([]Client, 0)
 	for _, client := range notifier.clientManager.GetClients() {
 		if client.GetUser() != nil && client.GetUser().ID == id {
@@ -152,12 +154,12 @@ func (notifier *Notifier) findClientsByUserID(id int64) []Client {
 	return clients
 }
 
-func (notifier *Notifier) findClientsByGroupID(id int64) []Client {
+func (notifier *Notifier) findClientsByRoleID(id uuid.UUID) []Client {
 	clients := make([]Client, 0)
 	for _, client := range notifier.clientManager.GetClients() {
 		if client.GetUser() != nil {
-			for _, group := range client.GetUser().Groups {
-				if group.ID == id {
+			for _, role := range client.GetUser().Roles {
+				if role.ID == id {
 					clients = append(clients, client)
 				}
 			}

@@ -15,7 +15,7 @@ import (
 func BuildSituationsFromFile(path string, file string) (map[int64]*Situation, []error) {
 
 	if fact.R() == nil {
-		return nil, []error{errors.New("Fact repository not initialized")}
+		return nil, []error{errors.New("fact repository not initialized")}
 	}
 
 	conf := viper.New()
@@ -42,7 +42,7 @@ func BuildSituationsFromFile(path string, file string) (map[int64]*Situation, []
 				continue
 			}
 			if !found {
-				errs = append(errs, errors.New("Fact "+v+" not found in fact repository"))
+				errs = append(errs, errors.New("fact "+v+" not found in fact repository"))
 				continue
 			}
 			facts = append(facts, f.ID)

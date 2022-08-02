@@ -25,12 +25,12 @@ func NewMockNotification(level string, title string, subTitle string, descriptio
 	return &MockNotification{
 		Type:         "mock",
 		CreationDate: creationDate,
-		Groups:       groups,
-		Level:        level,
-		Title:        title,
-		SubTitle:     subTitle,
-		Description:  description,
-		Context:      context,
+		// Groups:       groups,
+		Level:       level,
+		Title:       title,
+		SubTitle:    subTitle,
+		Description: description,
+		Context:     context,
 	}
 }
 

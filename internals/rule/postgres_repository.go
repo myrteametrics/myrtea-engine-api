@@ -68,14 +68,14 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 		rows.Scan(&ruleID)
 	} else {
 		tx.Rollback()
-		return -1, errors.New("No id returning of insert rule action")
+		return -1, errors.New("no id returning of insert rule action")
 	}
 	rows.Close()
 
 	rule.ID = ruleID
 	ruledata, err := json.Marshal(rule)
 	if err != nil {
-		return -1, errors.New("Failled to marshall the rule:" + rule.Name +
+		return -1, errors.New("failled to marshall the rule:" + rule.Name +
 			"\nError from Marshal" + err.Error())
 	}
 
@@ -90,11 +90,11 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 	i, err := res.RowsAffected()
 	if err != nil {
 		tx.Rollback()
-		return -1, errors.New("Error with the affected rows:" + err.Error())
+		return -1, errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
 		tx.Rollback()
-		return -1, errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return -1, errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 
 	err = tx.Commit()
@@ -115,7 +115,7 @@ func (r *PostgresRulesRepository) Get(id int64) (Rule, bool, error) {
 		"id": id,
 	})
 	if err != nil {
-		return Rule{}, false, errors.New("Couldn't retrieve the Rule with id: " + fmt.Sprint(id) + " : " + err.Error())
+		return Rule{}, false, errors.New("couldn't retrieve the Rule with id: " + fmt.Sprint(id) + " : " + err.Error())
 	}
 	defer rows.Close()
 
@@ -126,11 +126,11 @@ func (r *PostgresRulesRepository) Get(id int64) (Rule, bool, error) {
 	if rows.Next() {
 		err := rows.Scan(&ruleID, &ruleVersionNumber, &data)
 		if err != nil {
-			return Rule{}, false, errors.New("Couldn't scan the retrieved data: " + err.Error())
+			return Rule{}, false, errors.New("couldn't scan the retrieved data: " + err.Error())
 		}
 		err = json.Unmarshal([]byte(data), &rule)
 		if err != nil {
-			return Rule{}, false, errors.New("Malformed Data, rule ID: " + fmt.Sprint(id) + " error: " + err.Error())
+			return Rule{}, false, errors.New("malformed Data, rule ID: " + fmt.Sprint(id) + " error: " + err.Error())
 		}
 
 		//Set the id coming from the DB
@@ -152,7 +152,7 @@ func (r *PostgresRulesRepository) GetByVersion(id int64, version int64) (Rule, b
 		"version": version,
 	})
 	if err != nil {
-		return Rule{}, false, errors.New("Couldn't retrieve the Rule with id: " + fmt.Sprint(id) + " : " + err.Error())
+		return Rule{}, false, errors.New("couldn't retrieve the Rule with id: " + fmt.Sprint(id) + " : " + err.Error())
 	}
 	defer rows.Close()
 
@@ -163,11 +163,11 @@ func (r *PostgresRulesRepository) GetByVersion(id int64, version int64) (Rule, b
 	if rows.Next() {
 		err := rows.Scan(&ruleID, &ruleVersionNumber, &data)
 		if err != nil {
-			return Rule{}, false, errors.New("Couldn't scan the retrieved data: " + err.Error())
+			return Rule{}, false, errors.New("couldn't scan the retrieved data: " + err.Error())
 		}
 		err = json.Unmarshal([]byte(data), &rule)
 		if err != nil {
-			return Rule{}, false, errors.New("Malformed Data, rule ID: " + fmt.Sprint(id) + " error: " + err.Error())
+			return Rule{}, false, errors.New("malformed Data, rule ID: " + fmt.Sprint(id) + " error: " + err.Error())
 		}
 
 		//Set the id coming from the DB
@@ -189,7 +189,7 @@ func (r *PostgresRulesRepository) GetByName(name string) (Rule, bool, error) {
 		"name": name,
 	})
 	if err != nil {
-		return Rule{}, false, errors.New("Couldn't retrieve the Rule with name: " + name + " : " + err.Error())
+		return Rule{}, false, errors.New("couldn't retrieve the Rule with name: " + name + " : " + err.Error())
 	}
 	defer rows.Close()
 
@@ -200,11 +200,11 @@ func (r *PostgresRulesRepository) GetByName(name string) (Rule, bool, error) {
 	if rows.Next() {
 		err := rows.Scan(&ruleID, &ruleVersionNumber, &data)
 		if err != nil {
-			return Rule{}, false, errors.New("Couldn't scan the retrieved data: " + err.Error())
+			return Rule{}, false, errors.New("couldn't scan the retrieved data: " + err.Error())
 		}
 		err = json.Unmarshal([]byte(data), &rule)
 		if err != nil {
-			return Rule{}, false, errors.New("Malformed Data, rule Name: " + name + " error: " + err.Error())
+			return Rule{}, false, errors.New("malformed Data, rule Name: " + name + " error: " + err.Error())
 		}
 
 		//Set the id coming from the DB
@@ -239,7 +239,7 @@ func (r *PostgresRulesRepository) Update(rule Rule) error {
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
 	ruledata, err := json.Marshal(rule)
 	if err != nil {
-		return errors.New("Failled to marshall the rule:" + rule.Name +
+		return errors.New("failled to marshall the rule:" + rule.Name +
 			"\nError from Marshal" + err.Error())
 	}
 
@@ -267,11 +267,11 @@ func (r *PostgresRulesRepository) Update(rule Rule) error {
 	i, err := res.RowsAffected()
 	if err != nil {
 		tx.Rollback()
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
 		tx.Rollback()
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 
 	//Update Rule
@@ -291,11 +291,11 @@ func (r *PostgresRulesRepository) Update(rule Rule) error {
 	i, err = res.RowsAffected()
 	if err != nil {
 		tx.Rollback()
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
 		tx.Rollback()
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 
 	err = tx.Commit()
@@ -338,7 +338,7 @@ func (r *PostgresRulesRepository) Delete(id int64) error {
 	}
 	if i <= 0 {
 		tx.Rollback()
-		return errors.New("No row modified during delete")
+		return errors.New("no row modified during delete")
 	}
 	err = tx.Commit()
 	if err != nil {
@@ -355,7 +355,7 @@ func (r *PostgresRulesRepository) GetAll() (map[int64]Rule, error) {
 	rows, err := r.conn.Query(query)
 	if err != nil {
 		zap.L().Error("Couldn't retrieve the Rules", zap.Error(err))
-		return nil, errors.New("Couldn't retrieve the Rules " + err.Error())
+		return nil, errors.New("couldn't retrieve the Rules " + err.Error())
 	}
 	defer rows.Close()
 
@@ -368,12 +368,12 @@ func (r *PostgresRulesRepository) GetAll() (map[int64]Rule, error) {
 		err := rows.Scan(&ruleID, &ruledata)
 		if err != nil {
 			zap.L().Error("Couldn't read the rows:", zap.Error(err))
-			return nil, errors.New("Couldn't read the rows: " + err.Error())
+			return nil, errors.New("couldn't read the rows: " + err.Error())
 		}
 		err = json.Unmarshal([]byte(ruledata), &rule)
 		if err != nil {
 			zap.L().Error("Couldn't unmarshall the rule data:", zap.Error(err))
-			return nil, errors.New("Couldn't unmarshall the rule data: " + err.Error())
+			return nil, errors.New("couldn't unmarshall the rule data: " + err.Error())
 		}
 
 		//Set the id coming from the DB
@@ -392,7 +392,7 @@ func (r *PostgresRulesRepository) GetAllEnabled() (map[int64]Rule, error) {
 	rows, err := r.conn.Query(query)
 	if err != nil {
 		zap.L().Error("Couldn't retrieve the Rules", zap.Error(err))
-		return nil, errors.New("Couldn't retrieve the Rules " + err.Error())
+		return nil, errors.New("couldn't retrieve the Rules " + err.Error())
 	}
 	defer rows.Close()
 
@@ -405,12 +405,12 @@ func (r *PostgresRulesRepository) GetAllEnabled() (map[int64]Rule, error) {
 		err := rows.Scan(&ruleID, &ruledata)
 		if err != nil {
 			zap.L().Error("Couldn't read the rows:", zap.Error(err))
-			return nil, errors.New("Couldn't read the rows: " + err.Error())
+			return nil, errors.New("couldn't read the rows: " + err.Error())
 		}
 		err = json.Unmarshal([]byte(ruledata), &rule)
 		if err != nil {
 			zap.L().Error("Couldn't unmarshall the rule data:", zap.Error(err))
-			return nil, errors.New("Couldn't unmarshall the rule data: " + err.Error())
+			return nil, errors.New("couldn't unmarshall the rule data: " + err.Error())
 		}
 
 		//Set the id coming from the DB
@@ -432,7 +432,7 @@ func (r *PostgresRulesRepository) GetAllModifiedFrom(from time.Time) (map[int64]
 	})
 	if err != nil {
 		zap.L().Error("Couldn't retrieve the Rules", zap.Error(err))
-		return nil, errors.New("Couldn't retrieve the Rules " + err.Error())
+		return nil, errors.New("couldn't retrieve the Rules " + err.Error())
 	}
 	defer rows.Close()
 
@@ -445,12 +445,12 @@ func (r *PostgresRulesRepository) GetAllModifiedFrom(from time.Time) (map[int64]
 		err := rows.Scan(&ruleID, &ruledata)
 		if err != nil {
 			zap.L().Error("Couldn't read the rows:", zap.Error(err))
-			return nil, errors.New("Couldn't read the rows: " + err.Error())
+			return nil, errors.New("couldn't read the rows: " + err.Error())
 		}
 		err = json.Unmarshal([]byte(ruledata), &rule)
 		if err != nil {
 			zap.L().Error("Couldn't unmarshall the rule data:", zap.Error(err))
-			return nil, errors.New("Couldn't unmarshall the rule data: " + err.Error())
+			return nil, errors.New("couldn't unmarshall the rule data: " + err.Error())
 		}
 
 		//Set the id coming from the DB
