@@ -370,7 +370,6 @@ func TestFactCaltulationJobSituationTemplate(t *testing.T) {
 
 	s1 := situation.Situation{
 		Name:       "Situation1",
-		Groups:     []int64{1},
 		Facts:      []int64{1},
 		Parameters: map[string]string{"type0": "type0"},
 		IsTemplate: true,

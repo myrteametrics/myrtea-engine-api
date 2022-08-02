@@ -192,7 +192,6 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 			Name:       s.Name,
 			Facts:      factIDs,
 			CalendarID: s.CalendarID,
-			Groups:     s.Groups,
 			Parameters: s.Parameters,
 			IsTemplate: s.IsTemplate,
 			IsObject:   s.IsObject,

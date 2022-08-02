@@ -76,9 +76,8 @@ func dbInit(dbClient *sqlx.DB, t *testing.T) {
 
 	situation.ReplaceGlobals(situation.NewPostgresRepository(dbClient))
 	s := situation.Situation{
-		Groups: []int64{1, 2},
-		Name:   "situation_1",
-		Facts:  []int64{},
+		Name:  "situation_1",
+		Facts: []int64{},
 	}
 	situationID1, err := situation.R().Create(s)
 	if err != nil {

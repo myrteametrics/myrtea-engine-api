@@ -18,7 +18,6 @@ type Repository interface {
 	GetAll() (map[int64]Situation, error)
 	GetAllByIDs(ids []int64) (map[int64]Situation, error)
 	GetAllByRuleID(ruleID int64) (map[int64]Situation, error)
-	IsInGroups(id int64, groups []int64) (bool, error)
 
 	GetRules(id int64) ([]int64, error)
 	SetRules(id int64, rules []int64) error

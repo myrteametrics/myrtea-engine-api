@@ -134,7 +134,6 @@ func TestPostgresGet(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	groups := []int64{1, 2}
 
 	situationGet, found, err := r.Get(1)
 	if err != nil {
@@ -145,7 +144,7 @@ func TestPostgresGet(t *testing.T) {
 		t.Error("found a situation from nowhere")
 	}
 
-	situation := Situation{Name: "test_name", Groups: groups}
+	situation := Situation{Name: "test_name"}
 	id, err := r.Create(situation)
 	if err != nil {
 		t.Error(err)
@@ -182,8 +181,7 @@ func TestPostgresCreate(t *testing.T) {
 
 	params := map[string]string{"key": "value"}
 
-	groups := []int64{1, 2}
-	situation := Situation{Name: "test", Groups: groups, Facts: []int64{factID1, factID2}, Parameters: params}
+	situation := Situation{Name: "test", Facts: []int64{factID1, factID2}, Parameters: params}
 	id, err := r.Create(situation)
 	if err != nil {
 		t.Error(err)
@@ -219,8 +217,7 @@ func TestPostgresCreateMultiple(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	groups := []int64{1, 2}
-	situation := Situation{Name: "test", Groups: groups}
+	situation := Situation{Name: "test"}
 	id1, err := r.Create(situation)
 	if err != nil {
 		t.Error(err)
@@ -238,7 +235,7 @@ func TestPostgresCreateMultiple(t *testing.T) {
 		t.Error("invalid ID")
 	}
 
-	situation2 := Situation{Name: "test2", Groups: groups}
+	situation2 := Situation{Name: "test2"}
 	id2, err := r.Create(situation2)
 	if err != nil {
 		t.Error(err)
@@ -268,19 +265,18 @@ func TestPostgresUpdate(t *testing.T) {
 	factR := fact.NewPostgresRepository(db)
 
 	var err error
-	groups := []int64{1, 2}
 
 	fact1 := engine.Fact{Name: "test_name1", Comment: "test comment"}
 	id1, err := factR.Create(fact1)
 	fact2 := engine.Fact{Name: "test_name2", Comment: "test comment"}
 	id2, err := factR.Create(fact2)
 
-	situation := Situation{Name: "test1", Facts: []int64{id1}, Groups: groups}
+	situation := Situation{Name: "test1", Facts: []int64{id1}}
 	id, err := situationR.Create(situation)
 	if err != nil {
 		t.Error(err)
 	}
-	situation2 := Situation{Name: "test2", Facts: []int64{id2}, Groups: groups}
+	situation2 := Situation{Name: "test2", Facts: []int64{id2}}
 	err = situationR.Update(id, situation2)
 	if err != nil {
 		t.Error(err)
@@ -312,8 +308,7 @@ func TestPostgresUpdateNotExists(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	groups := []int64{1, 2}
-	situation := Situation{Name: "test", Groups: groups}
+	situation := Situation{Name: "test"}
 	err = r.Update(1, situation)
 	if err == nil {
 		t.Error("updating a non-existing situation should return an error")
@@ -331,8 +326,7 @@ func TestPostgresDelete(t *testing.T) {
 
 	var err error
 
-	groups := []int64{1, 2}
-	situation := Situation{Name: "test", Groups: groups}
+	situation := Situation{Name: "test"}
 	id, err := r.Create(situation)
 	if err != nil {
 		t.Error(err)
@@ -395,13 +389,12 @@ func TestPostgresGetAll(t *testing.T) {
 
 	params := map[string]string{"key": "value"}
 
-	groups := []int64{1, 2}
-	situation := Situation{Name: "test", Groups: groups, Facts: []int64{factID1}, Parameters: params}
+	situation := Situation{Name: "test", Facts: []int64{factID1}, Parameters: params}
 	s1ID, err := r.Create(situation)
 	if err != nil {
 		t.Error(err)
 	}
-	situation2 := Situation{Name: "test2", Groups: groups, Facts: []int64{factID2}, Parameters: params}
+	situation2 := Situation{Name: "test2", Facts: []int64{factID2}, Parameters: params}
 	s2ID, err := r.Create(situation2)
 	if err != nil {
 		t.Error(err)
@@ -454,8 +447,7 @@ func TestSetAndGetRules(t *testing.T) {
 	dbInitRepo(db, t)
 	r := NewPostgresRepository(db)
 
-	groups := []int64{1, 2}
-	situation := Situation{Name: "test", Groups: groups}
+	situation := Situation{Name: "test"}
 	situationID, err := r.Create(situation)
 	if err != nil {
 		t.Error(err)

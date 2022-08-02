@@ -108,7 +108,6 @@ func TestPostgresCreateAndGet(t *testing.T) {
 	s := situation.NewPostgresRepository(db)
 
 	var err error
-	groups := []int64{1, 2}
 	issueGet, found, err := r.Get(1)
 	if err != nil {
 		t.Error(err)
@@ -119,7 +118,8 @@ func TestPostgresCreateAndGet(t *testing.T) {
 	}
 
 	//Situation
-	situation1 := situation.Situation{Name: "test_name", Groups: groups}
+	situation1 := situation.Situation{Name: "test_name"}
+
 	situationID, err := s.Create(situation1)
 	if err != nil {
 		t.Error(err)
@@ -168,8 +168,8 @@ func TestPostgresUpdate(t *testing.T) {
 	s := situation.NewPostgresRepository(db)
 
 	//Situation
-	groupList := []int64{1, 2}
-	situation1 := situation.Situation{Name: "test_name", Groups: groupList}
+	situation1 := situation.Situation{Name: "test_name"}
+
 	situationID, err := s.Create(situation1)
 	if err != nil {
 		t.Error(err)
@@ -238,15 +238,16 @@ func TestPostgresGetByStates(t *testing.T) {
 	s := situation.NewPostgresRepository(db)
 
 	//Situation1
-	groups := []int64{1, 2}
-	situation1 := situation.Situation{Name: "test_name1", Groups: groups}
+	situation1 := situation.Situation{Name: "test_name1"}
+
 	situation1ID, err := s.Create(situation1)
 	if err != nil {
 		t.Error(err)
 	}
 
 	//Situation2
-	situation2 := situation.Situation{Name: "test_name2", Groups: groups}
+	situation2 := situation.Situation{Name: "test_name2"}
+
 	situation2ID, err := s.Create(situation2)
 	if err != nil {
 		t.Error(err)
@@ -297,15 +298,16 @@ func TestPostgresGetAll(t *testing.T) {
 	s := situation.NewPostgresRepository(db)
 
 	//Situation1
-	groups := []int64{1, 2}
-	situation1 := situation.Situation{Name: "test_name1", Groups: groups}
+	situation1 := situation.Situation{Name: "test_name1"}
+
 	situation1ID, err := s.Create(situation1)
 	if err != nil {
 		t.Error(err)
 	}
 
 	//Situation2
-	situation2 := situation.Situation{Name: "test_name2", Groups: groups}
+	situation2 := situation.Situation{Name: "test_name2"}
+
 	situation2ID, err := s.Create(situation2)
 	if err != nil {
 		t.Error(err)
@@ -356,15 +358,16 @@ func TestPostgresGetByStateByPage(t *testing.T) {
 	s := situation.NewPostgresRepository(db)
 
 	//Situation1
-	groups := []int64{1, 2}
-	situation1 := situation.Situation{Name: "test_name1", Groups: groups}
+	situation1 := situation.Situation{Name: "test_name1"}
+
 	situation1ID, err := s.Create(situation1)
 	if err != nil {
 		t.Error(err)
 	}
 
 	//Situation2
-	situation2 := situation.Situation{Name: "test_name2", Groups: groups}
+	situation2 := situation.Situation{Name: "test_name2"}
+
 	situation2ID, err := s.Create(situation2)
 	if err != nil {
 		t.Error(err)

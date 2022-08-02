@@ -58,8 +58,8 @@ func TestCreateIssueWithoutTimeout(t *testing.T) {
 	s := situation.NewPostgresRepository(db)
 
 	//Situation
-	groups := []int64{1, 2}
-	situation1 := situation.Situation{Name: "test_name", Groups: groups}
+	situation1 := situation.Situation{Name: "test_name"}
+
 	situationID, err := s.Create(situation1)
 	if err != nil {
 		t.Error(err)
@@ -96,8 +96,8 @@ func TestCreateIssueWithTimeout(t *testing.T) {
 	s := situation.NewPostgresRepository(db)
 
 	//Situation
-	groups := []int64{1, 2}
-	situation1 := situation.Situation{Name: "test_name", Groups: groups}
+	situation1 := situation.Situation{Name: "test_name"}
+
 	situationID, err := s.Create(situation1)
 	if err != nil {
 		t.Error(err)
@@ -182,8 +182,8 @@ func TestCreateIssueWithTimeoutAndState(t *testing.T) {
 	s := situation.NewPostgresRepository(db)
 
 	//Situation
-	groups := []int64{1, 2}
-	situation1 := situation.Situation{Name: "test_name", Groups: groups}
+	situation1 := situation.Situation{Name: "test_name"}
+
 	situationID, err := s.Create(situation1)
 	if err != nil {
 		t.Error(err)
@@ -278,11 +278,9 @@ func TestIssueGetFactsHistory(t *testing.T) {
 	}
 
 	//Situation
-	groups := []int64{1, 2}
 	situation1 := situation.Situation{
-		Name:   "test_name",
-		Facts:  []int64{idFact1, idFact2, idFact3},
-		Groups: groups,
+		Name:  "test_name",
+		Facts: []int64{idFact1, idFact2, idFact3},
 	}
 
 	situationID, err := s.Create(situation1)

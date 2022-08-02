@@ -187,7 +187,7 @@ func TestIssueTasks(t *testing.T) {
 
 	factID, _ := fact.R().Create(engine.Fact{Name: "fact_test_1"})
 
-	s := situation.Situation{Name: "situation_test", Groups: []int64{0}, Facts: []int64{factID}}
+	s := situation.Situation{Name: "situation_test", Facts: []int64{factID}}
 	sID, err := situation.R().Create(s)
 	if err != nil {
 		t.Error(err)
@@ -350,7 +350,7 @@ func TestTimezoneInCloseIssueTask(t *testing.T) {
 
 	factID, _ := fact.R().Create(engine.Fact{Name: "fact_test_1"})
 
-	s := situation.Situation{Name: "situation_test", Groups: []int64{0}, Facts: []int64{factID}}
+	s := situation.Situation{Name: "situation_test", Facts: []int64{factID}}
 	sID, err := situation.R().Create(s)
 	if err != nil {
 		t.Error(err)

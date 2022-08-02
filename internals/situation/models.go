@@ -8,7 +8,6 @@ import (
 // Situation is a struct used to represent a situation (or an ensemble of fact)
 type Situation struct {
 	ID              int64             `json:"id,omitempty"`
-	Groups          []int64           `json:"groups"`
 	Name            string            `json:"name"`
 	Facts           []int64           `json:"facts"`
 	CalendarID      int64             `json:"calendarId"`
@@ -29,12 +28,6 @@ func (s Situation) IsValid() (bool, error) {
 	if s.Name == "" {
 		return false, errors.New("missing Name")
 	}
-	if s.Groups == nil {
-		return false, errors.New("missing Groups")
-	}
-	if len(s.Groups) <= 0 {
-		return false, errors.New("missing Groups")
-	}
 	if s.Facts == nil {
 		return false, errors.New("missing Facts")
 	}
@@ -48,7 +41,6 @@ func (s Situation) IsValid() (bool, error) {
 func (s Situation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		ID              int64             `json:"id,omitempty"`
-		Groups          []int64           `json:"groups"`
 		Name            string            `json:"name"`
 		Facts           []int64           `json:"facts"`
 		ExpressionFacts []ExpressionFact  `json:"expressionFacts"`
@@ -58,7 +50,6 @@ func (s Situation) MarshalJSON() ([]byte, error) {
 		IsObject        bool              `json:"isObject"`
 	}{
 		ID:              s.ID,
-		Groups:          s.Groups,
 		Name:            s.Name,
 		Facts:           s.Facts,
 		ExpressionFacts: s.ExpressionFacts,

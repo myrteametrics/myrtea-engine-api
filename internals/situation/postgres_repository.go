@@ -110,17 +110,6 @@ func (r *PostgresRepository) GetByName(name string) (Situation, bool, error) {
 
 // Create creates a new situation in the database using the given situation object
 func (r *PostgresRepository) Create(situation Situation) (int64, error) {
-	// isAllGroup := false
-	// for _, group := range situation.Groups {
-	// 	if group == groups.AllGroups {
-	// 		zap.L().Error("Situation shouldn't have the universal token group")
-	// 		isAllGroup = true
-	// 	}
-	// }
-
-	// if !isAllGroup {
-	// 	situation.Groups = append(situation.Groups, groups.AllGroups)
-	// }
 
 	situationData, err := json.Marshal(situation)
 	if err != nil {
@@ -128,11 +117,10 @@ func (r *PostgresRepository) Create(situation Situation) (int64, error) {
 	}
 
 	timestamp := time.Now().Truncate(1 * time.Millisecond).UTC()
-	query := `INSERT INTO situation_definition_v1 (id, name, groups, definition, is_template, is_object, calendar_id, last_modified)
-		VALUES (DEFAULT, :name, :groups, :definition, :is_template, :is_object, :calendar_id, :last_modified) RETURNING id`
+	query := `INSERT INTO situation_definition_v1 (id, name, definition, is_template, is_object, calendar_id, last_modified)
+		VALUES (DEFAULT, :name, :definition, :is_template, :is_object, :calendar_id, :last_modified) RETURNING id`
 	params := map[string]interface{}{
 		"name":          situation.Name,
-		"groups":        pq.Array(situation.Groups),
 		"definition":    string(situationData),
 		"is_template":   situation.IsTemplate,
 		"is_object":     situation.IsObject,
@@ -203,7 +191,6 @@ func (r *PostgresRepository) Update(id int64, situation Situation) error {
 	params := map[string]interface{}{
 		"id":            id,
 		"name":          situation.Name,
-		"groups":        pq.Array(situation.Groups),
 		"definition":    string(situationData),
 		"is_template":   situation.IsTemplate,
 		"is_object":     situation.IsObject,
@@ -477,17 +464,6 @@ func parseAllRows(rows *sqlx.Rows) (map[int64]Situation, error) {
 		situations[situation.ID] = situation
 	}
 	return situations, nil
-}
-
-// IsInGroups returns true ins the situation is in one of the groups
-func (r *PostgresRepository) IsInGroups(id int64, groups []int64) (bool, error) {
-	var inGroup bool
-	checkNameQuery := `SELECT groups && $1 FROM situation_definition_v1 WHERE id = $2;`
-	err := r.conn.QueryRow(checkNameQuery, pq.Array(groups), id).Scan(&inGroup)
-	if err != nil && err != sql.ErrNoRows {
-		return false, err
-	}
-	return inGroup, nil
 }
 
 // GetRules returns the list of rules used in to evaluate the situation

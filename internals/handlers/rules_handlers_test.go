@@ -147,10 +147,9 @@ func TestPostRulesSituations(t *testing.T) {
 	r2ID, _ := rule.R().Create(rule2)
 
 	//create situations
-	situatiosGroup := []int64{1}
-	s1ID, _ := situation.R().Create(situation.Situation{Name: "Situation1", Groups: situatiosGroup})
-	s2ID, _ := situation.R().Create(situation.Situation{Name: "Situation2", Groups: situatiosGroup})
-	s3ID, _ := situation.R().Create(situation.Situation{Name: "Situation3", Groups: situatiosGroup})
+	s1ID, _ := situation.R().Create(situation.Situation{Name: "Situation1"})
+	s2ID, _ := situation.R().Create(situation.Situation{Name: "Situation2"})
+	s3ID, _ := situation.R().Create(situation.Situation{Name: "Situation3"})
 
 	//Post new situations to rules
 	situationIDs := []int64{s1ID, s2ID}

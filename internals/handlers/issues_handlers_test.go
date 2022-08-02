@@ -74,12 +74,9 @@ func TestGetIssues(t *testing.T) {
 	issues.ReplaceGlobals(issues.NewPostgresRepository(db))
 	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
 
-	groupsIDS := []int64{1, 2}
-
 	//Situation
 	situation1 := situation.Situation{
-		Name:   "test_name",
-		Groups: groupsIDS,
+		Name: "test_name",
 	}
 
 	situationID, err := situation.R().Create(situation1)
@@ -170,12 +167,9 @@ func TestGetIssuesStates(t *testing.T) {
 	issues.ReplaceGlobals(issues.NewPostgresRepository(db))
 	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
 
-	groupsIDS := []int64{1, 2}
-
 	//Situation
 	situation1 := situation.Situation{
-		Name:   "test_name",
-		Groups: groupsIDS,
+		Name: "test_name",
 	}
 
 	situationID, err := situation.R().Create(situation1)
@@ -295,8 +289,8 @@ func TestGetIssue(t *testing.T) {
 	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
 
 	//Situation
-	groupsIDS := []int64{1, 2}
-	situation1 := situation.Situation{Name: "test_name", Groups: groupsIDS}
+	situation1 := situation.Situation{Name: "test_name"}
+
 	situationID, err := situation.R().Create(situation1)
 	if err != nil {
 		t.Error(err)
@@ -384,10 +378,8 @@ func TestPostIssue(t *testing.T) {
 	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
 
 	//Situation
-	groups := []int64{1, 2}
 	situation1 := situation.Situation{
-		Name:   "test_name",
-		Groups: groups,
+		Name: "test_name",
 	}
 	situationID, err := situation.R().Create(situation1)
 	if err != nil {
@@ -468,8 +460,8 @@ func TestIssueLifecycle(t *testing.T) {
 	action.ReplaceGlobals(action.NewPostgresRepository(db))
 
 	//Situation
-	groupsIDS := []int64{1}
-	situation1 := situation.Situation{Name: "test_name", Groups: groupsIDS}
+	situation1 := situation.Situation{Name: "test_name"}
+
 	situationID, err := situation.R().Create(situation1)
 	if err != nil {
 		t.Error(err)
