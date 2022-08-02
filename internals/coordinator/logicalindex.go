@@ -151,7 +151,7 @@ func (logicalIndex *LogicalIndex) rollover() {
 			return
 		}
 		if !aliasResult.Acknowledged {
-			err := errors.New("ES API return false acknowledged")
+			err := errors.New("es API return false acknowledged")
 			zap.L().Error("Putting alias", zap.Error(err), zap.String("index", newIndex),
 				zap.String("alias", alias))
 			return
@@ -202,7 +202,7 @@ func (logicalIndex *LogicalIndex) rollover() {
 
 func persistTechnicalIndex(logicalIndex string, newIndex string, t time.Time) error {
 	if postgres.DB() == nil {
-		return errors.New("Postgresql Client not initialized")
+		return errors.New("postgresql Client not initialized")
 	}
 
 	query := `INSERT INTO elasticsearch_indices_v1 (id, logical, technical, creation_date)
@@ -223,7 +223,7 @@ func persistTechnicalIndex(logicalIndex string, newIndex string, t time.Time) er
 
 func purgeTechnicalIndex(logicalIndex string, technicalIndex string) error {
 	if postgres.DB() == nil {
-		return errors.New("Postgresql Client not initialized")
+		return errors.New("postgresql Client not initialized")
 	}
 
 	query := `DELETE FROM elasticsearch_indices_v1 where logical = :logical AND technical = :technical`

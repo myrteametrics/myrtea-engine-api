@@ -12,6 +12,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"go.uber.org/zap"
 )
@@ -28,21 +29,27 @@ var allowedSortByFields = []string{"id", "created_at", "last_modified"}
 // @Failure 500 "internal server error"
 // @Router /admin/engine/issues_all [get]
 func GetIssues(w http.ResponseWriter, r *http.Request) {
-	user := GetUserFromContext(r)
-	if user == nil {
-		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
-	groups := GetUserGroupsFromUser(user)
 
-	issues, err := issues.R().GetAll(groups)
+	var issueList map[int64]models.Issue
+	var err error
+	if userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionGet)) {
+		issueList, err = issues.R().GetAll()
+	} else {
+		situationIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionGet))
+		issueList, err = issues.R().GetAllBySituationIDs(situationIDs)
+	}
 	if err != nil {
 		zap.L().Error("Cannot retrieve issues", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	render.JSON(w, r, issues)
+	render.JSON(w, r, issueList)
 }
 
 // GetIssuesByStatesByPage godoc
@@ -59,13 +66,6 @@ func GetIssues(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "internal server error"
 // @Router /engine/issues [get]
 func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
-
-	user := GetUserFromContext(r)
-	if user == nil {
-		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
-		return
-	}
-	groups := GetUserGroupsFromUser(user)
 
 	var err error
 	var limit int
@@ -107,7 +107,20 @@ func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 		SortBy: sortOptions,
 	}
 
-	issuesSlice, total, err := issues.R().GetByStateByPage(states, searchOptions, groups)
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	var issuesSlice []models.Issue
+	var total int
+	if userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionGet)) {
+		issuesSlice, total, err = issues.R().GetByStateByPage(states, searchOptions)
+	} else {
+		situationIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionGet))
+		issuesSlice, total, err = issues.R().GetByStateByPageBySituationIDs(states, searchOptions, situationIDs)
+	}
 	if err != nil {
 		zap.L().Error("Error on getting issues", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -133,13 +146,6 @@ func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/issues/{id} [get]
 func GetIssue(w http.ResponseWriter, r *http.Request) {
-	user := GetUserFromContext(r)
-	if user == nil {
-		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
-		return
-	}
-	groups := GetUserGroupsFromUser(user)
-
 	id := chi.URLParam(r, "id")
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
@@ -148,8 +154,7 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	issue, found, err := issues.R().Get(idIssue, groups)
-
+	issue, found, err := issues.R().Get(idIssue)
 	if err != nil {
 		zap.L().Error("Cannot retrieve issue", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -158,6 +163,12 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 	if !found {
 		zap.L().Warn("issue does not exists", zap.String("issueID", id))
 		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -175,12 +186,6 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/issues/{id}/history [get]
 func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
-	user := GetUserFromContext(r)
-	if user == nil {
-		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
-		return
-	}
-	groups := GetUserGroupsFromUser(user)
 
 	var err error
 	var limit int
@@ -228,7 +233,13 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 		SortBy: sortOptions,
 	}
 
-	issue, found, err := issues.R().Get(idIssue, groups)
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	issue, found, err := issues.R().Get(idIssue)
 	if err != nil {
 		zap.L().Error("Cannot retrieve issue", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -240,7 +251,7 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	issuesSlice, total, err := issues.R().GetByKeyByPage(issue.Key, searchOptions, groups)
+	issuesSlice, total, err := issues.R().GetByKeyByPage(issue.Key, searchOptions)
 	if err != nil {
 		zap.L().Error("Error on getting issues", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -267,12 +278,6 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 "Status Not Found"
 // @Router /engine/issues/{id}/facts_history [get]
 func GetIssueFactsHistory(w http.ResponseWriter, r *http.Request) {
-	user := GetUserFromContext(r)
-	if user == nil {
-		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
-		return
-	}
-	groups := GetUserGroupsFromUser(user)
 
 	id := chi.URLParam(r, "id")
 	idIssue, err := strconv.ParseInt(id, 10, 64)
@@ -282,7 +287,25 @@ func GetIssueFactsHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	history, found, err := explainer.GetFactsHistory(idIssue, groups)
+	issue, found, err := issues.R().Get(idIssue)
+	if err != nil {
+		zap.L().Error("Cannot retrieve issue", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("issue does not exists", zap.String("issueID", id))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	history, found, err := explainer.GetFactsHistory(issue)
 	if err != nil {
 		zap.L().Error("An error has occurred", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -318,6 +341,12 @@ func PostIssue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(newIssue.SituationID, 10), permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	//TODO: No need to return the new issue id ?
 	_, err = issues.R().Create(newIssue)
 	if err != nil {
@@ -350,9 +379,27 @@ func GetIssueFeedbackTree(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tree, err := explainer.GetRecommendationTree(idIssue)
+	issue, found, err := issues.R().Get(idIssue)
 	if err != nil {
-		zap.L().Error("Generating rootcauses / actions tree", zap.Int64("id", idIssue), zap.Error(err))
+		zap.L().Error("Cannot retrieve issue", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("issue does not exists", zap.String("issueID", id))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	tree, err := explainer.GetRecommendationTree(issue)
+	if err != nil {
+		zap.L().Error("Generating rootcauses / actions tree", zap.Int64("id", issue.ID), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 		return
 	}
@@ -374,18 +421,29 @@ func GetIssueFeedbackTree(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/issues/{id}/draft [post]
 func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
-	user := GetUserFromContext(r)
-	if user == nil {
-		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
-		return
-	}
-	groups := GetUserGroupsFromUser(user)
-
 	id := chi.URLParam(r, "id")
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	issue, found, err := issues.R().Get(idIssue)
+	if err != nil {
+		zap.L().Error("Cannot retrieve issue", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("issue does not exists", zap.String("issueID", id))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -397,7 +455,7 @@ func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = explainer.SaveIssueDraft(nil, idIssue, newDraft, groups, *user)
+	err = explainer.SaveIssueDraft(nil, issue, newDraft, userCtx.User)
 	if err != nil {
 		zap.L().Error("SaveIssueDraft", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
@@ -421,18 +479,29 @@ func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/issues/{id}/feedback [post]
 func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
-	user := GetUserFromContext(r)
-	if user == nil {
-		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
-		return
-	}
-	groups := GetUserGroupsFromUser(user)
-
 	id := chi.URLParam(r, "id")
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	issue, found, err := issues.R().Get(idIssue)
+	if err != nil {
+		zap.L().Error("Cannot retrieve issue", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("issue does not exists", zap.String("issueID", id))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -444,7 +513,7 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = explainer.CloseIssueWithFeedback(postgres.DB(), idIssue, newFeedback, groups, *user)
+	err = explainer.CloseIssueWithFeedback(postgres.DB(), issue, newFeedback, userCtx.User)
 	if err != nil {
 		zap.L().Error("CloseIssueWithFeedback", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
@@ -468,18 +537,29 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/issues/{id}/close [post]
 func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
-	user := GetUserFromContext(r)
-	if user == nil {
-		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
-		return
-	}
-	groups := GetUserGroupsFromUser(user)
-
 	id := chi.URLParam(r, "id")
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	issue, found, err := issues.R().Get(idIssue)
+	if err != nil {
+		zap.L().Error("Cannot retrieve issue", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("issue does not exists", zap.String("issueID", id))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -497,7 +577,7 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = explainer.CloseIssueWithoutFeedback(postgres.DB(), idIssue, reason.S, groups, *user)
+	err = explainer.CloseIssueWithoutFeedback(postgres.DB(), issue, reason.S, userCtx.User)
 	if err != nil {
 		zap.L().Error("CloseIssueWithoutFeedback", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
@@ -521,18 +601,29 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/issues/{id}/detection/feedback [post]
 func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
-	user := GetUserFromContext(r)
-	if user == nil {
-		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
-		return
-	}
-	groups := GetUserGroupsFromUser(user)
-
 	id := chi.URLParam(r, "id")
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	issue, found, err := issues.R().Get(idIssue)
+	if err != nil {
+		zap.L().Error("Cannot retrieve issue", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("issue does not exists", zap.String("issueID", id))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -549,7 +640,7 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = explainer.AddIssueDetectionFeedback(postgres.DB(), idIssue, user.ID, feedback.Rating, groups)
+	err = explainer.AddIssueDetectionFeedback(postgres.DB(), issue, userCtx.User, feedback.Rating)
 	if err != nil {
 		zap.L().Warn("AddIssueDetectionFeedback", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
@@ -574,11 +665,16 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 // @Router /engine/issues/{id}/comment [put]
 func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
 
-	user := GetUserFromContext(r)
-	if user == nil {
-		render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("No user found in context"))
-		return
-	}
+	// userCtx, _ := GetUserFromContext(r)
+	// FIXME
+	// if user == nil {
+	// 	render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("no user found in context"))
+	// 	return
+	// }
+	// if !userCtx.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionCreate)) {
+	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+	// 	return
+	// }
 
 	id := chi.URLParam(r, "id")
 	idIssue, err := strconv.ParseInt(id, 10, 64)
@@ -602,7 +698,7 @@ func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
 
 	//zap.L().Info("UpdateComment", zap.String("comment", comment.Comment))
 
-	err = issues.R().UpdateComment(postgres.DB(), idIssue, comment.Comment, *user)
+	err = issues.R().UpdateComment(postgres.DB(), idIssue, comment.Comment)
 	if err != nil {
 		zap.L().Error("Cannot update issue comment", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)

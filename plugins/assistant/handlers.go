@@ -141,7 +141,7 @@ type AssistantResponse struct {
 func PersistInteractionTrace(receiveTs time.Time, askedTs time.Time, message *Message, nlpTokens *[]string, fact *engine.Fact, result *reader.Item, pipelineErr error) error {
 
 	if postgres.DB() == nil {
-		return errors.New("DB Client is not initialized")
+		return errors.New("db Client is not initialized")
 	}
 
 	params := map[string]interface{}{
@@ -193,8 +193,8 @@ func PersistInteractionTrace(receiveTs time.Time, askedTs time.Time, message *Me
 		return err
 	}
 	if i != 1 {
-		zap.L().Error("Insert interaction history V1", zap.Error(errors.New("No row inserted (or multiple row inserted) instead of 1 row")))
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		zap.L().Error("Insert interaction history V1", zap.Error(errors.New("no row inserted (or multiple row inserted) instead of 1 row")))
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }

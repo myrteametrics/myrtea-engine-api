@@ -86,11 +86,9 @@ func TestEvalProcessor(t *testing.T) {
 	}
 
 	//Situation
-	groups := []int64{1, 2}
 	situation1 := situation.Situation{
-		Name:   "test_name",
-		Facts:  []int64{idFact1, idFact2, idFact3},
-		Groups: groups,
+		Name:  "test_name",
+		Facts: []int64{idFact1, idFact2, idFact3},
 	}
 
 	situationID, err := situation.R().Create(situation1)
@@ -193,7 +191,7 @@ func TestEvalProcessor(t *testing.T) {
 		t.FailNow()
 	}
 
-	issues, err := issues.R().GetAll(groups)
+	issues, err := issues.R().GetAll()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

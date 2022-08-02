@@ -9,7 +9,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tasker"
 	"github.com/myrteametrics/myrtea-engine-api/v4/plugins/baseline"
@@ -437,7 +436,7 @@ func UpdateSituations(situationsToUpdate map[string]situation.HistoryRecord) ([]
 func evaluateExpressionFacts(record situation.HistoryRecord, t time.Time) (map[string]interface{}, error) {
 	evaluatedExpressionFacts := make(map[string]interface{})
 
-	s, found, err := situation.R().Get(record.ID, groups.GetTokenAllGroups())
+	s, found, err := situation.R().Get(record.ID)
 	if err != nil {
 		zap.L().Error("Get Situation", zap.Int64("situationID", record.ID), zap.Error(err))
 		return evaluatedExpressionFacts, err

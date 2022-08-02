@@ -91,7 +91,7 @@ func (r *PostgresRepository) Create(calendar Calendar) (int64, error) {
 		rows.Scan(&calendarID)
 	} else {
 		tx.Rollback()
-		return -1, errors.New("No id returning of insert calendar action")
+		return -1, errors.New("no id returning of insert calendar action")
 	}
 	rows.Close()
 
@@ -113,11 +113,11 @@ func (r *PostgresRepository) Create(calendar Calendar) (int64, error) {
 		i, err := res.RowsAffected()
 		if err != nil {
 			tx.Rollback()
-			return -1, errors.New("Error with the affected rows:" + err.Error())
+			return -1, errors.New("error with the affected rows:" + err.Error())
 		}
 		if i != 1 {
 			tx.Rollback()
-			return -1, errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+			return -1, errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 		}
 	}
 
@@ -195,7 +195,7 @@ func (r *PostgresRepository) Update(calendar Calendar) error {
 		rows.Scan(&calendarID)
 	} else {
 		tx.Rollback()
-		return errors.New("No id returning of update calendar action")
+		return errors.New("no id returning of update calendar action")
 	}
 	rows.Close()
 
@@ -218,11 +218,11 @@ func (r *PostgresRepository) Update(calendar Calendar) error {
 			i, err := res.RowsAffected()
 			if err != nil {
 				tx.Rollback()
-				return errors.New("Error with the affected rows:" + err.Error())
+				return errors.New("error with the affected rows:" + err.Error())
 			}
 			if i != 1 {
 				tx.Rollback()
-				return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+				return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 			}
 		} else {
 			_, err := tx.Exec(`UPDATE calendar_union_v1 SET priority = $1
@@ -240,11 +240,11 @@ func (r *PostgresRepository) Update(calendar Calendar) error {
 			/* i, err := res.RowsAffected()
 			if err != nil {
 				tx.Rollback()
-				return errors.New("Error with the affected rows:" + err.Error())
+				return errors.New("error with the affected rows:" + err.Error())
 			}
 			if i != 1 {
 				tx.Rollback()
-				return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+				return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 			} */
 		}
 	}
@@ -266,11 +266,11 @@ func (r *PostgresRepository) Update(calendar Calendar) error {
 			i, err := res.RowsAffected()
 			if err != nil {
 				tx.Rollback()
-				return errors.New("Error with the affected rows:" + err.Error())
+				return errors.New("error with the affected rows:" + err.Error())
 			}
 			if i != 1 {
 				tx.Rollback()
-				return errors.New("No row deleted (or multiple row inserted) instead of 1 row")
+				return errors.New("no row deleted (or multiple row inserted) instead of 1 row")
 			}
 		}
 	}
@@ -297,10 +297,10 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i > 1 {
-		return errors.New("No row deleted (or multiple row deleted) instead of 1 row")
+		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
 	if i < 1 {
-		return errors.New("Calendar not found for deletion")
+		return errors.New("calendar not found for deletion")
 	}
 	return nil
 }
@@ -318,7 +318,7 @@ func (r *PostgresRepository) GetAll() (map[int64]Calendar, error) {
 
 	rows, err := r.conn.Query(query)
 	if err != nil {
-		return nil, errors.New("Couldn't retrieve the calendars " + err.Error())
+		return nil, errors.New("couldn't retrieve the calendars " + err.Error())
 	}
 	defer rows.Close()
 
@@ -359,7 +359,7 @@ func (r *PostgresRepository) GetAllModifiedFrom(from time.Time) (map[int64]Calen
 	})
 
 	if err != nil {
-		return nil, errors.New("Couldn't retrieve the calendars " + err.Error())
+		return nil, errors.New("couldn't retrieve the calendars " + err.Error())
 	}
 	defer rows.Close()
 

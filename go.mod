@@ -3,12 +3,17 @@ module github.com/myrteametrics/myrtea-engine-api/v4
 go 1.14
 
 require (
+	github.com/Masterminds/squirrel v1.5.3
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/crewjam/saml v0.4.6
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.0.0
+	github.com/go-chi/jwtauth v1.2.0
 	github.com/go-chi/jwtauth/v5 v5.0.2
 	github.com/golang/protobuf v1.4.2
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/websocket v1.5.0
 	github.com/hashicorp/go-plugin v1.3.0

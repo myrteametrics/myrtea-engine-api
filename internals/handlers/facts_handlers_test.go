@@ -4,7 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
@@ -31,7 +32,8 @@ func initGlobalEmptyRepository() {
 
 func TestGetFacts(t *testing.T) {
 	initGlobalRepository()
-	rr := tests.BuildTestHandler(t, "GET", "/facts", ``, "/facts", GetFacts, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "*", permissions.ActionList), permissions.New(permissions.TypeFact, "*", permissions.ActionGet)}}
+	rr := tests.BuildTestHandler(t, "GET", "/facts", ``, "/facts", GetFacts, user)
 	tests.CheckTestHandler(t, rr,
 		http.StatusOK,
 		`[{"id":1,"name":"test1","isObject":false,"model":"model1","comment":"","isTemplate":false},{"id":2,"name":"test2","isObject":false,"model":"model2","comment":"","isTemplate":false}]`+"\n",
@@ -40,43 +42,50 @@ func TestGetFacts(t *testing.T) {
 
 func TestGetFactsEmpty(t *testing.T) {
 	initGlobalEmptyRepository()
-	rr := tests.BuildTestHandler(t, "GET", "/facts", ``, "/facts", GetFacts, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "*", permissions.ActionList), permissions.New(permissions.TypeFact, "*", permissions.ActionGet)}}
+	rr := tests.BuildTestHandler(t, "GET", "/facts", ``, "/facts", GetFacts, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, `[]`+"\n")
 }
 
 func TestGetFact(t *testing.T) {
 	initGlobalRepository()
-	rr := tests.BuildTestHandler(t, "GET", "/facts/1", ``, "/facts/{id}", GetFact, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "1", permissions.ActionGet)}}
+	rr := tests.BuildTestHandler(t, "GET", "/facts/1", ``, "/facts/{id}", GetFact, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, `{"id":1,"name":"test1","isObject":false,"model":"model1","comment":"","isTemplate":false}`+"\n")
 }
 
-func TestGetFactByName(t *testing.T) {
-	initGlobalRepository()
-	rr := tests.BuildTestHandler(t, "GET", "/fact/test1?byName=true", ``, "/fact/{id}", GetFact, groups.UserWithGroups{})
-	tests.CheckTestHandler(t, rr, http.StatusOK, `{"id":1,"name":"test1","isObject":false,"model":"model1","comment":"","isTemplate":false}`+"\n")
-}
+// func TestGetFactByName(t *testing.T) {
+// 	initGlobalRepository()
+// 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "1", permissions.ActionGet)}}
+// 	rr := tests.BuildTestHandler(t, "GET", "/fact/test1?byName=true", ``, "/fact/{id}", GetFact, user)
+// 	tests.CheckTestHandler(t, rr, http.StatusOK, `{"id":1,"name":"test1","isObject":false,"model":"model1","comment":"","isTemplate":false}`+"\n")
+// }
 
 func TestGetFactInvalidID(t *testing.T) {
 	initGlobalRepository()
-	rr := tests.BuildTestHandler(t, "GET", "/fact/not_an_id", ``, "/fact/{id}", GetFact, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "*", permissions.ActionGet)}}
+	rr := tests.BuildTestHandler(t, "GET", "/fact/not_an_id", ``, "/fact/{id}", GetFact, user)
 	tests.CheckTestHandler(t, rr, http.StatusBadRequest, `{"requestID":"","status":400,"type":"ParsingError","code":1002,"message":"Failed to parse a query param of type 'integer'"}`+"\n")
 }
 
 func TestGetFactNotExistingID(t *testing.T) {
 	initGlobalRepository()
-	rr := tests.BuildTestHandler(t, "GET", "/fact/999?byName=true", ``, "/fact/{id}", GetFact, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "*", permissions.ActionGet)}}
+	rr := tests.BuildTestHandler(t, "GET", "/fact/999", ``, "/fact/{id}", GetFact, user)
 	tests.CheckTestHandler(t, rr, http.StatusNotFound, `{"requestID":"","status":404,"type":"RessourceError","code":3000,"message":"Ressource not found"}`+"\n")
 }
 
-func TestGetFactNotExistingName(t *testing.T) {
-	initGlobalRepository()
-	rr := tests.BuildTestHandler(t, "GET", "/fact/not_an_id?byName=true", ``, "/fact/{id}", GetFact, groups.UserWithGroups{})
-	tests.CheckTestHandler(t, rr, http.StatusNotFound, `{"requestID":"","status":404,"type":"RessourceError","code":3000,"message":"Ressource not found"}`+"\n")
-}
+// func TestGetFactNotExistingName(t *testing.T) {
+// 	initGlobalRepository()
+// 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "1", permissions.ActionGet)}}
+// 	rr := tests.BuildTestHandler(t, "GET", "/fact/not_an_id?byName=true", ``, "/fact/{id}", GetFact, user)
+// 	tests.CheckTestHandler(t, rr, http.StatusNotFound, `{"requestID":"","status":404,"type":"RessourceError","code":3000,"message":"Ressource not found"}`+"\n")
+// }
 
 func TestPostFact(t *testing.T) {
 	initGlobalRepository()
-	rr := tests.BuildTestHandler(t, "POST", "/fact", `{"name":"test3","model":"newmodel","intent":{"operator":"count","term":"myterm"}}`, "/fact", PostFact, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "*", permissions.ActionCreate)}}
+	rr := tests.BuildTestHandler(t, "POST", "/fact", `{"name":"test3","model":"newmodel","intent":{"operator":"count","term":"myterm"}}`, "/fact", PostFact, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, `{"id":3,"name":"test3","isObject":false,"model":"newmodel","intent":{"operator":"count","term":"myterm"},"comment":"","isTemplate":false}`+"\n")
 
 	facts, err := fact.R().GetAll()
@@ -91,7 +100,8 @@ func TestPostFact(t *testing.T) {
 
 func TestPutFact(t *testing.T) {
 	initGlobalRepository()
-	rr := tests.BuildTestHandler(t, "PUT", "/fact/1", `{"name":"test1","model":"newmodel","intent":{"operator":"count","term":"myterm"}}`, "/fact/{id}", PutFact, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "1", permissions.ActionUpdate)}}
+	rr := tests.BuildTestHandler(t, "PUT", "/fact/1", `{"name":"test1","model":"newmodel","intent":{"operator":"count","term":"myterm"}}`, "/fact/{id}", PutFact, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, `{"id":1,"name":"test1","isObject":false,"model":"newmodel","intent":{"operator":"count","term":"myterm"},"comment":"","isTemplate":false}`+"\n")
 
 	facts, err := fact.R().GetAll()
@@ -110,7 +120,8 @@ func TestPutFact(t *testing.T) {
 
 func TestPutFactInvalidBody(t *testing.T) {
 	initGlobalRepository()
-	rr := tests.BuildTestHandler(t, "PUT", "/fact/1", `Not a json string`, "/fact/{id}", PutFact, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "1", permissions.ActionUpdate)}}
+	rr := tests.BuildTestHandler(t, "PUT", "/fact/1", `Not a json string`, "/fact/{id}", PutFact, user)
 	tests.CheckTestHandler(t, rr, http.StatusBadRequest, `{"requestID":"","status":400,"type":"ParsingError","code":1000,"message":"Failed to parse the JSON body provided in the request"}`+"\n")
 
 	facts, err := fact.R().GetAll()
@@ -130,7 +141,8 @@ func TestPutFactInvalidBody(t *testing.T) {
 
 func TestDeleteFact(t *testing.T) {
 	initGlobalRepository()
-	rr := tests.BuildTestHandler(t, "DELETE", "/fact/1", ``, "/fact/{id}", DeleteFact, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "1", permissions.ActionDelete)}}
+	rr := tests.BuildTestHandler(t, "DELETE", "/fact/1", ``, "/fact/{id}", DeleteFact, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
 	facts, err := fact.R().GetAll()
@@ -148,7 +160,8 @@ func TestDeleteFact(t *testing.T) {
 
 func TestDeleteFactInvalidID(t *testing.T) {
 	initGlobalRepository()
-	rr := tests.BuildTestHandler(t, "DELETE", "/fact/not_an_id", ``, "/fact/{id}", DeleteFact, groups.UserWithGroups{})
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "1", permissions.ActionDelete)}}
+	rr := tests.BuildTestHandler(t, "DELETE", "/fact/not_an_id", ``, "/fact/{id}", DeleteFact, user)
 	tests.CheckTestHandler(t, rr, http.StatusBadRequest, `{"requestID":"","status":400,"type":"ParsingError","code":1002,"message":"Failed to parse a query param of type 'integer'"}`+"\n")
 
 	facts, err := fact.R().GetAll()

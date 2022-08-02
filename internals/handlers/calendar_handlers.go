@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
 	"go.uber.org/zap"
 )
 
@@ -22,6 +24,12 @@ import (
 // @Failure 500 "internal server error"
 // @Router /engine/calendars [get]
 func GetCalendars(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	calendars, err := calendar.R().GetAll()
 	if err != nil {
 		zap.L().Error("Cannot retrieve issues", zap.Error(err))
@@ -60,6 +68,12 @@ func GetCalendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	calendar, found, err := calendar.R().Get(idCalendar)
 	if err != nil {
 		zap.L().Error("Cannot retrieve calendar", zap.Error(err))
@@ -93,6 +107,12 @@ func GetResolvedCalendar(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Error on parsing calendar id", zap.String("calendarID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -133,6 +153,12 @@ func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	t, err := ParseTime(r.URL.Query().Get("time"))
 	if err != nil {
 		zap.L().Error("Parse input time", zap.Error(err), zap.String("rawTime", r.URL.Query().Get("time")))
@@ -168,6 +194,12 @@ func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/calendars [post]
 func PostCalendar(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	var newCalendar calendar.Calendar
 	err := json.NewDecoder(r.Body).Decode(&newCalendar)
 	if err != nil {
@@ -213,10 +245,16 @@ func PostCalendar(w http.ResponseWriter, r *http.Request) {
 // @Router /engine/calendars/{id} [put]
 func PutCalendar(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	calendarID, err := strconv.ParseInt(id, 10, 64)
+	idCalendar, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("PutCalendar.GetId", zap.String("id", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
 	}
 
 	var calend calendar.Calendar
@@ -226,7 +264,7 @@ func PutCalendar(w http.ResponseWriter, r *http.Request) {
 		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
 		return
 	}
-	calend.ID = calendarID
+	calend.ID = idCalendar
 
 	err = calendar.R().Update(calend)
 	if err != nil {
@@ -235,14 +273,14 @@ func PutCalendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newCalendar, found, err := calendar.R().Get(calendarID)
+	newCalendar, found, err := calendar.R().Get(idCalendar)
 	if err != nil {
-		zap.L().Error("Get calendar failed", zap.Int64("id", calendarID), zap.Error(err))
+		zap.L().Error("Get calendar failed", zap.Int64("id", idCalendar), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
-		zap.L().Error("Calendar not found", zap.Int64("id", calendarID))
+		zap.L().Error("Calendar not found", zap.Int64("id", idCalendar))
 		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
@@ -267,6 +305,12 @@ func DeleteCalendar(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Error on parsing calendar id", zap.String("CalendarID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, strconv.FormatInt(idCalendar, 10), permissions.ActionDelete)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"go.uber.org/zap"
 )
 
@@ -28,13 +27,12 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Get retrieve the specified situation definition
-func (r *PostgresRepository) Get(id int64, groupsIDS []int64) (Situation, bool, error) {
+func (r *PostgresRepository) Get(id int64) (Situation, bool, error) {
 	query := `SELECT definition,
 				ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = :id) as fact_ids
-				FROM situation_definition_v1 WHERE id = :id and groups && :groups`
+				FROM situation_definition_v1 WHERE id = :id`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
-		"id":     id,
-		"groups": pq.Array(groupsIDS),
+		"id": id,
 	})
 
 	if err != nil {
@@ -64,19 +62,18 @@ func (r *PostgresRepository) Get(id int64, groupsIDS []int64) (Situation, bool, 
 	situation.ID = id
 
 	//Need to delete at any get of situation the universal token group
-	situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
+	// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
 
 	return situation, true, nil
 }
 
 // GetByName retrieve the specified situation definition by it's name
-func (r *PostgresRepository) GetByName(name string, groupsIDS []int64) (Situation, bool, error) {
+func (r *PostgresRepository) GetByName(name string) (Situation, bool, error) {
 	query := `SELECT id, definition,
 				ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = id) as fact_ids
-				FROM situation_definition_v1 WHERE name = :name and groups && :groups`
+				FROM situation_definition_v1 WHERE name = :name`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
-		"name":   name,
-		"groups": pq.Array(groupsIDS),
+		"name": name,
 	})
 	if err != nil {
 		return Situation{}, false, err
@@ -106,24 +103,13 @@ func (r *PostgresRepository) GetByName(name string, groupsIDS []int64) (Situatio
 	situation.ID = id
 
 	//Need to delete at any get of situation the universal token group
-	situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
+	// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
 
 	return situation, true, nil
 }
 
 // Create creates a new situation in the database using the given situation object
 func (r *PostgresRepository) Create(situation Situation) (int64, error) {
-	isAllGroup := false
-	for _, group := range situation.Groups {
-		if group == groups.AllGroups {
-			zap.L().Error("Situation shouldn't have the universal token group")
-			isAllGroup = true
-		}
-	}
-
-	if !isAllGroup {
-		situation.Groups = append(situation.Groups, groups.AllGroups)
-	}
 
 	situationData, err := json.Marshal(situation)
 	if err != nil {
@@ -131,11 +117,10 @@ func (r *PostgresRepository) Create(situation Situation) (int64, error) {
 	}
 
 	timestamp := time.Now().Truncate(1 * time.Millisecond).UTC()
-	query := `INSERT INTO situation_definition_v1 (id, name, groups, definition, is_template, is_object, calendar_id, last_modified)
-		VALUES (DEFAULT, :name, :groups, :definition, :is_template, :is_object, :calendar_id, :last_modified) RETURNING id`
+	query := `INSERT INTO situation_definition_v1 (id, name, definition, is_template, is_object, calendar_id, last_modified)
+		VALUES (DEFAULT, :name, :definition, :is_template, :is_object, :calendar_id, :last_modified) RETURNING id`
 	params := map[string]interface{}{
 		"name":          situation.Name,
-		"groups":        pq.Array(situation.Groups),
 		"definition":    string(situationData),
 		"is_template":   situation.IsTemplate,
 		"is_object":     situation.IsObject,
@@ -169,7 +154,7 @@ func (r *PostgresRepository) Create(situation Situation) (int64, error) {
 		rows.Close()
 	} else {
 		tx.Rollback()
-		return -1, errors.New("No id returning of insert situation")
+		return -1, errors.New("no id returning of insert situation")
 	}
 
 	err = r.updateSituationFacts(tx, id, situation.Facts)
@@ -199,14 +184,13 @@ func (r *PostgresRepository) Update(id int64, situation Situation) error {
 
 	situationData, err := json.Marshal(situation)
 	if err != nil {
-		return errors.New("Couldn't marshall the provided data" + err.Error())
+		return errors.New("couldn't marshall the provided data" + err.Error())
 	}
 
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
 	params := map[string]interface{}{
 		"id":            id,
 		"name":          situation.Name,
-		"groups":        pq.Array(situation.Groups),
 		"definition":    string(situationData),
 		"is_template":   situation.IsTemplate,
 		"is_object":     situation.IsObject,
@@ -226,16 +210,16 @@ func (r *PostgresRepository) Update(id int64, situation Situation) error {
 	res, err := tx.NamedExec(query, params)
 	if err != nil {
 		tx.Rollback()
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 	i, err := res.RowsAffected()
 	if err != nil {
 		tx.Rollback()
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
 		tx.Rollback()
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 
 	err = r.updateSituationFacts(tx, id, situation.Facts)
@@ -287,7 +271,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 	}
 	if i != 1 {
 		tx.Rollback()
-		return errors.New("No row deleted (or multiple row deleted) instead of 1 row")
+		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
 	err = tx.Commit()
 	if err != nil {
@@ -373,7 +357,7 @@ func (r *PostgresRepository) GetSituationsByFactID(factID int64, ignoreIsObject 
 		situation.ID = situationID
 
 		//Need to delete at any get of situation the universal token group
-		situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
+		// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
 
 		situations = append(situations, situation)
 	}
@@ -406,12 +390,27 @@ func (r *PostgresRepository) GetFacts(id int64) ([]int64, error) {
 }
 
 // GetAll returns all entities in the repository
-func (r *PostgresRepository) GetAll(groupsIDS []int64) (map[int64]Situation, error) {
+func (r *PostgresRepository) GetAll() (map[int64]Situation, error) {
 	query := `SELECT id, definition,
 			ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = situation_definition_v1.id) as fact_ids
-			FROM situation_definition_v1 WHERE groups && :groups`
+			FROM situation_definition_v1`
+	params := map[string]interface{}{}
+	rows, err := r.conn.NamedQuery(query, params)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return parseAllRows(rows)
+}
+
+// GetAllByIDs returns all entities filtered by IDs in the repository
+func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]Situation, error) {
+	query := `SELECT id, definition,
+			ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = situation_definition_v1.id) as fact_ids
+			FROM situation_definition_v1 WHERE id = ANY(:ids)`
 	params := map[string]interface{}{
-		"groups": pq.Array(groupsIDS),
+		"ids": pq.Array(ids),
 	}
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
@@ -423,13 +422,12 @@ func (r *PostgresRepository) GetAll(groupsIDS []int64) (map[int64]Situation, err
 }
 
 // GetAllByRuleID returns all entities in the repository based on a rule ID
-func (r *PostgresRepository) GetAllByRuleID(groupsIDS []int64, ruleID int64) (map[int64]Situation, error) {
+func (r *PostgresRepository) GetAllByRuleID(ruleID int64) (map[int64]Situation, error) {
 
 	query := `SELECT id, definition, ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = situation_definition_v1.id) as fact_ids
 		FROM situation_definition_v1 INNER JOIN situation_rules_v1 ON situation_definition_v1.id = situation_rules_v1.situation_id
-		WHERE groups && :groups AND situation_rules_v1.rule_id = :rule_id`
+		WHERE situation_rules_v1.rule_id = :rule_id`
 	params := map[string]interface{}{
-		"groups":  pq.Array(groupsIDS),
 		"rule_id": ruleID,
 	}
 	rows, err := r.conn.NamedQuery(query, params)
@@ -461,22 +459,11 @@ func parseAllRows(rows *sqlx.Rows) (map[int64]Situation, error) {
 		situation.ID = situationID
 
 		//Need to delete at any get of situation the universal token group
-		situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
+		// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
 
 		situations[situation.ID] = situation
 	}
 	return situations, nil
-}
-
-// IsInGroups returns true ins the situation is in one of the groups
-func (r *PostgresRepository) IsInGroups(id int64, groups []int64) (bool, error) {
-	var inGroup bool
-	checkNameQuery := `SELECT groups && $1 FROM situation_definition_v1 WHERE id = $2;`
-	err := r.conn.QueryRow(checkNameQuery, pq.Array(groups), id).Scan(&inGroup)
-	if err != nil && err != sql.ErrNoRows {
-		return false, err
-	}
-	return inGroup, nil
 }
 
 // GetRules returns the list of rules used in to evaluate the situation
@@ -582,7 +569,7 @@ func (r *PostgresRepository) CreateTemplateInstance(situationID int64, instance 
 		return -1, err
 	}
 	if !isTemplate {
-		return -1, errors.New("The Situation does not exists or it is not a template situation")
+		return -1, errors.New("the Situation does not exists or it is not a template situation")
 	}
 
 	parametersData, err := json.Marshal(instance.Parameters)
@@ -618,7 +605,7 @@ func (r *PostgresRepository) CreateTemplateInstance(situationID int64, instance 
 			return -1, err
 		}
 	} else {
-		return -1, errors.New("No id returning of insert situation")
+		return -1, errors.New("no id returning of insert situation")
 	}
 
 	return id, nil
@@ -632,7 +619,7 @@ func (r *PostgresRepository) UpdateTemplateInstance(instanceID int64, instance T
 		return err
 	}
 	if !isTemplate {
-		return errors.New("The Situation does not exists or it is not a template situation")
+		return errors.New("the Situation does not exists or it is not a template situation")
 	}
 
 	query := `UPDATE situation_template_instances_v1 SET situation_id = :situation_id,
@@ -645,7 +632,7 @@ func (r *PostgresRepository) UpdateTemplateInstance(instanceID int64, instance T
 
 	parametersData, err := json.Marshal(instance.Parameters)
 	if err != nil {
-		return errors.New("Couldn't marshall the provided situation parameters" + err.Error())
+		return errors.New("couldn't marshall the provided situation parameters" + err.Error())
 	}
 
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
@@ -666,14 +653,14 @@ func (r *PostgresRepository) UpdateTemplateInstance(instanceID int64, instance T
 	res, err := r.conn.NamedExec(query, params)
 
 	if err != nil {
-		return errors.New("Couldn't query the database:" + err.Error())
+		return errors.New("couldn't query the database:" + err.Error())
 	}
 	i, err := res.RowsAffected()
 	if err != nil {
-		return errors.New("Error with the affected rows:" + err.Error())
+		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 
 	return nil
@@ -718,7 +705,7 @@ func (r *PostgresRepository) DeleteTemplateInstance(instanceID int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("No row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
 }

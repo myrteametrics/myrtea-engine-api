@@ -10,9 +10,9 @@ import (
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows standard CRUD operation on facts
 type Repository interface {
-	Create(groups []int64, notif Notification) (int64, error)
+	Create(notif Notification) (int64, error)
 	Get(id int64) *FrontNotification
-	GetByGroups(groupIds []int64, queryOptionnal dbutils.DBQueryOptionnal) ([]FrontNotification, error)
+	GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]FrontNotification, error)
 	Delete(id int64) error
 	UpdateRead(id int64, state bool) error
 }

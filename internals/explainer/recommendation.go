@@ -7,26 +7,15 @@ import (
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/action"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/draft"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 )
 
 // GetRecommendationTree build a recommendation tree based on issue resolution stats table
-func GetRecommendationTree(issueID int64) (*models.FrontRecommendation, error) {
-	issue, found, err := issues.R().Get(issueID, groups.GetTokenAllGroups())
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return nil, fmt.Errorf("Cannot find issue with id %d", issueID)
-	}
-
+func GetRecommendationTree(issue models.Issue) (*models.FrontRecommendation, error) {
 	var recommendation *models.FrontRecommendation
-
+	var err error
 	switch {
-
 	case issue.State == models.Open:
 		recommendation, err = buildRecommendationTree(issue.SituationID, issue.Rule.RuleID)
 		if err != nil {
@@ -34,34 +23,34 @@ func GetRecommendationTree(issueID int64) (*models.FrontRecommendation, error) {
 		}
 
 	case issue.State == models.Draft:
-		exists, err := draft.R().CheckExists(nil, issueID)
+		exists, err := draft.R().CheckExists(nil, issue.ID)
 		if err != nil {
 			return nil, err
 		}
 		if !exists {
-			return nil, fmt.Errorf("No existing draft found for the issue %d with state Draft", issueID)
+			return nil, fmt.Errorf("No existing draft found for the issue %d with state Draft", issue.ID)
 		}
-		draft, found, err := draft.R().Get(issueID)
+		draft, found, err := draft.R().Get(issue.ID)
 		if err != nil {
 			return nil, err
 		}
 		if !found {
-			return nil, fmt.Errorf("No existing draft found for the issue %d with state Draft", issueID)
+			return nil, fmt.Errorf("No existing draft found for the issue %d with state Draft", issue.ID)
 		}
 		recommendation = &draft
 
 	case issue.State.IsClosed():
-		exists, err := draft.R().CheckExists(nil, issueID)
+		exists, err := draft.R().CheckExists(nil, issue.ID)
 		if err != nil {
 			return nil, err
 		}
 		if exists {
-			draft, found, err := draft.R().Get(issueID)
+			draft, found, err := draft.R().Get(issue.ID)
 			if err != nil {
 				return nil, err
 			}
 			if !found {
-				return nil, fmt.Errorf("No existing draft found for the issue %d with state Draft", issueID)
+				return nil, fmt.Errorf("No existing draft found for the issue %d with state Draft", issue.ID)
 			}
 			recommendation = &draft
 		} else {
@@ -82,7 +71,7 @@ func ExtractSelectedFromTree(recommendation models.FrontRecommendation) (*models
 	for _, rootCause := range recommendation.Tree {
 		if rootCause.Selected {
 			if selectedRootCause != nil {
-				return nil, nil, errors.New("A feedback can't have multiple selected rootcause")
+				return nil, nil, errors.New("a feedback can't have multiple selected rootcause")
 			}
 
 			selectedRootCause = rootCause
@@ -94,10 +83,10 @@ func ExtractSelectedFromTree(recommendation models.FrontRecommendation) (*models
 		}
 	}
 	if selectedRootCause == nil {
-		return nil, nil, errors.New("A feedback must have one rootcause selected")
+		return nil, nil, errors.New("a feedback must have one rootcause selected")
 	}
 	if len(selectedActions) == 0 {
-		return nil, nil, errors.New("A feedback must have at least one action selected")
+		return nil, nil, errors.New("a feedback must have at least one action selected")
 	}
 	return selectedRootCause, selectedActions, nil
 }

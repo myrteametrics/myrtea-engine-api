@@ -57,7 +57,7 @@ func InitEngine(engineID string) error {
 
 	rules, err := rule.R().GetAll()
 	if err != nil {
-		return errors.New("Couldn't read rules " + err.Error())
+		return errors.New("couldn't read rules " + err.Error())
 	}
 
 	for _, rule := range rules {
@@ -80,7 +80,7 @@ func UpdateEngine(engineID string) error {
 	now := time.Now()
 	rules, err := rule.R().GetAllModifiedFrom(_lastUpdate[engineID])
 	if err != nil {
-		return errors.New("Couldn't read modified rules " + err.Error())
+		return errors.New("couldn't read modified rules " + err.Error())
 	}
 	_lastUpdate[engineID] = now
 	for _, rule := range rules {

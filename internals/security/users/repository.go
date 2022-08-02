@@ -1,26 +1,25 @@
-package groups
+package users
 
 import (
 	"sync"
+
+	uuid "github.com/google/uuid"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows standard CRUD operation on facts
 type Repository interface {
-	Get(id int64) (Group, bool, error)
-	GetByName(name string) (Group, bool, error)
-	Create(group Group) (int64, error)
-	Update(group Group) error
-	Delete(id int64) error
-	GetAll() (map[int64]Group, error)
+	Get(uuid uuid.UUID) (User, bool, error)
+	Create(user UserWithPassword) (uuid.UUID, error)
+	Update(user User) error
+	UpdateWithPassword(user UserWithPassword) error
+	Delete(uuid uuid.UUID) error
+	GetAll() ([]User, error)
 
-	GetMembership(userID int64, groupID int64) (Membership, bool, error)
-	CreateMembership(membership Membership) error
-	UpdateMembership(membership Membership) error
-	DeleteMembership(userID int64, groupID int64) error
+	GetAllForRole(roleUUID uuid.UUID) ([]User, error)
 
-	GetGroupsOfUser(userID int64) ([]GroupOfUser, error)
+	SetUserRoles(userUUID uuid.UUID, roleUUIDs []uuid.UUID) error
 }
 
 var (

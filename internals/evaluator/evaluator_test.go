@@ -61,8 +61,8 @@ func TestEvaluator(t *testing.T) {
 
 	fact1ID, _ := fact.R().Create(engine.Fact{Name: "fact_test_1"})
 
-	groups := []int64{1, 2}
-	s := situation.Situation{Name: "test", Groups: groups}
+	s := situation.Situation{Name: "test"}
+
 	sID, err := situation.R().Create(s)
 	if err != nil {
 		t.Error(err)

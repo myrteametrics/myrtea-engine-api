@@ -1,14 +1,14 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
 	model "github.com/myrteametrics/myrtea-engine-api/v4/internals/modeler"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
 )
 
@@ -89,16 +89,8 @@ func initModelEmptyRepository() {
 
 func TestGetModels(t *testing.T) {
 	models := initModelRepository(t)
-
-	req, err := http.NewRequest("GET", "/models", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Get("/models", GetModels)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeModel, permissions.All, permissions.ActionList), permissions.New(permissions.TypeModel, permissions.All, permissions.ActionGet)}}
+	rr := tests.BuildTestHandler(t, "GET", "/models", ``, "/models", GetModels, user)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
@@ -111,16 +103,8 @@ func TestGetModels(t *testing.T) {
 
 func TestGetModelsEmpty(t *testing.T) {
 	initModelEmptyRepository()
-
-	req, err := http.NewRequest("GET", "/models", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Get("/models", GetModels)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeModel, permissions.All, permissions.ActionList)}}
+	rr := tests.BuildTestHandler(t, "GET", "/models", ``, "/models", GetModels, user)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
@@ -132,16 +116,8 @@ func TestGetModelsEmpty(t *testing.T) {
 
 func TestGetModel(t *testing.T) {
 	initModelRepository(t)
-
-	req, err := http.NewRequest("GET", "/models/1", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Get("/models/{id}", GetModel)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeModel, permissions.All, permissions.ActionGet)}}
+	rr := tests.BuildTestHandler(t, "GET", "/models/1", ``, "/models/{id}", GetModel, user)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
@@ -154,16 +130,8 @@ func TestGetModel(t *testing.T) {
 
 func TestGetModelInvalidID(t *testing.T) {
 	initModelRepository(t)
-
-	req, err := http.NewRequest("GET", "/models/not_an_id", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Get("/models/{id}", GetModel)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeModel, permissions.All, permissions.ActionGet)}}
+	rr := tests.BuildTestHandler(t, "GET", "/models/not_an_id", ``, "/models/{id}", GetModel, user)
 	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
 	}
@@ -179,16 +147,9 @@ func TestPostModel(t *testing.T) {
 	m := models[0]
 	m.Name = "test_3"
 	b, _ := json.Marshal(m)
-	req, err := http.NewRequest("POST", "/models", bytes.NewBuffer(b))
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Post("/models", PostModel)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeModel, permissions.All, permissions.ActionCreate)}}
+	rr := tests.BuildTestHandler(t, "POST", "/models", string(b), "/models", PostModel, user)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
@@ -213,20 +174,9 @@ func TestPutModel(t *testing.T) {
 	m := sourceModels[0]
 	m.Name = "test"
 	b, _ := json.Marshal(m)
-	req, err := http.NewRequest("PUT", "/models/1", bytes.NewBuffer(b))
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Put("/models/{id}", PutModel)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeModel, permissions.All, permissions.ActionUpdate)}}
+	rr := tests.BuildTestHandler(t, "PUT", "/models/1", string(b), "/models/{id}", PutModel, user)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
@@ -248,17 +198,8 @@ func TestPutModel(t *testing.T) {
 func TestPutModelInvalidResource(t *testing.T) {
 	initModelRepository(t)
 
-	req, err := http.NewRequest("PUT", "/models/99", bytes.NewBuffer(
-		[]byte(`{"name":"test","fields":[{"name":"test","type":"string","semantic":false}],"source":"{}","rollmode":"test","rollcron":"test"}`)))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Put("/models/{id}", PutModel)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeModel, permissions.All, permissions.ActionUpdate)}}
+	rr := tests.BuildTestHandler(t, "PUT", "/models/99", `{"name":"test","fields":[{"name":"test","type":"string","semantic":false}],"source":"{}","rollmode":"test","rollcron":"test"}`, "/models/{id}", PutModel, user)
 	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
 	}
@@ -271,16 +212,8 @@ func TestPutModelInvalidResource(t *testing.T) {
 func TestPutModelInvalidBody(t *testing.T) {
 	initModelRepository(t)
 
-	req, err := http.NewRequest("PUT", "/models/1", bytes.NewBuffer([]byte(`Not a json string`)))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Put("/models/{id}", PutModel)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeModel, permissions.All, permissions.ActionUpdate)}}
+	rr := tests.BuildTestHandler(t, "PUT", "/models/1", `Not a json string`, "/models/{id}", PutModel, user)
 	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
 	}
@@ -294,17 +227,8 @@ func TestPutModelInvalidBody(t *testing.T) {
 func TestDeleteModel(t *testing.T) {
 	initModelRepository(t)
 
-	req, err := http.NewRequest("DELETE", "/models/1", nil)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Delete("/models/{id}", DeleteModel)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeModel, permissions.All, permissions.ActionDelete)}}
+	rr := tests.BuildTestHandler(t, "DELETE", "/models/1", ``, "/models/{id}", DeleteModel, user)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
@@ -318,15 +242,8 @@ func TestDeleteModel(t *testing.T) {
 func TestDeleteModelInvalidID(t *testing.T) {
 	initModelRepository(t)
 
-	req, err := http.NewRequest("DELETE", "/models/not_an_id", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Delete("/models/{id}", DeleteModel)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeModel, permissions.All, permissions.ActionDelete)}}
+	rr := tests.BuildTestHandler(t, "DELETE", "/models/not_an_id", ``, "/models/{id}", DeleteModel, user)
 	t.Log(rr)
 	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)

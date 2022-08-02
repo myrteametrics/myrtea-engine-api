@@ -6,11 +6,7 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier/notification"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"go.uber.org/zap"
 )
 
@@ -29,31 +25,31 @@ func buildCreateIssueTask(parameters map[string]interface{}) (CreateIssueTask, e
 	if val, ok := parameters["id"].(string); ok && val != "" {
 		task.ID = val
 	} else {
-		return task, errors.New("Missing or not valid 'id' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'id' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["name"].(string); ok && val != "" {
 		task.Name = val
 	} else {
-		return task, errors.New("Missing or not valid 'name' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'name' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["level"].(string); ok && val != "" {
 		task.Level = val
 	} else {
-		return task, errors.New("Missing or not valid 'level' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'level' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["timeout"].(string); ok && val != "" {
 		task.Timeout = val
 	} else {
-		return task, errors.New("Missing or not valid 'timeout' parameter (string not empty required)")
+		return task, errors.New("missing or not valid 'timeout' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["isNotification"].(bool); ok {
 		task.IsNotification = val
 	} else {
-		return task, errors.New("Missing or not valid 'isNotification' parameter (boolean required)")
+		return task, errors.New("missing or not valid 'isNotification' parameter (boolean required)")
 	}
 
 	return task, nil
@@ -91,25 +87,27 @@ func (task CreateIssueTask) Perform(key string, context ContextData) error {
 		return err
 	}
 
-	if issueID > 0 && task.IsNotification {
-		ctx := map[string]interface{}{"issueId": issueID}
+	_ = issueID
+	// TODO: find another way to send notification to a specific "population" after permission system refactoring
+	// if issueID > 0 && task.IsNotification {
+	// 	ctx := map[string]interface{}{"issueId": issueID}
 
-		s, found, err := situation.R().Get(int64(context.SituationID), groups.GetTokenAllGroups())
-		if err != nil {
-			return err
-		}
-		if !found {
-			return fmt.Errorf("Invalid situation ID or groups not found within the situation")
-		}
+	// 	s, found, err := situation.R().Get(int64(context.SituationID))
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if !found {
+	// 		return fmt.Errorf("Invalid situation ID or groups not found within the situation")
+	// 	}
 
-		//notification description no needed
-		description := ""
-		notif := notification.NewMockNotification(task.Level, "", task.Name, description,
-			time.Now().Truncate(1*time.Millisecond).UTC(), nil, ctx)
-		notif.Type = "case"
+	// 	//notification description no needed
+	// 	description := ""
+	// 	notif := notification.NewMockNotification(task.Level, "", task.Name, description,
+	// 		time.Now().Truncate(1*time.Millisecond).UTC(), nil, ctx)
+	// 	notif.Type = "case"
 
-		notifier.C().SendToGroups(key, timeoutDuration, notif, s.Groups)
-	}
+	// 	notifier.C().SendToRoles(key, timeoutDuration, notif, s.Groups)
+	// }
 
 	return nil
 }

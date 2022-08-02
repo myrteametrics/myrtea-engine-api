@@ -187,7 +187,7 @@ func TestIssueTasks(t *testing.T) {
 
 	factID, _ := fact.R().Create(engine.Fact{Name: "fact_test_1"})
 
-	s := situation.Situation{Name: "situation_test", Groups: []int64{0}, Facts: []int64{factID}}
+	s := situation.Situation{Name: "situation_test", Facts: []int64{factID}}
 	sID, err := situation.R().Create(s)
 	if err != nil {
 		t.Error(err)
@@ -266,7 +266,7 @@ func TestIssueTasks(t *testing.T) {
 	T().BatchReceiver <- taskBatchs
 	time.Sleep(100 * time.Millisecond)
 
-	createdIssues, _ := issues.R().GetAll([]int64{0})
+	createdIssues, _ := issues.R().GetAll()
 	if createdIssues[1].Key != "1-1-task1" || createdIssues[1].State != models.Open {
 		t.Errorf("The created Issue is not as expected")
 	}
@@ -322,13 +322,13 @@ func TestIssueTasks(t *testing.T) {
 		t.Errorf("The task is not as expected")
 	}
 
-	createdIssues, _ = issues.R().GetAll([]int64{0})
+	createdIssues, _ = issues.R().GetAll()
 	if createdIssues[1].Key != "1-1-task1" || createdIssues[1].State != models.ClosedDiscard {
 		t.Errorf("The created Issue is not as expected")
 	}
 }
 
-func TestTimeZoneInCloseIssueTask(t *testing.T) {
+func TestTimezoneInCloseIssueTask(t *testing.T) {
 
 	if testing.Short() {
 		t.Skip("skipping postgresql test in short mode")
@@ -350,7 +350,7 @@ func TestTimeZoneInCloseIssueTask(t *testing.T) {
 
 	factID, _ := fact.R().Create(engine.Fact{Name: "fact_test_1"})
 
-	s := situation.Situation{Name: "situation_test", Groups: []int64{0}, Facts: []int64{factID}}
+	s := situation.Situation{Name: "situation_test", Facts: []int64{factID}}
 	sID, err := situation.R().Create(s)
 	if err != nil {
 		t.Error(err)
@@ -433,7 +433,7 @@ func TestTimeZoneInCloseIssueTask(t *testing.T) {
 	T().BatchReceiver <- taskBatchs
 	time.Sleep(100 * time.Millisecond)
 
-	createdIssues, _ := issues.R().GetAll([]int64{0})
+	createdIssues, _ := issues.R().GetAll()
 	if createdIssues[1].Key != "1-1-task1" || createdIssues[1].State != models.Open {
 		t.Errorf("The created Issue is not as expected")
 	}
@@ -492,12 +492,12 @@ func TestTimeZoneInCloseIssueTask(t *testing.T) {
 		t.Errorf("The task is not as expected")
 	}
 
-	createdIssues, _ = issues.R().GetAll([]int64{0})
+	createdIssues, _ = issues.R().GetAll()
 	if createdIssues[1].Key != "1-1-task1" || createdIssues[1].State != models.Open {
 		t.Errorf("The created Issue is not as expected")
 	}
 
-	rule1.Cases[1].Actions[0].Parameters["timeZone"] = "`Europe/Paris`"
+	rule1.Cases[1].Actions[0].Parameters["timezone"] = "`Europe/Paris`"
 	_ = rule.R().Update(rule1)
 
 	evaluations, _ = evaluator.EvaluateSituations(situations, "standart")
@@ -523,7 +523,7 @@ func TestTimeZoneInCloseIssueTask(t *testing.T) {
 		t.Errorf("The task is not as expected")
 	}
 
-	createdIssues, _ = issues.R().GetAll([]int64{0})
+	createdIssues, _ = issues.R().GetAll()
 	if createdIssues[1].Key != "1-1-task1" || createdIssues[1].State != models.ClosedDiscard {
 		t.Errorf("The created Issue is not as expected")
 	}

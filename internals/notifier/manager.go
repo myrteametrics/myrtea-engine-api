@@ -38,7 +38,7 @@ func (manager *ClientManager) Register(newClient Client) error {
 
 	if val, ok := manager.Clients[newClient]; ok {
 		if val {
-			return errors.New("This client already exists")
+			return errors.New("this client already exists")
 		}
 	}
 	manager.Clients[newClient] = true
@@ -52,7 +52,7 @@ func (manager *ClientManager) Unregister(existentClient Client) error {
 
 	if val, ok := manager.Clients[existentClient]; !ok {
 		if val {
-			return errors.New("The client doesn't exist")
+			return errors.New("the client doesn't exist")
 		}
 	}
 	delete(manager.Clients, existentClient)

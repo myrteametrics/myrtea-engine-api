@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"go.uber.org/zap"
 )
@@ -66,7 +65,7 @@ func (e ErrResourceNotFound) Error() string {
 // Execute executes the query and return a QueryResult or an error
 func (q Query) Execute() (QueryResult, error) {
 
-	s, found, err := situation.R().Get(q.SituationID, groups.GetTokenAllGroups())
+	s, found, err := situation.R().Get(q.SituationID)
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", q.SituationID), zap.Error(err))
 		return nil, NewErrDatabase(err.Error())
@@ -109,7 +108,7 @@ func (d *DownSampling) UnmarshalJSON(data []byte) error {
 
 	d.Operation = strings.ToLower(d.Operation)
 	if d.Operation != "first" && d.Operation != "latest" && d.Operation != "sum" && d.Operation != "max" && d.Operation != "min" && d.Operation != "avg" {
-		return errors.New("Unknown downSampling operation")
+		return errors.New("unknown downSampling operation")
 	}
 
 	return nil
@@ -138,23 +137,23 @@ func (q *Query) UnmarshalJSON(data []byte) error {
 	timeIsZero, startIsZero, endIsZero := q.Time.IsZero(), q.Start.IsZero(), q.End.IsZero()
 
 	if !timeIsZero && q.DownSampling.Granularity != 0 {
-		return errors.New("The 'time' parameter is not compatible with downSampling")
+		return errors.New("the 'time' parameter is not compatible with downSampling")
 	}
 
 	if !timeIsZero && (!startIsZero || !endIsZero || q.Range != 0) {
-		return errors.New("The 'time' parameter is not compatible with the parameters 'start', 'end' and 'range'")
+		return errors.New("the 'time' parameter is not compatible with the parameters 'start', 'end' and 'range'")
 	}
 
 	if timeIsZero && q.Range == 0 && (startIsZero || endIsZero) {
-		return errors.New("Missing 'start' or 'end' parameter")
+		return errors.New("missing 'start' or 'end' parameter")
 	}
 
 	if q.Range != 0 && (startIsZero && endIsZero) {
-		return errors.New("To use the 'range' parameter the parameter 'start' or 'end' should be settled")
+		return errors.New("to use the 'range' parameter the parameter 'start' or 'end' should be settled")
 	}
 
 	if q.Range != 0 && (!startIsZero && !endIsZero) {
-		return errors.New("To use the 'range' parameter only one of the parameters 'start' and 'end' should be settled")
+		return errors.New("to use the 'range' parameter only one of the parameters 'start' and 'end' should be settled")
 	}
 
 	if q.Range != 0 && startIsZero {
@@ -164,7 +163,7 @@ func (q *Query) UnmarshalJSON(data []byte) error {
 	}
 
 	if startIsZero && q.Range == 0 && q.End.After(q.Start) {
-		return errors.New("The 'end' dateTime should be after the start dateTime")
+		return errors.New("the 'end' dateTime should be after the start dateTime")
 	}
 
 	err := validateSourceFilterParameter(&q.Facts, "facts")

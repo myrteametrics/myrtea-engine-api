@@ -3,12 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/scheduler"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
 )
 
@@ -62,15 +62,8 @@ func TestGetJobs(t *testing.T) {
 	}
 	job2.ID = jobID2
 
-	req, err := http.NewRequest("GET", "/jobs", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rr := httptest.NewRecorder()
-	r := chi.NewRouter()
-	r.Get("/jobs", GetJobSchedules)
-	r.ServeHTTP(rr, req)
-
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeScheduler, "*", permissions.ActionList)}}
+	rr := tests.BuildTestHandler(t, "POST", "/jobs", ``, "/jobs", GetJobSchedules, user)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}

@@ -26,12 +26,12 @@ func (task PersistDataTask) GetID() string {
 func (task PersistDataTask) Perform(key string, context ContextData) error {
 
 	if context.SituationID == 0 || context.TS.IsZero() {
-		return errors.New("Errro performinf PersistDataTask, situation instance not defined")
+		return errors.New("errro performinf PersistDataTask, situation instance not defined")
 	}
 
 	err := situation.UpdateHistoryMetadata(int64(context.SituationID), context.TS, int64(context.TemplateInstanceID), task.Data)
 	if err != nil {
-		return errors.New("Error when performing PersistDataTask: " + err.Error())
+		return errors.New("error when performing PersistDataTask: " + err.Error())
 	}
 	return nil
 }
