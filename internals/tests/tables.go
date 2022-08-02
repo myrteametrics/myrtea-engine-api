@@ -100,7 +100,6 @@ const (
 	// SituationDefinitionTableV1 SQL statement for the situation definition table
 	SituationDefinitionTableV1 string = `create table situation_definition_v1 (
 		id serial primary key,
-		groups integer[] not null,
 		name varchar(100) not null unique,
 		definition json,
 		is_template boolean,
