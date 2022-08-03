@@ -23,43 +23,6 @@ type InPeriodContains struct {
 	Contains bool `json:"contains"`
 }
 
-// contains check if a calendar contains a specific time (based on inclusion and exclusion periods)
-// This function only checks the calendar periods (but not the unioned calendars)
-// Therefore, the calendar MUST have been resolved / flatten before calling this function
-func (c Calendar) contains(t time.Time) (bool, PeriodStatus, PeriodStatus, PeriodStatus) {
-
-	statusMonth := NoInfo
-	statusDay := NoInfo
-	statusTime := NoInfo
-
-	for _, period := range c.Periods {
-		month, day, time := period.contains(t)
-		if month == OutOfPeriod || day == OutOfPeriod || time == OutOfPeriod {
-			month = OutOfPeriod
-			day = OutOfPeriod
-			time = OutOfPeriod
-		}
-		if month == InPeriod {
-			statusMonth = includedToStatus(period.Included)
-		}
-		if day == InPeriod {
-			statusDay = includedToStatus(period.Included)
-		}
-		if time == InPeriod {
-			statusTime = includedToStatus(period.Included)
-		}
-	}
-
-	status := true
-	if statusMonth == NoInfo && statusDay == NoInfo && statusTime == NoInfo {
-		status = false
-	}
-	if statusMonth == OutOfPeriod || statusDay == OutOfPeriod || statusTime == OutOfPeriod {
-		status = false
-	}
-	return status, statusMonth, statusDay, statusTime
-}
-
 // containsWithTz check if a calendar contains a specific time (based on inclusion and exclusion periods)
 // This function only checks the calendar periods (but not the unioned calendars)
 // Therefore, the calendar MUST have been resolved / flatten before calling this function
@@ -166,6 +129,7 @@ func (c Calendar) ResolveCalendar(joinedCalendars []int64) Calendar {
 		ID:               c.ID,
 		Name:             fmt.Sprintf("%s (resolved)", c.Name),
 		Description:      c.Description,
+		Timezone:         c.Timezone,
 		Periods:          periods,
 		Enabled:          c.Enabled,
 		UnionCalendarIDs: []int64{},
