@@ -3,6 +3,7 @@ package history
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -34,7 +35,7 @@ func (querier HistorySituationsQuerier) GetHistorySituationsIdsLast(options GetH
 	}
 
 	query := querier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs)
-	return querier.execute(query)
+	return querier.Query(query)
 }
 
 func (querier HistorySituationsQuerier) GetHistorySituationsIdsByStandardInterval(options GetHistorySituationsOptions, interval string) ([]HistorySituationsV4, error) {
@@ -44,7 +45,7 @@ func (querier HistorySituationsQuerier) GetHistorySituationsIdsByStandardInterva
 	}
 
 	query := querier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs)
-	return querier.execute(query)
+	return querier.Query(query)
 }
 
 func (querier HistorySituationsQuerier) GetHistorySituationsIdsByCustomInterval(options GetHistorySituationsOptions, referenceDate time.Time, interval time.Duration) ([]HistorySituationsV4, error) {
@@ -54,10 +55,43 @@ func (querier HistorySituationsQuerier) GetHistorySituationsIdsByCustomInterval(
 	}
 
 	query := querier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs)
-	return querier.execute(query)
+	return querier.Query(query)
 }
 
-func (querier HistorySituationsQuerier) execute(builder sq.SelectBuilder) ([]HistorySituationsV4, error) {
+func (querier HistorySituationsQuerier) Insert(history HistorySituationsV4) (int64, error) {
+	parametersJSON, err := json.Marshal(history.Parameters)
+	if err != nil {
+		return -1, err
+	}
+
+	expressionFactsJSON, err := json.Marshal(history.ExpressionFacts)
+	if err != nil {
+		return -1, err
+	}
+
+	metadatasJSON, err := json.Marshal(history.Metadatas)
+	if err != nil {
+		return -1, err
+	}
+
+	query := querier.Builder.Insert(history, parametersJSON, expressionFactsJSON, metadatasJSON)
+	id, err := querier.QueryReturning(query)
+	if err != nil {
+		return -1, err
+	}
+	return id, nil
+}
+
+func (querier HistorySituationsQuerier) QueryReturning(builder sq.InsertBuilder) (int64, error) {
+	rows, err := builder.RunWith(querier.conn.DB).Query()
+	if err != nil {
+		return -1, err
+	}
+	defer rows.Close()
+	return querier.scanID(rows)
+}
+
+func (querier HistorySituationsQuerier) Query(builder sq.SelectBuilder) ([]HistorySituationsV4, error) {
 	rows, err := builder.RunWith(querier.conn.DB).Query()
 	if err != nil {
 		return make([]HistorySituationsV4, 0), err
@@ -66,8 +100,17 @@ func (querier HistorySituationsQuerier) execute(builder sq.SelectBuilder) ([]His
 	return querier.scanAll(rows)
 }
 
-func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV4, error) {
+func (querier HistorySituationsQuerier) scanID(rows *sql.Rows) (int64, error) {
+	var id int64
+	if rows.Next() {
+		rows.Scan(&id)
+	} else {
+		return -1, errors.New("no id returned")
+	}
+	return id, nil
+}
 
+func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV4, error) {
 	var rawParameters []byte
 	var rawExpressionFacts []byte
 	var rawMetadatas []byte

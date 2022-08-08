@@ -16,3 +16,13 @@ func (builder HistorySituationFactsBuilder) GetHistorySituationFacts(historySitu
 		From("situation_fact_history_v4").
 		Where(sq.Eq{"situation_history_id": historySituationsIds})
 }
+
+func (builder HistorySituationFactsBuilder) InsertBulk(historySituationFacts []HistorySituationFactsV4) sq.InsertBuilder {
+	b := builder.newStatement().
+		Insert("situation_fact_history_v4").
+		Columns("situation_history_id", "fact_history_id", "fact_id")
+	for _, hishistorySituationFact := range historySituationFacts {
+		b = b.Values(hishistorySituationFact.HistorySituationID, hishistorySituationFact.HistoryFactID, hishistorySituationFact.FactID)
+	}
+	return b
+}

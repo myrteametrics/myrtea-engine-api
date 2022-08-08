@@ -20,7 +20,6 @@ func (builder HistorySituationsBuilder) newStatement() sq.StatementBuilderType {
 	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 }
 
-// situationID, situationInstanceID, tsFrom, tsTo
 func (builder HistorySituationsBuilder) getHistorySituationsIdsBase(options GetHistorySituationsOptions) sq.SelectBuilder {
 	q := builder.newStatement().
 		Select("id").
@@ -66,4 +65,11 @@ func (builder HistorySituationsBuilder) GetHistorySituationsDetails(subQueryIds 
 		LeftJoin("situation_template_instances_v1 si on s.id = si.situation_id").
 		InnerJoin("situation_history_v4 sh on (s.id = sh.situation_id and (sh.situation_instance_id = si.id OR sh.situation_instance_id = 0))").
 		Where("sh.id = any ("+subQueryIds+")", subQueryIdsArgs...)
+}
+
+func (builder HistorySituationsBuilder) Insert(history HistorySituationsV4, parametersJSON []byte, expressionFactsJSON []byte, metadatasJSON []byte) sq.InsertBuilder {
+	return builder.newStatement().Insert("situation_history_v4").
+		Columns("id", "situation_id", "situation_instance_id", "ts", "parameters", "expression_facts", "metadatas").
+		Values(sq.Expr("DEFAULT"), history.SituationID, history.SituationInstanceID, history.Ts, parametersJSON, expressionFactsJSON, metadatasJSON).
+		Suffix("RETURNING id")
 }

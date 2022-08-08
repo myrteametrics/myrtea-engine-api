@@ -32,10 +32,10 @@ func (service HistoryService) ExtractData(historySituations []HistorySituationsV
 
 	mapSituationFact := make(map[int64][]int64)
 	for _, historySituationFact := range historySituationFacts {
-		if list, exists := mapSituationFact[historySituationFact.HistorySituationsID]; exists {
-			mapSituationFact[historySituationFact.HistorySituationsID] = append(list, historySituationFact.HistoryFactsID)
+		if list, exists := mapSituationFact[historySituationFact.HistorySituationID]; exists {
+			mapSituationFact[historySituationFact.HistorySituationID] = append(list, historySituationFact.HistoryFactID)
 		} else {
-			mapSituationFact[historySituationFact.HistorySituationsID] = []int64{historySituationFact.HistoryFactsID}
+			mapSituationFact[historySituationFact.HistorySituationID] = []int64{historySituationFact.HistoryFactID}
 		}
 	}
 

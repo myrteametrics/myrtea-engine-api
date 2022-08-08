@@ -9,8 +9,9 @@ import (
 )
 
 type HistorySituationFactsV4 struct {
-	HistorySituationsID int64
-	HistoryFactsID      int64
+	HistorySituationID int64
+	HistoryFactID      int64
+	FactID             int64
 }
 
 type HistorySituationFactsQuerier struct {
@@ -20,10 +21,24 @@ type HistorySituationFactsQuerier struct {
 
 func (querier HistorySituationFactsQuerier) GetHistorySituationFacts(historySituationsIds []int64) ([]HistorySituationFactsV4, error) {
 	query := querier.Builder.GetHistorySituationFacts(historySituationsIds)
-	return querier.execute(query)
+	return querier.query(query)
 }
 
-func (querier HistorySituationFactsQuerier) execute(builder sq.SelectBuilder) ([]HistorySituationFactsV4, error) {
+func (querier HistorySituationFactsQuerier) execute(builder sq.InsertBuilder) error {
+	res, err := builder.RunWith(querier.conn.DB).Exec()
+	if err != nil {
+		return err
+	}
+
+	if count, err := res.RowsAffected(); err != nil {
+		return err
+	} else if count == 0 {
+		return errors.New("no rows inserted")
+	}
+	return nil
+}
+
+func (querier HistorySituationFactsQuerier) query(builder sq.SelectBuilder) ([]HistorySituationFactsV4, error) {
 	rows, err := builder.RunWith(querier.conn.DB).Query()
 	if err != nil {
 		return make([]HistorySituationFactsV4, 0), err
@@ -34,7 +49,7 @@ func (querier HistorySituationFactsQuerier) execute(builder sq.SelectBuilder) ([
 
 func (querier HistorySituationFactsQuerier) scan(rows *sql.Rows) (HistorySituationFactsV4, error) {
 	item := HistorySituationFactsV4{}
-	err := rows.Scan(&item.HistorySituationsID, &item.HistoryFactsID)
+	err := rows.Scan(&item.HistorySituationID, &item.HistoryFactID, &item.FactID)
 	if err != nil {
 		return HistorySituationFactsV4{}, errors.New("couldn't scan the retrieved data: " + err.Error())
 	}
