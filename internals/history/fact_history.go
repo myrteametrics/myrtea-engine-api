@@ -26,13 +26,8 @@ type HistoryFactsV4 struct {
 	Result              reader.Item
 }
 
-func (querier HistoryFactsQuerier) GetHistoryFacts(historyFactsIds []int64) ([]HistoryFactsV4, error) {
-	Query := querier.Builder.GetHistoryFacts(historyFactsIds)
-	return querier.Query(Query)
-}
-
 func (querier HistoryFactsQuerier) GetHistoryFactsFromSituation(sfq HistorySituationFactsQuerier, historySituationsIds []int64) ([]HistoryFactsV4, []HistorySituationFactsV4, error) {
-	historySituationFacts, err := sfq.GetHistorySituationFacts(historySituationsIds)
+	historySituationFacts, err := sfq.Query(sfq.Builder.GetHistorySituationFacts(historySituationsIds))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -42,8 +37,7 @@ func (querier HistoryFactsQuerier) GetHistoryFactsFromSituation(sfq HistorySitua
 		historyFactsIds = append(historyFactsIds, item.HistoryFactID)
 	}
 
-	Query := querier.Builder.GetHistoryFacts(historyFactsIds)
-	historyFacts, err := querier.Query(Query)
+	historyFacts, err := querier.Query(querier.Builder.GetHistoryFacts(historyFactsIds))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -57,8 +51,7 @@ func (querier HistoryFactsQuerier) Insert(history HistoryFactsV4) (int64, error)
 		return -1, err
 	}
 
-	query := querier.Builder.Insert(history, resultJSON)
-	id, err := querier.QueryReturning(query)
+	id, err := querier.QueryReturning(querier.Builder.Insert(history, resultJSON))
 	if err != nil {
 		return -1, err
 	}

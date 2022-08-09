@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/processor"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/scheduler"
@@ -83,16 +84,21 @@ func PostAggregates(w http.ResponseWriter, r *http.Request) {
 
 // ReceiveAggregates process a slice of ExternalAggregates and trigger all standard fact-situation-rule process
 func ReceiveAggregates(aggregates []scheduler.ExternalAggregate) error {
+	localRuleEngine, err := evaluator.BuildLocalRuleEngine("external-aggs")
+	if err != nil {
+		zap.L().Error("BuildLocalRuleEngine", zap.Error(err))
+		return err
+	}
 
 	situationsToUpdate, err := scheduler.ReceiveAndPersistFacts(aggregates)
 	if err != nil {
+		zap.L().Error("ReceiveAndPersistFacts", zap.Error(err))
 		return err
 	}
-	zap.L().Debug("situationsToUpdate", zap.Any("situationsToUpdate", situationsToUpdate))
 
-	taskBatchs, err := scheduler.CalculateAndPersistSituations(situationsToUpdate)
+	taskBatchs, err := scheduler.CalculateAndPersistSituations(localRuleEngine, situationsToUpdate)
 	if err != nil {
-		zap.L().Error("Cannot update situations", zap.Error(err))
+		zap.L().Error("CalculateAndPersistSituations", zap.Error(err))
 		return err
 	}
 

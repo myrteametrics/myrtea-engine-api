@@ -33,9 +33,7 @@ func (querier HistorySituationsQuerier) GetHistorySituationsIdsLast(options GetH
 	if err != nil {
 		return make([]HistorySituationsV4, 0), err
 	}
-
-	query := querier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs)
-	return querier.Query(query)
+	return querier.Query(querier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs))
 }
 
 func (querier HistorySituationsQuerier) GetHistorySituationsIdsByStandardInterval(options GetHistorySituationsOptions, interval string) ([]HistorySituationsV4, error) {
@@ -43,9 +41,7 @@ func (querier HistorySituationsQuerier) GetHistorySituationsIdsByStandardInterva
 	if err != nil {
 		return make([]HistorySituationsV4, 0), err
 	}
-
-	query := querier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs)
-	return querier.Query(query)
+	return querier.Query(querier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs))
 }
 
 func (querier HistorySituationsQuerier) GetHistorySituationsIdsByCustomInterval(options GetHistorySituationsOptions, referenceDate time.Time, interval time.Duration) ([]HistorySituationsV4, error) {
@@ -53,9 +49,7 @@ func (querier HistorySituationsQuerier) GetHistorySituationsIdsByCustomInterval(
 	if err != nil {
 		return make([]HistorySituationsV4, 0), err
 	}
-
-	query := querier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs)
-	return querier.Query(query)
+	return querier.Query(querier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs))
 }
 
 func (querier HistorySituationsQuerier) Insert(history HistorySituationsV4) (int64, error) {
@@ -74,8 +68,7 @@ func (querier HistorySituationsQuerier) Insert(history HistorySituationsV4) (int
 		return -1, err
 	}
 
-	query := querier.Builder.Insert(history, parametersJSON, expressionFactsJSON, metadatasJSON)
-	id, err := querier.QueryReturning(query)
+	id, err := querier.QueryReturning(querier.Builder.Insert(history, parametersJSON, expressionFactsJSON, metadatasJSON))
 	if err != nil {
 		return -1, err
 	}

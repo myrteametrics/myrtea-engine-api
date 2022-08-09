@@ -22,8 +22,7 @@ func (service HistoryService) ExtractFactData2(historyFactsNew []HistoryFactsV4,
 			}
 		}
 		if !exists {
-			query := service.HistoryFactsQuerier.Builder.GetHistoryFactLast(factId)
-			historyFactLast, err := service.HistoryFactsQuerier.QueryOne(query)
+			historyFactLast, err := service.HistoryFactsQuerier.QueryOne(service.HistoryFactsQuerier.Builder.GetHistoryFactLast(factId))
 			if err != nil {
 				// err
 			}
@@ -54,8 +53,7 @@ func (service HistoryService) ExtractFactData(historyFactNew HistoryFactsV4, exi
 			historyFactsNew = append(historyFactsNew, historyFactNew)
 
 		} else {
-			query := service.HistoryFactsQuerier.Builder.GetHistoryFactLast(factId)
-			historyFactLast, err := service.HistoryFactsQuerier.QueryOne(query)
+			historyFactLast, err := service.HistoryFactsQuerier.QueryOne(service.HistoryFactsQuerier.Builder.GetHistoryFactLast(factId))
 			if err != nil {
 				// err
 			}

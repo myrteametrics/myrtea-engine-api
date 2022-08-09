@@ -429,20 +429,6 @@ func calculate(t time.Time, f engine.Fact, situationID int64, situationInstanceI
 	// 	}
 	// 	widgetData.Aggregates.Baselines = values
 	// }
-
-	// if update {
-	// 	err = fact.UpdateFactResult(f.ID, t, situationID, situationInstanceID, widgetData.Aggregates)
-	// 	if err != nil {
-	// 		zap.L().Error("Cannot update fact instance", zap.Error(err))
-	// 		return err
-	// 	}
-	// } else {
-	// 	err = fact.PersistFactResult(f.ID, t, situationID, situationInstanceID, widgetData.Aggregates, true)
-	// 	if err != nil {
-	// 		zap.L().Error("Cannot persist fact instance", zap.Error(err))
-	// 		return err
-	// 	}
-	// }
 	return *widgetData, nil
 }
 
@@ -523,8 +509,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			})
 		}
 
-		query := historyService.HistorySituationFactsQuerier.Builder.InsertBulk(historySituationFactNew)
-		err = historyService.HistorySituationFactsQuerier.Execute(query)
+		err = historyService.HistorySituationFactsQuerier.Execute(historyService.HistorySituationFactsQuerier.Builder.InsertBulk(historySituationFactNew))
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
 		}

@@ -19,11 +19,6 @@ type HistorySituationFactsQuerier struct {
 	conn    *sqlx.DB
 }
 
-func (querier HistorySituationFactsQuerier) GetHistorySituationFacts(historySituationsIds []int64) ([]HistorySituationFactsV4, error) {
-	query := querier.Builder.GetHistorySituationFacts(historySituationsIds)
-	return querier.Query(query)
-}
-
 func (querier HistorySituationFactsQuerier) Execute(builder sq.InsertBuilder) error {
 	res, err := builder.RunWith(querier.conn.DB).Exec()
 	if err != nil {
