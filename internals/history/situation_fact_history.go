@@ -21,10 +21,10 @@ type HistorySituationFactsQuerier struct {
 
 func (querier HistorySituationFactsQuerier) GetHistorySituationFacts(historySituationsIds []int64) ([]HistorySituationFactsV4, error) {
 	query := querier.Builder.GetHistorySituationFacts(historySituationsIds)
-	return querier.query(query)
+	return querier.Query(query)
 }
 
-func (querier HistorySituationFactsQuerier) execute(builder sq.InsertBuilder) error {
+func (querier HistorySituationFactsQuerier) Execute(builder sq.InsertBuilder) error {
 	res, err := builder.RunWith(querier.conn.DB).Exec()
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func (querier HistorySituationFactsQuerier) execute(builder sq.InsertBuilder) er
 	return nil
 }
 
-func (querier HistorySituationFactsQuerier) query(builder sq.SelectBuilder) ([]HistorySituationFactsV4, error) {
+func (querier HistorySituationFactsQuerier) Query(builder sq.SelectBuilder) ([]HistorySituationFactsV4, error) {
 	rows, err := builder.RunWith(querier.conn.DB).Query()
 	if err != nil {
 		return make([]HistorySituationFactsV4, 0), err

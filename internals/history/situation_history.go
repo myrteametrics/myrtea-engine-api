@@ -18,7 +18,7 @@ type HistorySituationsV4 struct {
 	SituationInstanceID   int64
 	SituationInstanceName string
 	Ts                    time.Time
-	Parameters            map[string]interface{}
+	Parameters            map[string]string
 	ExpressionFacts       map[string]interface{}
 	Metadatas             []models.MetaData
 }
