@@ -20,7 +20,7 @@ func (builder HistorySituationsBuilder) newStatement() sq.StatementBuilderType {
 	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 }
 
-func (builder HistorySituationsBuilder) getHistorySituationsIdsBase(options GetHistorySituationsOptions) sq.SelectBuilder {
+func (builder HistorySituationsBuilder) GetHistorySituationsIdsBase(options GetHistorySituationsOptions) sq.SelectBuilder {
 	q := builder.newStatement().
 		Select("id").
 		From("situation_history_v4")
@@ -40,20 +40,20 @@ func (builder HistorySituationsBuilder) getHistorySituationsIdsBase(options GetH
 }
 
 func (builder HistorySituationsBuilder) GetHistorySituationsIdsLast(options GetHistorySituationsOptions) sq.SelectBuilder {
-	return builder.getHistorySituationsIdsBase(options).
+	return builder.GetHistorySituationsIdsBase(options).
 		Options("distinct on (situation_id, situation_instance_id)").
 		OrderBy("situation_id", "situation_instance_id", "ts desc")
 }
 
 func (builder HistorySituationsBuilder) GetHistorySituationsIdsByStandardInterval(options GetHistorySituationsOptions, interval string) sq.SelectBuilder {
-	return builder.getHistorySituationsIdsBase(options).
+	return builder.GetHistorySituationsIdsBase(options).
 		Options("distinct on (situation_id, situation_instance_id, date_trunc('"+interval+"', ts))").
 		OrderBy("situation_id", "situation_instance_id", "date_trunc('"+interval+"', ts)")
 }
 
 func (builder HistorySituationsBuilder) GetHistorySituationsIdsByCustomInterval(options GetHistorySituationsOptions, referenceDate time.Time, interval time.Duration) sq.SelectBuilder {
 	intervalMin := fmt.Sprintf("%d", int64(interval.Minutes()))
-	return builder.getHistorySituationsIdsBase(options).
+	return builder.GetHistorySituationsIdsBase(options).
 		Options("distinct on (situation_id, situation_instance_id, CAST('2022-08-01' AS TIMESTAMP) + INTERVAL '1 second' * "+intervalMin+" * FLOOR(DATE_PART('epoch', ts- '2022-08-01')/"+intervalMin+"))").
 		OrderBy("situation_id", "situation_instance_id", "CAST('2022-08-01' AS TIMESTAMP) + INTERVAL '1 second' * "+intervalMin+" * FLOOR(DATE_PART('epoch', ts- '2022-08-01')/"+intervalMin+")")
 }

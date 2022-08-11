@@ -7,6 +7,6 @@ type DBQueryOptionnal struct {
 	Limit  int
 	Offset int
 	MaxAge time.Duration
-	// Sorts []string //TODO: real sorting struct (order by)
-	// Filters []string //TODO: real filters struct (where)
+	// Sorts []string // TODO : real sorting struct (order by)
+	// Filters []string // TODO : real filters struct (where)
 }

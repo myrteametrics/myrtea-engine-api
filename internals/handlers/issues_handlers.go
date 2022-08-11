@@ -665,8 +665,8 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 // @Router /engine/issues/{id}/comment [put]
 func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
 
+	// FIXME : UpdateIssueComment permissions
 	// userCtx, _ := GetUserFromContext(r)
-	// FIXME
 	// if user == nil {
 	// 	render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("no user found in context"))
 	// 	return

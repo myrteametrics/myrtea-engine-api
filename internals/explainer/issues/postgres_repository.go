@@ -69,12 +69,13 @@ func (r *PostgresRepository) Create(issue models.Issue) (int64, error) {
 		return -1, err
 	}
 
-	query := `INSERT into issues_v1 (id, key, name, level, situation_id, situation_instance_id, situation_date, expiration_date, rule_data, state, created_at, last_modified, detection_rating_avg, comment)
-			  values (DEFAULT, :key, :name, :level, :situation_id, :situation_instance_id, :situation_date, :expiration_date, :rule_data, :state, :created_at, :last_modified, :detection_rating_avg, :comment) RETURNING id`
+	query := `INSERT into issues_v1 (id, key, name, level, situation_history_id, situation_id, situation_instance_id, situation_date, expiration_date, rule_data, state, created_at, last_modified, detection_rating_avg, comment)
+			  values (DEFAULT, :key, :name, :level, :situation_history_id, :situation_id, :situation_instance_id, :situation_date, :expiration_date, :rule_data, :state, :created_at, :last_modified, :detection_rating_avg, :comment) RETURNING id`
 	params := map[string]interface{}{
 		"key":                   issue.Key,
 		"name":                  issue.Name,
 		"level":                 issue.Level.String(),
+		"situation_history_id":  issue.SituationHistoryID,
 		"situation_id":          issue.SituationID,
 		"situation_instance_id": issue.TemplateInstanceID,
 		"situation_date":        issue.SituationTS,
@@ -186,7 +187,6 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, u
 func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS time.Time) (map[int64]models.Issue, error) {
 	issues := make(map[int64]models.Issue, 0)
 
-	// TODO: list of closed states should be provided and not hardcoded !!!
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
 			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment

@@ -27,31 +27,35 @@ import (
 // @Failure 400 "Status Bad Request"
 // @Router /engine/situations/{id}/evaluation/{instanceid} [get]
 func GetSituationEvaluation(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	idSituation, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		zap.L().Warn("Error on parsing situation id", zap.String("situationID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
-		return
-	}
 
-	id = chi.URLParam(r, "instanceid")
-	instanceID, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		zap.L().Warn("Error on parsing situation template instance id, using default value (0)", zap.String("instanceID", id), zap.Error(err))
-		instanceID = 0
-	}
+	// TODO: Fixme or remove handler to get one specific situation evaluation (is it even usefull ?)
+	render.NotImplemented(w, r)
 
-	// FIXME: security check !
+	// id := chi.URLParam(r, "id")
+	// idSituation, err := strconv.ParseInt(id, 10, 64)
+	// if err != nil {
+	// 	zap.L().Warn("Error on parsing situation id", zap.String("situationID", id), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPIParsingInteger, err)
+	// 	return
+	// }
 
-	metaDatas, err := situation.GetLastHistoryMetadata(idSituation, instanceID)
-	if err != nil {
-		zap.L().Error("Error on getting situation last evaluation id", zap.String("situationID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
-	}
+	// id = chi.URLParam(r, "instanceid")
+	// instanceID, err := strconv.ParseInt(id, 10, 64)
+	// if err != nil {
+	// 	zap.L().Warn("Error on parsing situation template instance id, using default value (0)", zap.String("instanceID", id), zap.Error(err))
+	// 	instanceID = 0
+	// }
 
-	render.JSON(w, r, metaDatas)
+	// // FIXME: security check !
+
+	// metaDatas, err := situation.GetLastHistoryMetadata(idSituation, instanceID)
+	// if err != nil {
+	// 	zap.L().Error("Error on getting situation last evaluation id", zap.String("situationID", id), zap.Error(err))
+	// 	render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+	// 	return
+	// }
+
+	// render.JSON(w, r, metaDatas)
 }
 
 // GetSituationFacts godoc

@@ -371,21 +371,24 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Reimplement fact handler cache system
 	var data *reader.WidgetData
-	if useCache {
-		zap.L().Debug("Use history cache to resolve query")
-		item, _, err := fact.GetFactResultFromHistory(f.ID, t, -1, 0, true, cacheDuration)
-		if err != nil {
-			zap.L().Error("Cannot fetch fact history", zap.Int64("id", f.ID), zap.Time("t", t), zap.Duration("cache", cacheDuration), zap.Error(err))
-			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-			return
-		}
-		if item != nil {
-			data = &reader.WidgetData{
-				Aggregates: item,
-			}
-		}
-	}
+	_ = useCache
+	_ = cacheDuration
+	// if useCache {
+	// 	zap.L().Debug("Use history cache to resolve query")
+	// 	item, _, err := fact.GetFactResultFromHistory(f.ID, t, -1, 0, true, cacheDuration)
+	// 	if err != nil {
+	// 		zap.L().Error("Cannot fetch fact history", zap.Int64("id", f.ID), zap.Time("t", t), zap.Duration("cache", cacheDuration), zap.Error(err))
+	// 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+	// 		return
+	// 	}
+	// 	if item != nil {
+	// 		data = &reader.WidgetData{
+	// 			Aggregates: item,
+	// 		}
+	// 	}
+	// }
 
 	if data == nil {
 		zap.L().Debug("Use elasticsearch to resolve query")
@@ -410,7 +413,6 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("prepared-query", pf))
 			render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
-			// FIXME: render.Error(w, r, render.ErrAPIResourceInvalid, err)
 			return
 		}
 
@@ -424,11 +426,6 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 				}
 				data.Aggregates.Baselines = values
 			}
-		}
-
-		err = fact.PersistFactResult(f.ID, t, 0, 0, data.Aggregates, true)
-		if err != nil {
-			zap.L().Error("Cannot persist fact", zap.Error(err))
 		}
 	}
 

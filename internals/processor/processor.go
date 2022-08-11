@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/evaluator"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tasker"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
@@ -36,7 +37,19 @@ func evaluateFactObjects(fact engine.Fact, objects []map[string]interface{}) err
 		)
 	}
 
-	situationEvaluations, err := evaluator.EvaluateObjectSituations(situationsToEvalute, fact, objects, "object")
+	localEvaluator, err := evaluator.BuildLocalRuleEngine("object")
+	// Evaluate rules
+	enabledRuleIDs, err := GetEnabledRuleIDs(situationToUpdate.SituationID, situationToUpdate.Ts)
+	if err != nil {
+		zap.L().Error("", zap.Error(err))
+	}
+
+	metadatas := make([]models.MetaData, 0)
+	agenda := evaluator.EvaluateRules(localRuleEngine, historySituationFlattenData, enabledRuleIDs)
+
+	// FIXME: Fixing situation object evaluation
+	// situationEvaluations, err := evaluator.EvaluateObjectSituations(situationsToEvalute, fact, objects, "object")
+
 	taskBatchs := make([]tasker.TaskBatch, 0)
 	for _, situationEvaluation := range situationEvaluations {
 		taskBatchs = append(taskBatchs, tasker.TaskBatch{

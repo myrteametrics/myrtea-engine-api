@@ -213,7 +213,7 @@ func TestUpdateHistoryMetadata(t *testing.T) {
 		t.Error(err)
 	}
 
-	// TODO: check metadatas ?
+	// check metadatas ?
 }
 
 func TestUpdateHistoryMetadataInvalid(t *testing.T) {

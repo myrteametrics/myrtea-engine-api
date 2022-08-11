@@ -17,12 +17,9 @@ type Task interface {
 //ApplyTasks applies the task of an evaluated situation
 func ApplyTasks(batch TaskBatch) (err error) {
 
-	persistTask := PersistDataTask{}
 	for _, action := range batch.Agenda {
 
 		switch action.GetName() {
-		case "set":
-			persistTask.addData(action.GetParameters(), buildContextData(action.GetMetaData(), batch.Context))
 
 		case "create-issue":
 			task, err := buildCreateIssueTask(action.GetParameters())
@@ -31,7 +28,7 @@ func ApplyTasks(batch TaskBatch) (err error) {
 				continue
 			}
 
-			taskContext := buildContextData(action.GetMetaData(), batch.Context)
+			taskContext := BuildContextData(action.GetMetaData(), batch.Context)
 			err = task.Perform(buildTaskKey(taskContext, task), taskContext)
 			if err != nil {
 				zap.L().Warn("Error while performing task CreateIssueTask", zap.Error(err))
@@ -44,7 +41,7 @@ func ApplyTasks(batch TaskBatch) (err error) {
 				continue
 			}
 
-			taskContext := buildContextData(action.GetMetaData(), batch.Context)
+			taskContext := BuildContextData(action.GetMetaData(), batch.Context)
 			err = task.Perform(buildTaskKey(taskContext, task), taskContext)
 			if err != nil {
 				zap.L().Warn("Error while performing task CloseTodayIssuesTask", zap.Error(err))
@@ -57,7 +54,7 @@ func ApplyTasks(batch TaskBatch) (err error) {
 				continue
 			}
 
-			taskContext := buildContextData(action.GetMetaData(), batch.Context)
+			taskContext := BuildContextData(action.GetMetaData(), batch.Context)
 			err = task.Perform(buildTaskKey(taskContext, task), taskContext)
 			if err != nil {
 				zap.L().Warn("Error while performing task CloseAllIssuesTask", zap.Error(err))
@@ -70,7 +67,7 @@ func ApplyTasks(batch TaskBatch) (err error) {
 				continue
 			}
 
-			taskContext := buildContextData(action.GetMetaData(), batch.Context)
+			taskContext := BuildContextData(action.GetMetaData(), batch.Context)
 			err = task.Perform(buildTaskKey(taskContext, task), taskContext)
 			if err != nil {
 				zap.L().Warn("Error while performing task NotifyTask", zap.Error(err))
@@ -83,7 +80,7 @@ func ApplyTasks(batch TaskBatch) (err error) {
 				continue
 			}
 
-			taskContext := buildContextData(action.GetMetaData(), batch.Context)
+			taskContext := BuildContextData(action.GetMetaData(), batch.Context)
 			err = task.Perform(buildTaskKey(taskContext, task), taskContext)
 			if err != nil {
 				zap.L().Warn("Error while performing task SituationReportingTask", zap.Error(err))
@@ -91,12 +88,6 @@ func ApplyTasks(batch TaskBatch) (err error) {
 
 		default:
 			continue
-		}
-	}
-	if len(persistTask.Data) > 0 {
-		err = persistTask.Perform("", buildContextData(batch.Context))
-		if err != nil {
-			zap.L().Warn("Error while performing task xxxx", zap.Error(err))
 		}
 	}
 

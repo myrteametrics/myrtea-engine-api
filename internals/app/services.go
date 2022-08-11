@@ -10,6 +10,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/rootcause"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/externalconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/history"
 
 	// "github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/modeler"
@@ -49,6 +50,7 @@ func initRepositories() {
 	rule.ReplaceGlobals(rule.NewPostgresRepository(dbClient))
 	modeler.ReplaceGlobals(modeler.NewPostgresRepository(dbClient))
 	externalconfig.ReplaceGlobals(externalconfig.NewPostgresRepository(dbClient))
+	history.ReplaceGlobals(history.New(dbClient))
 }
 
 func initServices() {

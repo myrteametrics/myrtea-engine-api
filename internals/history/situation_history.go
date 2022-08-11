@@ -9,6 +9,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"go.uber.org/zap"
 )
 
 type HistorySituationsV4 struct {
@@ -93,6 +94,27 @@ func (querier HistorySituationsQuerier) Query(builder sq.SelectBuilder) ([]Histo
 	return querier.scanAll(rows)
 }
 
+func (querier HistorySituationsQuerier) QueryIDs(builder sq.SelectBuilder) ([]int64, error) {
+	rows, err := builder.RunWith(querier.conn.DB).Query()
+	if err != nil {
+		return make([]int64, 0), err
+	}
+	defer rows.Close()
+	return querier.scanAllIDs(rows)
+}
+
+func (querier HistorySituationsQuerier) scanAllIDs(rows *sql.Rows) ([]int64, error) {
+	ids := make([]int64, 0)
+	for rows.Next() {
+		id, err := querier.scanID(rows)
+		if err != nil {
+			return []int64{}, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
 func (querier HistorySituationsQuerier) scanID(rows *sql.Rows) (int64, error) {
 	var id int64
 	if rows.Next() {
@@ -116,7 +138,7 @@ func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV
 	if len(rawParameters) > 0 {
 		err = json.Unmarshal(rawParameters, &item.Parameters)
 		if err != nil {
-			// TODO: add logs !
+			zap.L().Error("Unmarshal", zap.Error(err))
 			return HistorySituationsV4{}, err
 		}
 	}
@@ -124,7 +146,7 @@ func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV
 	if len(rawExpressionFacts) > 0 {
 		err = json.Unmarshal(rawExpressionFacts, &item.ExpressionFacts)
 		if err != nil {
-			// TODO: add logs !
+			zap.L().Error("Unmarshal", zap.Error(err))
 			return HistorySituationsV4{}, err
 		}
 	}
@@ -132,7 +154,7 @@ func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV
 	if len(rawMetadatas) > 0 {
 		err = json.Unmarshal(rawMetadatas, &item.Metadatas)
 		if err != nil {
-			// TODO: add logs !
+			zap.L().Error("Unmarshal", zap.Error(err))
 			return HistorySituationsV4{}, err
 		}
 	}

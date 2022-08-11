@@ -14,15 +14,17 @@ type TaskBatch struct {
 
 //ContextData struct to represent the data related to the context in an action perform
 type ContextData struct {
-	SituationID        int64
-	TS                 time.Time
-	TemplateInstanceID int64
-	RuleID             int64
-	RuleVersion        int64
-	CaseName           string
+	RuleID                      int64
+	RuleVersion                 int64
+	CaseName                    string
+	SituationID                 int64
+	TemplateInstanceID          int64
+	TS                          time.Time
+	HistorySituationFlattenData map[string]interface{}
+	SituationHistoryID          int64
 }
 
-func buildContextData(inputs ...map[string]interface{}) ContextData {
+func BuildContextData(inputs ...map[string]interface{}) ContextData {
 
 	ctx := ContextData{}
 	for _, input := range inputs {
@@ -36,10 +38,14 @@ func buildContextData(inputs ...map[string]interface{}) ContextData {
 				ctx.CaseName = value.(string)
 			case "situationID":
 				ctx.SituationID = value.(int64)
-			case "ts":
-				ctx.TS = value.(time.Time)
 			case "templateInstanceID":
 				ctx.TemplateInstanceID = value.(int64)
+			case "ts":
+				ctx.TS = value.(time.Time)
+			case "historySituationFlattenData":
+				ctx.HistorySituationFlattenData = value.(map[string]interface{})
+			case "situationHistoryID":
+				ctx.SituationHistoryID = value.(int64)
 			}
 		}
 	}

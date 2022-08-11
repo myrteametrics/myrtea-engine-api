@@ -17,12 +17,9 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tasker"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"github.com/myrteametrics/myrtea-sdk/v4/expression"
-	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/myrteametrics/myrtea-sdk/v4/ruleeng"
 	"go.uber.org/zap"
 )
-
-var historyService = history.New(postgres.DB())
 
 const timeLayout = "2006-01-02T15:04:05.000Z07:00"
 
@@ -128,7 +125,7 @@ func (job FactCalculationJob) Run() {
 		return
 	}
 
-	// TODO: Support retroactive update
+	// FIXME: Support retroactive update
 	// if job.From != "" {
 	// 	err := job.update(t)
 	// 	if err != nil {
@@ -239,7 +236,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]HistoryR
 				Ts:                  t,
 				Result:              agg.Value,
 			}
-			historyFactNew.ID, err = historyService.HistoryFactsQuerier.Insert(historyFactNew)
+			historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 			if err != nil {
 				// err
 			}
@@ -274,7 +271,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]HistoryR
 					Ts:                  t,
 					Result:              agg.Value,
 				}
-				historyFactNew.ID, err = historyService.HistoryFactsQuerier.Insert(historyFactNew)
+				historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 				if err != nil {
 					// err
 				}
@@ -319,9 +316,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]HistoryR
 			continue
 		}
 		if len(factSituationsHistory) == 0 {
-			zap.L().Info("No situation within valid calendar period for the Fact, skipping fact calculation...", zap.Int64("factID", factID))
-			// S().RemoveRunningJob(job.ScheduleID)
-			return make(map[string]HistoryRecordV2, 0), nil
+			continue
 		}
 
 		if !f.IsTemplate {
@@ -340,7 +335,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]HistoryR
 				Ts:                  t,
 				Result:              *widgetData.Aggregates,
 			}
-			historyFactNew.ID, err = historyService.HistoryFactsQuerier.Insert(historyFactNew)
+			historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 			if err != nil {
 				// err
 			}
@@ -382,7 +377,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]HistoryR
 					Ts:                  t,
 					Result:              *widgetData.Aggregates,
 				}
-				historyFactNew.ID, err = historyService.HistoryFactsQuerier.Insert(historyFactNew)
+				historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 				if err != nil {
 					// err
 				}
@@ -444,7 +439,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		}
 		zap.L().Info("", zap.Any("parameters", parameters))
 
-		historyFactsAll, historySituationFlattenData, err := historyService.ExtractFactData2(situationToUpdate.HistoryFacts, s.Facts)
+		historyFactsAll, historySituationFlattenData, err := history.S().ExtractFactData(situationToUpdate.HistoryFacts, s.Facts)
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
 			continue
@@ -471,16 +466,23 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			zap.L().Error("", zap.Error(err))
 		}
 
+		metadatas := make([]models.MetaData, 0)
 		agenda := evaluator.EvaluateRules(localRuleEngine, historySituationFlattenData, enabledRuleIDs)
 		if agenda != nil {
-			taskBatchs = append(taskBatchs, tasker.TaskBatch{
-				Context: map[string]interface{}{
-					"situationID":        situationToUpdate.SituationID,
-					"templateInstanceID": situationToUpdate.SituationInstanceID,
-					"ts":                 situationToUpdate.Ts,
-				},
-				Agenda: agenda,
-			})
+			for _, agen := range agenda {
+				if agen.GetName() != "set" {
+					context := tasker.BuildContextData(agen.GetMetaData())
+					for key, value := range agen.GetParameters() {
+						metadatas = append(metadatas, models.MetaData{
+							Key:         key,
+							Value:       value,
+							RuleID:      context.RuleID,
+							RuleVersion: context.RuleVersion,
+							CaseName:    context.CaseName,
+						})
+					}
+				}
+			}
 		}
 
 		// Build and insert HistorySituationV4
@@ -493,7 +495,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			ExpressionFacts:     expressionFacts,
 			Metadatas:           make([]models.MetaData, 0),
 		}
-		historySituationNew.ID, err = historyService.HistorySituationsQuerier.Insert(historySituationNew)
+		historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
 		}
@@ -509,11 +511,24 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			})
 		}
 
-		err = historyService.HistorySituationFactsQuerier.Execute(historyService.HistorySituationFactsQuerier.Builder.InsertBulk(historySituationFactNew))
+		err = history.S().HistorySituationFactsQuerier.Execute(history.S().HistorySituationFactsQuerier.Builder.InsertBulk(historySituationFactNew))
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
 		}
 		zap.L().Info("historySituationFactNew", zap.Any("historySituationFactNew", historySituationFactNew))
+
+		if agenda != nil {
+			taskBatchs = append(taskBatchs, tasker.TaskBatch{
+				Context: map[string]interface{}{
+					"situationID":                 situationToUpdate.SituationID,
+					"templateInstanceID":          situationToUpdate.SituationInstanceID,
+					"ts":                          situationToUpdate.Ts,
+					"historySituationFlattenData": historySituationFlattenData,
+					"situationHistoryID":          historySituationNew.ID,
+				},
+				Agenda: agenda,
+			})
+		}
 	}
 
 	return taskBatchs, nil
