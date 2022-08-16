@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/calendar"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"go.uber.org/zap"
 )
 
@@ -459,4 +461,32 @@ func (r *PostgresRulesRepository) GetAllModifiedFrom(from time.Time) (map[int64]
 		rules[ruleID] = rule
 	}
 	return rules, nil
+}
+
+func (r *PostgresRulesRepository) GetEnabledRuleIDs(situationID int64, ts time.Time) ([]int64, error) {
+
+	ruleIDs, err := situation.R().GetRules(situationID)
+	if err != nil {
+		return nil, fmt.Errorf("error geting rules for situation instance (%d): %s", situationID, err.Error())
+	}
+
+	ruleIDsInt := make([]int64, 0)
+	for _, id := range ruleIDs {
+		r, found, err := r.Get(id)
+		if err != nil {
+			zap.L().Error("Get Rule", zap.Int64("id", id), zap.Error(err))
+			continue
+		}
+		if !found {
+			zap.L().Warn("Rule is missing", zap.Int64("id", id))
+			continue
+		}
+
+		cfound, valid, _ := calendar.CBase().InPeriodFromCalendarID(int64(r.CalendarID), ts)
+		if !cfound || valid {
+			ruleIDsInt = append(ruleIDsInt, id)
+		}
+	}
+
+	return ruleIDsInt, nil
 }

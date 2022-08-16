@@ -4,66 +4,136 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/evaluator"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/history"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tasker"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v4/expression"
 	"go.uber.org/zap"
 )
 
-func evaluateFactObjects(fact engine.Fact, objects []map[string]interface{}) error {
+func evaluateFactObjects(factObject engine.Fact, objects []map[string]interface{}) error {
 
-	situations, err := situation.R().GetSituationsByFactID(fact.ID, false)
+	t := time.Now()
+
+	situations, err := situation.R().GetSituationsByFactID(factObject.ID, false)
 	if err != nil {
 		return err
 	}
 	if len(situations) == 0 {
-		zap.L().Debug("No situation to evaluate for fact object", zap.String("factName", fact.Name))
+		zap.L().Debug("No situation to evaluate for fact object", zap.String("factName", factObject.Name))
 		return nil
 	}
-	zap.L().Debug("situations to evaluate", zap.Any("situations", situations))
 
-	situationsToEvalute := make([]evaluator.SituationToEvaluate, 0)
-	ts := time.Now().Truncate(1 * time.Millisecond).UTC()
-	for _, objectSituation := range situations {
-
-		situationsToEvalute = append(situationsToEvalute,
-			evaluator.SituationToEvaluate{
-				ID:         objectSituation.ID,
-				TS:         ts,
-				Facts:      objectSituation.Facts,
-				Parameters: objectSituation.Parameters,
-			},
-		)
-	}
-
-	localEvaluator, err := evaluator.BuildLocalRuleEngine("object")
-	// Evaluate rules
-	enabledRuleIDs, err := GetEnabledRuleIDs(situationToUpdate.SituationID, situationToUpdate.Ts)
+	localRuleEngine, err := evaluator.BuildLocalRuleEngine("object")
 	if err != nil {
 		zap.L().Error("", zap.Error(err))
 	}
 
-	metadatas := make([]models.MetaData, 0)
-	agenda := evaluator.EvaluateRules(localRuleEngine, historySituationFlattenData, enabledRuleIDs)
-
-	// FIXME: Fixing situation object evaluation
-	// situationEvaluations, err := evaluator.EvaluateObjectSituations(situationsToEvalute, fact, objects, "object")
-
 	taskBatchs := make([]tasker.TaskBatch, 0)
-	for _, situationEvaluation := range situationEvaluations {
-		taskBatchs = append(taskBatchs, tasker.TaskBatch{
-			Context: map[string]interface{}{
-				"situationID":        situationEvaluation.ID,
-				"ts":                 situationEvaluation.TS,
-				"templateInstanceID": situationEvaluation.TemplateInstanceID,
-			},
-			Agenda: situationEvaluation.Agenda,
-		})
+	for _, s := range situations {
+
+		// _, parameters, err := history.ExtractSituationData(s.ID, 0)
+		// if err != nil {
+		// 	zap.L().Error("", zap.Error(err))
+		// 	continue
+		// }
+
+		historyFactsAll, historySituationFlattenData, err := history.S().ExtractFactData(make([]history.HistoryFactsV4, 0), s.Facts)
+		if err != nil {
+			zap.L().Error("", zap.Error(err))
+			continue
+		}
+		for key, value := range s.Parameters {
+			historySituationFlattenData[key] = value
+		}
+		for key, value := range expression.GetDateKeywords(t) {
+			historySituationFlattenData[key] = value
+		}
+
+		expressionFacts := history.EvaluateExpressionFacts(s.ExpressionFacts, historySituationFlattenData)
+		for key, value := range expressionFacts {
+			historySituationFlattenData[key] = value
+		}
+
+		enabledRuleIDs, err := rule.R().GetEnabledRuleIDs(s.ID, t)
+		if err != nil {
+			zap.L().Error("", zap.Error(err))
+		}
+
+		for _, object := range objects {
+			localRuleEngine.Reset()
+			localRuleEngine.GetKnowledgeBase().SetFacts(historySituationFlattenData)
+			localRuleEngine.GetKnowledgeBase().InsertFact(factObject.Name, object)
+			localRuleEngine.ExecuteRules(enabledRuleIDs)
+			agenda := localRuleEngine.GetResults()
+
+			if len(agenda) > 0 {
+
+				objectKeyValues := make(map[string]*reader.ItemAgg, 0)
+				for k, v := range object {
+					objectKeyValues[k] = &reader.ItemAgg{Value: v}
+				}
+				historyFactNew := history.HistoryFactsV4{
+					// ID:                  -1,
+					SituationID:         s.ID,
+					SituationInstanceID: 0,
+					FactID:              factObject.ID,
+					Ts:                  t,
+					Result: reader.Item{
+						Key:  object["id"].(string),
+						Aggs: objectKeyValues,
+					},
+				}
+				historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
+				if err != nil {
+					zap.L().Error("", zap.Error(err))
+				}
+
+				historySituationNew := history.HistorySituationsV4{
+					// ID:                    -1,
+					SituationID:         s.ID,
+					SituationInstanceID: 0,
+					Ts:                  t,
+					Parameters:          s.Parameters,
+					ExpressionFacts:     expressionFacts,
+					Metadatas:           make([]models.MetaData, 0),
+				}
+				historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
+				if err != nil {
+					zap.L().Error("", zap.Error(err))
+				}
+
+				historySituationFactNew := make([]history.HistorySituationFactsV4, 0)
+				for _, historyFactNew := range historyFactsAll {
+					historySituationFactNew = append(historySituationFactNew, history.HistorySituationFactsV4{ // Replace entry for existing factID with new HistorySituationFactsV4{}
+						HistorySituationID: historySituationNew.ID,
+						HistoryFactID:      historyFactNew.ID,
+						FactID:             historyFactNew.FactID,
+					})
+				}
+				err = history.S().HistorySituationFactsQuerier.Execute(history.S().HistorySituationFactsQuerier.Builder.InsertBulk(historySituationFactNew))
+				if err != nil {
+					zap.L().Error("", zap.Error(err))
+				}
+
+				taskBatchs = append(taskBatchs, tasker.TaskBatch{
+					Context: map[string]interface{}{
+						"situationID":        s.ID,
+						"templateInstanceID": 0,
+						"ts":                 t,
+					},
+					Agenda: agenda,
+				})
+			}
+		}
+
 	}
-	if err == nil {
-		tasker.T().BatchReceiver <- taskBatchs
-	}
+
+	tasker.T().BatchReceiver <- taskBatchs
 
 	return nil
 }

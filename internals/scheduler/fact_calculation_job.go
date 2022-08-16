@@ -23,23 +23,6 @@ import (
 
 const timeLayout = "2006-01-02T15:04:05.000Z07:00"
 
-// HistoryRecordV2 represents a single and unique situation history entry
-type HistoryRecordV2 struct {
-	SituationID         int64
-	SituationInstanceID int64
-	Ts                  time.Time
-	HistoryFacts        []history.HistoryFactsV4
-	Parameters          map[string]string
-	ExpressionFacts     map[string]interface{}
-}
-
-// OverrideParameters overrides the parameters of the History Record
-func (hr HistoryRecordV2) OverrideParameters(p map[string]string) {
-	for key, value := range p {
-		hr.Parameters[key] = value
-	}
-}
-
 // FactCalculationJob represent a scheduler job instance which process a group of facts, and persist the result in postgresql
 // It also generate situations, persists them and notify the rule engine to evaluate them
 type FactCalculationJob struct {
@@ -166,27 +149,27 @@ type ExternalAggregate struct {
 }
 
 // ReceiveAndPersistFacts process a slice of ExternalAggregates and trigger all standard fact-situation-rule process
-func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]HistoryRecordV2, error) {
+func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.HistoryRecordV4, error) {
 
-	situationsToUpdate := make(map[string]HistoryRecordV2, 0)
+	situationsToUpdate := make(map[string]history.HistoryRecordV4, 0)
 	for _, agg := range aggregates {
 
 		t := agg.Time.UTC().Truncate(time.Second)
 
 		f, found, err := fact.R().Get(agg.FactID)
 		if err != nil {
-			return make(map[string]HistoryRecordV2), err
+			return make(map[string]history.HistoryRecordV4), err
 		}
 		if !found {
-			return make(map[string]HistoryRecordV2), errors.New("not found")
+			return make(map[string]history.HistoryRecordV4), errors.New("not found")
 		}
 
 		s, found, err := situation.R().Get(agg.SituationID)
 		if err != nil {
-			return make(map[string]HistoryRecordV2), err
+			return make(map[string]history.HistoryRecordV4), err
 		}
 		if !found {
-			return make(map[string]HistoryRecordV2), errors.New("not found")
+			return make(map[string]history.HistoryRecordV4), errors.New("not found")
 		}
 
 		found = false
@@ -202,10 +185,10 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]HistoryR
 
 		si, found, err := situation.R().GetTemplateInstance(agg.SituationInstanceID)
 		if err != nil {
-			return make(map[string]HistoryRecordV2), err
+			return make(map[string]history.HistoryRecordV4), err
 		}
 		if !found {
-			return make(map[string]HistoryRecordV2), errors.New("not found")
+			return make(map[string]history.HistoryRecordV4), errors.New("not found")
 		}
 
 		if s.ID != si.SituationID {
@@ -244,7 +227,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]HistoryR
 			for _, sh := range factSituationsHistory {
 				key := fmt.Sprintf("%d-%d", sh.SituationID, sh.SituationInstanceID)
 				if _, ok := situationsToUpdate[key]; !ok {
-					situationsToUpdate[key] = HistoryRecordV2{
+					situationsToUpdate[key] = history.HistoryRecordV4{
 						SituationID:         sh.SituationID,
 						SituationInstanceID: sh.SituationInstanceID,
 						Ts:                  t,
@@ -278,7 +261,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]HistoryR
 
 				key := fmt.Sprintf("%d-%d", sh.SituationID, sh.SituationInstanceID)
 				if _, ok := situationsToUpdate[key]; !ok {
-					situationsToUpdate[key] = HistoryRecordV2{
+					situationsToUpdate[key] = history.HistoryRecordV4{
 						SituationID:         sh.SituationID,
 						SituationInstanceID: sh.SituationInstanceID,
 						Ts:                  t,
@@ -297,8 +280,8 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]HistoryR
 	return situationsToUpdate, nil
 }
 
-func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]HistoryRecordV2, error) {
-	situationsToUpdate := make(map[string]HistoryRecordV2, 0)
+func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.HistoryRecordV4, error) {
+	situationsToUpdate := make(map[string]history.HistoryRecordV4, 0)
 
 	for _, factID := range factIDs {
 		f, found, err := fact.R().Get(factID)
@@ -320,7 +303,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]HistoryR
 		}
 
 		if !f.IsTemplate {
-			widgetData, err := calculate(t, f, 0, 0, nil, false)
+			widgetData, err := calculateFact(t, f, 0, 0, nil, false)
 			if err != nil {
 				zap.L().Error("Fact calculation Error, skipping fact calculation...", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
 				continue
@@ -343,7 +326,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]HistoryR
 			for _, sh := range factSituationsHistory {
 				key := fmt.Sprintf("%d-%d", sh.SituationID, sh.SituationInstanceID)
 				if _, ok := situationsToUpdate[key]; !ok {
-					situationsToUpdate[key] = HistoryRecordV2{
+					situationsToUpdate[key] = history.HistoryRecordV4{
 						SituationID:         sh.SituationID,
 						SituationInstanceID: sh.SituationInstanceID,
 						Ts:                  t,
@@ -362,7 +345,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]HistoryR
 				var fCopy engine.Fact
 				fData, _ := json.Marshal(f)
 				json.Unmarshal(fData, &fCopy)
-				widgetData, err := calculate(t, fCopy, sh.SituationID, sh.SituationInstanceID, sh.Parameters, false)
+				widgetData, err := calculateFact(t, fCopy, sh.SituationID, sh.SituationInstanceID, sh.Parameters, false)
 				if err != nil {
 					zap.L().Error("Fact calculation Error, skipping fact calculation...", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
 					continue
@@ -384,7 +367,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]HistoryR
 
 				key := fmt.Sprintf("%d-%d", sh.SituationID, sh.SituationInstanceID)
 				if _, ok := situationsToUpdate[key]; !ok {
-					situationsToUpdate[key] = HistoryRecordV2{
+					situationsToUpdate[key] = history.HistoryRecordV4{
 						SituationID:         sh.SituationID,
 						SituationInstanceID: sh.SituationInstanceID,
 						Ts:                  t,
@@ -403,7 +386,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]HistoryR
 	return situationsToUpdate, nil
 }
 
-func calculate(t time.Time, f engine.Fact, situationID int64, situationInstanceID int64, placeholders map[string]string, update bool) (reader.WidgetData, error) {
+func calculateFact(t time.Time, f engine.Fact, situationID int64, situationInstanceID int64, placeholders map[string]string, update bool) (reader.WidgetData, error) {
 	pf, err := fact.Prepare(&f, -1, -1, t, placeholders, update)
 	if err != nil {
 		zap.L().Error("Cannot prepare fact", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
@@ -427,7 +410,7 @@ func calculate(t time.Time, f engine.Fact, situationID int64, situationInstanceI
 	return *widgetData, nil
 }
 
-func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situationsToUpdate map[string]HistoryRecordV2) ([]tasker.TaskBatch, error) {
+func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situationsToUpdate map[string]history.HistoryRecordV4) ([]tasker.TaskBatch, error) {
 	taskBatchs := make([]tasker.TaskBatch, 0)
 	for _, situationToUpdate := range situationsToUpdate {
 
@@ -461,7 +444,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		}
 
 		// Evaluate rules
-		enabledRuleIDs, err := GetEnabledRuleIDs(situationToUpdate.SituationID, situationToUpdate.Ts)
+		enabledRuleIDs, err := rule.R().GetEnabledRuleIDs(situationToUpdate.SituationID, situationToUpdate.Ts)
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
 		}
@@ -491,7 +474,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			SituationID:         situationToUpdate.SituationID,
 			SituationInstanceID: situationToUpdate.SituationInstanceID,
 			Ts:                  situationToUpdate.Ts,
-			Parameters:          situationToUpdate.Parameters,
+			Parameters:          parameters,
 			ExpressionFacts:     expressionFacts,
 			Metadatas:           make([]models.MetaData, 0),
 		}
@@ -534,36 +517,8 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 	return taskBatchs, nil
 }
 
-func GetEnabledRuleIDs(situationID int64, ts time.Time) ([]int64, error) {
-
-	ruleIDs, err := situation.R().GetRules(situationID)
-	if err != nil {
-		return nil, fmt.Errorf("error geting rules for situation instance (%d): %s", situationID, err.Error())
-	}
-
-	ruleIDsInt := make([]int64, 0)
-	for _, id := range ruleIDs {
-		r, found, err := rule.R().Get(id)
-		if err != nil {
-			zap.L().Error("Get Rule", zap.Int64("id", id), zap.Error(err))
-			continue
-		}
-		if !found {
-			zap.L().Warn("Rule is missing", zap.Int64("id", id))
-			continue
-		}
-
-		cfound, valid, _ := calendar.CBase().InPeriodFromCalendarID(int64(r.CalendarID), ts)
-		if !cfound || valid {
-			ruleIDsInt = append(ruleIDsInt, id)
-		}
-	}
-
-	return ruleIDsInt, nil
-}
-
 // // UpdateSituations creates the new instances of the situations in the history and evaluates them
-// func UpdateSituations(situationsToUpdate map[string]HistoryRecordV2) ([]evaluator.SituationToEvaluate, error) {
+// func UpdateSituations(situationsToUpdate map[string]history.HistoryRecordV4) ([]evaluator.SituationToEvaluate, error) {
 
 // 	situationsToEvalute := make([]evaluator.SituationToEvaluate, 0)
 // 	for _, record := range situationsToUpdate {
@@ -575,8 +530,8 @@ func GetEnabledRuleIDs(situationID int64, ts time.Time) ([]int64, error) {
 // 			continue
 // 		}
 
-// 		// merge values from lastHistoryRecordV2 into factsHistory
-// 		lastHistoryRecordV2, err := situation.GetFromHistory(record.ID, record.TS, record.TemplateInstanceID, true)
+// 		// merge values from lasthistory.HistoryRecordV4 into factsHistory
+// 		lasthistory.HistoryRecordV4, err := situation.GetFromHistory(record.ID, record.TS, record.TemplateInstanceID, true)
 // 		if err != nil {
 // 			zap.L().Error("Get situation from history", zap.Int64("situationID", record.ID), zap.Time("ts", record.TS), zap.Error(err))
 // 			continue
@@ -587,8 +542,8 @@ func GetEnabledRuleIDs(situationID int64, ts time.Time) ([]int64, error) {
 // 			factsHistory[factID] = nil
 // 		}
 
-// 		if lastHistoryRecordV2 != nil {
-// 			for factID, factTS := range lastHistoryRecordV2.FactsIDS {
+// 		if lasthistory.HistoryRecordV4 != nil {
+// 			for factID, factTS := range lasthistory.HistoryRecordV4.FactsIDS {
 // 				factsHistory[factID] = factTS
 // 			}
 // 		}
@@ -623,7 +578,7 @@ func GetEnabledRuleIDs(situationID int64, ts time.Time) ([]int64, error) {
 // 	return situationsToEvalute, nil
 // }
 
-// func evaluateExpressionFacts(record HistoryRecordV2, t time.Time) (map[string]interface{}, error) {
+// func evaluateExpressionFacts(record history.HistoryRecordV4, t time.Time) (map[string]interface{}, error) {
 // 	evaluatedExpressionFacts := make(map[string]interface{})
 
 // 	s, found, err := situation.R().Get(record.ID)
@@ -662,7 +617,7 @@ func GetEnabledRuleIDs(situationID int64, ts time.Time) ([]int64, error) {
 // 	return evaluatedExpressionFacts, nil
 // }
 
-// func flattenSituationData(record HistoryRecordV2) (map[string]interface{}, error) {
+// func flattenSituationData(record history.HistoryRecordV4) (map[string]interface{}, error) {
 // 	situationData := make(map[string]interface{})
 // 	for factID, factTS := range record.FactsIDS {
 // 		f, found, err := fact.R().Get(factID)
@@ -700,8 +655,8 @@ func GetEnabledRuleIDs(situationID int64, ts time.Time) ([]int64, error) {
 // }
 
 // GetFactSituations returns all situation linked to a fact
-func GetFactSituations(fact engine.Fact, t time.Time) ([]HistoryRecordV2, error) {
-	factSituationsHistory := make([]HistoryRecordV2, 0)
+func GetFactSituations(fact engine.Fact, t time.Time) ([]history.HistoryRecordV4, error) {
+	factSituationsHistory := make([]history.HistoryRecordV4, 0)
 	factSituations, err := situation.R().GetSituationsByFactID(fact.ID, true)
 	if err != nil {
 		zap.L().Error("Cannot get the situations to update for fact", zap.Int64("id", fact.ID), zap.Any("fact", fact), zap.Error(err))
@@ -724,7 +679,7 @@ func GetFactSituations(fact engine.Fact, t time.Time) ([]HistoryRecordV2, error)
 				//We consider that if the calendar is not found then is in valid period
 				found, valid, _ := calendar.CBase().InPeriodFromCalendarID(calendarID, t)
 				if !found || valid {
-					sh := HistoryRecordV2{
+					sh := history.HistoryRecordV4{
 						SituationID:         s.ID,
 						SituationInstanceID: ti.ID,
 						Parameters:          map[string]string{},
@@ -740,7 +695,7 @@ func GetFactSituations(fact engine.Fact, t time.Time) ([]HistoryRecordV2, error)
 			//We consider that if the calendar is not found then is in valid period
 			found, valid, _ := calendar.CBase().InPeriodFromCalendarID(s.CalendarID, t)
 			if !found || valid {
-				factSituationsHistory = append(factSituationsHistory, HistoryRecordV2{
+				factSituationsHistory = append(factSituationsHistory, history.HistoryRecordV4{
 					SituationID:         s.ID,
 					SituationInstanceID: 0,
 					Parameters:          s.Parameters,

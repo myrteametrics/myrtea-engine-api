@@ -24,6 +24,23 @@ type HistorySituationsV4 struct {
 	Metadatas             []models.MetaData
 }
 
+// HistoryRecordV4 represents a single and unique situation history entry
+type HistoryRecordV4 struct {
+	SituationID         int64
+	SituationInstanceID int64
+	Ts                  time.Time
+	HistoryFacts        []HistoryFactsV4
+	Parameters          map[string]string
+	ExpressionFacts     map[string]interface{}
+}
+
+// OverrideParameters overrides the parameters of the History Record
+func (hr HistoryRecordV4) OverrideParameters(p map[string]string) {
+	for key, value := range p {
+		hr.Parameters[key] = value
+	}
+}
+
 type HistorySituationsQuerier struct {
 	Builder HistorySituationsBuilder
 	conn    *sqlx.DB
