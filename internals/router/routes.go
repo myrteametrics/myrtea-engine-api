@@ -149,8 +149,8 @@ func engineRouter() http.Handler {
 
 	// r.Post("/search", handlers.Search)
 	r.Get("/search/last", handlers.SearchLast)
-	r.Get("/search/lastbyinterval", handlers.SearchLastByInterval)
-	r.Get("/search/lastbycustominterval", handlers.SearchLastByCustomInterval)
+	r.Get("/search/last/byinterval", handlers.SearchLastByInterval)
+	r.Get("/search/last/bycustominterval", handlers.SearchLastByCustomInterval)
 
 	r.Get("/calendars", handlers.GetCalendars)
 	r.Get("/calendars/{id}", handlers.GetCalendar)

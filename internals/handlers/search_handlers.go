@@ -112,7 +112,7 @@ func SearchLast(w http.ResponseWriter, r *http.Request) {
 // @Security Bearer
 // @Success 200 {array} search.QueryResult "query result"
 // @Failure 500 "internal server error"
-// @Router /engine/search/lastbyinterval [get]
+// @Router /engine/search/last/byinterval [get]
 func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 
 	options, apiError, err := baseSearchOptions(w, r)
@@ -166,7 +166,7 @@ func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 // @Security Bearer
 // @Success 200 {array} search.QueryResult "query result"
 // @Failure 500 "internal server error"
-// @Router /engine/search/lastbycustominterval [get]
+// @Router /engine/search/last/bycustominterval [get]
 func SearchLastByCustomInterval(w http.ResponseWriter, r *http.Request) {
 
 	options, apiError, err := baseSearchOptions(w, r)

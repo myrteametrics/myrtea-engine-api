@@ -220,7 +220,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 			}
 			historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 			if err != nil {
-				// err
+				zap.L().Error("", zap.Error(err))
 			}
 
 			for _, sh := range factSituationsHistory {
@@ -260,7 +260,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 				}
 				historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 				if err != nil {
-					// err
+					zap.L().Error("", zap.Error(err))
 				}
 
 				key := fmt.Sprintf("%d-%d", sh.SituationID, sh.SituationInstanceID)
@@ -324,7 +324,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 			}
 			historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 			if err != nil {
-				// err
+				zap.L().Error("", zap.Error(err))
 			}
 
 			for _, sh := range factSituationsHistory {
@@ -366,7 +366,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 				}
 				historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 				if err != nil {
-					// err
+					zap.L().Error("", zap.Error(err))
 				}
 
 				key := fmt.Sprintf("%d-%d", sh.SituationID, sh.SituationInstanceID)
@@ -480,7 +480,6 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
 		}
-		zap.L().Info("historySituationNew", zap.Any("historySituationNew", historySituationNew))
 
 		// Build and insert HistorySituationFactsV4
 		historySituationFactNew := make([]history.HistorySituationFactsV4, 0)
@@ -496,7 +495,6 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
 		}
-		zap.L().Info("historySituationFactNew", zap.Any("historySituationFactNew", historySituationFactNew))
 
 		if agenda != nil {
 			taskBatchs = append(taskBatchs, tasker.TaskBatch{
