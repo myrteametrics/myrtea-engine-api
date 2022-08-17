@@ -209,7 +209,6 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 		if !f.IsTemplate {
 			// calculate
 			// already done !
-
 			historyFactNew := history.HistoryFactsV4{
 				// ID:                  -1,
 				FactID:              f.ID,
@@ -225,6 +224,9 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 			}
 
 			for _, sh := range factSituationsHistory {
+				if sh.SituationID != s.ID || sh.SituationInstanceID != si.ID {
+					continue
+				}
 				key := fmt.Sprintf("%d-%d", sh.SituationID, sh.SituationInstanceID)
 				if _, ok := situationsToUpdate[key]; !ok {
 					situationsToUpdate[key] = history.HistoryRecordV4{
@@ -242,9 +244,11 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 			}
 		} else {
 			for _, sh := range factSituationsHistory {
+				if sh.SituationID != s.ID || sh.SituationInstanceID != si.ID {
+					continue
+				}
 				// calculate
 				// already done !
-
 				historyFactNew := history.HistoryFactsV4{
 					// ID:                  -1,
 					FactID:              f.ID,
@@ -420,7 +424,6 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			zap.L().Error("", zap.Error(err))
 			continue
 		}
-		zap.L().Info("", zap.Any("parameters", parameters))
 
 		historyFactsAll, historySituationFlattenData, err := history.S().ExtractFactData(situationToUpdate.HistoryFacts, s.Facts)
 		if err != nil {
@@ -433,12 +436,9 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		for key, value := range expression.GetDateKeywords(situationToUpdate.Ts) {
 			historySituationFlattenData[key] = value
 		}
-		zap.L().Info("flatten data", zap.Any("historySituationFlattenData", historySituationFlattenData))
 
 		// Evaluate expression facts
 		expressionFacts := history.EvaluateExpressionFacts(s.ExpressionFacts, historySituationFlattenData)
-		zap.L().Info("expressionfacts", zap.Any("expressionFacts", expressionFacts))
-
 		for key, value := range expressionFacts {
 			historySituationFlattenData[key] = value
 		}
@@ -451,19 +451,17 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 
 		metadatas := make([]models.MetaData, 0)
 		agenda := evaluator.EvaluateRules(localRuleEngine, historySituationFlattenData, enabledRuleIDs)
-		if agenda != nil {
-			for _, agen := range agenda {
-				if agen.GetName() != "set" {
-					context := tasker.BuildContextData(agen.GetMetaData())
-					for key, value := range agen.GetParameters() {
-						metadatas = append(metadatas, models.MetaData{
-							Key:         key,
-							Value:       value,
-							RuleID:      context.RuleID,
-							RuleVersion: context.RuleVersion,
-							CaseName:    context.CaseName,
-						})
-					}
+		for _, agen := range agenda {
+			if agen.GetName() != "set" {
+				context := tasker.BuildContextData(agen.GetMetaData())
+				for key, value := range agen.GetParameters() {
+					metadatas = append(metadatas, models.MetaData{
+						Key:         key,
+						Value:       value,
+						RuleID:      context.RuleID,
+						RuleVersion: context.RuleVersion,
+						CaseName:    context.CaseName,
+					})
 				}
 			}
 		}
@@ -476,7 +474,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			Ts:                  situationToUpdate.Ts,
 			Parameters:          parameters,
 			ExpressionFacts:     expressionFacts,
-			Metadatas:           make([]models.MetaData, 0),
+			Metadatas:           metadatas,
 		}
 		historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
 		if err != nil {
