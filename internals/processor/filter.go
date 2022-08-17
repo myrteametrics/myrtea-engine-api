@@ -16,11 +16,11 @@ func ReceiveObjects(factObjectName string, documents []sdk_models.Document) erro
 		return err
 	}
 	if !found {
-		zap.L().Debug("Fact not found", zap.String("name", factObjectName))
+		zap.L().Error("Fact not found", zap.String("name", factObjectName))
 		return nil
 	}
 	if !factObject.IsObject {
-		zap.L().Debug("Fact is not an object fact", zap.String("name", factObjectName))
+		zap.L().Warn("Fact is not an object fact", zap.String("name", factObjectName))
 		return nil
 	}
 
