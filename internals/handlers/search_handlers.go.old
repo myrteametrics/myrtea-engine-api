@@ -1,0 +1,83 @@
+package handlers
+
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/search"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
+	"go.uber.org/zap"
+)
+
+// Search godoc
+// @Summary query situation history data
+// @Description query situation history data
+// @Tags Search
+// @Accept json
+// @Produce json
+// @Param query body search.Query true "query (json)"
+// @Security Bearer
+// @Success 200 {array} search.QueryResult "query result"
+// @Failure 500 "internal server error"
+// @Router /engine/search [post]
+func Search(w http.ResponseWriter, r *http.Request) {
+	var query search.Query
+	err := json.NewDecoder(r.Body).Decode(&query)
+	if err != nil {
+		zap.L().Warn("Query json decode", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	// Check Situation
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(query.SituationID, 10), permissions.ActionSearch)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	_, found, err := situation.R().Get(query.SituationID)
+	if err != nil {
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, nil)
+		return
+	}
+
+	// Check situation instance
+	if query.SituationInstanceID != 0 {
+		if !userCtx.HasPermission(permissions.New(permissions.TypeSituationInstance, strconv.FormatInt(query.SituationInstanceID, 10), permissions.ActionSearch)) {
+			render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+			return
+		}
+	}
+	// } else {
+	// 	if userCtx.HasPermission(permissions.New(permissions.TypeSituationInstance, permissions.All, permissions.ActionSearch)) {
+	// 		// OK ?
+	// 	} else {
+	// 		resourceIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeSituationInstance, permissions.All, permissions.ActionSearch))
+	// 		_ = resourceIDs
+	// 	}
+	// }
+
+	result, err := query.Execute()
+	if err != nil {
+		switch err.(type) {
+		case search.ErrResourceNotFound:
+			render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		case search.ErrDatabase:
+			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		default:
+			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		}
+		return
+	}
+
+	render.JSON(w, r, result)
+}

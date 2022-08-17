@@ -32,7 +32,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 
 // Get use to retrieve an issue by id
 func (r *PostgresRepository) Get(id int64) (models.Issue, bool, error) {
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
 			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i
@@ -187,7 +187,7 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, u
 func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS time.Time) (map[int64]models.Issue, error) {
 	issues := make(map[int64]models.Issue, 0)
 
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
+	query := `SELECT i.id, i.key, i.name, i.level,  i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
 			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i
@@ -218,7 +218,7 @@ func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS
 func (r *PostgresRepository) GetByKeyByPage(key string, options models.SearchOptions) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
 
-	query := `SELECT i.id, i.key, i.name, i.level,
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, 
         i.situation_id, situation_instance_id, i.situation_date,
         i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
         i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
@@ -335,7 +335,7 @@ func (r *PostgresRepository) ChangeStateBetweenDates(key string, fromStates []mo
 func (r *PostgresRepository) GetAll() (map[int64]models.Issue, error) {
 	issues := make(map[int64]models.Issue, 0)
 
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
 			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i`
@@ -359,7 +359,7 @@ func (r *PostgresRepository) GetAll() (map[int64]models.Issue, error) {
 func (r *PostgresRepository) GetAllBySituationIDs(situationIDs []int64) (map[int64]models.Issue, error) {
 	issues := make(map[int64]models.Issue, 0)
 
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 		  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
 		  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 		  FROM issues_v1 as i
@@ -388,7 +388,7 @@ func (r *PostgresRepository) GetAllBySituationIDs(situationIDs []int64) (map[int
 func (r *PostgresRepository) GetByStates(issueStates []string) (map[int64]models.Issue, error) {
 	issues := make(map[int64]models.Issue, 0)
 
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
 			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i`
@@ -420,7 +420,7 @@ func (r *PostgresRepository) GetByStates(issueStates []string) (map[int64]models
 func (r *PostgresRepository) GetByStatesBySituationIDs(issueStates []string, situationIDs []int64) (map[int64]models.Issue, error) {
 	issues := make(map[int64]models.Issue, 0)
 
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_id, situation_instance_id, i.situation_date,
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
 			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i
@@ -455,7 +455,7 @@ func (r *PostgresRepository) GetByStatesBySituationIDs(issueStates []string, sit
 // GetByStateByPage method used to get all issues
 func (r *PostgresRepository) GetByStateByPage(issueStates []string, options models.SearchOptions) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
-	query := `SELECT i.id, i.key, i.name, i.level,
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id,
 		i.situation_id, situation_instance_id, i.situation_date,
 		i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
 		i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
@@ -501,7 +501,7 @@ func (r *PostgresRepository) GetByStateByPage(issueStates []string, options mode
 func (r *PostgresRepository) GetByStateByPageBySituationIDs(issueStates []string, options models.SearchOptions, situationIDs []int64) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
 
-	query := `SELECT i.id, i.key, i.name, i.level,
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, 
 		i.situation_id, situation_instance_id, i.situation_date,
 		i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
 		i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
@@ -640,6 +640,7 @@ func scanIssue(rows *sqlx.Rows) (models.Issue, error) {
 		&issue.Key,
 		&issue.Name,
 		&issueLevelString,
+		&issue.SituationHistoryID,
 		&issue.SituationID,
 		&issue.TemplateInstanceID,
 		&issue.SituationTS,

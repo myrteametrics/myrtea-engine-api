@@ -147,7 +147,10 @@ func engineRouter() http.Handler {
 	r.Put("/actions/{id}", handlers.PutAction)
 	r.Delete("/actions/{id}", handlers.DeleteAction)
 
-	r.Post("/search", handlers.Search)
+	// r.Post("/search", handlers.Search)
+	r.Get("/search/last", handlers.SearchLast)
+	r.Get("/search/lastbyinterval", handlers.SearchLastByInterval)
+	r.Get("/search/lastbycustominterval", handlers.SearchLastByCustomInterval)
 
 	r.Get("/calendars", handlers.GetCalendars)
 	r.Get("/calendars/{id}", handlers.GetCalendar)

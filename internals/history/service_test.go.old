@@ -254,7 +254,7 @@ func TestQuery5(t *testing.T) {
 // 	}
 
 // 	// Get last saved facts for the old situation
-// 	historyFactLasts, historySituationFactLasts, err := historyService.HistoryFactsQuerier.GetHistoryFactsFromSituation(historyService.HistorySituationFactsQuerier, historySituationIDs)
+// 	historyFactLasts, historySituationFactLasts, err := historyService.HistoryFactsQuerier.GetHistoryFactsFromSituationIds(historyService.HistorySituationFactsQuerier, historySituationIDs)
 // 	if err != nil {
 // 		t.Error(err)
 // 	}
@@ -371,7 +371,7 @@ func TestQuery3(t *testing.T) {
 		historySituationsIds = append(historySituationsIds, item.ID)
 	}
 
-	historyFacts, historySituationFacts, err := historyService.HistoryFactsQuerier.GetHistoryFactsFromSituation(historyService.HistorySituationFactsQuerier, historySituationsIds)
+	historyFacts, historySituationFacts, err := historyService.HistoryFactsQuerier.GetHistoryFactsFromSituationIds(historyService.HistorySituationFactsQuerier, historySituationsIds)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

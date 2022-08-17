@@ -46,30 +46,6 @@ type HistorySituationsQuerier struct {
 	conn    *sqlx.DB
 }
 
-func (querier HistorySituationsQuerier) GetHistorySituationsIdsLast(options GetHistorySituationsOptions) ([]HistorySituationsV4, error) {
-	subQuery, subQueryArgs, err := querier.Builder.GetHistorySituationsIdsLast(options).ToSql()
-	if err != nil {
-		return make([]HistorySituationsV4, 0), err
-	}
-	return querier.Query(querier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs))
-}
-
-func (querier HistorySituationsQuerier) GetHistorySituationsIdsByStandardInterval(options GetHistorySituationsOptions, interval string) ([]HistorySituationsV4, error) {
-	subQuery, subQueryArgs, err := querier.Builder.GetHistorySituationsIdsByStandardInterval(options, interval).ToSql()
-	if err != nil {
-		return make([]HistorySituationsV4, 0), err
-	}
-	return querier.Query(querier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs))
-}
-
-func (querier HistorySituationsQuerier) GetHistorySituationsIdsByCustomInterval(options GetHistorySituationsOptions, referenceDate time.Time, interval time.Duration) ([]HistorySituationsV4, error) {
-	subQuery, subQueryArgs, err := querier.Builder.GetHistorySituationsIdsByCustomInterval(options, referenceDate, interval).ToSql()
-	if err != nil {
-		return make([]HistorySituationsV4, 0), err
-	}
-	return querier.Query(querier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs))
-}
-
 func (querier HistorySituationsQuerier) Insert(history HistorySituationsV4) (int64, error) {
 	parametersJSON, err := json.Marshal(history.Parameters)
 	if err != nil {
@@ -123,7 +99,8 @@ func (querier HistorySituationsQuerier) QueryIDs(builder sq.SelectBuilder) ([]in
 func (querier HistorySituationsQuerier) scanAllIDs(rows *sql.Rows) ([]int64, error) {
 	ids := make([]int64, 0)
 	for rows.Next() {
-		id, err := querier.scanID(rows)
+		var id int64
+		err := rows.Scan(&id)
 		if err != nil {
 			return []int64{}, err
 		}

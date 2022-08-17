@@ -14,6 +14,38 @@ import (
 	"go.uber.org/zap"
 )
 
+func QueryParamToOptionnalInt64(r *http.Request, name string, orDefault int64) (int64, error) {
+	param := r.URL.Query().Get(name)
+	if param != "" {
+		return strconv.ParseInt(param, 10, 64)
+	}
+	return orDefault, nil
+}
+
+func QueryParamToOptionnalTime(r *http.Request, name string, orDefault time.Time) (time.Time, error) {
+	param := r.URL.Query().Get(name)
+	if param != "" {
+		return time.Parse("2006-01-02T15:04:05.000Z07:00", param)
+	}
+	return orDefault, nil
+}
+
+func QueryParamToTime(r *http.Request, name string) (time.Time, error) {
+	param := r.URL.Query().Get(name)
+	if param != "" {
+		return time.Parse("2006-01-02T15:04:05.000Z07:00", param)
+	}
+	return time.Time{}, fmt.Errorf("missing query parameter %s", name)
+}
+
+func QueryParamToOptionnalDuration(r *http.Request, name string, orDefault time.Duration) (time.Duration, error) {
+	param := r.URL.Query().Get(name)
+	if param != "" {
+		return time.ParseDuration(param)
+	}
+	return orDefault, nil
+}
+
 // ParseTime try to parse a supposed time string as a time.Time or returns time.Now()
 func ParseTime(tStr string) (time.Time, error) {
 	t, err := time.Parse("2006-01-02T15:04:05.000Z07:00", tStr)

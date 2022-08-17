@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
+	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/history"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
@@ -65,6 +66,7 @@ func GetFactsHistory(issue models.Issue) ([]models.FrontFactHistory, bool, error
 
 	historySituationFacts, err := history.S().HistorySituationFactsQuerier.Query(history.S().HistorySituationFactsQuerier.Builder.GetHistorySituationFacts([]int64{issue.SituationHistoryID}))
 	if err != nil {
+		zap.L().Error("", zap.Error(err))
 		return nil, false, err
 	}
 
@@ -78,12 +80,14 @@ func GetFactsHistory(issue models.Issue) ([]models.FrontFactHistory, bool, error
 		},
 	))
 	if err != nil {
+		zap.L().Error("", zap.Error(err))
 		return nil, false, err
 	}
 
 	// Get All Value of All HistoryFactV4 from all HistorySituationV4 IDs
-	historyFacts, _, err := history.S().HistoryFactsQuerier.GetHistoryFactsFromSituation(history.S().HistorySituationFactsQuerier, historySituationIDs)
+	historyFacts, _, err := history.S().GetHistoryFactsFromSituationIds(historySituationIDs)
 	if err != nil {
+		zap.L().Error("", zap.Error(err))
 		return nil, false, err
 	}
 
@@ -98,18 +102,28 @@ func GetFactsHistory(issue models.Issue) ([]models.FrontFactHistory, bool, error
 
 	// Build frontFacts
 	frontFacts := make([]models.FrontFactHistory, 0)
-	for _, historyFacts := range historyFactGroups {
+	for factID, historyFacts := range historyFactGroups {
+		f, found, err := fact.R().Get(factID)
+		if err != nil {
+			zap.L().Warn("Get fact", zap.Error(err))
+			continue
+		}
+		if !found {
+			zap.L().Warn("fact doesn't exists", zap.Int64("factID", factID))
+			continue
+		}
+
 		historyFactCurrent := history.HistoryFactsV4{}
 		factValues := make(map[time.Time]models.FactValue)
 		for _, historyFact := range historyFacts {
-			factValue := extractFactValue(historyFact.Result, engine.Fact{})
+			factValue := extractFactValue(historyFact.Result, f)
 			if factValue.GetType() == "not_supported" {
 				factValues = nil
 				historyFactCurrent = historyFact
 				break
 			}
 			for _, historySituationFact := range historySituationFacts {
-				if historyFact.ID == historySituationFact.FactID {
+				if historyFact.ID == historySituationFact.HistoryFactID {
 					factValue.SetCurrent(true)
 					historyFactCurrent = historyFact
 				}
@@ -117,7 +131,7 @@ func GetFactsHistory(issue models.Issue) ([]models.FrontFactHistory, bool, error
 			factValues[historyFact.Ts] = factValue
 		}
 
-		factValueCurrent := extractFactValue(historyFactCurrent.Result, engine.Fact{})
+		factValueCurrent := extractFactValue(historyFactCurrent.Result, f)
 
 		frontFact := models.FrontFactHistory{
 			ID:           historyFactCurrent.FactID,
@@ -162,7 +176,7 @@ func extractFactValue(item reader.Item, factDefinition engine.Fact) models.FactV
 			return &models.SingleValue{Key: keyDocCount, Value: val.Value}
 		}
 
-		zap.L().Warn("No value found for key: ", zap.String("KeyAgg", keyDocCount))
+		zap.L().Warn("No value found for key: ", zap.String("KeyAgg", keyDocCount), zap.Any("fact", factDefinition), zap.Any("item", item))
 		return &models.NotSupportedValue{}
 	}
 
@@ -172,6 +186,6 @@ func extractFactValue(item reader.Item, factDefinition engine.Fact) models.FactV
 		}
 	}
 
-	zap.L().Warn("No value found for key other than doc_count")
+	zap.L().Warn("No value found for key other than doc_count", zap.Any("fact", factDefinition), zap.Any("item", item))
 	return &models.NotSupportedValue{}
 }

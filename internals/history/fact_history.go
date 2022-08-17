@@ -26,25 +26,6 @@ type HistoryFactsV4 struct {
 	Result              reader.Item
 }
 
-func (querier HistoryFactsQuerier) GetHistoryFactsFromSituation(sfq HistorySituationFactsQuerier, historySituationsIds []int64) ([]HistoryFactsV4, []HistorySituationFactsV4, error) {
-	historySituationFacts, err := sfq.Query(sfq.Builder.GetHistorySituationFacts(historySituationsIds))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	historyFactsIds := make([]int64, 0)
-	for _, item := range historySituationFacts {
-		historyFactsIds = append(historyFactsIds, item.HistoryFactID)
-	}
-
-	historyFacts, err := querier.Query(querier.Builder.GetHistoryFacts(historyFactsIds))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return historyFacts, historySituationFacts, nil
-}
-
 func (querier HistoryFactsQuerier) Insert(history HistoryFactsV4) (int64, error) {
 	resultJSON, err := json.Marshal(history.Result)
 	if err != nil {
