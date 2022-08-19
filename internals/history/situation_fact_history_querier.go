@@ -1,28 +1,83 @@
 package history
 
 import (
+	"database/sql"
+	"errors"
+
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jmoiron/sqlx"
 )
 
-type HistorySituationFactsBuilder struct{}
-
-func (builder HistorySituationFactsBuilder) newStatement() sq.StatementBuilderType {
-	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+type HistorySituationFactsV4 struct {
+	HistorySituationID int64
+	HistoryFactID      int64
+	FactID             int64
 }
 
-func (builder HistorySituationFactsBuilder) GetHistorySituationFacts(historySituationsIds []int64) sq.SelectBuilder {
-	return builder.newStatement().
-		Select("*").
-		From("situation_fact_history_v4").
-		Where(sq.Eq{"situation_history_id": historySituationsIds})
+type HistorySituationFactsQuerier struct {
+	Builder HistorySituationFactsBuilder
+	conn    *sqlx.DB
 }
 
-func (builder HistorySituationFactsBuilder) InsertBulk(historySituationFacts []HistorySituationFactsV4) sq.InsertBuilder {
-	b := builder.newStatement().
-		Insert("situation_fact_history_v4").
-		Columns("situation_history_id", "fact_history_id", "fact_id")
-	for _, hishistorySituationFact := range historySituationFacts {
-		b = b.Values(hishistorySituationFact.HistorySituationID, hishistorySituationFact.HistoryFactID, hishistorySituationFact.FactID)
+func (querier HistorySituationFactsQuerier) Execute(builder sq.InsertBuilder) error {
+	res, err := builder.RunWith(querier.conn.DB).Exec()
+	if err != nil {
+		return err
 	}
-	return b
+
+	if count, err := res.RowsAffected(); err != nil {
+		return err
+	} else if count == 0 {
+		return errors.New("no rows inserted")
+	}
+	return nil
 }
+
+func (querier HistorySituationFactsQuerier) Query(builder sq.SelectBuilder) ([]HistorySituationFactsV4, error) {
+	rows, err := builder.RunWith(querier.conn.DB).Query()
+	if err != nil {
+		return make([]HistorySituationFactsV4, 0), err
+	}
+	defer rows.Close()
+	return querier.scanAll(rows)
+}
+
+func (querier HistorySituationFactsQuerier) scan(rows *sql.Rows) (HistorySituationFactsV4, error) {
+	item := HistorySituationFactsV4{}
+	err := rows.Scan(&item.HistorySituationID, &item.HistoryFactID, &item.FactID)
+	if err != nil {
+		return HistorySituationFactsV4{}, errors.New("couldn't scan the retrieved data: " + err.Error())
+	}
+	return item, nil
+}
+
+func (querier HistorySituationFactsQuerier) scanAll(rows *sql.Rows) ([]HistorySituationFactsV4, error) {
+	users := make([]HistorySituationFactsV4, 0)
+	for rows.Next() {
+		user, err := querier.scan(rows)
+		if err != nil {
+			return []HistorySituationFactsV4{}, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
+}
+
+// func (querier HistorySituationFactsQuerier) scanFirst(rows *sql.Rows) (HistorySituationFactsV4, bool, error) {
+// 	if rows.Next() {
+// 		user, err := querier.scan(rows)
+// 		return user, err == nil, err
+// 	}
+// 	return HistorySituationFactsV4{}, false, nil
+// }
+
+// func (querier HistorySituationFactsQuerier) checkRowAffected(result sql.Result, nbRows int64) error {
+// 	i, err := result.RowsAffected()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if i != nbRows {
+// 		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
+// 	}
+// 	return nil
+// }

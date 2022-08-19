@@ -3,7 +3,7 @@ package queryutils
 import (
 	"testing"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 )
 
 func TestAppendSearchOptions(t *testing.T) {

@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/history"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/history"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"go.uber.org/zap"
 )
 
@@ -59,10 +59,10 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 // @Tags Search
 // @Accept json
 // @Produce json
-// @Param situationid 			query	int		true
-// @Param situationinstanceid 	query	int		true
-// @Param maxdate				query 	string 	true	"time.Time"
-// @Param mindate				query 	string 	true	"time.Time"
+// @Param situationid 			query	int		false    "situationid"
+// @Param situationinstanceid 	query	int		false    "situationinstanceid"
+// @Param maxdate				query 	string 	false	"time.Time"
+// @Param mindate				query 	string 	false	"time.Time"
 // @Security Bearer
 // @Success 200 {array} search.QueryResult "query result"
 // @Failure 500 "internal server error"
@@ -104,10 +104,10 @@ func SearchLast(w http.ResponseWriter, r *http.Request) {
 // @Tags Search
 // @Accept json
 // @Produce json
-// @Param situationid 			query	int		true
-// @Param situationinstanceid 	query	int		true
-// @Param maxdate				query 	string 	true	"time.Time"
-// @Param mindate				query 	string 	true	"time.Time"
+// @Param situationid 			query	int		false	"situationid"
+// @Param situationinstanceid 	query	int		false	"situationinstanceid"
+// @Param maxdate				query 	string 	false	"time.Time"
+// @Param mindate				query 	string 	false	"time.Time"
 // @Param interval				query 	string 	true	"year | quarter | month | week | day | hour | minute"
 // @Security Bearer
 // @Success 200 {array} search.QueryResult "query result"
@@ -157,10 +157,10 @@ func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 // @Tags Search
 // @Accept json
 // @Produce json
-// @Param situationid 			query	int		true
-// @Param situationinstanceid 	query	int		true
-// @Param maxdate				query 	string 	true	"time.Time"
-// @Param mindate				query 	string 	true	"time.Time"
+// @Param situationid 			query	int		false	"situationid"
+// @Param situationinstanceid 	query	int		false	"situationinstanceid"
+// @Param maxdate				query 	string 	false	"time.Time"
+// @Param mindate				query 	string 	false	"time.Time"
 // @Param referencedate			query 	string 	true	"time.Time"
 // @Param interval				query 	string 	true	"time.Duration"
 // @Security Bearer
@@ -200,7 +200,7 @@ func SearchLastByCustomInterval(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	historySituations, err := history.S().GetHistorySituationsIdsByCustomInterval(options, referenceDate, interval)
+	historySituations, err := history.S().GetHistorySituationsIdsByCustomInterval(options, interval, referenceDate)
 	if err != nil {
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 		return

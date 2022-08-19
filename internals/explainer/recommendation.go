@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/action"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/draft"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/action"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/draft"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/rootcause"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 )
 
 // GetRecommendationTree build a recommendation tree based on issue resolution stats table

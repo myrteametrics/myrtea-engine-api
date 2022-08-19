@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier/notification"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
 	"go.uber.org/zap"
 )
 

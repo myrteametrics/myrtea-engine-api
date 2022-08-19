@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
 )
 
 func TestBuildSituationReportingTask(t *testing.T) {

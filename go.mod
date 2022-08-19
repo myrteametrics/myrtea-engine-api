@@ -1,4 +1,4 @@
-module github.com/myrteametrics/myrtea-engine-api/v4
+module github.com/myrteametrics/myrtea-engine-api/v5
 
 go 1.14
 

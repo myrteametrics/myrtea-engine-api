@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend

@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
 )
 
 func dbInit(dbClient *sqlx.DB, t *testing.T) {

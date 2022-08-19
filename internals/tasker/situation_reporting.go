@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/email"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/export"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/email"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
 	"go.uber.org/zap"
 )
 

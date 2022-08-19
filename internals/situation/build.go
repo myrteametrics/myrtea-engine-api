@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

@@ -2,7 +2,7 @@ package assistant
 
 import (
 	"github.com/hashicorp/go-plugin"
-	"github.com/myrteametrics/myrtea-engine-api/v4/plugins/assistant/proto"
+	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/assistant/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )

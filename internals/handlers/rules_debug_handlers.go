@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 )
 
 // TODO: Add handler annotation on TestRuleHandler

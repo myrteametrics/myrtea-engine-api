@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/connector"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connector"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"go.uber.org/zap"
 )
 

@@ -5,22 +5,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/scheduler"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/scheduler"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
 	"github.com/myrteametrics/myrtea-sdk/v4/expression"
 	"go.uber.org/zap"
 )
 
-// builder.newStatement().Update("situation_history_v4").
+// builder.newStatement().Update("situation_history_v5").
 // 	Where("id = ?", history.ID).
 // 	Set("metadatas", history.Metadatas)
 // Set("last_update", time.Now())
 
-// builder.newStatement().Update("situation_history_v4").
+// builder.newStatement().Update("situation_history_v5").
 // 	Where("id = ?", history.ID).
 // 	Set("situation_id", history.SituationID).
 // 	Set("situation_instance_id", history.SituationInstanceID).

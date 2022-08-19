@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v4/docs"
+	"github.com/myrteametrics/myrtea-engine-api/v5/docs"
 	"github.com/spf13/viper"
 )
 

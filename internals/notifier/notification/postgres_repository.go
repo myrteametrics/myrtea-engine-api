@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/dbutils"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/dbutils"
 	"go.uber.org/zap"
 )
 

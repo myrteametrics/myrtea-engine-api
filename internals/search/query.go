@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 	"go.uber.org/zap"
 )
 

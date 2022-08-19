@@ -61,8 +61,8 @@ func (service HistoryService) GetHistorySituationsIdsByStandardInterval(options 
 	return service.HistorySituationsQuerier.Query(service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs))
 }
 
-func (service HistoryService) GetHistorySituationsIdsByCustomInterval(options GetHistorySituationsOptions, referenceDate time.Time, interval time.Duration) ([]HistorySituationsV4, error) {
-	subQuery, subQueryArgs, err := service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsByCustomInterval(options, referenceDate, interval).ToSql()
+func (service HistoryService) GetHistorySituationsIdsByCustomInterval(options GetHistorySituationsOptions, interval time.Duration, referenceDate time.Time) ([]HistorySituationsV4, error) {
+	subQuery, subQueryArgs, err := service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsByCustomInterval(options, interval, referenceDate).ToSql()
 	if err != nil {
 		return make([]HistorySituationsV4, 0), err
 	}

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
 	"github.com/myrteametrics/myrtea-sdk/v4/ruleeng"
 )
 
