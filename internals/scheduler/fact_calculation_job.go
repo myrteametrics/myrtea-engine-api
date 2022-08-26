@@ -300,6 +300,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 
 		factSituationsHistory, err := GetFactSituations(f, t)
 		if err != nil {
+			zap.L().Error("Get situations including fact", zap.Error(err), zap.Any("factID", f.ID))
 			continue
 		}
 		if len(factSituationsHistory) == 0 {
@@ -452,7 +453,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		metadatas := make([]models.MetaData, 0)
 		agenda := evaluator.EvaluateRules(localRuleEngine, historySituationFlattenData, enabledRuleIDs)
 		for _, agen := range agenda {
-			if agen.GetName() != "set" {
+			if agen.GetName() == "set" {
 				context := tasker.BuildContextData(agen.GetMetaData())
 				for key, value := range agen.GetParameters() {
 					metadatas = append(metadatas, models.MetaData{
@@ -658,8 +659,22 @@ func GetFactSituations(fact engine.Fact, t time.Time) ([]history.HistoryRecordV4
 		zap.L().Error("Cannot get the situations to update for fact", zap.Int64("id", fact.ID), zap.Any("fact", fact), zap.Error(err))
 		return nil, err
 	}
+
 	for _, s := range factSituations {
-		if s.IsTemplate {
+		if !s.IsTemplate {
+			//We consider that if the calendar is not found then is in valid period
+			found, valid, _ := calendar.CBase().InPeriodFromCalendarID(s.CalendarID, t)
+			if !found || valid {
+				factSituationsHistory = append(factSituationsHistory, history.HistoryRecordV4{
+					SituationID:         s.ID,
+					SituationInstanceID: 0,
+					Parameters:          s.Parameters,
+				})
+			} else {
+				zap.L().Debug("Situation not within a valid calendar period, situation id: ", zap.Int64("id", s.ID))
+			}
+
+		} else {
 			templateInstances, err := situation.R().GetAllTemplateInstances(s.ID)
 			if err != nil {
 				zap.L().Error("Cannot get the situations template instances for situation", zap.Int64("id", s.ID), zap.Any("fact", fact), zap.Error(err))
@@ -684,20 +699,8 @@ func GetFactSituations(fact engine.Fact, t time.Time) ([]history.HistoryRecordV4
 					sh.OverrideParameters(ti.Parameters)
 					factSituationsHistory = append(factSituationsHistory, sh)
 				} else {
-					zap.L().Debug("Situation template not within a valid calendar period, situation id: ", zap.Int64("id", s.ID))
+					zap.L().Warn("Situation template not within a valid calendar period, situation id: ", zap.Int64("id", s.ID))
 				}
-			}
-		} else {
-			//We consider that if the calendar is not found then is in valid period
-			found, valid, _ := calendar.CBase().InPeriodFromCalendarID(s.CalendarID, t)
-			if !found || valid {
-				factSituationsHistory = append(factSituationsHistory, history.HistoryRecordV4{
-					SituationID:         s.ID,
-					SituationInstanceID: 0,
-					Parameters:          s.Parameters,
-				})
-			} else {
-				zap.L().Debug("Situation not within a valid calendar period, situation id: ", zap.Int64("id", s.ID))
 			}
 		}
 	}
