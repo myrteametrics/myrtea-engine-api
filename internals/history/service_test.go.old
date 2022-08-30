@@ -50,7 +50,7 @@ func (historyService HistoryService) CalculateAndStoreFacts(ti time.Time, factID
 		}
 
 		// Get Situations Linked to fact => For each calculate + persist
-		situationHistoryRecordV1, err := scheduler.GetFactSituations(f, ti)
+		situationHistoryRecordV1, err := scheduler.GetEnabledSituations(f, ti)
 		if err != nil {
 			continue
 		}

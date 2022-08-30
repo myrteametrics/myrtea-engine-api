@@ -58,31 +58,28 @@ const (
 	);`
 
 	//SituationHistoryDropTableV1 SQL statement for table drop
-	SituationHistoryDropTableV1 string = `DROP TABLE IF EXISTS situation_history_v1;`
+	SituationHistoryDropTableV1 string = `DROP TABLE IF EXISTS situation_history_v5;`
 	// SituationHistoryTableV1 SQL statement for the situation history
-	SituationHistoryTableV1 string = `create table situation_history_v1 (
-		id integer,
-		ts timestamptz not null,
+	SituationHistoryTableV1 string = `create table if not exists situation_history_v5 (
+		id serial primary key,
+		situation_id integer,
 		situation_instance_id integer,
-		facts_ids json,
+		ts timestamptz not null,
 		parameters json,
 		expression_facts jsonb,
-		metadatas json,
-		evaluated boolean,
-		primary key (id, ts, situation_instance_id)
+		metadatas json
 	);`
 
 	//FactHistoryDropTableV1 SQL statement for table drop
-	FactHistoryDropTableV1 string = `DROP TABLE IF EXISTS fact_history_v1;`
+	FactHistoryDropTableV1 string = `DROP TABLE IF EXISTS fact_history_v5;`
 	// FactHistoryTableV1 SQL statement for the fact history
-	FactHistoryTableV1 string = `create table if not exists fact_history_v1 (
-		id integer not null,
-		ts timestamptz not null,
+	FactHistoryTableV1 string = `create table if not exists fact_history_v5 (
+		id serial primary key,
+		fact_id integer,
 		situation_id integer,
 		situation_instance_id integer,
-		result jsonb,
-		success boolean,
-		primary key (id, ts, situation_id, situation_instance_id)
+		ts timestamptz not null,
+		result jsonb
 	);`
 
 	//FactDefinitionDropTableV1 SQL statement for table drop
@@ -160,6 +157,7 @@ const (
 		key varchar(100) not null,
 		name varchar(100) not null,
 		level varchar(100) not null,
+		situation_history_id integer references situation_history_v5(id),
 		situation_id integer REFERENCES situation_definition_v1 (id),
 		situation_instance_id integer,
 		situation_date timestamptz not null,

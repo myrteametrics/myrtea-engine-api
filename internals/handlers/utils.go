@@ -46,6 +46,14 @@ func QueryParamToOptionnalDuration(r *http.Request, name string, orDefault time.
 	return orDefault, nil
 }
 
+func QueryParamToOptionnalBool(r *http.Request, name string, orDefault bool) (bool, error) {
+	param := r.URL.Query().Get(name)
+	if param != "" {
+		return strconv.ParseBool(param)
+	}
+	return orDefault, nil
+}
+
 // ParseTime try to parse a supposed time string as a time.Time or returns time.Now()
 func ParseTime(tStr string) (time.Time, error) {
 	t, err := time.Parse("2006-01-02T15:04:05.000Z07:00", tStr)

@@ -196,13 +196,13 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 			continue
 		}
 
-		factSituationsHistory, err := GetFactSituations(f, t)
+		factSituationsHistory, err := GetEnabledSituations(f, t)
 		if err != nil {
 			zap.L().Warn("getFactSituations", zap.Int64("factID", f.ID), zap.Error(err))
 			continue
 		}
 		if len(factSituationsHistory) == 0 {
-			zap.L().Warn("fact has no situation history", zap.Int64("factID", f.ID))
+			zap.L().Debug("Fact has no enabled situations", zap.Int64("factID", f.ID))
 			continue
 		}
 
@@ -298,9 +298,9 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 			continue
 		}
 
-		factSituationsHistory, err := GetFactSituations(f, t)
+		factSituationsHistory, err := GetEnabledSituations(f, t)
 		if err != nil {
-			zap.L().Error("Get situations including fact", zap.Error(err), zap.Any("factID", f.ID))
+			zap.L().Debug("Fact has no enabled situations", zap.Int64("factID", f.ID))
 			continue
 		}
 		if len(factSituationsHistory) == 0 {
@@ -514,145 +514,45 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 	return taskBatchs, nil
 }
 
-// // UpdateSituations creates the new instances of the situations in the history and evaluates them
-// func UpdateSituations(situationsToUpdate map[string]history.HistoryRecordV4) ([]evaluator.SituationToEvaluate, error) {
+// GetLinkedSituations returns all situation linked to a fact
+func GetLinkedSituations(fact engine.Fact) ([]history.HistoryRecordV4, error) {
+	factSituationsHistory := make([]history.HistoryRecordV4, 0)
+	factSituations, err := situation.R().GetSituationsByFactID(fact.ID, true)
+	if err != nil {
+		zap.L().Error("Cannot get the situations to update for fact", zap.Int64("id", fact.ID), zap.Any("fact", fact), zap.Error(err))
+		return nil, err
+	}
 
-// 	situationsToEvalute := make([]evaluator.SituationToEvaluate, 0)
-// 	for _, record := range situationsToUpdate {
+	for _, s := range factSituations {
+		if !s.IsTemplate {
+			factSituationsHistory = append(factSituationsHistory, history.HistoryRecordV4{
+				SituationID:         s.ID,
+				SituationInstanceID: 0,
+				Parameters:          s.Parameters,
+			})
+		} else {
+			templateInstances, err := situation.R().GetAllTemplateInstances(s.ID)
+			if err != nil {
+				zap.L().Error("Cannot get the situations template instances for situation", zap.Int64("id", s.ID), zap.Any("fact", fact), zap.Error(err))
+				return nil, err
+			}
+			for _, ti := range templateInstances {
+				sh := history.HistoryRecordV4{
+					SituationID:         s.ID,
+					SituationInstanceID: ti.ID,
+					Parameters:          map[string]string{},
+				}
+				sh.OverrideParameters(s.Parameters)
+				sh.OverrideParameters(ti.Parameters)
+				factSituationsHistory = append(factSituationsHistory, sh)
+			}
+		}
+	}
+	return factSituationsHistory, nil
+}
 
-// 		// create factsHistory from situationFacts
-// 		situationFacts, err := situation.R().GetFacts(record.ID)
-// 		if err != nil {
-// 			zap.L().Error("Get situation facts", zap.Int64("situationID", record.ID), zap.Error(err))
-// 			continue
-// 		}
-
-// 		// merge values from lasthistory.HistoryRecordV4 into factsHistory
-// 		lasthistory.HistoryRecordV4, err := situation.GetFromHistory(record.ID, record.TS, record.TemplateInstanceID, true)
-// 		if err != nil {
-// 			zap.L().Error("Get situation from history", zap.Int64("situationID", record.ID), zap.Time("ts", record.TS), zap.Error(err))
-// 			continue
-// 		}
-
-// 		factsHistory := make(map[int64]*time.Time)
-// 		for _, factID := range situationFacts {
-// 			factsHistory[factID] = nil
-// 		}
-
-// 		if lasthistory.HistoryRecordV4 != nil {
-// 			for factID, factTS := range lasthistory.HistoryRecordV4.FactsIDS {
-// 				factsHistory[factID] = factTS
-// 			}
-// 		}
-// 		// merge new values into factsHistory
-// 		for factID, factTS := range record.FactsIDS {
-// 			factsHistory[factID] = factTS
-// 		}
-
-// 		record.FactsIDS = factsHistory
-
-// 		evaluatedExpressionFacts, err := evaluateExpressionFacts(record, record.TS)
-// 		if err != nil {
-// 			zap.L().Warn("cannot evaluate expression facts", zap.Error(err))
-// 			continue
-// 		}
-// 		record.EvaluatedExpressionFacts = evaluatedExpressionFacts
-
-// 		err = situation.Persist(record, false)
-// 		if err != nil {
-// 			zap.L().Error("UpdateSituations.persistSituation:", zap.Error(err))
-// 			continue
-// 		}
-// 		situationsToEvalute = append(situationsToEvalute,
-// 			evaluator.SituationToEvaluate{
-// 				ID:                 record.ID,
-// 				TS:                 record.TS,
-// 				TemplateInstanceID: record.TemplateInstanceID,
-// 			},
-// 		)
-// 	}
-
-// 	return situationsToEvalute, nil
-// }
-
-// func evaluateExpressionFacts(record history.HistoryRecordV4, t time.Time) (map[string]interface{}, error) {
-// 	evaluatedExpressionFacts := make(map[string]interface{})
-
-// 	s, found, err := situation.R().Get(record.ID)
-// 	if err != nil {
-// 		zap.L().Error("Get Situation", zap.Int64("situationID", record.ID), zap.Error(err))
-// 		return evaluatedExpressionFacts, err
-// 	}
-// 	if !found {
-// 		zap.L().Warn("Situation not found", zap.Int64("situationID", s.ID))
-// 		return evaluatedExpressionFacts, fmzap.L().Errorf("", zap.Error("situation not found with ID = %d", record.ID))
-// 	}
-
-// 	data, err := flattenSituationData(record)
-// 	if err != nil {
-// 		return evaluatedExpressionFacts, err
-// 	}
-
-// 	//Add date keywords in situation data
-// 	for key, value := range expression.GetDateKeywords(t) {
-// 		data[key] = value
-// 	}
-
-// 	for _, expressionFact := range s.ExpressionFacts {
-// 		result, err := expression.Process(expression.LangEval, expressionFact.Expression, data)
-// 		if err != nil {
-// 			zap.L().Debug("Cannot process gval factExpression", zap.Error(err))
-// 			continue
-// 		}
-// 		if expression.IsInvalidNumber(result) {
-// 			continue
-// 		}
-
-// 		data[expressionFact.Name] = result
-// 		evaluatedExpressionFacts[expressionFact.Name] = result
-// 	}
-// 	return evaluatedExpressionFacts, nil
-// }
-
-// func flattenSituationData(record history.HistoryRecordV4) (map[string]interface{}, error) {
-// 	situationData := make(map[string]interface{})
-// 	for factID, factTS := range record.FactsIDS {
-// 		f, found, err := fact.R().Get(factID)
-// 		if err != nil {
-// 			zap.L().Error("get fact", zap.Error(err))
-// 			return nil, err
-// 		}
-// 		if !found {
-// 			zap.L().Warn("fact not found", zap.Int64("factID", factID))
-// 			return nil, fmzap.L().Errorf("", zap.Error("fact not found with id=%d", factID))
-// 		}
-// 		if factTS == nil {
-// 			// zap.L().Warn("At least one fact has never been calculated", zap.Int64("id", f.ID), zap.String("name", f.Name))
-// 			// return nil, fmzap.L().Errorf("", zap.Error("at least one fact has never been calculated, id=%d, name=%s", f.ID, f.Name))
-// 			continue
-// 		}
-
-// 		item, _, err := fact.GetFactResultFromHistory(factID, *factTS, record.ID, record.TemplateInstanceID, false, -1)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		itemData, err := item.ToAbstractMap()
-// 		if err != nil {
-// 			zap.L().Error("Convert item to abstractmap", zap.Error(err))
-// 			return nil, err
-// 		}
-
-// 		situationData[f.Name] = itemData
-// 	}
-// 	for key, value := range record.Parameters {
-// 		situationData[key] = value
-// 	}
-
-// 	return situationData, nil
-// }
-
-// GetFactSituations returns all situation linked to a fact
-func GetFactSituations(fact engine.Fact, t time.Time) ([]history.HistoryRecordV4, error) {
+// GetEnabledSituations returns all situation linked to a fact
+func GetEnabledSituations(fact engine.Fact, t time.Time) ([]history.HistoryRecordV4, error) {
 	factSituationsHistory := make([]history.HistoryRecordV4, 0)
 	factSituations, err := situation.R().GetSituationsByFactID(fact.ID, true)
 	if err != nil {
@@ -699,15 +599,13 @@ func GetFactSituations(fact engine.Fact, t time.Time) ([]history.HistoryRecordV4
 					sh.OverrideParameters(ti.Parameters)
 					factSituationsHistory = append(factSituationsHistory, sh)
 				} else {
-					zap.L().Warn("Situation template not within a valid calendar period, situation id: ", zap.Int64("id", s.ID))
+					zap.L().Debug("Situation template not within a valid calendar period, situation id: ", zap.Int64("id", s.ID))
 				}
 			}
 		}
 	}
 	return factSituationsHistory, nil
 }
-
-// ----------------------------------
 
 // UnmarshalJSON unmarshals a quoted json string to a valid FactCalculationJob struct
 func (job *FactCalculationJob) UnmarshalJSON(data []byte) error {
