@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/coordinator"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/coordinator"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 )
 
 // GetAlias godoc

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
 )
 
 func TestBuildSituationReportingTask(t *testing.T) {
@@ -129,7 +129,7 @@ func TestBuildMessageBody(t *testing.T) {
 }
 
 func TestSituationReportingTask(t *testing.T) {
-	// t.Skip() // Development test
+	t.Skip() // Development test
 	parameters := map[string]interface{}{
 		"id":                  "export-2",
 		"subject":             "My top CSV export",

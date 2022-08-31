@@ -6,8 +6,8 @@ package coordinator
 // 	"net/http"
 
 // 	"github.com/spf13/viper"
-// 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/coordinator"
-// 	"github.com/myrteametrics/myrtea-engine-api/v4/internals/model"
+// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/coordinator"
+// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/model"
 // 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
 
 // 	"go.uber.org/zap"

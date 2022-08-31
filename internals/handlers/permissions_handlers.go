@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"go.uber.org/zap"
 )
 

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/myrteametrics/myrtea-engine-api/v4/plugins/baseline/proto"
+	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )

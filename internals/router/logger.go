@@ -10,7 +10,7 @@ import (
 
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	gorillacontext "github.com/gorilla/context"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 )
 
 var (

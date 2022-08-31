@@ -9,7 +9,7 @@ import (
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows to read and write the connections configuration
 type Repository interface {
-	GetLastConnectionReading(connectorID string, successOnly bool) (map[string]time.Time, error)
+	GetLastConnectionReading(connectorID string, successOnly bool, maxAge int64) (map[string]time.Time, error)
 }
 
 var (

@@ -10,8 +10,6 @@ import (
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows standard CRUD operation on facts
 type Repository interface {
-	//TODO: Get ride of the pointers for the fact and situations
-
 	Get(id int64) (engine.Fact, bool, error)
 	GetByName(name string) (engine.Fact, bool, error)
 	Create(fact engine.Fact) (int64, error)

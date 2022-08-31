@@ -3,7 +3,7 @@ package notification
 import (
 	"sync"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/dbutils"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/dbutils"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend

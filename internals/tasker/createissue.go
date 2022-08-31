@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"go.uber.org/zap"
 )
 
@@ -76,7 +76,7 @@ func (task CreateIssueTask) Perform(key string, context ContextData) error {
 
 	issueLevel := models.ToIssueLevel(task.Level)
 
-	issueID, err := explainer.CreateIssue(int64(context.SituationID), context.TS, int64(context.TemplateInstanceID),
+	issueID, err := explainer.CreateIssue(context.SituationHistoryID, context.SituationID, context.TemplateInstanceID, context.TS,
 		models.RuleData{
 			RuleID:      int64(context.RuleID),
 			RuleVersion: int64(context.RuleVersion),

@@ -1,28 +1,29 @@
 package app
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/calendar"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/connector"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/coordinator"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/action"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/draft"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/externalconfig"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connector"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/coordinator"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/action"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/draft"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/rootcause"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/externalconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/history"
 
-	// "github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/modeler"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier/notification"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/scheduler"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/search"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/roles"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tasker"
+	// "github.com/myrteametrics/myrtea-engine-api/v5/internals/groups"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/modeler"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/scheduler"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/search"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/roles"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tasker"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -49,6 +50,7 @@ func initRepositories() {
 	rule.ReplaceGlobals(rule.NewPostgresRepository(dbClient))
 	modeler.ReplaceGlobals(modeler.NewPostgresRepository(dbClient))
 	externalconfig.ReplaceGlobals(externalconfig.NewPostgresRepository(dbClient))
+	history.ReplaceGlobals(history.New(dbClient))
 }
 
 func initServices() {

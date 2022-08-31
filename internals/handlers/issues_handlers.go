@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"go.uber.org/zap"
 )
@@ -665,8 +665,8 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 // @Router /engine/issues/{id}/comment [put]
 func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
 
+	// FIXME : UpdateIssueComment permissions
 	// userCtx, _ := GetUserFromContext(r)
-	// FIXME
 	// if user == nil {
 	// 	render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("no user found in context"))
 	// 	return

@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/action"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/action"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/rootcause"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
 )
 
 // repoCreateIssue create a new issue in the specified repository
@@ -69,6 +69,7 @@ func repoCreateDraft(r Repository, t *testing.T) models.FrontRecommendation {
 func dbInit(dbClient *sqlx.DB, t *testing.T) {
 	dbDestroy(dbClient, t)
 
+	tests.DBExec(dbClient, tests.SituationHistoryTableV1, t, true)
 	tests.DBExec(dbClient, tests.CalendarTableV3, t, true)
 	tests.DBExec(dbClient, tests.SituationDefinitionTableV1, t, true)
 	tests.DBExec(dbClient, tests.FactDefinitionTableV1, t, true)
@@ -140,6 +141,7 @@ func dbDestroy(dbClient *sqlx.DB, t *testing.T) {
 	tests.DBExec(dbClient, tests.FactDefinitionDropTableV1, t, false)
 	tests.DBExec(dbClient, tests.SituationDefinitionDropTableV1, t, false)
 	tests.DBExec(dbClient, tests.CalendarDropTableV3, t, false)
+	tests.DBExec(dbClient, tests.SituationHistoryDropTableV1, t, false)
 }
 
 func TestNewPostgresRepository(t *testing.T) {

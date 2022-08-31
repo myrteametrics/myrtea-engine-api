@@ -8,7 +8,7 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/jwtauth"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 
 	"go.uber.org/zap"
 )

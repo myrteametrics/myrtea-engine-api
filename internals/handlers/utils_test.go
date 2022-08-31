@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 )
 
 func TestParseTime(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
 )
 
 func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string, separator rune) ([]byte, error) {
