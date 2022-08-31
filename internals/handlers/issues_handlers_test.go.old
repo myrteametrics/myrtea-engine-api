@@ -37,6 +37,7 @@ func dbIssueInitRepo(dbClient *sqlx.DB, t *testing.T) {
 	tests.DBExec(dbClient, tests.FactDefinitionTableV1, t, true)
 	tests.DBExec(dbClient, tests.SituationFactsTableV1, t, true)
 	tests.DBExec(dbClient, tests.IssuesTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationHistoryTableV1, t, true)
 	tests.DBExec(dbClient, tests.RulesTableV1, t, true)
 	tests.DBExec(dbClient, tests.RuleVersionsTableV1, t, true)
 	tests.DBExec(dbClient, tests.SituationRulesTableV1, t, true)
@@ -60,6 +61,7 @@ func dbIssueDestroyRepo(dbClient *sqlx.DB, t *testing.T) {
 	tests.DBExec(dbClient, tests.CalendarDropTableV3, t, true)
 	tests.DBExec(dbClient, tests.FactDefinitionDropTableV1, t, true)
 	tests.DBExec(dbClient, tests.UsersDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationHistoryDropTableV1, t, false)
 }
 
 func TestGetIssues(t *testing.T) {

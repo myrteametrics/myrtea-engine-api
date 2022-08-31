@@ -6,6 +6,7 @@ import (
 )
 
 func TestGetHistorySituationsIdsBase(t *testing.T) {
+	t.SkipNow()
 	var options GetHistorySituationsOptions = GetHistorySituationsOptions{
 		SituationID:         -1,
 		SituationInstanceID: -1,
@@ -16,7 +17,9 @@ func TestGetHistorySituationsIdsBase(t *testing.T) {
 	t.Fail()
 	t.Log(builder.ToSql())
 }
+
 func TestGetHistorySituationsIdsLast(t *testing.T) {
+	t.SkipNow()
 	var options GetHistorySituationsOptions = GetHistorySituationsOptions{
 		SituationID:         -1,
 		SituationInstanceID: -1,
@@ -27,7 +30,9 @@ func TestGetHistorySituationsIdsLast(t *testing.T) {
 	t.Fail()
 	t.Log(builder.ToSql())
 }
+
 func TestGetHistorySituationsIdsByStandardInterval(t *testing.T) {
+	t.SkipNow()
 	var options GetHistorySituationsOptions = GetHistorySituationsOptions{
 		SituationID:         -1,
 		SituationInstanceID: -1,
@@ -39,7 +44,9 @@ func TestGetHistorySituationsIdsByStandardInterval(t *testing.T) {
 	t.Fail()
 	t.Log(builder.ToSql())
 }
+
 func TestGetHistorySituationsIdsByCustomInterval(t *testing.T) {
+	t.SkipNow()
 	var options GetHistorySituationsOptions = GetHistorySituationsOptions{
 		SituationID:         -1,
 		SituationInstanceID: -1,
@@ -52,7 +59,9 @@ func TestGetHistorySituationsIdsByCustomInterval(t *testing.T) {
 	t.Fail()
 	t.Log(builder.ToSql())
 }
+
 func TestGetHistorySituationsDetails(t *testing.T) {
+	t.SkipNow()
 	var subQueryIds string = ""
 	var subQueryIdsArgs []interface{} = []interface{}{}
 	builder := HistorySituationsBuilder{}.GetHistorySituationsDetails(subQueryIds, subQueryIdsArgs)

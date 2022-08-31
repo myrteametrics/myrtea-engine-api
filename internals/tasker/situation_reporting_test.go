@@ -129,7 +129,7 @@ func TestBuildMessageBody(t *testing.T) {
 }
 
 func TestSituationReportingTask(t *testing.T) {
-	// t.Skip() // Development test
+	t.Skip() // Development test
 	parameters := map[string]interface{}{
 		"id":                  "export-2",
 		"subject":             "My top CSV export",
