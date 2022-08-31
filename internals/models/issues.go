@@ -76,9 +76,10 @@ type Issue struct {
 	Key                string     `json:"key"`
 	Name               string     `json:"name"`
 	Level              IssueLevel `json:"level"`
+	SituationHistoryID int64      `json:"situationHistoryId"`
 	SituationID        int64      `json:"situationId"`
-	SituationTS        time.Time  `json:"situationDate"`
 	TemplateInstanceID int64      `json:"templateInstanceId"`
+	SituationTS        time.Time  `json:"situationDate"`
 	ExpirationTS       time.Time  `json:"expirationDate"`
 	Rule               RuleData   `json:"rule"`
 	State              IssueState `json:"state"`

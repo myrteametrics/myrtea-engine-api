@@ -56,8 +56,8 @@ Our favored way to ship and install Myrtea is by using [docker](https://www.dock
 
 ```sh
 # This docker image might not be available as you read this (and you might need to build it yourself following the "From Source" section)
-docker pull <myrtea-engine:v4.0.0>
-docker run -d --name myrtea-engine -p 9000:9000 <myrtea-engine:v4.0.0>
+docker pull <myrtea-engine:v5.0.0>
+docker run -d --name myrtea-engine -p 9000:9000 <myrtea-engine:v5.0.0>
 ```
 
 This image can be configured using a configuration file mounted in the container with `-v $PWD/config/engine-api.toml:/app/config/engine-api.toml`.
@@ -67,10 +67,6 @@ It can also be configured using environment variables prefixed by `MYRTEA_`. (ex
 ## Documentation
 
 See the [Getting Started](https://myrteametrics.github.io/myrtea-docs/getting-started/first-application/) documentation for more infos on the application settings
-
-## Why are we already in v4 !?
-
-This product already has a pretty large history as a closed-source code base. The v4 is the first open-source release to date.
 
 ## Contributing
 

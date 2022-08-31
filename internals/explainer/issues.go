@@ -1,26 +1,26 @@
 package explainer
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/history"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
 )
 
-//CreateIssue function used to create an issue
-func CreateIssue(situationID int64, ts time.Time, templateInstanceID int64, rule models.RuleData, name string, level models.IssueLevel, timeout time.Duration, key string) (int64, error) {
+// CreateIssue function used to create an issue
+func CreateIssue(situationHistoryID int64, situationID int64, templateInstanceID int64, ts time.Time, rule models.RuleData, name string, level models.IssueLevel, timeout time.Duration, key string) (int64, error) {
 	expirationTS := ts.Add(timeout).UTC()
 
 	issue := models.Issue{
 		Name:               name,
 		Key:                key,
 		Level:              level,
+		SituationHistoryID: situationHistoryID,
 		SituationID:        situationID,
 		SituationTS:        ts,
 		TemplateInstanceID: templateInstanceID,
@@ -59,88 +59,92 @@ func isNewIssue(issue models.Issue) (bool, error) {
 
 //GetFactsHistory get the history of facts for an issue
 func GetFactsHistory(issue models.Issue) ([]models.FrontFactHistory, bool, error) {
-	history := make([]models.FrontFactHistory, 0)
 
-	record, err := situation.GetFromHistory(issue.SituationID, issue.SituationTS, issue.TemplateInstanceID, false)
-	if err != nil {
-		return nil, false, err
-	}
-
-	if record == nil {
-		zap.L().Warn("No record situation history found")
-		return nil, false, nil
-	}
-
-	//TODO: interval shouldn't hard coded ?
+	// TODO: interval shouldn't hard coded ?
 	interval := 3 * time.Hour
 	from, to := getFromAndToHistoryDates(issue.SituationTS, interval)
 
-	for factHistoryID, factHistoryTS := range record.FactsIDS {
-		factDefinition, found, err := fact.R().Get(factHistoryID)
-		if err != nil {
-			return nil, false, err
-		}
-		if !found {
-			return nil, false, fmt.Errorf("fact definition not found for id %d", factHistoryID)
-		}
-
-		frontFact := models.FrontFactHistory{
-			ID:   factHistoryID,
-			Name: factDefinition.Name,
-		}
-		if factDefinition.IsObject {
-			items, _, err := fact.GetFactResultFromHistory(factHistoryID, *factHistoryTS, issue.SituationID, 0, false, 0)
-			if err != nil {
-				return nil, false, err
-			}
-			attributes := make(map[string]interface{}, 0)
-			for k, v := range items.Aggs {
-				attributes[k] = v.Value
-			}
-			factValue := &models.ObjectValue{
-				Attributes: attributes,
-			}
-			frontFact.Deepness = factValue.GetDeepness()
-			frontFact.Type = factValue.GetType()
-			frontFact.CurrentValue = factValue
-			frontFact.History = make(map[time.Time]models.FactValue, 0)
-		} else {
-			var factCurrentValue models.FactValue
-			factValues := make(map[time.Time]models.FactValue)
-
-			items, err := fact.GetFactRangeFromHistory(factHistoryID, issue.SituationID, issue.TemplateInstanceID, from, to)
-			if err != nil {
-				return nil, false, err
-			}
-			for ts, item := range items {
-				factValue, err := extractFactValue(item, factDefinition)
-				if err != nil {
-					return nil, false, err
-				}
-
-				if factValue.GetType() == "not_supported" {
-					factValues = nil
-					factCurrentValue = factValue
-					break
-				}
-
-				if factHistoryTS.Equal(ts) {
-					factValue.SetCurrent(true)
-					factCurrentValue = factValue
-				}
-
-				factValues[ts] = factValue
-			}
-			frontFact.Deepness = factCurrentValue.GetDeepness()
-			frontFact.Type = factCurrentValue.GetType()
-			frontFact.CurrentValue = factCurrentValue
-			frontFact.History = factValues
-		}
-
-		history = append(history, frontFact)
+	historySituationFacts, err := history.S().HistorySituationFactsQuerier.Query(history.S().HistorySituationFactsQuerier.Builder.GetHistorySituationFacts([]int64{issue.SituationHistoryID}))
+	if err != nil {
+		zap.L().Error("", zap.Error(err))
+		return nil, false, err
 	}
 
-	return history, true, nil
+	// Get SituationHistoryV4 from ID
+	historySituationIDs, err := history.S().HistorySituationsQuerier.QueryIDs(history.S().HistorySituationsQuerier.Builder.GetHistorySituationsIdsBase(
+		history.GetHistorySituationsOptions{
+			SituationID:         issue.SituationID,
+			SituationInstanceID: issue.TemplateInstanceID,
+			FromTS:              from,
+			ToTS:                to,
+		},
+	))
+	if err != nil {
+		zap.L().Error("", zap.Error(err))
+		return nil, false, err
+	}
+
+	// Get All Value of All HistoryFactV4 from all HistorySituationV4 IDs
+	historyFacts, _, err := history.S().GetHistoryFactsFromSituationIds(historySituationIDs)
+	if err != nil {
+		zap.L().Error("", zap.Error(err))
+		return nil, false, err
+	}
+
+	historyFactGroups := make(map[int64][]history.HistoryFactsV4)
+	for _, historyFact := range historyFacts {
+		if l, exists := historyFactGroups[historyFact.FactID]; exists {
+			historyFactGroups[historyFact.FactID] = append(l, historyFact)
+		} else {
+			historyFactGroups[historyFact.FactID] = []history.HistoryFactsV4{historyFact}
+		}
+	}
+
+	// Build frontFacts
+	frontFacts := make([]models.FrontFactHistory, 0)
+	for factID, historyFacts := range historyFactGroups {
+		f, found, err := fact.R().Get(factID)
+		if err != nil {
+			zap.L().Warn("Get fact", zap.Error(err))
+			continue
+		}
+		if !found {
+			zap.L().Warn("fact doesn't exists", zap.Int64("factID", factID))
+			continue
+		}
+
+		historyFactCurrent := history.HistoryFactsV4{}
+		factValues := make(map[time.Time]models.FactValue)
+		for _, historyFact := range historyFacts {
+			factValue := extractFactValue(historyFact.Result, f)
+			if factValue.GetType() == "not_supported" {
+				factValues = nil
+				historyFactCurrent = historyFact
+				break
+			}
+			for _, historySituationFact := range historySituationFacts {
+				if historyFact.ID == historySituationFact.HistoryFactID {
+					factValue.SetCurrent(true)
+					historyFactCurrent = historyFact
+				}
+			}
+			factValues[historyFact.Ts] = factValue
+		}
+
+		factValueCurrent := extractFactValue(historyFactCurrent.Result, f)
+
+		frontFact := models.FrontFactHistory{
+			ID:           historyFactCurrent.FactID,
+			Name:         historyFactCurrent.FactName,
+			Deepness:     factValueCurrent.GetDeepness(),
+			Type:         factValueCurrent.GetType(),
+			CurrentValue: factValueCurrent,
+			History:      factValues,
+		}
+		frontFacts = append(frontFacts, frontFact)
+	}
+
+	return frontFacts, true, nil
 }
 
 func getFromAndToHistoryDates(ts time.Time, interval time.Duration) (time.Time, time.Time) {
@@ -156,32 +160,32 @@ func getFromAndToHistoryDates(ts time.Time, interval time.Duration) (time.Time, 
 	return tsFrom, tsTo
 }
 
-func extractFactValue(item reader.Item, factDefinition engine.Fact) (models.FactValue, error) {
+func extractFactValue(item reader.Item, factDefinition engine.Fact) models.FactValue {
 	if factDefinition.AdvancedSource != "" {
-		return &models.NotSupportedValue{}, nil
+		return &models.NotSupportedValue{}
 	}
 
 	if len(factDefinition.Dimensions) > 0 {
-		return &models.NotSupportedValue{}, nil
+		return &models.NotSupportedValue{}
 	}
 
 	keyDocCount := "doc_count"
 
 	if factDefinition.Intent.Operator == engine.Count && factDefinition.Model == factDefinition.Intent.Term {
 		if val, ok := item.Aggs[keyDocCount]; ok {
-			return &models.SingleValue{Key: keyDocCount, Value: val.Value}, nil
+			return &models.SingleValue{Key: keyDocCount, Value: val.Value}
 		}
 
-		zap.L().Warn("No value found for key: ", zap.String("KeyAgg", keyDocCount))
-		return &models.NotSupportedValue{}, nil
+		zap.L().Warn("No value found for key: ", zap.String("KeyAgg", keyDocCount), zap.Any("fact", factDefinition), zap.Any("item", item))
+		return &models.NotSupportedValue{}
 	}
 
 	for aggKey, agg := range item.Aggs {
 		if aggKey != keyDocCount {
-			return &models.SingleValue{Key: aggKey, Value: agg.Value}, nil
+			return &models.SingleValue{Key: aggKey, Value: agg.Value}
 		}
 	}
 
-	zap.L().Warn("No value found for key other than doc_count")
-	return &models.NotSupportedValue{}, nil
+	zap.L().Warn("No value found for key other than doc_count", zap.Any("fact", factDefinition), zap.Any("item", item))
+	return &models.NotSupportedValue{}
 }

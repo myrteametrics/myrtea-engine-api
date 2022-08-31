@@ -8,11 +8,11 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 )
 

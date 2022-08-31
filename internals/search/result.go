@@ -3,8 +3,8 @@ package search
 import (
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/reader"
-	"github.com/myrteametrics/myrtea-engine-api/v4/plugins/baseline"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
+	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
 )
 
 // QueryResult is a struct used to represent a query result

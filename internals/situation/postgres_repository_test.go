@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 )
 
@@ -74,7 +74,6 @@ func dbDestroyRepo(dbClient *sqlx.DB, t *testing.T) {
 
 func insertRule(dbClient *sqlx.DB, t *testing.T, ruleID int64) {
 	dt := time.Now().Truncate(1 * time.Millisecond).UTC()
-	//FIXME: sql query directly within a test, this is fragile !!!
 	query := `INSERT INTO rules_v1 VALUES (:id, :name, :enabled, :calendar_id, :last_modified)`
 	_, err := dbClient.NamedExec(query, map[string]interface{}{
 		"id":            ruleID,

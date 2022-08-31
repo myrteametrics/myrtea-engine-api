@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/calendar"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
 )
 
 func dbCalendarInit(dbClient *sqlx.DB, t *testing.T) {

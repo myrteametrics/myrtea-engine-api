@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"go.uber.org/zap"
 )
 

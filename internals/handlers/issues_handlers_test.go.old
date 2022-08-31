@@ -13,17 +13,17 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/action"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/draft"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/rule"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/action"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/draft"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/rootcause"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/myrteametrics/myrtea-sdk/v4/ruleeng"
 )
@@ -37,6 +37,7 @@ func dbIssueInitRepo(dbClient *sqlx.DB, t *testing.T) {
 	tests.DBExec(dbClient, tests.FactDefinitionTableV1, t, true)
 	tests.DBExec(dbClient, tests.SituationFactsTableV1, t, true)
 	tests.DBExec(dbClient, tests.IssuesTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationHistoryTableV1, t, true)
 	tests.DBExec(dbClient, tests.RulesTableV1, t, true)
 	tests.DBExec(dbClient, tests.RuleVersionsTableV1, t, true)
 	tests.DBExec(dbClient, tests.SituationRulesTableV1, t, true)
@@ -60,6 +61,7 @@ func dbIssueDestroyRepo(dbClient *sqlx.DB, t *testing.T) {
 	tests.DBExec(dbClient, tests.CalendarDropTableV3, t, true)
 	tests.DBExec(dbClient, tests.FactDefinitionDropTableV1, t, true)
 	tests.DBExec(dbClient, tests.UsersDropTableV1, t, true)
+	tests.DBExec(dbClient, tests.SituationHistoryDropTableV1, t, false)
 }
 
 func TestGetIssues(t *testing.T) {

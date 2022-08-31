@@ -2,6 +2,7 @@ package connector
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -24,16 +25,16 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 //GetLastConnectionReading returns the datetime of the last connections reading for a connector id
-func (r *PostgresRepository) GetLastConnectionReading(connectorID string, successOnly bool) (map[string]time.Time, error) {
-	query := `SELECT DISTINCT ON (name) name, ts 
+func (r *PostgresRepository) GetLastConnectionReading(connectorID string, successOnly bool, maxAgeDays int64) (map[string]time.Time, error) {
+	query := fmt.Sprintf(`SELECT DISTINCT ON (name) name, ts 
 				FROM connectors_executions_log_v1 
-				WHERE connector_id = :connector_id AND (:success_only = false OR success = :success_only)
-				ORDER BY name, ts DESC`
-
-	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
+				WHERE ts > current_timestamp - interval '%d days' AND connector_id = :connector_id AND (:success_only = false OR success = :success_only)
+				ORDER BY name, ts DESC`, maxAgeDays)
+	params := map[string]interface{}{
 		"connector_id": connectorID,
 		"success_only": successOnly,
-	})
+	}
+	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
 		zap.L().Error("Couldn't retrieve the Connections reading datetime", zap.Error(err))
 		return nil, errors.New("couldn't retrieve the connections reading " + err.Error())

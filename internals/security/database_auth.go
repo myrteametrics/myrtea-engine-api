@@ -7,7 +7,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 )
 
 const table = "users_v4"

@@ -3,11 +3,11 @@ package explainer
 import (
 	"testing"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/draft"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/tests"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/draft"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
 )
 
 func TestSaveIssueDraftNotExists(t *testing.T) {

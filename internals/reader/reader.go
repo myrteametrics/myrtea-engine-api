@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/myrteametrics/myrtea-engine-api/v4/plugins/baseline"
+	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
 	"github.com/olivere/elastic"
 	"go.uber.org/zap"
 )

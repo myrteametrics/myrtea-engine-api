@@ -3,10 +3,10 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/handlers/render"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"go.uber.org/zap"
 )
 

@@ -9,10 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/email"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/export"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/email"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
 	"go.uber.org/zap"
 )
 
@@ -169,10 +167,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 		return nil
 	}
 
-	situationData, err := GetSituationKnowledge(context.SituationID, context.TemplateInstanceID, context.TS)
-	if err != nil {
-		return err
-	}
+	situationData := context.HistorySituationFlattenData
 	zap.L().Debug("GetSituationKnowledge()", zap.Any("situationData", situationData))
 
 	var body []byte
@@ -237,45 +232,4 @@ func BuildMessageBody(templateBody string, templateData map[string]interface{}) 
 	}
 
 	return body.Bytes(), nil
-}
-
-func GetSituationKnowledge(situationID int64, situationInstanceID int64, situationTS time.Time) (map[string]interface{}, error) {
-	situationData := make(map[string]interface{})
-	record, err := situation.GetFromHistory(situationID, situationTS, situationInstanceID, false)
-	if err != nil {
-		return nil, err
-	}
-	if record == nil {
-		return nil, errors.New("situation was not found in the history")
-	}
-
-	for factID, factTS := range record.FactsIDS {
-		f, found, err := fact.R().Get(factID)
-		if err != nil {
-			return nil, err
-		}
-		if !found {
-			return nil, fmt.Errorf("Fact not found with id=%d", factID)
-		}
-		if factTS == nil {
-			return nil, fmt.Errorf("At least one fact has never been calculated, id=%d, name=%s", f.ID, f.Name)
-		}
-
-		item, _, err := fact.GetFactResultFromHistory(factID, *factTS, situationID, situationInstanceID, false, -1)
-		if err != nil {
-			return nil, err
-		}
-		itemData, err := item.ToAbstractMap()
-		if err != nil {
-			return nil, err
-		}
-		situationData[f.Name] = itemData
-	}
-	for key, value := range record.Parameters {
-		situationData[key] = value
-	}
-	for key, value := range record.EvaluatedExpressionFacts {
-		situationData[key] = value
-	}
-	return situationData, nil
 }

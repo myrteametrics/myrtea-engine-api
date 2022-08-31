@@ -1,7 +1,7 @@
 package notifier
 
-// import "github.com/myrteametrics/myrtea-engine-api/v4/internals/groups"
-import "github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
+// import "github.com/myrteametrics/myrtea-engine-api/v5/internals/groups"
+import "github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 
 // Client is used as an abstract notifier client, which could use SSE or WS implementations
 type Client interface {

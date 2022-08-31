@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/explainer/draft"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/draft"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 )
 
 // SaveIssueDraft generate and persist an issue draft

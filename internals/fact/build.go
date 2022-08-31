@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/myrteametrics/myrtea-engine-api/v4/internals/fact/lexer"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact/lexer"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	parsec "github.com/prataprc/goparsec"
 	"github.com/spf13/viper"
