@@ -42,7 +42,7 @@ func evaluateFactObjects(factObject engine.Fact, objects []map[string]interface{
 		// 	continue
 		// }
 
-		historyFactsAll, historySituationFlattenData, err := history.S().ExtractFactData(make([]history.HistoryFactsV4, 0), s.Facts)
+		historyFactsAll, historySituationFlattenData, err := history.S().ExtractFactData(s.ID, 0, make([]history.HistoryFactsV4, 0), s.Facts)
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
 			continue

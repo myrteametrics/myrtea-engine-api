@@ -153,7 +153,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 
 	situationsToUpdate := make(map[string]history.HistoryRecordV4, 0)
 	for _, agg := range aggregates {
-
+		// zap.L().Sugar().Info(agg)
 		t := agg.Time.UTC().Truncate(time.Second)
 
 		f, found, err := fact.R().Get(agg.FactID)
@@ -164,6 +164,8 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 			return make(map[string]history.HistoryRecordV4), errors.New("not found")
 		}
 
+		// zap.L().Sugar().Info("fact", f)
+
 		s, found, err := situation.R().Get(agg.SituationID)
 		if err != nil {
 			return make(map[string]history.HistoryRecordV4), err
@@ -171,6 +173,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 		if !found {
 			return make(map[string]history.HistoryRecordV4), errors.New("not found")
 		}
+		// zap.L().Sugar().Info("situation", s)
 
 		found = false
 		for _, factID := range s.Facts {
@@ -190,6 +193,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 		if !found {
 			return make(map[string]history.HistoryRecordV4), errors.New("not found")
 		}
+		// zap.L().Sugar().Info("instance", si)
 
 		if s.ID != si.SituationID {
 			zap.L().Warn("invalid s.ID != si.SituationID")
@@ -206,7 +210,10 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 			continue
 		}
 
+		// zap.L().Sugar().Info("factSituationsHistory", factSituationsHistory)
+
 		if !f.IsTemplate {
+			// zap.L().Sugar().Info("fact is not a template")
 			// calculate
 			// already done !
 			historyFactNew := history.HistoryFactsV4{
@@ -243,10 +250,13 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 				}
 			}
 		} else {
+			// zap.L().Sugar().Info("fact IS a template")
 			for _, sh := range factSituationsHistory {
 				if sh.SituationID != s.ID || sh.SituationInstanceID != si.ID {
+					// zap.L().Sugar().Info(sh.SituationID, s.ID, sh.SituationInstanceID, si.ID)
 					continue
 				}
+
 				// calculate
 				// already done !
 				historyFactNew := history.HistoryFactsV4{
@@ -262,6 +272,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 				if err != nil {
 					zap.L().Error("", zap.Error(err))
 				}
+				// zap.L().Sugar().Info("insert fact", historyFactNew)
 
 				key := fmt.Sprintf("%d-%d", sh.SituationID, sh.SituationInstanceID)
 				if _, ok := situationsToUpdate[key]; !ok {
@@ -281,6 +292,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 
 		}
 	}
+	// zap.L().Sugar().Info("situationToUpdate ", situationsToUpdate)
 	return situationsToUpdate, nil
 }
 
@@ -419,6 +431,8 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 	taskBatchs := make([]tasker.TaskBatch, 0)
 	for _, situationToUpdate := range situationsToUpdate {
 
+		// zap.L().Sugar().Info(situationToUpdate)
+
 		// Flatten parameters from situation definition + situation instance definition
 		s, parameters, err := history.ExtractSituationData(situationToUpdate.SituationID, situationToUpdate.SituationInstanceID)
 		if err != nil {
@@ -426,7 +440,9 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			continue
 		}
 
-		historyFactsAll, historySituationFlattenData, err := history.S().ExtractFactData(situationToUpdate.HistoryFacts, s.Facts)
+		// zap.L().Sugar().Info(s, parameters)
+
+		historyFactsAll, historySituationFlattenData, err := history.S().ExtractFactData(situationToUpdate.SituationID, situationToUpdate.SituationInstanceID, situationToUpdate.HistoryFacts, s.Facts)
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
 			continue
@@ -437,6 +453,9 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		for key, value := range expression.GetDateKeywords(situationToUpdate.Ts) {
 			historySituationFlattenData[key] = value
 		}
+
+		// zap.L().Sugar().Info("historyFactsAll", historyFactsAll)
+		// zap.L().Sugar().Info("historySituationFlattenData", historySituationFlattenData)
 
 		// Evaluate expression facts
 		expressionFacts := history.EvaluateExpressionFacts(s.ExpressionFacts, historySituationFlattenData)
@@ -481,6 +500,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
 		}
+		// zap.L().Sugar().Info("insert new situation", historySituationNew)
 
 		// Build and insert HistorySituationFactsV4
 		historySituationFactNew := make([]history.HistorySituationFactsV4, 0)
@@ -491,6 +511,8 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 				FactID:             historyFactNew.FactID,
 			})
 		}
+
+		// zap.L().Sugar().Info("historySituationFactNew", historySituationFactNew)
 
 		err = history.S().HistorySituationFactsQuerier.Execute(history.S().HistorySituationFactsQuerier.Builder.InsertBulk(historySituationFactNew))
 		if err != nil {
@@ -560,6 +582,9 @@ func GetEnabledSituations(fact engine.Fact, t time.Time) ([]history.HistoryRecor
 		return nil, err
 	}
 
+	// zap.L().Sugar().Info("factID ", fact.ID)
+	// zap.L().Sugar().Info("situations ", factSituations)
+
 	for _, s := range factSituations {
 		if !s.IsTemplate {
 			//We consider that if the calendar is not found then is in valid period
@@ -580,6 +605,8 @@ func GetEnabledSituations(fact engine.Fact, t time.Time) ([]history.HistoryRecor
 				zap.L().Error("Cannot get the situations template instances for situation", zap.Int64("id", s.ID), zap.Any("fact", fact), zap.Error(err))
 				return nil, err
 			}
+
+			// zap.L().Sugar().Info("instances", templateInstances)
 			for _, ti := range templateInstances {
 				calendarID := ti.CalendarID
 				if calendarID == 0 {
