@@ -10,14 +10,17 @@ func (builder HistoryFactsBuilder) newStatement() sq.StatementBuilderType {
 	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 }
 
-func (builder HistoryFactsBuilder) GetHistoryFactLast(factId int64) sq.SelectBuilder {
+func (builder HistoryFactsBuilder) GetHistoryFactLast(situationID int64, instanceID int64, factID int64) sq.SelectBuilder {
 	return builder.newStatement().
 		Select("fh.*, f.name").
 		From("fact_history_v5 fh").
 		InnerJoin("fact_definition_v1 f on fh.fact_id = f.id").
 		OrderBy("fh.ts desc").
 		Limit(1).
-		Where(sq.Eq{"fh.fact_id": factId})
+		Where(sq.Eq{"fh.situation_id": situationID}).
+		Where(sq.Eq{"fh.situation_instance_id": instanceID}).
+		Where(sq.Eq{"fh.fact_id": factID})
+
 }
 
 func (builder HistoryFactsBuilder) GetHistoryFacts(historyFactsIds []int64) sq.SelectBuilder {
