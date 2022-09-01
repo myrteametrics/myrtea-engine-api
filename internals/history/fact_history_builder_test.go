@@ -6,8 +6,7 @@ import (
 
 func TestGetHistoryFactLast(t *testing.T) {
 	t.SkipNow()
-	var factId int64 = 1
-	builder := HistoryFactsBuilder{}.GetHistoryFactLast(factId)
+	builder := HistoryFactsBuilder{}.GetHistoryFactLast(4, 109, 19)
 	t.Fail()
 	t.Log(builder.ToSql())
 }

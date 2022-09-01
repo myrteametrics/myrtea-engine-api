@@ -1,7 +1,7 @@
 package history
 
 // Flatten situation data (old and new facts + parameters)
-func (service HistoryService) ExtractFactData(historyFactsNew []HistoryFactsV4, existingFactIDs []int64) ([]HistoryFactsV4, map[string]interface{}, error) {
+func (service HistoryService) ExtractFactData(situationID int64, instanceID int64, historyFactsNew []HistoryFactsV4, existingFactIDs []int64) ([]HistoryFactsV4, map[string]interface{}, error) {
 	historySituationFlattenData := make(map[string]interface{})
 	historyFactsAll := make([]HistoryFactsV4, 0)
 
@@ -14,15 +14,15 @@ func (service HistoryService) ExtractFactData(historyFactsNew []HistoryFactsV4, 
 		historyFactsAll = append(historyFactsAll, historyFactNew)
 	}
 
-	for _, factId := range existingFactIDs {
+	for _, factID := range existingFactIDs {
 		exists := false
 		for _, historyFactNew := range historyFactsNew {
-			if factId == historyFactNew.FactID {
+			if factID == historyFactNew.FactID {
 				exists = true
 			}
 		}
 		if !exists {
-			historyFactLast, err := service.HistoryFactsQuerier.QueryOne(service.HistoryFactsQuerier.Builder.GetHistoryFactLast(factId))
+			historyFactLast, err := service.HistoryFactsQuerier.QueryOne(service.HistoryFactsQuerier.Builder.GetHistoryFactLast(situationID, instanceID, factID))
 			if err != nil {
 				return make([]HistoryFactsV4, 0), make(map[string]interface{}), err
 			}
