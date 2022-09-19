@@ -39,11 +39,13 @@ var (
 // @name Authorization
 
 func main() {
-	zapConfig := app.InitLogger()
 
-	zap.L().Info("Starting Engine-API", zap.String("version", Version), zap.String("build_date", BuildDate))
+	app.InitConfiguration()
+	zapConfig := app.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
+
 	app.Init()
 	defer app.Stop()
+	zap.L().Info("Starting Engine-API", zap.String("version", Version), zap.String("build_date", BuildDate))
 
 	plugins := make([]plugin.MyrteaPlugin, 0)
 

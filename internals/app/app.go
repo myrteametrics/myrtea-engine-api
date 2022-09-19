@@ -8,7 +8,6 @@ import (
 // Init initialiaze all the app configuration and components
 func Init() {
 
-	initConfiguration()
 	docs.SwaggerInfo.Host = viper.GetString("SWAGGER_HOST")
 	docs.SwaggerInfo.BasePath = viper.GetString("SWAGGER_BASEPATH")
 

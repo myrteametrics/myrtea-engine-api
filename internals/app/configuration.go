@@ -14,6 +14,7 @@ var EnvPrefix = "MYRTEA"
 // AllowedConfigKey list every allowed configuration key
 var AllowedConfigKey = []configuration.ConfigKey{
 	{Type: configuration.StringFlag, Name: "DEBUG_MODE", DefaultValue: "false", Description: "Enable debug mode"},
+	{Type: configuration.StringFlag, Name: "LOGGER_PRODUCTION", DefaultValue: "true", Description: "Enable or disable production log"},
 	{Type: configuration.StringFlag, Name: "SERVER_PORT", DefaultValue: "9000", Description: "Server port"},
 	{Type: configuration.StringFlag, Name: "SERVER_ENABLE_TLS", DefaultValue: "false", Description: "Run the server in unsecured mode (without SSL)"},
 	{Type: configuration.StringFlag, Name: "SERVER_TLS_FILE_CRT", DefaultValue: "certs/server.rsa.crt", Description: "SSL certificate crt file location"},
@@ -51,6 +52,6 @@ var AllowedConfigKey = []configuration.ConfigKey{
 	{Type: configuration.StringFlag, Name: "AUTHENTICATION_SAML_COOKIE_MAX_AGE_DURATION", DefaultValue: "1h", Description: "SAML Cookie max age (time.Duration)"},
 }
 
-func initConfiguration() {
+func InitConfiguration() {
 	configuration.InitializeConfig(AllowedConfigKey, ConfigName, ConfigPath, EnvPrefix)
 }
