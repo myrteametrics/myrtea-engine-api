@@ -48,7 +48,7 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsLast(options GetH
 func (builder HistorySituationsBuilder) GetHistorySituationsIdsByStandardInterval(options GetHistorySituationsOptions, interval string) sq.SelectBuilder {
 	return builder.GetHistorySituationsIdsBase(options).
 		Options("distinct on (situation_id, situation_instance_id, date_trunc('"+interval+"', ts))").
-		OrderBy("situation_id", "situation_instance_id", "date_trunc('"+interval+"', ts) desc")
+		OrderBy("situation_id", "situation_instance_id", "date_trunc('"+interval+"', ts) desc, ts desc")
 }
 
 func (builder HistorySituationsBuilder) GetHistorySituationsIdsByCustomInterval(options GetHistorySituationsOptions, interval time.Duration, referenceDate time.Time) sq.SelectBuilder {
@@ -56,7 +56,7 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsByCustomInterval(
 	referenceDateStr := referenceDate.Format("2006-01-02T15:04:05Z07:00")
 	return builder.GetHistorySituationsIdsBase(options).
 		Options("distinct on (situation_id, situation_instance_id, CAST('"+referenceDateStr+"' AS TIMESTAMPTZ) + INTERVAL '1 second' * "+intervalSeconds+" * FLOOR(DATE_PART('epoch', ts- '"+referenceDateStr+"')/"+intervalSeconds+"))").
-		OrderBy("situation_id", "situation_instance_id", "CAST('"+referenceDateStr+"' AS TIMESTAMPTZ) + INTERVAL '1 second' * "+intervalSeconds+" * FLOOR(DATE_PART('epoch', ts- '"+referenceDateStr+"')/"+intervalSeconds+") desc")
+		OrderBy("situation_id", "situation_instance_id", "CAST('"+referenceDateStr+"' AS TIMESTAMPTZ) + INTERVAL '1 second' * "+intervalSeconds+" * FLOOR(DATE_PART('epoch', ts- '"+referenceDateStr+"')/"+intervalSeconds+") desc, ts desc")
 }
 
 func (builder HistorySituationsBuilder) GetHistorySituationsDetails(subQueryIds string, subQueryIdsArgs []interface{}) sq.SelectBuilder {
