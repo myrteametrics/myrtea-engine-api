@@ -24,6 +24,7 @@ import (
 
 // Config wraps common configuration parameters
 type Config struct {
+	Production         bool
 	Security           bool
 	CORS               bool
 	GatewayMode        bool
@@ -85,7 +86,11 @@ func New(config Config) *chi.Mux {
 	r.Use(chimiddleware.RealIP)
 	r.Use(chimiddleware.StripSlashes)
 	r.Use(chimiddleware.RedirectSlashes)
-	r.Use(CustomLogger)
+	if config.Production {
+		r.Use(CustomZapLogger)
+	} else {
+		r.Use(CustomLogger)
+	}
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Timeout(60 * time.Second))
 

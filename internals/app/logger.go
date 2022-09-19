@@ -7,8 +7,13 @@ import (
 )
 
 // InitLogger initialialize zap logging component
-func InitLogger() zap.Config {
-	zapConfig := zap.NewDevelopmentConfig()
+func InitLogger(production bool) zap.Config {
+	var zapConfig zap.Config
+	if production {
+		zapConfig = zap.NewProductionConfig()
+	} else {
+		zapConfig = zap.NewDevelopmentConfig()
+	}
 	zapConfig.Level.SetLevel(zap.InfoLevel)
 	logger, err := zapConfig.Build(zap.AddStacktrace(zap.ErrorLevel))
 	if err != nil {
