@@ -73,6 +73,7 @@ func main() {
 	serverTLSKey := viper.GetString("SERVER_TLS_FILE_KEY")
 
 	routerConfig := router.Config{
+		Production:         viper.GetBool("LOGGER_PRODUCTION"),
 		CORS:               viper.GetBool("API_ENABLE_CORS"),
 		Security:           viper.GetBool("API_ENABLE_SECURITY"),
 		GatewayMode:        viper.GetBool("API_ENABLE_GATEWAY_MODE"),
