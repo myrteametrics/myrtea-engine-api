@@ -2,14 +2,42 @@ package assistant
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"sync"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
 )
+
+var (
+	_globalPluginMu sync.RWMutex
+	_globalPlugin   *AssistantPlugin
+)
+
+// P is used to access the global plugin singleton
+func P() (*AssistantPlugin, error) {
+	_globalPluginMu.RLock()
+	defer _globalPluginMu.RUnlock()
+
+	plugin := _globalPlugin
+	if plugin == nil {
+		return nil, errors.New("no Assistant plugin found, feature is not available")
+	}
+	return plugin, nil
+}
+
+func Register(plugin *AssistantPlugin) func() {
+	_globalPluginMu.Lock()
+	defer _globalPluginMu.Unlock()
+
+	prev := _globalPlugin
+	_globalPlugin = plugin
+	return func() { Register(prev) }
+}
 
 // Handshake is a common handshake that is shared by plugin and host.
 var Handshake = plugin.HandshakeConfig{
@@ -19,6 +47,7 @@ var Handshake = plugin.HandshakeConfig{
 	MagicCookieValue: "hello",
 }
 
+var pluginServicePort = 9081
 var pluginName string = "assistant"
 
 type AssistantPlugin struct {
@@ -55,18 +84,22 @@ func NewAssistantPlugin() *AssistantPlugin {
 	}
 }
 
-func (m *AssistantPlugin) HandlerPrefix() string {
-	return fmt.Sprintf("/%s", m.Name)
+func (p *AssistantPlugin) HandlerPrefix() string {
+	return fmt.Sprintf("/%s", p.Name)
 }
 
-func (m *AssistantPlugin) Stop() error {
-	m.Client.Kill()
+func (p *AssistantPlugin) ServicePort() int {
+	return pluginServicePort
+}
+
+func (p *AssistantPlugin) Stop() error {
+	p.Client.Kill()
 	return nil
 }
 
-func (m *AssistantPlugin) Start() error {
+func (p *AssistantPlugin) Start() error {
 
-	client := plugin.NewClient(m.ClientConfig)
+	client := plugin.NewClient(p.ClientConfig)
 
 	rpcClient, err := client.Client()
 	if err != nil {
@@ -80,14 +113,16 @@ func (m *AssistantPlugin) Start() error {
 		return err
 	}
 
-	m.Assistant = raw.(Assistant)
-	m.Client = client
+	p.Assistant = raw.(Assistant)
+	p.Client = client
+
+	Register(p)
 
 	return nil
 }
 
-func (m *AssistantPlugin) Test() {
-	bFact, tokens, err := m.Assistant.SentenceProcess(
+func (p *AssistantPlugin) Test() {
+	bFact, tokens, err := p.Assistant.SentenceProcess(
 		"2020-10-03T12:30:00.000+02:00",
 		"combien de colis pour client france",
 		[][]string{{"combien", "colis", "for", "country", "espagne"}},

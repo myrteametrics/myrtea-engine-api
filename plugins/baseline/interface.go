@@ -7,7 +7,7 @@ import (
 // Baseline is the interface that we're exposing as a plugin.
 type Baseline interface {
 	// GetBaselineValue(id int64, factID int64, situationID int64, situationInstanceID int64, time time.Time) (BaselineValue, error)
-	GetBaselineValues(id int64, factID int64, situationID int64, situationInstanceID int64, time time.Time) (map[string]BaselineValue, error)
+	GetBaselineValues(int64, int64, int64, int64, time.Time) (map[string]BaselineValue, error)
 }
 
 type BaselineValue struct {

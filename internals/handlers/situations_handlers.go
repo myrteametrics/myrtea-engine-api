@@ -57,7 +57,7 @@ func GetSituations(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSituation godoc
-// @Summary Get a situation definition
+// @Summary Get a situation definitionM
 // @Description Get a situation definition
 // @Tags Situations
 // @Produce json

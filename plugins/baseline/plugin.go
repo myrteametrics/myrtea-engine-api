@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-plugin"
+	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
 	"go.uber.org/zap"
 )
 
@@ -48,6 +49,7 @@ var Handshake = plugin.HandshakeConfig{
 	MagicCookieValue: "hello",
 }
 
+var pluginServicePort int = 9082
 var pluginName string = "baseline"
 
 type BaselinePlugin struct {
@@ -76,6 +78,7 @@ func NewBaselinePlugin() *BaselinePlugin {
 	return &BaselinePlugin{
 		Name: pluginName,
 		ClientConfig: &plugin.ClientConfig{
+			Logger:           pluginutils.ZapWrap(zap.L()),
 			HandshakeConfig:  Handshake,
 			Plugins:          pluginMap,
 			Cmd:              cmd,
@@ -84,18 +87,22 @@ func NewBaselinePlugin() *BaselinePlugin {
 	}
 }
 
-func (m *BaselinePlugin) HandlerPrefix() string {
-	return fmt.Sprintf("/%s", m.Name)
+func (p *BaselinePlugin) ServicePort() int {
+	return pluginServicePort
 }
 
-func (m *BaselinePlugin) Stop() error {
-	m.Client.Kill()
+func (p *BaselinePlugin) HandlerPrefix() string {
+	return fmt.Sprintf("/%s", p.Name)
+}
+
+func (p *BaselinePlugin) Stop() error {
+	p.Client.Kill()
 	return nil
 }
 
-func (m *BaselinePlugin) Start() error {
+func (p *BaselinePlugin) Start() error {
 
-	client := plugin.NewClient(m.ClientConfig)
+	client := plugin.NewClient(p.ClientConfig)
 
 	rpcClient, err := client.Client()
 	if err != nil {
@@ -109,25 +116,26 @@ func (m *BaselinePlugin) Start() error {
 		return err
 	}
 
-	m.Baseline = raw.(Baseline)
-	m.Client = client
+	p.Baseline = raw.(Baseline)
+	p.Client = client
 
-	Register(m)
+	Register(p)
 
 	return nil
 }
 
-func (m *BaselinePlugin) Test() {
-	result, err := m.Baseline.GetBaselineValues(-1, 1, 0, 0, time.Now())
+func (p *BaselinePlugin) Test() {
+	result, err := p.Baseline.GetBaselineValues(-1, 19, 4, 111, time.Now())
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-
 	fmt.Println(result)
 }
 
-func (m *BaselinePlugin) Handler() http.Handler {
+func (p *BaselinePlugin) Handler() http.Handler {
 	r := chi.NewRouter()
+
+	// Add HTTP routes for every method exposed in the plugin interface GetBaselineValues
 
 	return r
 }

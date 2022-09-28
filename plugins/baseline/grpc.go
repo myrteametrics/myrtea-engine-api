@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline/proto"
+	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -48,8 +49,9 @@ func (m *GRPCClient) GetBaselineValues(id int64, factID int64, situationID int64
 	}
 
 	for k, v := range resp.Values {
-		vTime, err := time.Parse(v.GetTime(), timeLayout)
+		vTime, err := time.Parse(timeLayout, v.GetTime())
 		if err != nil {
+			zap.L().Warn("parse baseline ti", zap.Error(err))
 			continue
 		}
 		baselineValues[k] = BaselineValue{
