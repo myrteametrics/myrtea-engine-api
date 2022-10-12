@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func CreatePasswordProtectedZipFile(string zipFileName, []byte contents) ([]byte, error) {	
+func CreatePasswordProtectedZipFile(zipFileName string, contents []byte) ([]byte, error) {
 	// create a buffer to write our archive to
 	buf := new(bytes.Buffer)
 
