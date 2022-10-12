@@ -12,6 +12,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/email"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
 	"go.uber.org/zap"
+	
 )
 
 // Temp solution before proper task condition trigger
@@ -190,11 +191,26 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 			return err
 		}
 
-		attachments = append(attachments, email.MessageAttachment{
-			FileName: task.AttachmentFileNames[i],
-			Mime:     "application/octet-stream",
-			Content:  csvAttachment,
-		})
+		attachmentFileName = task.AttachmentFileNames[i]
+		if strings.Contains(attachmentFileName, ".") 
+		&& len(strings.Split(attachmentFileName, ".")) > 1 
+		&& if strings.Split(attachmentFileName, ".")[1] == "zip" {
+			zipAttachment, err := export.CreatePasswordProtectedZipFile(attachmentFileName, csvAttachment)
+			if err != nil {
+				attachments = append(attachments, email.MessageAttachment{
+					FileName: attachmentFileName,
+					Mime:     "application/zip",
+					Content:  zipAttachment,
+				})
+			}
+		} else {
+			attachments = append(attachments, email.MessageAttachment{
+				FileName: task.AttachmentFileNames[i],
+				Mime:     "application/octet-stream",
+				Content:  csvAttachment,
+			})
+		}
+		
 		zap.L().Debug("Attachments Added", zap.Any("factID", attachmentFactID))
 	}
 
