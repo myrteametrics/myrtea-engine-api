@@ -196,7 +196,7 @@ func buildRoutesV3SAML(config Config) (func(r chi.Router), error) {
 		AttributeUserID:          viper.GetString("AUTHENTICATION_SAML_ATTRIBUTE_USER_ID"),
 		AttributeUserDisplayName: viper.GetString("AUTHENTICATION_SAML_ATTRIBUTE_USER_DISPLAYNAME"),
 		AttributeUserMemberOf:    viper.GetString("AUTHENTICATION_SAML_ATTRIBUTE_USER_MEMBEROF"),
-		CookieMaxAge:             viper.GetDuration("AUTHENTICATION_SAML_COOKIE_MAX_AGE"),
+		CookieMaxAge:             viper.GetDuration("AUTHENTICATION_SAML_COOKIE_MAX_AGE_DURATION"),
 	}
 	if ok, err := samlConfig.IsValid(); !ok {
 		return nil, err
