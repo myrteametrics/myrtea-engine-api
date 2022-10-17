@@ -53,10 +53,10 @@ var pluginServicePort int = 9082
 var pluginName string = "baseline"
 
 type BaselinePlugin struct {
-	Name         string
-	ClientConfig *plugin.ClientConfig
-	Client       *plugin.Client
-	Baseline     Baseline
+	Name            string
+	ClientConfig    *plugin.ClientConfig
+	Client          *plugin.Client
+	BaselineService BaselineService
 }
 
 func NewBaselinePlugin() *BaselinePlugin {
@@ -116,7 +116,7 @@ func (p *BaselinePlugin) Start() error {
 		return err
 	}
 
-	p.Baseline = raw.(Baseline)
+	p.BaselineService = raw.(BaselineService)
 	p.Client = client
 
 	Register(p)
@@ -125,7 +125,7 @@ func (p *BaselinePlugin) Start() error {
 }
 
 func (p *BaselinePlugin) Test() {
-	result, err := p.Baseline.GetBaselineValues(-1, 19, 4, 111, time.Now())
+	result, err := p.BaselineService.GetBaselineValues(-1, 19, 4, 111, time.Now())
 	if err != nil {
 		fmt.Println(err.Error())
 	}

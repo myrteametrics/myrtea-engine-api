@@ -11,5 +11,6 @@ WORKDIR /app
 
 COPY bin/myrtea-engine-api myrtea-engine-api
 COPY config config
+COPY plugin plugin
 
 ENTRYPOINT ["./myrtea-engine-api"]

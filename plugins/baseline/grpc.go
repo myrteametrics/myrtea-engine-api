@@ -16,7 +16,7 @@ type BaselineGRPCPlugin struct {
 	// GRPCPlugin must still implement the Plugin interface
 	plugin.Plugin
 	// Concrete implementation, written in Go. This is only used for plugins that are written in Go.
-	Impl Baseline
+	Impl BaselineService
 }
 
 func (p *BaselineGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
@@ -71,7 +71,7 @@ func (m *GRPCClient) GetBaselineValues(id int64, factID int64, situationID int64
 
 type GRPCServer struct {
 	// This is the real implementation
-	Impl Baseline
+	Impl BaselineService
 }
 
 func (m *GRPCServer) GetBaselineValues(ctx context.Context, req *proto.BaselineValueRequest) (*proto.BaselineValues, error) {
