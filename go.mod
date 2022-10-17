@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
+	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0 // indirect
 	github.com/crewjam/saml v0.4.6
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chi/chi v1.5.4
