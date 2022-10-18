@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
+	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
 	github.com/crewjam/saml v0.4.6
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.0.0
