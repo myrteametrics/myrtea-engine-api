@@ -22,9 +22,7 @@ services:
     volumes:
       - "./resources/model.sql:/docker-entrypoint-initdb.d/1-init.sql"
   engine:
-    build:
-      context: .
-      dockerfile: local.Dockerfile
+    image: golang:1.19-alpine
     container_name: myrtea-engine
     ports:
       - "9000:9000"
@@ -32,3 +30,7 @@ services:
       - elastic
       - pgsql
     restart: always
+    volumes:
+      - ".:/app"
+    working_dir: /app
+    command: go run main.go
