@@ -11,10 +11,11 @@ import (
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows standard CRUD operation on ExternalConfigs
 type Repository interface {
-	Get(name string) (models.ExternalConfig, bool, error)
-	Create(tx *sqlx.Tx, rootCause models.ExternalConfig) error
-	Update(tx *sqlx.Tx, name string, rootCause models.ExternalConfig) error
-	Delete(tx *sqlx.Tx, name string) error
+	Get(id int64) (models.ExternalConfig, bool, error)
+	GetByName(name string) (models.ExternalConfig, bool, error)
+	Create(tx *sqlx.Tx, rootCause models.ExternalConfig) (int64, error)
+	Update(tx *sqlx.Tx, id int64, rootCause models.ExternalConfig) error
+	Delete(tx *sqlx.Tx, id int64) error
 	GetAll() (map[string]models.ExternalConfig, error)
 }
 

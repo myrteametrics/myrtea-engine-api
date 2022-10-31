@@ -89,10 +89,11 @@ func engineRouter() http.Handler {
 	r.Delete("/situations/{id}/instances/{instanceid}", handlers.DeleteSituationTemplateInstance)
 
 	r.Get("/externalconfigs", handlers.GetExternalConfigs)
-	r.Get("/externalconfigs/{name}", handlers.GetExternalConfig)
+	r.Get("/externalconfigs/{id}", handlers.GetExternalConfig)
+	r.Get("/externalconfigs/name/{name}", handlers.GetExternalConfigByName)
 	r.Post("/externalconfigs", handlers.PostExternalConfig)
-	r.Put("/externalconfigs/{name}", handlers.PutExternalConfig)
-	r.Delete("/externalconfigs/{name}", handlers.DeleteExternalConfig)
+	r.Put("/externalconfigs/{id}", handlers.PutExternalConfig)
+	r.Delete("/externalconfigs/{id}", handlers.DeleteExternalConfig)
 
 	r.Get("/rules", handlers.GetRules)
 	r.Get("/rules/{id}", handlers.GetRule)
