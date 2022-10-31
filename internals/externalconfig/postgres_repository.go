@@ -155,7 +155,7 @@ func (r *PostgresRepository) GetAll() (map[string]models.ExternalConfig, error) 
 	for rows.Next() {
 		var name, data string
 
-		err := rows.Scan(&name, &name, &data)
+		err := rows.Scan(&name, &data)
 		if err != nil {
 			return nil, err
 		}
