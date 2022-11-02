@@ -25,7 +25,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 
 // Get use to retrieve an externalConfig by id
 func (r *PostgresRepository) Get(id int64) (models.ExternalConfig, bool, error) {
-	query := `SELECT data FROM external_generic_config_v1 WHERE id = :id`
+	query := `SELECT name, data FROM external_generic_config_v1 WHERE id = :id`
 	params := map[string]interface{}{
 		"id": id,
 	}
