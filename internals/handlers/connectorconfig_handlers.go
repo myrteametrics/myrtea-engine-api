@@ -30,16 +30,16 @@ func GetConnectorConfigs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	externalConfigsSlice := make([]models.ConnectorConfig, 0)
+	connectorConfigsSlice := make([]models.ConnectorConfig, 0)
 	for _, connectorConfig := range connectorConfigs {
-		externalConfigsSlice = append(externalConfigsSlice, connectorConfig)
+		connectorConfigsSlice = append(connectorConfigsSlice, connectorConfig)
 	}
 
-	sort.SliceStable(externalConfigsSlice, func(i, j int) bool {
-		return externalConfigsSlice[i].Name < externalConfigsSlice[j].Name
+	sort.SliceStable(connectorConfigsSlice, func(i, j int) bool {
+		return connectorConfigsSlice[i].Name < connectorConfigsSlice[j].Name
 	})
 
-	render.JSON(w, r, externalConfigsSlice)
+	render.JSON(w, r, connectorConfigsSlice)
 }
 
 // GetConnectorConfig godoc
