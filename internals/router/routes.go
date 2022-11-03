@@ -95,6 +95,12 @@ func engineRouter() http.Handler {
 	r.Put("/externalconfigs/{id}", handlers.PutExternalConfig)
 	r.Delete("/externalconfigs/{id}", handlers.DeleteExternalConfig)
 
+	r.Get("/connectorconfigs", handlers.GetConnectorConfigs)
+	r.Get("/connectorconfigs/{id}", handlers.GetConnectorConfig)
+	r.Post("/connectorconfigs", handlers.PostConnectorConfig)
+	r.Put("/connectorconfigs/{id}", handlers.PutConnectorConfig)
+	r.Delete("/connectorconfigs/{id}", handlers.DeleteConnectorConfig)
+
 	r.Get("/rules", handlers.GetRules)
 	r.Get("/rules/{id}", handlers.GetRule)
 	r.Get("/rules/{id}/versions/{versionid}", handlers.GetRuleByVersion)
