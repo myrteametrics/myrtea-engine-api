@@ -15,7 +15,7 @@ type Repository interface {
 	Create(tx *sqlx.Tx, rootCause models.ConnectorConfig) (int64, error)
 	Update(tx *sqlx.Tx, id int64, rootCause models.ConnectorConfig) error
 	Delete(tx *sqlx.Tx, id int64) error
-	GetAll() (map[string]models.ConnectorConfig, error)
+	GetAll() (map[int64]models.ConnectorConfig, error)
 }
 
 var (

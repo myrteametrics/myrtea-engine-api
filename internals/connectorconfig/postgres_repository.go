@@ -146,8 +146,8 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
 }
 
 // GetAll method used to get all ConnectorConfigs
-func (r *PostgresRepository) GetAll() (map[string]models.ConnectorConfig, error) {
-	ConnectorConfigs := make(map[string]models.ConnectorConfig)
+func (r *PostgresRepository) GetAll() (map[int64]models.ConnectorConfig, error) {
+	ConnectorConfigs := make(map[int64]models.ConnectorConfig)
 
 	query := `SELECT id, name, connector_id, current FROM connectors_config_v1`
 	rows, err := r.conn.Query(query)
@@ -173,7 +173,8 @@ func (r *PostgresRepository) GetAll() (map[string]models.ConnectorConfig, error)
 			Current:     current,
 		}
 
-		ConnectorConfigs[ConnectorConfig.Name] = ConnectorConfig
+		ConnectorConfigs[ConnectorConfig.Id] = ConnectorConfig
 	}
+
 	return ConnectorConfigs, nil
 }

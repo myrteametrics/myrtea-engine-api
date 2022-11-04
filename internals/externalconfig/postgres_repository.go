@@ -171,8 +171,8 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
 }
 
 // GetAll method used to get all externalConfigs
-func (r *PostgresRepository) GetAll() (map[string]models.ExternalConfig, error) {
-	externalConfigs := make(map[string]models.ExternalConfig)
+func (r *PostgresRepository) GetAll() (map[int64]models.ExternalConfig, error) {
+	externalConfigs := make(map[int64]models.ExternalConfig)
 
 	query := `SELECT id, name, data FROM external_generic_config_v1`
 	rows, err := r.conn.Query(query)
@@ -197,7 +197,7 @@ func (r *PostgresRepository) GetAll() (map[string]models.ExternalConfig, error) 
 			Data: data,
 		}
 
-		externalConfigs[externalConfig.Name] = externalConfig
+		externalConfigs[externalConfig.Id] = externalConfig
 	}
 	return externalConfigs, nil
 }

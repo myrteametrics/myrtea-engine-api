@@ -16,7 +16,7 @@ type Repository interface {
 	Create(tx *sqlx.Tx, rootCause models.ExternalConfig) (int64, error)
 	Update(tx *sqlx.Tx, id int64, rootCause models.ExternalConfig) error
 	Delete(tx *sqlx.Tx, id int64) error
-	GetAll() (map[string]models.ExternalConfig, error)
+	GetAll() (map[int64]models.ExternalConfig, error)
 }
 
 var (
