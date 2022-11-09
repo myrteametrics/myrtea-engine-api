@@ -343,7 +343,7 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	placeholders, err := ParsePlaceholders(r.URL.Query().Get("placeholders"))
+	placeholders, err := QueryParamToOptionnalKeyValues(r, "placeholders", make(map[string]string))
 	if err != nil {
 		zap.L().Warn("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
 		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
@@ -483,7 +483,7 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	placeholders, err := ParsePlaceholders(r.URL.Query().Get("placeholders"))
+	placeholders, err := QueryParamToOptionnalKeyValues(r, "placeholders", make(map[string]string))
 	if err != nil {
 		zap.L().Error("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
 		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
@@ -749,7 +749,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	placeholders, err := ParsePlaceholders(r.URL.Query().Get("placeholders"))
+	placeholders, err := QueryParamToOptionnalKeyValues(r, "placeholders", make(map[string]string))
 	if err != nil {
 		zap.L().Warn("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
 		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
