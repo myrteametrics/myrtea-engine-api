@@ -12,6 +12,7 @@ type HistorySituationsBuilder struct{}
 type GetHistorySituationsOptions struct {
 	SituationID         int64
 	SituationInstanceID int64
+	ParameterFilters    map[string]string
 	FromTS              time.Time
 	ToTS                time.Time
 }
@@ -35,6 +36,9 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsBase(options GetH
 	}
 	if !options.ToTS.IsZero() {
 		q = q.Where(sq.Lt{"ts": options.ToTS})
+	}
+	for k, v := range options.ParameterFilters {
+		q = q.Where(sq.Eq{"parameters->>'" + k + "'": v})
 	}
 	return q
 }
