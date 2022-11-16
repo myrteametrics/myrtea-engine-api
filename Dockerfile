@@ -14,7 +14,7 @@ RUN make build
 
 
 # Stage 2 - Run binary
-FROM alpine:3.7
+FROM alpine:3.14
 LABEL maintainer="Myrtea Metrics <contact@myrteametrics.com>"
 
 RUN apk update && apk add -y ca-certificates && rm -rf /var/cache/apk/*
