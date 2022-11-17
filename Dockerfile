@@ -17,7 +17,7 @@ RUN make build
 FROM alpine:3.14
 LABEL maintainer="Myrtea Metrics <contact@myrteametrics.com>"
 
-RUN apk update && apk add -y ca-certificates && rm -rf /var/cache/apk/*
+RUN apk update && apk add --no-cache ca-certificates && rm -rf /var/cache/apk/*
 
 COPY --from=builder /build/bin/myrtea-engine-api myrtea-engine-api
 COPY config config
