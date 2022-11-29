@@ -279,3 +279,114 @@ func TestCalendarWithTimezone(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestUnionCalendarsSimpleCase(t *testing.T) {
+	InitUnitTest()
+
+	setCalendar(Calendar{ID: 1, Name: "unionCalendar", Periods: []Period{{Included: false,
+		MonthsOfYear: &monthInterval{From: 11, To: 11},
+		DaysOfWeek:   &dayWeekInterval{From: time.Saturday, To: time.Sunday}}},
+		UnionCalendarIDs: []int64{}})
+
+	setCalendar(Calendar{ID: 2, Name: "mainCalendar", Periods: []Period{{Included: true,
+		MonthsOfYear: &monthInterval{From: 11, To: 11},
+		DaysOfWeek:   &dayWeekInterval{From: time.Monday, To: time.Sunday}}},
+		UnionCalendarIDs: []int64{1}})
+
+	c, _, _ := getCalendar(2)
+	resolved := c.ResolveCalendar([]int64{})
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 23, 0, 0, 0, 0, time.UTC), true); err != nil {
+		t.Error(err)
+	}
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 26, 0, 0, 0, 0, time.UTC), false); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUnionCalendarsComplexeCase(t *testing.T) {
+	InitUnitTest()
+
+	// excluding specific time range within specific day
+	setCalendar(Calendar{ID: 1, Name: "excludingSundaySpecificTimeCalendar", Periods: []Period{{Included: false,
+		DaysOfWeek: &dayWeekInterval{From: time.Sunday, To: time.Sunday},
+		HoursOfDay: &hoursInterval{FromHour: 00, FromMinute: 1, ToHour: 22, ToMinute: 00}}},
+		UnionCalendarIDs: []int64{}})
+
+	// excluding specific date & time
+	setCalendar(Calendar{ID: 2, Name: "excludingSpecificHolidaysAndTimeCalendar", Periods: []Period{{Included: false,
+		DateTimeIntervals: &dateTimeInterval{From: time.Date(2022, 11, 1, 0, 0, 0, 0, time.UTC), To: time.Date(2022, 11, 1, 17, 0, 0, 0, time.UTC)}}},
+		UnionCalendarIDs: []int64{}})
+
+	// excluding specific time range all days
+	setCalendar(Calendar{ID: 3, Name: "excludingTimeAllDaysCalendar", Periods: []Period{{Included: false,
+		HoursOfDay: &hoursInterval{FromHour: 5, FromMinute: 0, ToHour: 7, ToMinute: 0}}},
+		UnionCalendarIDs: []int64{}})
+
+	// all days
+	setCalendar(Calendar{ID: 4, Name: "mainCalendar", Periods: []Period{{Included: true,
+		DaysOfWeek: &dayWeekInterval{From: time.Monday, To: time.Sunday}}},
+		UnionCalendarIDs: []int64{1, 2, 3}})
+
+	c, _, _ := getCalendar(4)
+	resolved := c.ResolveCalendar([]int64{})
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 23, 0, 0, 0, 0, time.UTC), true); err != nil {
+		t.Error(err)
+	}
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 27, 0, 2, 0, 0, time.UTC), false); err != nil {
+		t.Error(err)
+	}
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 27, 21, 0, 0, 0, time.UTC), false); err != nil {
+		t.Error(err)
+	}
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 27, 22, 5, 0, 0, time.UTC), true); err != nil {
+		t.Error(err)
+	}
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 1, 0, 0, 0, 0, time.UTC), true); err != nil {
+		t.Error(err)
+	}
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 1, 17, 0, 0, 0, time.UTC), true); err != nil {
+		t.Error(err)
+	}
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 1, 17, 5, 0, 0, time.UTC), true); err != nil {
+		t.Error(err)
+	}
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 22, 5, 0, 0, 0, time.UTC), false); err != nil {
+		t.Error(err)
+	}
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 22, 6, 0, 0, 0, time.UTC), false); err != nil {
+		t.Error(err)
+	}
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 22, 7, 0, 0, 0, time.UTC), false); err != nil {
+		t.Error(err)
+	}
+
+	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 22, 8, 0, 0, 0, time.UTC), true); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUnionCalendarExcluding11PMTo1AM(t *testing.T) {
+	InitUnitTest()
+
+	setCalendar(Calendar{ID: 2, Name: "mainCalendar", Periods: []Period{{Included: false,
+		HoursOfDay: &hoursInterval{FromHour: int(23), ToHour: int(1)}}},
+		UnionCalendarIDs: []int64{}})
+
+	c, _, _ := getCalendar(2)
+
+	if err := checkCalendarPeriod(t, c, time.Date(2022, 11, 23, 23, 15, 0, 0, time.UTC), false); err != nil {
+		t.Error(err)
+	}
+}
