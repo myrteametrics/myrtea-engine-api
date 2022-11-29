@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"math"
 	"time"
 )
 
@@ -19,7 +20,8 @@ type monthInterval struct {
 }
 
 func (i monthInterval) containsWithTz(t time.Time, tz *time.Location) bool {
-	return t.In(tz).Month() >= i.From && t.In(tz).Month() <= i.To
+	fromTr, toTr, valueTr := transpose(int(i.From), int(i.To), int(t.In(tz).Month()), 12)
+	return valueTr >= fromTr && valueTr <= toTr
 }
 
 type dayInterval struct {
@@ -28,7 +30,8 @@ type dayInterval struct {
 }
 
 func (i dayInterval) containsWithTz(t time.Time, tz *time.Location) bool {
-	return t.In(tz).Day() >= i.From && t.In(tz).Day() <= i.To
+	fromTr, toTr, valueTr := transpose(int(i.From), int(i.To), int(t.In(tz).Day()), 31)
+	return valueTr >= fromTr && valueTr <= toTr
 }
 
 type dayWeekInterval struct {
@@ -37,7 +40,8 @@ type dayWeekInterval struct {
 }
 
 func (i dayWeekInterval) containsWithTz(t time.Time, tz *time.Location) bool {
-	return t.In(tz).Weekday() >= i.From && t.In(tz).Weekday() <= i.To
+	fromTr, toTr, valueTr := transpose(int(i.From), int(i.To), int(t.In(tz).Weekday()), 7)
+	return valueTr >= fromTr && valueTr <= toTr
 }
 
 type hoursInterval struct {
@@ -48,9 +52,17 @@ type hoursInterval struct {
 }
 
 func (i hoursInterval) containsWithTz(t time.Time, tz *time.Location) bool {
-	fromMinutes := i.FromHour*60 + i.FromMinute
-	toMinutes := i.ToHour*60 + i.ToMinute
-	tMinutes := t.In(tz).Hour()*60 + t.In(tz).Minute()
+	from := i.FromHour*60 + i.FromMinute
+	to := i.ToHour*60 + i.ToMinute
+	value := t.In(tz).Hour()*60 + t.In(tz).Minute()
 
-	return tMinutes >= fromMinutes && tMinutes <= toMinutes
+	fromTr, toTr, valueTr := transpose(from, to, value, 24.0*60.0)
+	return valueTr >= fromTr && valueTr <= toTr
+}
+
+func transpose(from int, to int, value int, max int) (float64, float64, float64) {
+	transposition := float64(max - from)
+	return math.Mod(float64(from)+transposition, float64(max)),
+		math.Mod(float64(to)+transposition, float64(max)),
+		math.Mod(float64(value)+transposition, float64(max))
 }
