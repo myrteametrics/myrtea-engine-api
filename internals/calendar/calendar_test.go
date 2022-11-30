@@ -227,7 +227,7 @@ func TestCalendarIncludeDaysExcludeMonths2(t *testing.T) {
 func TestCalendarExcludeAllIncludeSpecific1(t *testing.T) {
 	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: false, MonthsOfYear: &monthInterval{From: 1, To: 12}, DaysOfMonth: &dayInterval{From: 1, To: 31}},
-		{Included: false, HoursOfDay: &hoursInterval{FromHour: 0, ToHour: 24}},
+		{Included: false, HoursOfDay: &hoursInterval{FromHour: 0, ToHour: 23, ToMinute: 59}},
 		{Included: true, MonthsOfYear: &monthInterval{From: 1, To: 1}, DaysOfMonth: &dayInterval{From: 1, To: 1}, HoursOfDay: &hoursInterval{FromHour: 12, ToHour: 13}},
 	}}
 	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 1, 12, 30, 0, 0, time.UTC), true); err != nil {
@@ -238,7 +238,7 @@ func TestCalendarExcludeAllIncludeSpecific1(t *testing.T) {
 func TestCalendarExcludeAllIncludeSpecific2(t *testing.T) {
 	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: false, MonthsOfYear: &monthInterval{From: 1, To: 12}, DaysOfMonth: &dayInterval{From: 1, To: 31}},
-		{Included: false, HoursOfDay: &hoursInterval{FromHour: 0, ToHour: 24}},
+		{Included: false, HoursOfDay: &hoursInterval{FromHour: 0, ToHour: 23, ToMinute: 59}},
 		{Included: true, MonthsOfYear: &monthInterval{From: 1, To: 1}, DaysOfMonth: &dayInterval{From: 1, To: 1}},
 	}}
 	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 1, 12, 30, 0, 0, time.UTC), false); err != nil {
@@ -249,7 +249,7 @@ func TestCalendarExcludeAllIncludeSpecific2(t *testing.T) {
 func TestCalendarExcludeAllIncludeSpecific3(t *testing.T) {
 	cal := Calendar{ID: 1, Name: "cal", Timezone: "UTC", UnionCalendarIDs: []int64{}, Periods: []Period{
 		{Included: false, MonthsOfYear: &monthInterval{From: 1, To: 12}, DaysOfMonth: &dayInterval{From: 1, To: 31}},
-		{Included: false, HoursOfDay: &hoursInterval{FromHour: 0, ToHour: 24}},
+		{Included: false, HoursOfDay: &hoursInterval{FromHour: 0, ToHour: 23, ToMinute: 59}},
 		{Included: true, MonthsOfYear: &monthInterval{From: 1, To: 1}},
 	}}
 	if err := checkCalendarPeriod(t, cal, time.Date(2020, 1, 1, 12, 30, 0, 0, time.UTC), false); err != nil {
