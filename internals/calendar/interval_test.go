@@ -49,5 +49,4 @@ func TestWeekday(t *testing.T) {
 
 	t.Log(dayWeekInterval{From: time.Friday, To: time.Sunday}.containsWithTz(time.Date(2022, time.November, 24, 12, 0, 0, 0, tzFR), tzFR), false)
 	t.Log(dayWeekInterval{From: time.Saturday, To: time.Wednesday}.containsWithTz(time.Date(2022, time.November, 24, 12, 0, 0, 0, tzFR), tzFR), false)
-	t.Fail()
 }
