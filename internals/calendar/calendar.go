@@ -93,6 +93,9 @@ func (c Calendar) ResolveCalendar(joinedCalendars []int64) Calendar {
 	joinedCalendars = append(joinedCalendars, c.ID)
 	periods := make([]Period, 0)
 
+	// Append current calendar periods
+	periods = append(periods, c.Periods...)
+
 	// Append unioned calendars periods
 	for _, unionCalendarID := range c.UnionCalendarIDs {
 
@@ -121,9 +124,6 @@ func (c Calendar) ResolveCalendar(joinedCalendars []int64) Calendar {
 		unionCalendarResolved := unionCalendar.ResolveCalendar(joinedCalendars)
 		periods = append(periods, unionCalendarResolved.Periods...)
 	}
-
-	// Append current calendar periods
-	periods = append(periods, c.Periods...)
 
 	return Calendar{
 		ID:               c.ID,
