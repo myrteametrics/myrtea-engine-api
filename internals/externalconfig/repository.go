@@ -3,7 +3,6 @@ package externalconfig
 import (
 	"sync"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 )
 
@@ -13,9 +12,9 @@ import (
 type Repository interface {
 	Get(id int64) (models.ExternalConfig, bool, error)
 	GetByName(name string) (models.ExternalConfig, bool, error)
-	Create(tx *sqlx.Tx, rootCause models.ExternalConfig) (int64, error)
-	Update(tx *sqlx.Tx, id int64, rootCause models.ExternalConfig) error
-	Delete(tx *sqlx.Tx, id int64) error
+	Create(rootCause models.ExternalConfig) (int64, error)
+	Update(id int64, rootCause models.ExternalConfig) error
+	Delete(id int64) error
 	GetAll() (map[int64]models.ExternalConfig, error)
 }
 

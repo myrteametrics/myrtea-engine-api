@@ -4,9 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 )
+
+const table = "external_generic_config_v1"
 
 // PostgresRepository is a repository containing the ExternalConfig definition based on a PSQL database and
 // implementing the repository interface
@@ -23,16 +26,32 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	return repo
 }
 
+// newStatement creates a new statement builder with Dollar format
+func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
+	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(r.conn.DB)
+}
+
+// checkRowsAffected Check if nbRows where affected to db
+func (r *PostgresRepository) checkRowsAffected(res sql.Result, nbRows int64) error {
+	i, err := res.RowsAffected()
+	if err != nil {
+		return errors.New("error with the affected rows:" + err.Error())
+	}
+	if i != nbRows {
+		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
+	}
+	return nil
+}
+
 // Get use to retrieve an externalConfig by id
 func (r *PostgresRepository) Get(id int64) (models.ExternalConfig, bool, error) {
-	query := `SELECT name, data FROM external_generic_config_v1 WHERE id = :id`
-	params := map[string]interface{}{
-		"id": id,
-	}
-
-	rows, err := r.conn.NamedQuery(query, params)
+	rows, err := r.newStatement().
+		Select("name", "data").
+		From(table).
+		Where(sq.Eq{"id": id}).
+		Query()
 	if err != nil {
-		return models.ExternalConfig{}, false, fmt.Errorf("couldn't retrieve the action with name %d: %s", id, err.Error())
+		return models.ExternalConfig{}, false, err
 	}
 	defer rows.Close()
 
@@ -55,10 +74,11 @@ func (r *PostgresRepository) Get(id int64) (models.ExternalConfig, bool, error) 
 
 // GetByName use to retrieve an externalConfig by name
 func (r *PostgresRepository) GetByName(name string) (models.ExternalConfig, bool, error) {
-	query := `SELECT id, data FROM external_generic_config_v1 WHERE name = :name`
-	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
-		"name": name,
-	})
+	rows, err := r.newStatement().
+		Select("id", "data").
+		From(table).
+		Where(sq.Eq{"name": name}).
+		Query()
 	if err != nil {
 		return models.ExternalConfig{}, false, err
 	}
@@ -83,99 +103,54 @@ func (r *PostgresRepository) GetByName(name string) (models.ExternalConfig, bool
 }
 
 // Create method used to create an externalConfig
-func (r *PostgresRepository) Create(tx *sqlx.Tx, externalConfig models.ExternalConfig) (int64, error) {
-	query := `INSERT into external_generic_config_v1 (name, data) 
-			 values (:name, :data)`
-	params := map[string]interface{}{
-		"name": externalConfig.Name,
-		"data": externalConfig.Data,
-	}
-
-	var err error
-	var res sql.Result
-	if tx != nil {
-		res, err = tx.NamedExec(query, params)
-	} else {
-		res, err = r.conn.NamedExec(query, params)
-	}
+func (r *PostgresRepository) Create(externalConfig models.ExternalConfig) (int64, error) {
+	var id int64
+	err := r.newStatement().
+		Insert(table).
+		Columns("name", "data").
+		Values(externalConfig.Name, externalConfig.Data).
+		Suffix("RETURNING \"id\"").
+		QueryRow().
+		Scan(&id)
 	if err != nil {
-		return -1, errors.New("couldn't query the database:" + err.Error())
+		return -1, err
 	}
-
-	i, err := res.RowsAffected()
-	if err != nil {
-		return -1, errors.New("error with the affected rows:" + err.Error())
-	}
-	if i != 1 {
-		return -1, errors.New("no row inserted (or multiple row inserted) instead of 1 row")
-	}
-	return -1, nil
+	return id, nil
 }
 
 // Update method used to update un externalConfig
-func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, externalConfig models.ExternalConfig) error {
-	query := `UPDATE external_generic_config_v1 SET name = :name, data = :data WHERE id = :id`
-	params := map[string]interface{}{
-		"id":   id,
-		"name": externalConfig.Name,
-		"data": externalConfig.Data,
-	}
-
-	var err error
-	var res sql.Result
-	if tx != nil {
-		res, err = tx.NamedExec(query, params)
-	} else {
-		res, err = r.conn.NamedExec(query, params)
-	}
-	if err != nil {
-		return errors.New("couldn't query the database:" + err.Error())
-	}
-
-	i, err := res.RowsAffected()
-	if err != nil {
-		return errors.New("error with the affected rows:" + err.Error())
-	}
-	if i != 1 {
-		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
-	}
-	return nil
-}
-
-// Delete use to retrieve an externalConfig by name
-func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
-	query := `DELETE FROM external_generic_config_v1 WHERE id = :id`
-	params := map[string]interface{}{
-		"id": id,
-	}
-
-	var err error
-	var res sql.Result
-	if tx != nil {
-		res, err = tx.NamedExec(query, params)
-	} else {
-		res, err = r.conn.NamedExec(query, params)
-	}
-	if err != nil {
-		return errors.New("couldn't query the database:" + err.Error())
-	}
-
-	i, err := res.RowsAffected()
+func (r *PostgresRepository) Update(id int64, externalConfig models.ExternalConfig) error {
+	res, err := r.newStatement().
+		Update(table).
+		Set("name", externalConfig.Name).
+		Set("data", externalConfig.Data).
+		Where("id = ?", id).
+		Exec()
 	if err != nil {
 		return err
 	}
-	if i != 1 {
-		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
+	return r.checkRowsAffected(res, 1)
+}
+
+// Delete use to retrieve an externalConfig by name
+func (r *PostgresRepository) Delete(id int64) error {
+	res, err := r.newStatement().
+		Delete(table).
+		Where("id = ?", id).
+		Exec()
+	if err != nil {
+		return err
 	}
-	return nil
+	return r.checkRowsAffected(res, 1)
 }
 
 // GetAll method used to get all externalConfigs
 func (r *PostgresRepository) GetAll() (map[int64]models.ExternalConfig, error) {
 	externalConfigs := make(map[int64]models.ExternalConfig)
-
-	query := `SELECT id, name, data FROM external_generic_config_v1`
-	rows, err := r.conn.Query(query)
+	rows, err := r.newStatement().
+		Select("id", "name", "data").
+		From(table).
+		Query()
 
 	if err != nil {
 		return nil, err

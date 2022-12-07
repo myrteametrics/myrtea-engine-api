@@ -129,7 +129,7 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := externalconfig.R().Create(nil, newExternalConfig)
+	id, err := externalconfig.R().Create(newExternalConfig)
 	if err != nil {
 		zap.L().Error("Error while creating the ExternalConfig", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
@@ -183,7 +183,7 @@ func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	newExternalConfig.Id = idExternalConfig
 
-	err = externalconfig.R().Update(nil, idExternalConfig, newExternalConfig)
+	err = externalconfig.R().Update(idExternalConfig, newExternalConfig)
 	if err != nil {
 		zap.L().Error("Error while updating the ExternalConfig", zap.String("idExternalConfig", id), zap.Any("externalConfig", newExternalConfig), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
@@ -225,7 +225,7 @@ func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = externalconfig.R().Delete(nil, idExternalConfig)
+	err = externalconfig.R().Delete(idExternalConfig)
 
 	if err != nil {
 		zap.L().Error("Error while deleting the ExternalConfig", zap.String("ExternalConfig ID", id), zap.Error(err))
