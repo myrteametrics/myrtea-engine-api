@@ -2,12 +2,10 @@ package externalconfig
 
 import (
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
-	"testing"
-	"time"
-
 	"github.com/jmoiron/sqlx"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
+	"testing"
 )
 
 func dbInitRepo(dbClient *sqlx.DB, t *testing.T) {
@@ -21,32 +19,6 @@ func dbInitRepo(dbClient *sqlx.DB, t *testing.T) {
 
 func dbDestroyRepo(dbClient *sqlx.DB, t *testing.T) {
 	_, err := dbClient.Exec(tests.ExternalGenericConfigDropTableV1)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func insertRule(dbClient *sqlx.DB, t *testing.T, ruleID int64) {
-	dt := time.Now().Truncate(1 * time.Millisecond).UTC()
-	query := `INSERT INTO rules_v1 VALUES (:id, :name, :enabled, :calendar_id, :last_modified)`
-	_, err := dbClient.NamedExec(query, map[string]interface{}{
-		"id":            ruleID,
-		"name":          "rule" + fmt.Sprint(ruleID),
-		"enabled":       true,
-		"calendar_id":   nil,
-		"last_modified": dt,
-	})
-	if err != nil {
-		t.Error(err)
-	}
-
-	query = `INSERT INTO rule_versions_v1 VALUES(:rule_id, 0, '{}', :creation_datetime)`
-	_, err = dbClient.NamedExec(query, map[string]interface{}{
-		"id":                ruleID,
-		"rule_id":           ruleID,
-		"creation_datetime": dt,
-	})
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -104,6 +76,46 @@ func TestPostgresGet(t *testing.T) {
 	}
 
 	externalConfigGet, found, err = r.Get(id)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	if !found {
+		t.Error("ExternalConfig doesn't exists after the creation")
+		t.FailNow()
+	}
+	if id != externalConfigGet.Id {
+		t.Error("invalid ExternalConfig ID")
+	}
+}
+
+func TestPostgresGetByName(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql test in short mode")
+	}
+	db := tests.DBClient(t)
+	defer dbDestroyRepo(db, t)
+	dbInitRepo(db, t)
+	r := NewPostgresRepository(db)
+
+	var err error
+
+	externalConfigGet, found, err := r.GetByName("test")
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	if found {
+		t.Error("found a externalConfig from nowhere")
+	}
+
+	externalConfig := models.ExternalConfig{Name: "test", Data: "{\"test\": \"test\"}"}
+	id, err := r.Create(externalConfig)
+	if err != nil {
+		t.Error(err)
+	}
+
+	externalConfigGet, found, err = r.GetByName("test")
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
