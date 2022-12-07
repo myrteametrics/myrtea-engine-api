@@ -64,6 +64,39 @@ This image can be configured using a configuration file mounted in the container
 
 It can also be configured using environment variables prefixed by `MYRTEA_`. (example: `-e MYRTEA_API_ENABLE_SECURITY=false` to disable security)
 
+### With Docker Compose
+
+You can also build a myrtea server instance in a single command with docker compose. 
+Two compose files are included in the project: dev and prod (default).
+
+As we are in docker containers, please replace all `localhost` occurrences 
+in the `config/engine-api.toml` file with the container name linking to it.
+
+Please make sure you have done all the required configurations.
+
+#### Production
+
+You can create an .env file containing the following environment variables:
+```
+POSTGRES_DB: db
+POSTGRES_USER: pg-user
+POSTGRES_PASSWORD: pg-pass
+```
+
+Then enter the command:
+
+```sh
+docker-compose --env-file .env up
+```
+
+#### Development
+
+No need to configure anything else here, just enter the following command:
+
+```sh
+docker-compose -f docker-compose.dev.yml up
+```
+
 ## Documentation
 
 See the [Getting Started](https://myrteametrics.github.io/myrtea-docs/getting-started/first-application/) documentation for more infos on the application settings

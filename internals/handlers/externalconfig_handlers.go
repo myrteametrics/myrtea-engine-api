@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/externalconfig"
@@ -46,21 +47,59 @@ func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 // @Description Get an externalConfig definition
 // @Tags ExternalConfigs
 // @Produce json
-// @Param name path string true "ExternalConfig ID"
+// @Param id path string true "ExternalConfig ID"
 // @Security Bearer
 // @Success 200 {object} models.ExternalConfig "externalConfig"
 // @Failure 400 "Status Bad Request"
-// @Router /engine/externalconfigs/{name} [get]
+// @Router /engine/externalconfigs/{id} [get]
 func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
-	nameExternalConfig := chi.URLParam(r, "name")
-	a, found, err := externalconfig.R().Get(nameExternalConfig)
+	id := chi.URLParam(r, "id")
+	idExternalConfig, err := strconv.ParseInt(id, 10, 64)
+
 	if err != nil {
-		zap.L().Error("Cannot get externalConfig", zap.String("externalConfigname", nameExternalConfig), zap.Error(err))
+		zap.L().Warn("Error on parsing external config id", zap.String("idExternalConfig", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	a, found, err := externalconfig.R().Get(idExternalConfig)
+	if err != nil {
+		zap.L().Error("Cannot get externalConfig", zap.String("externalConfigId", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 		return
 	}
+
 	if !found {
-		zap.L().Warn("ExternalConfig does not exists", zap.String("externalConfigname", nameExternalConfig))
+		zap.L().Warn("ExternalConfig does not exists", zap.String("externalConfigId", id))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	render.JSON(w, r, a)
+}
+
+// GetExternalConfigByName godoc
+// @Summary Get an externalConfig definition
+// @Description Get an externalConfig definition
+// @Tags ExternalConfigs
+// @Produce json
+// @Param name path string true "ExternalConfig Name"
+// @Security Bearer
+// @Success 200 {object} models.ExternalConfig "externalConfig"
+// @Failure 400 "Status Bad Request"
+// @Router /engine/externalconfigs/name/{name} [get]
+func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
+	name := chi.URLParam(r, "name")
+
+	a, found, err := externalconfig.R().GetByName(name)
+	if err != nil {
+		zap.L().Error("Cannot get externalConfig", zap.String("externalConfigname", name), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	if !found {
+		zap.L().Warn("ExternalConfig does not exists", zap.String("externalConfigname", name))
 		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
 		return
 	}
@@ -90,14 +129,14 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = externalconfig.R().Create(nil, newExternalConfig)
+	id, err := externalconfig.R().Create(newExternalConfig)
 	if err != nil {
 		zap.L().Error("Error while creating the ExternalConfig", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	newExternalConfigGet, found, err := externalconfig.R().Get(newExternalConfig.Name)
+	newExternalConfigGet, found, err := externalconfig.R().Get(id)
 	if err != nil {
 		zap.L().Error("Cannot get externalConfig", zap.String("externalConfigname", newExternalConfig.Name), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -126,32 +165,39 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/externalconfigs/{name} [put]
 func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
-	nameExternalConfig := chi.URLParam(r, "name")
+	id := chi.URLParam(r, "id")
+	idExternalConfig, err := strconv.ParseInt(id, 10, 64)
+
+	if err != nil {
+		zap.L().Warn("Error on parsing external config id", zap.String("idExternalConfig", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
 
 	var newExternalConfig models.ExternalConfig
-	err := json.NewDecoder(r.Body).Decode(&newExternalConfig)
+	err = json.NewDecoder(r.Body).Decode(&newExternalConfig)
 	if err != nil {
 		zap.L().Warn("ExternalConfig json decoding", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
 		return
 	}
-	newExternalConfig.Name = nameExternalConfig
+	newExternalConfig.Id = idExternalConfig
 
-	err = externalconfig.R().Update(nil, nameExternalConfig, newExternalConfig)
+	err = externalconfig.R().Update(idExternalConfig, newExternalConfig)
 	if err != nil {
-		zap.L().Error("Error while updating the ExternalConfig", zap.String("nameExternalConfig", nameExternalConfig), zap.Any("externalConfig", newExternalConfig), zap.Error(err))
+		zap.L().Error("Error while updating the ExternalConfig", zap.String("idExternalConfig", id), zap.Any("externalConfig", newExternalConfig), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	newExternalConfigGet, found, err := externalconfig.R().Get(nameExternalConfig)
+	newExternalConfigGet, found, err := externalconfig.R().Get(idExternalConfig)
 	if err != nil {
-		zap.L().Error("Cannot get externalConfig", zap.String("externalConfigname", nameExternalConfig), zap.Error(err))
+		zap.L().Error("Cannot get externalConfig", zap.String("externalConfigId", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
-		zap.L().Warn("ExternalConfig does not exists after update", zap.String("externalConfigname", nameExternalConfig))
+		zap.L().Warn("ExternalConfig does not exists after update", zap.String("externalConfigId", id))
 		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
 		return
 	}
@@ -170,10 +216,19 @@ func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/externalconfigs/{name} [delete]
 func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
-	nameExternalConfig := chi.URLParam(r, "name")
-	err := externalconfig.R().Delete(nil, nameExternalConfig)
+	id := chi.URLParam(r, "id")
+	idExternalConfig, err := strconv.ParseInt(id, 10, 64)
+
 	if err != nil {
-		zap.L().Error("Error while deleting the ExternalConfig", zap.String("ExternalConfig ID", nameExternalConfig), zap.Error(err))
+		zap.L().Warn("Error on parsing external config id", zap.String("idExternalConfig", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	err = externalconfig.R().Delete(idExternalConfig)
+
+	if err != nil {
+		zap.L().Error("Error while deleting the ExternalConfig", zap.String("ExternalConfig ID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
 		return
 	}
