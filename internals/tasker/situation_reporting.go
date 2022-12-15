@@ -201,12 +201,14 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 			strings.Split(attachmentFileName, ".")[1] == "zip" {
 			zipAttachment, err := export.CreatePasswordProtectedZipFile(attachmentFileName, csvAttachment)
 			if err != nil {
-				attachments = append(attachments, email.MessageAttachment{
-					FileName: attachmentFileName,
-					Mime:     "application/zip",
-					Content:  zipAttachment,
-				})
+				return err
 			}
+
+			attachments = append(attachments, email.MessageAttachment{
+				FileName: attachmentFileName,
+				Mime:     "application/zip",
+				Content:  zipAttachment,
+			})
 		} else {
 			attachments = append(attachments, email.MessageAttachment{
 				FileName: attachmentFileName,
