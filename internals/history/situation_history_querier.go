@@ -20,6 +20,7 @@ type HistorySituationsV4 struct {
 	SituationInstanceName string
 	Ts                    time.Time
 	Parameters            map[string]string
+	SituationParameters   map[string]string
 	ExpressionFacts       map[string]interface{}
 	Metadatas             []models.MetaData
 }
@@ -121,16 +122,25 @@ func (querier HistorySituationsQuerier) scanID(rows *sql.Rows) (int64, error) {
 
 func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV4, error) {
 	var rawParameters []byte
+	var rawSituationParameters []byte
 	var rawExpressionFacts []byte
 	var rawMetadatas []byte
 	item := HistorySituationsV4{}
-	err := rows.Scan(&item.ID, &item.SituationID, &item.SituationInstanceID, &item.Ts, &rawParameters, &rawExpressionFacts, &rawMetadatas, &item.SituationName, &item.SituationInstanceName)
+	err := rows.Scan(&item.ID, &item.SituationID, &item.SituationInstanceID, &item.Ts, &rawParameters, &rawExpressionFacts, &rawMetadatas, &item.SituationName, &item.SituationInstanceName, &rawSituationParameters)
 	if err != nil {
 		return HistorySituationsV4{}, err
 	}
 
 	if len(rawParameters) > 0 {
 		err = json.Unmarshal(rawParameters, &item.Parameters)
+		if err != nil {
+			zap.L().Error("Unmarshal", zap.Error(err))
+			return HistorySituationsV4{}, err
+		}
+	}
+
+	if len(rawSituationParameters) > 0 {
+		err = json.Unmarshal(rawSituationParameters, &item.SituationParameters)
 		if err != nil {
 			zap.L().Error("Unmarshal", zap.Error(err))
 			return HistorySituationsV4{}, err

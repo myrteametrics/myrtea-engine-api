@@ -74,6 +74,11 @@ func ExtractHistoryDataSearch(historySituations []HistorySituationsV4, historySi
 			parameters[k] = v
 		}
 
+		situationParameters := make(map[string]interface{})
+		for k, v := range historySituation.SituationParameters {
+			situationParameters[k] = v
+		}
+
 		situationRecord := search.SituationHistoryRecord{
 			SituationID:           historySituation.SituationID,
 			SituationName:         historySituation.SituationName,
@@ -81,6 +86,7 @@ func ExtractHistoryDataSearch(historySituations []HistorySituationsV4, historySi
 			SituationInstanceName: historySituation.SituationInstanceName,
 			DateTime:              historySituation.Ts,
 			Parameters:            parameters,
+			SituationParameters:   situationParameters,
 			ExpressionFacts:       historySituation.ExpressionFacts,
 			MetaData:              metadatas,
 			Facts:                 factRecords,

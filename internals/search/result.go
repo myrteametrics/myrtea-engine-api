@@ -23,6 +23,7 @@ type SituationHistoryRecord struct {
 	SituationInstanceID   int64                  `json:"situationInstanceId"`
 	SituationInstanceName string                 `json:"situationInstanceName"`
 	Parameters            map[string]interface{} `json:"parameters,omitempty"`
+	SituationParameters   map[string]interface{} `json:"situationParameters,omitempty"`
 	ExpressionFacts       map[string]interface{} `json:"expressionFacts,omitempty"`
 	MetaData              map[string]interface{} `json:"metaDatas,omitempty"`
 	Facts                 []FactHistoryRecord    `json:"facts,omitempty"`
