@@ -17,6 +17,7 @@ func dbInitRepo(dbClient *sqlx.DB, t *testing.T) {
 	dbDestroyRepo(dbClient, t)
 
 	tests.DBExec(dbClient, tests.CalendarTableV3, t, true)
+	tests.DBExec(dbClient, tests.CalendarUnionTableV3, t, true)
 
 	_, err := dbClient.Exec(tests.SituationDefinitionTableV1)
 	if err != nil {
@@ -71,6 +72,7 @@ func dbDestroyRepo(dbClient *sqlx.DB, t *testing.T) {
 		t.Error(err)
 	}
 
+	tests.DBExec(dbClient, tests.CalendarUnionDropTableV3, t, true)
 	tests.DBExec(dbClient, tests.CalendarDropTableV3, t, true)
 }
 
