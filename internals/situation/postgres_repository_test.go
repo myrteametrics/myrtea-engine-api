@@ -484,6 +484,7 @@ func TestPostgresRepository_GetTemplateInstanceCalendars_SingleCalendar(t *testi
 	defer dbDestroyRepo(db, t)
 	dbInitRepo(db, t)
 	r := NewPostgresRepository(db)
+	calendarRepo := calendar.NewPostgresRepository(db)
 	var err error
 
 	// Testing with one template situation no calendar, and an instance with a calendar (no unions)
@@ -491,7 +492,8 @@ func TestPostgresRepository_GetTemplateInstanceCalendars_SingleCalendar(t *testi
 		Name:        "test",
 		Description: "test",
 	}
-	c.ID, err = calendar.R().Create(c)
+
+	c.ID, err = calendarRepo.Create(c)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -531,6 +533,7 @@ func TestPostgresRepository_GetTemplateInstanceCalendars_MultipleCalendar(t *tes
 	defer dbDestroyRepo(db, t)
 	dbInitRepo(db, t)
 	r := NewPostgresRepository(db)
+	calendarRepo := calendar.NewPostgresRepository(db)
 	var err error
 
 	// Testing with one template situation no calendar, and an instance with a calendar (no unions)
@@ -546,17 +549,17 @@ func TestPostgresRepository_GetTemplateInstanceCalendars_MultipleCalendar(t *tes
 		Name:        "test2",
 		Description: "test2",
 	}
-	c.ID, err = calendar.R().Create(c)
+	c.ID, err = calendarRepo.Create(c)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
-	c1.ID, err = calendar.R().Create(c1)
+	c1.ID, err = calendarRepo.Create(c1)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
-	c2.ID, err = calendar.R().Create(c2)
+	c2.ID, err = calendarRepo.Create(c2)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -564,12 +567,12 @@ func TestPostgresRepository_GetTemplateInstanceCalendars_MultipleCalendar(t *tes
 	c1.UnionCalendarIDs = []int64{c2.ID}
 	c2.UnionCalendarIDs = []int64{c.ID}
 
-	err = calendar.R().Update(c1)
+	err = calendarRepo.Update(c1)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
-	err = calendar.R().Update(c2)
+	err = calendarRepo.Update(c2)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
