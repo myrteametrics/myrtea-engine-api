@@ -1,6 +1,7 @@
 package situation
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
@@ -31,6 +32,7 @@ type Repository interface {
 	DeleteTemplateInstance(instanceID int64) error
 	GetTemplateInstance(instanceID int64) (TemplateInstance, bool, error)
 	GetAllTemplateInstances(situationID int64) (map[int64]TemplateInstance, error)
+	GetTemplateInstanceCalendars(instanceID int64) (map[int64]calendar.Calendar, error)
 }
 
 var (
