@@ -2,6 +2,8 @@ package situation
 
 import (
 	"fmt"
+	"github.com/magiconair/properties/assert"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"testing"
 	"time"
 
@@ -472,4 +474,128 @@ func TestSetAndGetRules(t *testing.T) {
 		}
 	}
 
+}
+
+func TestPostgresRepository_GetTemplateInstanceCalendars_SingleCalendar(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql test in short mode")
+	}
+	db := tests.DBClient(t)
+	defer dbDestroyRepo(db, t)
+	dbInitRepo(db, t)
+	r := NewPostgresRepository(db)
+	var err error
+
+	// Testing with one template situation no calendar, and an instance with a calendar (no unions)
+	c := calendar.Calendar{
+		Name:        "test",
+		Description: "test",
+	}
+	c.ID, err = calendar.R().Create(c)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	situationTemplate := Situation{Name: "test"}
+	situationTemplate.ID, err = r.Create(situationTemplate)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	situationInstance := TemplateInstance{Name: "test instance", CalendarID: c.ID}
+	situationInstance.ID, err = r.CreateTemplateInstance(situationTemplate.ID, situationInstance)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	calendars, err := r.GetTemplateInstanceCalendars(situationInstance.ID)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	if calendars == nil {
+		t.Error("calendars should not be nil")
+	}
+	assert.Equal(t, len(calendars), 1, "wrong calendars count")
+	assert.Equal(t, calendars[0].Name, c.Name, "wrong calendar name")
+}
+
+func TestPostgresRepository_GetTemplateInstanceCalendars_MultipleCalendar(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql test in short mode")
+	}
+	db := tests.DBClient(t)
+	defer dbDestroyRepo(db, t)
+	dbInitRepo(db, t)
+	r := NewPostgresRepository(db)
+	var err error
+
+	// Testing with one template situation no calendar, and an instance with a calendar (no unions)
+	c := calendar.Calendar{
+		Name:        "test",
+		Description: "test",
+	}
+	c1 := calendar.Calendar{
+		Name:        "test1",
+		Description: "test1",
+	}
+	c2 := calendar.Calendar{
+		Name:        "test2",
+		Description: "test2",
+	}
+	c.ID, err = calendar.R().Create(c)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	c1.ID, err = calendar.R().Create(c1)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	c2.ID, err = calendar.R().Create(c2)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	c1.UnionCalendarIDs = []int64{c2.ID}
+	c2.UnionCalendarIDs = []int64{c.ID}
+
+	err = calendar.R().Update(c1)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	err = calendar.R().Update(c2)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	situationTemplate := Situation{Name: "test"}
+	situationTemplate.ID, err = r.Create(situationTemplate)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	situationInstance := TemplateInstance{Name: "test instance", CalendarID: c1.ID}
+	situationInstance.ID, err = r.CreateTemplateInstance(situationTemplate.ID, situationInstance)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	calendars, err := r.GetTemplateInstanceCalendars(situationInstance.ID)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	if calendars == nil {
+		t.Error("calendars should not be nil")
+	}
+	assert.Equal(t, len(calendars), 3, "wrong calendars count")
 }
