@@ -501,7 +501,7 @@ func TestPostgresRepository_GetTemplateInstanceCalendars_SingleCalendar(t *testi
 		t.FailNow()
 	}
 
-	situationTemplate := Situation{Name: "test"}
+	situationTemplate := Situation{Name: "test", IsTemplate: true}
 	situationTemplate.ID, err = r.Create(situationTemplate)
 	if err != nil {
 		t.Error(err)
@@ -580,7 +580,7 @@ func TestPostgresRepository_GetTemplateInstanceCalendars_MultipleCalendar(t *tes
 		t.FailNow()
 	}
 
-	situationTemplate := Situation{Name: "test"}
+	situationTemplate := Situation{Name: "test", IsTemplate: true}
 	situationTemplate.ID, err = r.Create(situationTemplate)
 	if err != nil {
 		t.Error(err)
