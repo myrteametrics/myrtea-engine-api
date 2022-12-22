@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 	"go.uber.org/zap"
 )
 
@@ -29,6 +30,12 @@ func ApplyTasks(batch TaskBatch) (err error) {
 			}
 
 			taskContext := BuildContextData(action.GetMetaData(), batch.Context)
+
+			if shouldNotExecuteAction(taskContext.SituationID, taskContext.TemplateInstanceID) {
+				zap.L().Warn("CreateIssueTask skipped - last status of today is still critical")
+				continue
+			}
+
 			err = task.Perform(buildTaskKey(taskContext, task), taskContext)
 			if err != nil {
 				zap.L().Warn("Error while performing task CreateIssueTask", zap.Error(err))
@@ -81,6 +88,12 @@ func ApplyTasks(batch TaskBatch) (err error) {
 			}
 
 			taskContext := BuildContextData(action.GetMetaData(), batch.Context)
+
+			if shouldNotExecuteAction(taskContext.SituationID, taskContext.TemplateInstanceID) {
+				zap.L().Warn("SituationReportingTask skipped - last status of today is still critical")
+				continue
+			}
+
 			err = task.Perform(buildTaskKey(taskContext, task), taskContext)
 			if err != nil {
 				zap.L().Warn("Error while performing task SituationReportingTask", zap.Error(err))
@@ -108,4 +121,15 @@ func ApplyBatchs(batchs []TaskBatch) {
 			continue
 		}
 	}
+}
+
+//Determine wether the latest evaluation of current day of an instance is critical or not
+//Return true if the last status is "critical"
+//Alerts and situation reporting actions should not be executed when true (it means the latest issue is still ongoing)
+func shouldNotExecuteAction(situationId int64, situationInstanceId int64) bool {
+	critical, err := situation.R().LastSituationInstanceStatusValueIsCritical(situationId, situationInstanceId)
+	if err != nil {
+		return false
+	}
+	return critical
 }

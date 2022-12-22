@@ -783,3 +783,36 @@ func (r *PostgresRepository) GetAllTemplateInstances(situationID int64) (map[int
 
 	return templateInstances, nil
 }
+
+func (r *PostgresRepository) LastSituationInstanceStatusValueIsCritical(situationID int64, instanceId int64) (bool, error) {
+
+	query := `
+    SELECT * 
+    FROM (
+        SELECT json_array_elements(metadatas) as last_status_value 
+        FROM situation_history_v5 
+        WHERE situation_id = :situation_id 
+          AND situation_instance_id = :instance_id 
+          AND date_trunc('day', ts) = date_trunc('day', current_date) 
+        ORDER BY ts desc 
+        LIMIT 1
+    ) t 
+    WHERE last_status_value->>'value' = 'critical'
+`
+
+	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
+		"situation_id": situationID,
+		"instance_id":  instanceId,
+	})
+	if err != nil {
+		return false, errors.New("Couldn't retrieve the last evaluation status 'ok' of the instance: " + err.Error())
+	}
+	defer rows.Close()
+
+	var size int
+	for rows.Next() {
+		size++
+	}
+
+	return (size > 0), nil
+}

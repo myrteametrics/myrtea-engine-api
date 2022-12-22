@@ -31,6 +31,7 @@ type Repository interface {
 	DeleteTemplateInstance(instanceID int64) error
 	GetTemplateInstance(instanceID int64) (TemplateInstance, bool, error)
 	GetAllTemplateInstances(situationID int64) (map[int64]TemplateInstance, error)
+	LastSituationInstanceStatusValueIsCritical(situationID int64, instanceId int64) (bool, error)
 }
 
 var (
