@@ -532,7 +532,12 @@ func TestPostgresRepository_GetTemplateInstanceCalendars_SingleCalendar(t *testi
 		t.Error("calendars should not be nil")
 	}
 	assert.Equal(t, len(calendars), 1, "wrong calendars count")
-	assert.Equal(t, calendars[0].Name, c.Name, "wrong calendar name")
+
+	for k := range calendars {
+		assert.Equal(t, calendars[k].Name, c.Name, "wrong calendar name")
+		break
+	}
+
 }
 
 func TestPostgresRepository_GetTemplateInstanceCalendars_MultipleCalendar(t *testing.T) {
