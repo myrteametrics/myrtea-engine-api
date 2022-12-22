@@ -23,6 +23,10 @@ func dbInitRepo(dbClient *sqlx.DB, t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	_, err = dbClient.Exec(tests.SituationTemplateInstancesTableV1)
+	if err != nil {
+		t.Error(err)
+	}
 	_, err = dbClient.Exec(tests.FactDefinitionTableV1)
 	if err != nil {
 		t.Error(err)
@@ -55,6 +59,10 @@ func dbDestroyRepo(dbClient *sqlx.DB, t *testing.T) {
 		t.Error(err)
 	}
 	_, err = dbClient.Exec(tests.FactDefinitionDropTableV1)
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = dbClient.Exec(tests.SituationTemplateInstancesDropTableV1)
 	if err != nil {
 		t.Error(err)
 	}
