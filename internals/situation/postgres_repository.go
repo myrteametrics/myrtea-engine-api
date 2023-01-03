@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	sq "github.com/Masterminds/squirrel"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -14,7 +12,7 @@ import (
 )
 
 // PostgresRepository is a repository containing the situation definition based on a PSQL database and
-// implementing the repository interface
+//implementing the repository interface
 type PostgresRepository struct {
 	conn *sqlx.DB
 }
@@ -26,11 +24,6 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	}
 	var ifm Repository = &r
 	return ifm
-}
-
-// newStatement creates a new statement builder with Dollar format
-func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
-	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(r.conn.DB)
 }
 
 // Get retrieve the specified situation definition
@@ -789,45 +782,4 @@ func (r *PostgresRepository) GetAllTemplateInstances(situationID int64) (map[int
 	}
 
 	return templateInstances, nil
-}
-
-func (r *PostgresRepository) GetTemplateInstanceCalendars(instanceID int64) (map[int64]calendar.Calendar, error) {
-	query := `with recursive calendars as (select a.id, a.name, a.description, a.timezone, a.period_data, a.enabled,
-                                    ARRAY(SELECT sub_calendar_id FROM calendar_union_v1
-                                          WHERE calendar_id = a.id ORDER BY priority) as unionCalendarIDs
-                             from calendar_v1 a
-                             where a.id = (select i.calendar_id from situation_template_instances_v1 i where i.id = :id)
-                             union
-                             select b.id, b.name, b.description, b.timezone, b.period_data, b.enabled,
-                                    ARRAY(SELECT sub_calendar_id FROM calendar_union_v1
-										  WHERE calendar_id = b.id ORDER BY priority) as unionCalendarIDs
-                             from calendar_v1 b inner join calendars l on b.id = any (l.unionCalendarIDs)
-						 ) select * from calendars;`
-	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
-		"id": instanceID,
-	})
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	calendars := make(map[int64]calendar.Calendar)
-
-	for rows.Next() {
-		var periodData string
-
-		foundCalendar := calendar.Calendar{}
-		err = rows.Scan(&foundCalendar.ID, &foundCalendar.Name, &foundCalendar.Description, &foundCalendar.Timezone, &periodData, &foundCalendar.Enabled, pq.Array(&foundCalendar.UnionCalendarIDs))
-		if err != nil {
-			return nil, err
-		}
-
-		err = json.Unmarshal([]byte(periodData), &foundCalendar.Periods)
-		if err != nil {
-			return nil, err
-		}
-
-		calendars[foundCalendar.ID] = foundCalendar
-	}
-
-	return calendars, nil
 }

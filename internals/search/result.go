@@ -16,7 +16,7 @@ type SituationHistoryRecords struct {
 	Situations []SituationHistoryRecord `json:"situations"`
 }
 
-// SituationHistoryRecord struct used to represent a situation history record
+//SituationHistoryRecord struct used to represent a situation history record
 type SituationHistoryRecord struct {
 	SituationID           int64                           `json:"situationId"`
 	SituationName         string                          `json:"situationName"`
@@ -30,7 +30,7 @@ type SituationHistoryRecord struct {
 	DateTime              time.Time                       `json:"dateTime"`
 }
 
-// FactHistoryRecord struct to represent a fact history record
+//FactHistoryRecord struct to represent a fact history record
 type FactHistoryRecord struct {
 	DateTime  time.Time                         `json:"dateTime"`
 	FactID    int64                             `json:"factId"`
