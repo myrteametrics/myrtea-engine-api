@@ -25,7 +25,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	return repo
 }
 
-//Get search and returns a Calendar from the repository by its id
+// Get search and returns a Calendar from the repository by its id
 func (r *PostgresRepository) Get(id int64) (Calendar, bool, error) {
 	query := `SELECT id, name, description, timezone, period_data, enabled,
 			  ARRAY(SELECT sub_calendar_id 
@@ -63,7 +63,7 @@ func (r *PostgresRepository) Get(id int64) (Calendar, bool, error) {
 	return Calendar{}, false, nil
 }
 
-//Create method used to create a Calendar
+// Create method used to create a Calendar
 func (r *PostgresRepository) Create(calendar Calendar) (int64, error) {
 	creationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
@@ -156,7 +156,7 @@ func oldUnionIDs(r *PostgresRepository, calendarID int64) ([]int64, error) {
 	return unionCalendarIDs, nil
 }
 
-//Update method used to update a Calendar
+// Update method used to update a Calendar
 func (r *PostgresRepository) Update(calendar Calendar) error {
 	lasmodifiedTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
@@ -381,4 +381,42 @@ func (r *PostgresRepository) GetAllModifiedFrom(from time.Time) (map[int64]Calen
 	}
 
 	return calendars, nil
+}
+
+// GetSituationCalendar search and returns a Calendar from the repository by the situation id
+func (r *PostgresRepository) GetSituationCalendar(id int64) (Calendar, bool, error) {
+	query := `SELECT id, name, description, timezone, period_data, enabled,
+			  ARRAY(SELECT sub_calendar_id 
+					FROM calendar_union_v1 
+					WHERE calendar_id = :id 
+					ORDER BY priority ASC) as unionCalendarIDs 
+			  FROM calendar_v1 
+			  WHERE id = (SELECT s.calendar_id FROM situation_definition_v1 s WHERE s.id = :id)`
+	params := map[string]interface{}{
+		"id": id,
+	}
+	rows, err := r.conn.NamedQuery(query, params)
+	if err != nil {
+		return Calendar{}, false, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		var periodData string
+
+		calendar := Calendar{}
+		err = rows.Scan(&calendar.ID, &calendar.Name, &calendar.Description, &calendar.Timezone, &periodData, &calendar.Enabled, pq.Array(&calendar.UnionCalendarIDs))
+		if err != nil {
+			return Calendar{}, false, err
+		}
+
+		err = json.Unmarshal([]byte(periodData), &calendar.Periods)
+		if err != nil {
+			return Calendar{}, false, err
+		}
+
+		return calendar, true, nil
+	}
+
+	return Calendar{}, false, nil
 }

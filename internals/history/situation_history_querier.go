@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -22,6 +23,7 @@ type HistorySituationsV4 struct {
 	Parameters            map[string]string
 	ExpressionFacts       map[string]interface{}
 	Metadatas             []models.MetaData
+	Calendar              *calendar.Calendar
 }
 
 // HistoryRecordV4 represents a single and unique situation history entry
@@ -124,7 +126,15 @@ func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV
 	var rawExpressionFacts []byte
 	var rawMetadatas []byte
 	item := HistorySituationsV4{}
-	err := rows.Scan(&item.ID, &item.SituationID, &item.SituationInstanceID, &item.Ts, &rawParameters, &rawExpressionFacts, &rawMetadatas, &item.SituationName, &item.SituationInstanceName)
+	//
+	var calendarId sql.NullInt64
+	var calendarName sql.NullString
+	var calendarDescription sql.NullString
+	var calendarTimezone sql.NullString
+
+	err := rows.Scan(&item.ID, &item.SituationID, &item.SituationInstanceID, &item.Ts, &rawParameters,
+		&rawExpressionFacts, &rawMetadatas, &item.SituationName, &item.SituationInstanceName,
+		&calendarId, &calendarName, &calendarDescription, &calendarTimezone)
 	if err != nil {
 		return HistorySituationsV4{}, err
 	}
@@ -150,6 +160,15 @@ func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV
 		if err != nil {
 			zap.L().Error("Unmarshal", zap.Error(err))
 			return HistorySituationsV4{}, err
+		}
+	}
+
+	if calendarId.Valid && calendarName.Valid && calendarDescription.Valid && calendarTimezone.Valid {
+		item.Calendar = &calendar.Calendar{
+			ID:          calendarId.Int64,
+			Name:        calendarName.String,
+			Description: calendarDescription.String,
+			Timezone:    calendarTimezone.String,
 		}
 	}
 
