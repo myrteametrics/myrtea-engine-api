@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"net/http"
 	"sort"
 	"strconv"
@@ -584,58 +583,4 @@ func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 	})
 
 	render.JSON(w, r, instancesSlice)
-}
-
-// GetSituationInstanceCalendars godoc
-// @Summary Get the list of calendars from a situation instance
-// @Description Get the list of calendars from a situation instance
-// @Tags SituationInstance
-// @Produce json
-// @Param instanceid path string true "SituationInstance ID"
-// @Security Bearer
-// @Success 200 {array} calendar.Calendar
-// @Failure 400 "Status Bad Request"
-// @Failure 401 "Status Unauthorized"
-// @Router /engine/situations/{id}/instances/{instanceid}/calendars [get]
-func GetSituationInstanceCalendars(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "instanceid")
-	idSituationInstance, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		zap.L().Warn("Error on parsing instanceSituation id", zap.String("instanceSituationID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
-		return
-	}
-
-	// groups := GetUserGroupsFromContext(r)
-	// inGroups, err := situation.R().IsInGroups(idSituation, groups)
-	// if err != nil {
-	// 	zap.L().Error("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-	// 	render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-	// 	return
-	// }
-	// if !inGroups {
-	// 	zap.L().Warn("Error while validating authorization", zap.String("Situation ID", id), zap.String("groups", fmt.Sprint(groups)), zap.Error(err))
-	// 	render.Error(w, r, render.ErrAPISecurityNoPermissions, err)
-	// 	return
-	// }
-
-	// FIXME: security check !
-
-	instances, err := situation.R().GetTemplateInstanceCalendars(idSituationInstance)
-	if err != nil {
-		zap.L().Error("Error on getting situation instance calendars", zap.String("situationID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
-	}
-
-	calendarsSlice := make([]calendar.Calendar, 0)
-	for _, instance := range instances {
-		calendarsSlice = append(calendarsSlice, instance)
-	}
-
-	sort.SliceStable(calendarsSlice, func(i, j int) bool {
-		return calendarsSlice[i].ID < calendarsSlice[j].ID
-	})
-
-	render.JSON(w, r, calendarsSlice)
 }
