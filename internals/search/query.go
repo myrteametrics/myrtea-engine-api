@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -202,14 +201,4 @@ func validateSourceFilterParameter(value *interface{}, name string) error {
 		}
 	}
 	return nil
-}
-
-func parseDurationPart(value string, unit time.Duration) time.Duration {
-	if len(value) == 0 {
-		return 0
-	}
-	if parsed, err := strconv.ParseFloat(value[:len(value)-1], 64); err == nil {
-		return time.Duration(float64(unit) * parsed)
-	}
-	return 0
 }

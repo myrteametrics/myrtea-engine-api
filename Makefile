@@ -80,18 +80,12 @@ test-unit:
 # test-memory:
 # 	GO111MODULE=$(GO111MODULE) GOSUMDB=$(GOSUMDB) go test -msan -short $$(go list ./... | grep -v /vendor/)
 
-
-$(GOLINT):
-	go get golang.org/x/lint/golint
+$(lint):
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 .PHONY: lint ## Lint the code
-lint: $(GOLINT)
-	golint -set_exit_status=true $$(go list ./... | grep github.com/myrteametrics/myrtea-engine-api/v5)
-
-$(GOLANGCILINT):
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.30.0
-
-lint2: $(GOLANGCILINT)
+lint: $(lint)
+	go mod tidy
 	golangci-lint run
 
 $(SWAG):

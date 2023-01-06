@@ -1,3 +1,5 @@
 # Golang dependencies
-# Gopkg.lock
+# Gopkg.lock
 /vendor
+/coverage
+/document
