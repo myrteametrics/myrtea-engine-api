@@ -65,9 +65,10 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsByCustomInterval(
 
 func (builder HistorySituationsBuilder) GetHistorySituationsDetails(subQueryIds string, subQueryIdsArgs []interface{}) sq.SelectBuilder {
 	return builder.newStatement().
-		Select("sh.*, s.name, si.name").
+		Select("sh.*, s.name, si.name, c.id, c.name, c.description, c.timezone").
 		From("situation_definition_v1 s").
 		LeftJoin("situation_template_instances_v1 si on s.id = si.situation_id").
+		LeftJoin("calendar_v1 c on c.id = COALESCE(si.calendar_id, s.calendar_id)").
 		InnerJoin("situation_history_v5 sh on (s.id = sh.situation_id and (sh.situation_instance_id = si.id OR sh.situation_instance_id = 0))").
 		Where("sh.id = any ("+subQueryIds+")", subQueryIdsArgs...)
 }
