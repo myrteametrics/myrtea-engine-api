@@ -13,7 +13,6 @@ type Base struct {
 	localMu           sync.RWMutex
 	calendars         map[int64]Calendar
 	resolvedCalendars map[int64]Calendar
-	graph             *Graph
 	lastUpdateTime    time.Time
 }
 
@@ -22,7 +21,6 @@ func NewCalendarBase() *Base {
 	return &Base{
 		calendars:         map[int64]Calendar{},
 		resolvedCalendars: map[int64]Calendar{},
-		graph:             newGraph(),
 	}
 }
 
@@ -51,8 +49,8 @@ func (cBase *Base) GetResolved(id int64) (Calendar, bool, error) {
 
 // Update Updates the calendar map (read the new calendar from database)
 func (cBase *Base) Update() {
-	cBase.localMu.RLock()
-	defer cBase.localMu.RUnlock()
+	cBase.localMu.Lock()
+	defer cBase.localMu.Unlock()
 
 	allCalendars, err := R().GetAll()
 	if err != nil {
@@ -60,36 +58,34 @@ func (cBase *Base) Update() {
 		return
 	}
 
+	enabledCalendars := make(map[int64]Calendar)
 	for calendarID, calendar := range allCalendars {
 		if calendar.Enabled {
-			cBase.calendars[calendarID] = calendar
-		} else {
-			_, ok := cBase.calendars[calendarID]
-			if ok {
-				delete(cBase.calendars, calendarID)
-			}
+			enabledCalendars[calendarID] = calendar
 		}
 	}
 
-	cBase.resolvedCalendars = map[int64]Calendar{}
-	cBase.graph = newGraph()
-
+	graph := newGraph()
 	for calendarID := range allCalendars {
-		cBase.graph.addVertex(calendarID)
+		graph.addVertex(calendarID)
 	}
 
 	for _, calendar := range allCalendars {
 		for _, unionCalendarID := range calendar.UnionCalendarIDs {
-			cBase.graph.addEdge(calendar.ID, unionCalendarID)
+			graph.addEdge(calendar.ID, unionCalendarID)
 		}
 	}
 
+	resolvedCalendars := make(map[int64]Calendar)
 	for calendarID, calendar := range allCalendars {
-		cBase.graph.clearGraph()
-		if !cBase.graph.Nodes[calendarID].isCyclic(cBase.graph) {
-			cBase.resolvedCalendars[calendarID] = calendar.ResolveCalendar([]int64{})
+		graph.clearGraph()
+		if !graph.Nodes[calendarID].isCyclic(graph) {
+			resolvedCalendars[calendarID] = calendar.ResolveCalendar(enabledCalendars, []int64{})
 		} else {
 			zap.L().Warn("Cyclic reference detected for calendar: ", zap.Int64("calendarID", calendarID))
 		}
 	}
+
+	cBase.calendars = enabledCalendars
+	cBase.resolvedCalendars = resolvedCalendars
 }
