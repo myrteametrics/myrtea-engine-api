@@ -65,7 +65,7 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsByCustomInterval(
 
 func (builder HistorySituationsBuilder) GetHistorySituationsDetails(subQueryIds string, subQueryIdsArgs []interface{}) sq.SelectBuilder {
 	return builder.newStatement().
-		Select("sh.*, s.name, si.name, c.id, c.name, c.description, c.timezone").
+		Select("sh.*, s.name, coalesce(si.name, ''), c.id, c.name, c.description, c.timezone").
 		From("situation_definition_v1 s").
 		LeftJoin("situation_template_instances_v1 si on s.id = si.situation_id").
 		LeftJoin("calendar_v1 c on c.id = COALESCE(si.calendar_id, s.calendar_id)").
@@ -78,4 +78,13 @@ func (builder HistorySituationsBuilder) Insert(history HistorySituationsV4, para
 		Columns("id", "situation_id", "situation_instance_id", "ts", "parameters", "expression_facts", "metadatas").
 		Values(sq.Expr("DEFAULT"), history.SituationID, history.SituationInstanceID, history.Ts, parametersJSON, expressionFactsJSON, metadatasJSON).
 		Suffix("RETURNING id")
+}
+
+func (builder HistorySituationsBuilder) Update(id int64, parametersJSON []byte, expressionFactsJSON []byte, metadatasJSON []byte) sq.UpdateBuilder {
+	return builder.newStatement().
+		Update("situation_history_v5").
+		Where(sq.Eq{"id": id}).
+		Set("parameters", parametersJSON).
+		Set("expression_facts", expressionFactsJSON).
+		Set("metadatas", metadatasJSON)
 }

@@ -53,6 +53,33 @@ func (querier HistoryFactsQuerier) Exec(builder sq.InsertBuilder) error {
 	return nil
 }
 
+func (querier HistoryFactsQuerier) Update(history HistoryFactsV4) error {
+	resultJSON, err := json.Marshal(history.Result)
+	if err != nil {
+		return err
+	}
+
+	err = querier.ExecUpdate(querier.Builder.Update(history.ID, resultJSON))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (querier HistoryFactsQuerier) ExecUpdate(builder sq.UpdateBuilder) error {
+	res, err := builder.RunWith(querier.conn.DB).Exec()
+	if err != nil {
+		return err
+	}
+
+	if count, err := res.RowsAffected(); err != nil {
+		return err
+	} else if count == 0 {
+		return errors.New("no rows inserted")
+	}
+	return nil
+}
+
 func (querier HistoryFactsQuerier) QueryReturning(builder sq.InsertBuilder) (int64, error) {
 	rows, err := builder.RunWith(querier.conn.DB).Query()
 	if err != nil {

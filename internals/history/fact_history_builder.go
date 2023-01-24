@@ -39,13 +39,9 @@ func (builder HistoryFactsBuilder) Insert(history HistoryFactsV4, resultJSON []b
 		Suffix("RETURNING id")
 }
 
-func (builder HistoryFactsBuilder) Update(history HistoryFactsV4) sq.UpdateBuilder {
+func (builder HistoryFactsBuilder) Update(id int64, resultJSON []byte) sq.UpdateBuilder {
 	return builder.newStatement().
 		Update("fact_history_v5").
-		Where("id", history.ID).
-		Set("fact_id", history.FactID).
-		Set("situation_id", history.SituationID).
-		Set("situation_instance_id", history.SituationInstanceID).
-		Set("ts", history.Ts).
-		Set("result", history.Result)
+		Where(sq.Eq{"id": id}).
+		Set("result", resultJSON)
 }
