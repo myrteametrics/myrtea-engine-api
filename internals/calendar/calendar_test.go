@@ -22,17 +22,16 @@ func initCalendars() {
 func TestCalendarResolution(t *testing.T) {
 	initCalendars()
 	c, _, _ := getCalendar(5)
-	resolved := c.ResolveCalendar([]int64{})
+	resolved := c.ResolveCalendar(_globalCBase.calendars, []int64{})
 
 	_ = resolved
 	t.Log(resolved)
-
 }
 
 func TestCalendarResolutionCircularReference(t *testing.T) {
 	initCalendars()
 	c, _, _ := getCalendar(6)
-	resolved := c.ResolveCalendar([]int64{})
+	resolved := c.ResolveCalendar(_globalCBase.calendars, []int64{})
 
 	_ = resolved
 	t.Log(resolved)
@@ -294,7 +293,7 @@ func TestUnionCalendarsSimpleCase(t *testing.T) {
 		UnionCalendarIDs: []int64{1}})
 
 	c, _, _ := getCalendar(2)
-	resolved := c.ResolveCalendar([]int64{})
+	resolved := c.ResolveCalendar(_globalCBase.calendars, []int64{})
 
 	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 23, 0, 0, 0, 0, time.UTC), true); err != nil {
 		t.Error(err)
@@ -330,7 +329,7 @@ func TestUnionCalendarsComplexeCase(t *testing.T) {
 		UnionCalendarIDs: []int64{1, 2, 3}})
 
 	c, _, _ := getCalendar(4)
-	resolved := c.ResolveCalendar([]int64{})
+	resolved := c.ResolveCalendar(_globalCBase.calendars, []int64{})
 
 	if err := checkCalendarPeriod(t, resolved, time.Date(2022, 11, 23, 0, 0, 0, 0, time.UTC), true); err != nil {
 		t.Error(err)
