@@ -91,6 +91,18 @@ func (job FactCalculationJob) IsValid() (bool, error) {
 
 // Run contains all the business logic of the job
 func (job FactCalculationJob) Run() {
+	if job.From != "" {
+		FactRecalculationJob{
+			FactIds:        job.FactIds,
+			From:           job.From,
+			To:             job.To,
+			LastDailyValue: job.LastDailyValue,
+			Debug:          job.Debug,
+			ScheduleID:     job.ScheduleID,
+		}.Run()
+		return
+	}
+
 	if S().ExistingRunningJob(job.ScheduleID) {
 		zap.L().Info("Skipping FactScheduleJob because last execution is still running", zap.Int64s("ids", job.FactIds))
 		return
@@ -107,17 +119,6 @@ func (job FactCalculationJob) Run() {
 		zap.L().Error("BuildLocalRuleEngine", zap.Error(err))
 		return
 	}
-
-	// FIXME: Support retroactive update
-	// if job.From != "" {
-	// 	err := job.update(t)
-	// 	if err != nil {
-	// 		zap.L().Error("Error updating fact instances", zap.Error(err))
-	// 	}
-	// 	zap.L().Info("FactScheduleJob Ended", zap.Int64s("ids", job.FactIds))
-	// 	S().RemoveRunningJob(job.ScheduleID)
-	// 	return
-	// }
 
 	situationsToUpdate, err := CalculateAndPersistFacts(t, job.FactIds)
 	if err != nil {

@@ -71,6 +71,43 @@ func (querier HistorySituationsQuerier) Insert(history HistorySituationsV4) (int
 	return id, nil
 }
 
+func (querier HistorySituationsQuerier) Update(history HistorySituationsV4) error {
+	parametersJSON, err := json.Marshal(history.Parameters)
+	if err != nil {
+		return err
+	}
+
+	expressionFactsJSON, err := json.Marshal(history.ExpressionFacts)
+	if err != nil {
+		return err
+	}
+
+	metadatasJSON, err := json.Marshal(history.Metadatas)
+	if err != nil {
+		return err
+	}
+
+	err = querier.ExecUpdate(querier.Builder.Update(history.ID, parametersJSON, expressionFactsJSON, metadatasJSON))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (querier HistorySituationsQuerier) ExecUpdate(builder sq.UpdateBuilder) error {
+	res, err := builder.RunWith(querier.conn.DB).Exec()
+	if err != nil {
+		return err
+	}
+
+	if count, err := res.RowsAffected(); err != nil {
+		return err
+	} else if count == 0 {
+		return errors.New("no rows inserted")
+	}
+	return nil
+}
+
 func (querier HistorySituationsQuerier) QueryReturning(builder sq.InsertBuilder) (int64, error) {
 	rows, err := builder.RunWith(querier.conn.DB).Query()
 	if err != nil {
