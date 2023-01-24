@@ -86,6 +86,15 @@ func ExtractHistoryDataSearch(historySituations []HistorySituationsV4, historySi
 			Facts:                 factRecords,
 		}
 
+		if historySituation.Calendar != nil {
+			situationRecord.Calendar = &search.SituationHistoryCalendarRecord{
+				Id:          historySituation.Calendar.ID,
+				Name:        historySituation.Calendar.Name,
+				Description: historySituation.Calendar.Description,
+				Timezone:    historySituation.Calendar.Timezone,
+			}
+		}
+
 		situationRecords = append(situationRecords, situationRecord)
 	}
 

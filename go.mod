@@ -19,10 +19,11 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/hashicorp/go-plugin v1.3.0
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/json-iterator/go v1.1.8
+	github.com/json-iterator/go v1.1.12
 	github.com/lestrrat-go/jwx v1.2.6
 	github.com/lib/pq v1.0.0
-	github.com/myrteametrics/myrtea-sdk/v4 v4.1.1
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/myrteametrics/myrtea-sdk/v4 v4.1.9
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/prataprc/goparsec v0.0.0-20180806094145-2600a2a4a410
 	github.com/robfig/cron/v3 v3.0.0
