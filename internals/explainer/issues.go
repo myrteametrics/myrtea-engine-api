@@ -65,9 +65,9 @@ func IsOpenOrDraftIssue(issueKey string) (bool, error) {
 		return false, err
 	}
 	if len(issues) == 0 {
-		return true, nil
+		return false, nil
 	}
-	return false, nil
+	return true, nil
 }
 
 //GetFactsHistory get the history of facts for an issue
