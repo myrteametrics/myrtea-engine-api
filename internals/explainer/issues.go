@@ -29,13 +29,15 @@ func CreateIssue(situationHistoryID int64, situationID int64, templateInstanceID
 		Rule:               rule,
 	}
 
-	isNew, err := isNewIssue(issue)
+	//isNew, err := isNewIssue(issue)
+	isNew, err := IsOpenOrDraftIssue(issue.Key)
 	if err != nil {
 		zap.L().Error("Cannot search in issue history", zap.String("key", key), zap.Error(err))
 		return -1, err
 	}
 	if !isNew {
-		zap.L().Debug("Issue creation skipped (timeout not reached)")
+		//zap.L().Debug("Issue creation skipped (timeout not reached)")
+		zap.L().Debug("Issue creation skipped - open/draft issue already existed")
 		return 0, nil
 	}
 
@@ -46,8 +48,19 @@ func CreateIssue(situationHistoryID int64, situationID int64, templateInstanceID
 	return id, nil
 }
 
-func isNewIssue(issue models.Issue) (bool, error) {
-	issues, err := issues.R().GetCloseToTimeoutByKey(issue.Key, issue.SituationTS)
+//func isNewIssue(issue models.Issue) (bool, error) {
+//	issues, err := issues.R().GetCloseToTimeoutByKey(issue.Key, issue.SituationTS)
+//	if err != nil {
+//		return false, err
+//	}
+//	if len(issues) == 0 {
+//		return true, nil
+//	}
+//	return false, nil
+//}
+
+func IsOpenOrDraftIssue(issueKey string) (bool, error) {
+	issues, err := issues.R().GetOpenAndDraftIssuesByKey(issueKey)
 	if err != nil {
 		return false, err
 	}
