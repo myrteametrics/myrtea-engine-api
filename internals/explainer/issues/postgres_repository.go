@@ -191,7 +191,7 @@ func (r *PostgresRepository) GetOpenAndDraftIssuesByKey(key string) (map[int64]m
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
 			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
 			  FROM issues_v1 as i
-			  WHERE key = :key and i.state IN ( :states )`
+			  WHERE key = :key and (i.state = ANY ( :states ))`
 
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
 		"key":    key,
