@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/email"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
 	"go.uber.org/zap"
 )
@@ -28,6 +29,7 @@ func verifyCache(key string, timeout time.Duration) bool {
 // SituationReportingTask struct for close issues created in the current day from the BRMS
 type SituationReportingTask struct {
 	ID                  string   `json:"id"`
+	IssueID             string   `json:"issueId"`
 	Subject             string   `json:"subject"`
 	BodyTemplate        string   `json:"bodyTemplate"`
 	To                  []string `json:"to"`
@@ -50,6 +52,10 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 		task.ID = val
 	} else {
 		return task, errors.New("missing or invalid 'id' parameter (string not empty required)")
+	}
+
+	if val, ok := parameters["issueId"].(string); ok && val != "" {
+		task.IssueID = val
 	}
 
 	if val, ok := parameters["subject"].(string); ok && val != "" {
@@ -165,6 +171,18 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 	if !verifyCache(key, timeoutDuration) {
 		zap.L().Debug("SituationReportingTask skipped - timeout not reached")
 		return nil
+	}
+
+	if task.IssueID != "" {
+		isOpen, err := explainer.IsOpenOrDraftIssue(task.IssueID)
+		if err != nil {
+			zap.L().Error("Cannot search in issue history", zap.String("key", key), zap.Error(err))
+			return err
+		}
+		if isOpen {
+			zap.L().Debug("SituationReportingTask creation skipped - open/draft issue already existed")
+			return nil
+		}
 	}
 
 	situationData := context.HistorySituationFlattenData
