@@ -14,7 +14,7 @@ import (
 	plugin "github.com/myrteametrics/myrtea-engine-api/v5/plugins"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/assistant"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
-	"github.com/myrteametrics/myrtea-sdk/v4/configuration"
+	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v4/server"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -42,7 +42,7 @@ var (
 func main() {
 
 	app.InitConfiguration()
-	zapConfig := configuration.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
+	zapConfig := helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
 
 	app.Init()
 	defer app.Stop()
