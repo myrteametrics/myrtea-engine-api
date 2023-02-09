@@ -1,5 +1,5 @@
 FROM alpine:3.14
-LABEL maintainer="Myrtea Metrics <contact@myrteametrics.com>"
+LABEL maintainer="Mind7 Consulting <contact@mind7.com>"
 
 RUN apk update && apk add --no-cache ca-certificates tzdata && rm -rf /var/cache/apk/*
 RUN addgroup -S myrtea -g "1001" &&  \

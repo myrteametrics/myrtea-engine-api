@@ -54,12 +54,12 @@ func engineRouter() http.Handler {
 	r.Put("/models/{id}", handlers.PutModel)
 	r.Delete("/models/{id}", handlers.DeleteModel)
 
-	r.Get("/crons", handlers.GetAllCron)
-	r.Post("/crons/start", handlers.StartAllCron)
-	r.Post("/crons/stop", handlers.StopAllCron)
-	r.Get("/cron", handlers.GetCron)
-	r.Post("/cron/{instance}/{logicalIndex}/start", handlers.StartCron)
-	r.Post("/cron/{instance}/{logicalIndex}/stop", handlers.StopCron)
+	// r.Get("/crons", handlers.GetAllCron)
+	// r.Post("/crons/start", handlers.StartAllCron)
+	// r.Post("/crons/stop", handlers.StopAllCron)
+	// r.Get("/cron", handlers.GetCron)
+	// r.Post("/cron/{instance}/{logicalIndex}/start", handlers.StartCron)
+	// r.Post("/cron/{instance}/{logicalIndex}/stop", handlers.StopCron)
 
 	r.Get("/facts", handlers.GetFacts)
 	r.Get("/facts/{id}", handlers.GetFact)

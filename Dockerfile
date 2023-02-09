@@ -1,6 +1,6 @@
 # Stage 1 - Build binary
 FROM golang:1.14-alpine as builder
-LABEL maintainer="Myrtea Metrics <contact@myrteametrics.com>"
+LABEL maintainer="Mind7 Consulting <contact@mind7.com>"
 
 RUN apk --no-cache add curl git make \
     && rm -rf /var/cache/apk/*
@@ -15,7 +15,7 @@ RUN make build
 
 # Stage 2 - Run binary
 FROM alpine:3.14
-LABEL maintainer="Myrtea Metrics <contact@myrteametrics.com>"
+LABEL maintainer="Mind7 Consulting <contact@mind7.com>"
 
 RUN apk update && apk add --no-cache ca-certificates && rm -rf /var/cache/apk/*
 

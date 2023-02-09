@@ -2,7 +2,7 @@ package coordinator
 
 import (
 	"context"
-	"fmt"
+	"sync"
 
 	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
@@ -15,58 +15,60 @@ type Instance struct {
 	Name           string
 	Urls           []string
 	Executor       *elasticsearch.EsExecutor
-	LogicalIndices map[string]*LogicalIndex
+	LogicalIndices map[string]LogicalIndex
 }
 
-func (instance *Instance) initialize(models map[int64]modeler.Model) error {
-	err := instance.InitLogicalIndices(models)
-	if err != nil {
-		zap.L().Error("instance.InitLogicalIndices()", zap.Error(err))
-		return err
+var (
+	_instance *Instance
+	_once     sync.Once
+)
+
+func GetInstance() *Instance {
+	return _instance
+}
+
+func (i *Instance) LogicalIndex(modelName string) LogicalIndex {
+	return i.LogicalIndices[modelName]
+}
+
+func InitInstance(instanceName string, urls []string, models map[int64]modeler.Model) error {
+	zap.L().Info("Initialize coordinator instance", zap.String("instanceName", instanceName))
+
+	instance := &Instance{
+		Initialized:    false,
+		Name:           instanceName,
+		Urls:           urls,
+		Executor:       nil,
+		LogicalIndices: make(map[string]LogicalIndex),
 	}
 
-	instance.Initialized = true
-	return nil
-}
-
-func (instance *Instance) initElasticClient(urls []string) error {
-	// TODO: Multiple elasticsearch URL Support
-	executor, err := elasticsearch.NewEsExecutor(context.Background(), urls)
-	if err != nil {
-		zap.L().Error("elasticsearch.NewEsExecutor()", zap.Error(err))
-		return err
-	}
-
-	instance.Executor = executor
-	return nil
-}
-
-// InitLogicalIndices initialize an ensemble of logical indices (each based on a specific elasticsearch model)
-func (instance *Instance) InitLogicalIndices(models map[int64]modeler.Model) error {
-	for _, m := range models {
-
-		zap.L().Info("Initialize model indices", zap.String("model", m.Name), zap.Any("options", m.ElasticsearchOptions))
-
+	for _, model := range models {
 		executor, err := elasticsearch.NewEsExecutor(context.Background(), instance.Urls)
 		if err != nil {
 			zap.L().Error("elasticsearch.NewEsExecutor()", zap.Error(err))
 			return err
 		}
 
-		logicalIndex := &LogicalIndex{
-			Initialized: false,
-			Name:        fmt.Sprintf("%s-%s", instance.Name, m.Name),
-			Cron:        nil,
-			Executor:    executor,
-			Model:       m,
-		}
-		err = logicalIndex.initialize()
-		if err != nil {
-			zap.L().Error("logicalIndex.initialize()", zap.Error(err))
-			return err
-		}
+		switch model.ElasticsearchOptions.Rollmode {
+		case "cron":
+			logicalIndex, err := NewLogicalIndexCron(instance.Name, model, executor)
+			if err != nil {
+				zap.L().Error("logicalIndex.initialize()", zap.Error(err))
+				return err
+			}
+			instance.LogicalIndices[model.Name] = logicalIndex
 
-		instance.LogicalIndices[m.Name] = logicalIndex
+		case "timebased":
+			logicalIndex, err := NewLogicalIndexTimeBased(instance.Name, model, executor)
+			if err != nil {
+				zap.L().Error("NewLogicalIndexTimeBased()", zap.Error(err))
+				return err
+			}
+			instance.LogicalIndices[model.Name] = logicalIndex
+		}
 	}
+
+	_instance = instance
+
 	return nil
 }
