@@ -248,7 +248,7 @@ func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS
 func (r *PostgresRepository) GetByKeyByPage(key string, options models.SearchOptions) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
 
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, 
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id,
         i.situation_id, situation_instance_id, i.situation_date,
         i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
         i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
@@ -293,9 +293,13 @@ func (r *PostgresRepository) GetByKeyByPage(key string, options models.SearchOpt
 func (r *PostgresRepository) ChangeState(key string, fromStates []models.IssueState, toState models.IssueState) error {
 	LastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
+	// Review 2023-02-10 : We are about to close all issues, there's no need to have "key" here
 	// Here we exclude some fields that are not to be updated
+	// query := `UPDATE issues_v1 SET state = :to_state, last_modified = :last_modified
+	//		  WHERE key = :key AND state = ANY ( :from_states )`
+
 	query := `UPDATE issues_v1 SET state = :to_state, last_modified = :last_modified
-			  WHERE key = :key AND state = ANY ( :from_states )`
+			  WHERE state = ANY ( :from_states )`
 
 	var states []string
 	for _, state := range fromStates {
@@ -531,7 +535,7 @@ func (r *PostgresRepository) GetByStateByPage(issueStates []string, options mode
 func (r *PostgresRepository) GetByStateByPageBySituationIDs(issueStates []string, options models.SearchOptions, situationIDs []int64) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
 
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, 
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id,
 		i.situation_id, situation_instance_id, i.situation_date,
 		i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
 		i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment

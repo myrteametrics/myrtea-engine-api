@@ -25,7 +25,7 @@ func loadConfiguration() {
 	if viper.GetString("INSTANCE_NAME") == "" {
 
 		allowedConfigKey := [][]helpers.ConfigKey{
-			{Type: helpers.StringFlag, Name: "INSTANCE_NAME", DefaultValue: "myrtea", Description: "Myrtea instance name"},
+			{{Type: helpers.StringFlag, Name: "INSTANCE_NAME", DefaultValue: "myrtea", Description: "Myrtea instance name"}},
 		}
 		configName, configPath, envPrefix := "engine-api", "config", "MYRTEA"
 		helpers.InitializeConfig(allowedConfigKey, configName, configPath, envPrefix)
