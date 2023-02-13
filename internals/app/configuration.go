@@ -18,7 +18,7 @@ var AllowedConfigKey = [][]helpers.ConfigKey{
 	helpers.PostgresqlConfigKeys,
 	helpers.ElasticsearchConfigKeys,
 	{
-		{Type: helpers.StringFlag, Name: "API_ENABLE_VERBOSE_ERROR", DefaultValue: "false", Description: "Run the API with verbose error"},
+		{Type: helpers.StringFlag, Name: "HTTP_SERVER_API_ENABLE_VERBOSE_ERROR", DefaultValue: "false", Description: "Run the API with verbose error"},
 		{Type: helpers.StringFlag, Name: "SWAGGER_HOST", DefaultValue: "localhost:9000", Description: "Swagger UI target hostname"},
 		{Type: helpers.StringFlag, Name: "SWAGGER_BASEPATH", DefaultValue: "/api/v5", Description: "Swagger UI target basepath"},
 		{Type: helpers.StringFlag, Name: "POSTGRESQL_CONN_POOL_MAX_OPEN", DefaultValue: "6", Description: "PostgreSQL connection pool max open"},
