@@ -27,6 +27,7 @@ type Repository interface {
 	GetByKeyByPage(key string, options models.SearchOptions) ([]models.Issue, int, error)
 
 	GetCloseToTimeoutByKey(key string, firstSituationTS time.Time) (map[int64]models.Issue, error)
+	GetOpenAndDraftIssuesByKey(key string) (map[int64]models.Issue, error)
 
 	ChangeState(key string, fromStates []models.IssueState, toState models.IssueState) error
 	ChangeStateBetweenDates(key string, fromStates []models.IssueState, toState models.IssueState, from time.Time, to time.Time) error

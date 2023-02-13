@@ -182,6 +182,36 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, u
 	return nil
 }
 
+// GetOpenStateByKey get all issues that belong to the same situation in 'open' or 'draft' states
+// if existed
+func (r *PostgresRepository) GetOpenAndDraftIssuesByKey(key string) (map[int64]models.Issue, error) {
+	issues := make(map[int64]models.Issue, 0)
+
+	query := `SELECT i.id, i.key, i.name, i.level,  i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
+			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
+			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
+			  FROM issues_v1 as i
+			  WHERE key = :key and (i.state = ANY ( :states ))`
+
+	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
+		"key":    key,
+		"states": pq.Array([]string{models.Open.String(), models.Draft.String()}),
+	})
+	if err != nil {
+		return nil, errors.New("couldn't retrieve the issues with key and first situation date: " + err.Error())
+	}
+	defer rows.Close()
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, err
+		}
+		issues[issue.ID] = issue
+	}
+
+	return issues, nil
+}
+
 // GetCloseToTimeoutByKey get all issues that belong to the same situation and their
 // creation time are within the timeout duration
 func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS time.Time) (map[int64]models.Issue, error) {
@@ -218,7 +248,7 @@ func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS
 func (r *PostgresRepository) GetByKeyByPage(key string, options models.SearchOptions) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
 
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, 
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id,
         i.situation_id, situation_instance_id, i.situation_date,
         i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
         i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
@@ -263,9 +293,13 @@ func (r *PostgresRepository) GetByKeyByPage(key string, options models.SearchOpt
 func (r *PostgresRepository) ChangeState(key string, fromStates []models.IssueState, toState models.IssueState) error {
 	LastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
+	// Review 2023-02-10 : We are about to close all issues, there's no need to have "key" here
 	// Here we exclude some fields that are not to be updated
+	// query := `UPDATE issues_v1 SET state = :to_state, last_modified = :last_modified
+	//		  WHERE key = :key AND state = ANY ( :from_states )`
+
 	query := `UPDATE issues_v1 SET state = :to_state, last_modified = :last_modified
-			  WHERE key = :key AND state = ANY ( :from_states )`
+			  WHERE state = ANY ( :from_states )`
 
 	var states []string
 	for _, state := range fromStates {
@@ -501,7 +535,7 @@ func (r *PostgresRepository) GetByStateByPage(issueStates []string, options mode
 func (r *PostgresRepository) GetByStateByPageBySituationIDs(issueStates []string, options models.SearchOptions, situationIDs []int64) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
 
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, 
+	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id,
 		i.situation_id, situation_instance_id, i.situation_date,
 		i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
 		i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment

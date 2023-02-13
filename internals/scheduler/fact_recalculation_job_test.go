@@ -13,8 +13,8 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
-	"github.com/myrteametrics/myrtea-sdk/v4/configuration"
 	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
+	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -24,11 +24,11 @@ func loadConfiguration() {
 
 	if viper.GetString("INSTANCE_NAME") == "" {
 
-		allowedConfigKey := []configuration.ConfigKey{
-			{Type: configuration.StringFlag, Name: "INSTANCE_NAME", DefaultValue: "myrtea", Description: "Myrtea instance name"},
+		allowedConfigKey := [][]helpers.ConfigKey{
+			{{Type: helpers.StringFlag, Name: "INSTANCE_NAME", DefaultValue: "myrtea", Description: "Myrtea instance name"}},
 		}
 		configName, configPath, envPrefix := "engine-api", "config", "MYRTEA"
-		configuration.InitializeConfig(allowedConfigKey, configName, configPath, envPrefix)
+		helpers.InitializeConfig(allowedConfigKey, configName, configPath, envPrefix)
 	}
 }
 
