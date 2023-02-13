@@ -37,21 +37,21 @@ type Config struct {
 // Check clean up the configuration and logs comments if required
 func (config *Config) Check() {
 	if !config.Security {
-		zap.L().Warn("API starting in unsecured mode, be sure to set API_ENABLE_SECURITY=true in production")
+		zap.L().Warn("API starting in unsecured mode, be sure to set HTTP_SERVER_API_ENABLE_SECURITY=true in production")
 	}
 	if config.VerboseError {
-		zap.L().Warn("API starting in verbose error mode, be sure to set API_ENABLE_VERBOSE_MODE=false in production")
+		zap.L().Warn("API starting in verbose error mode, be sure to set HTTP_SERVER_API_ENABLE_VERBOSE_MODE=false in production")
 	}
 	if config.GatewayMode {
 		zap.L().Warn("Server router will be started using API Gateway mode. " +
 			"Please ensure every request has been properly pre-verified by the auth-api")
 		if !config.Security {
-			zap.L().Warn("Gateway mode has no use if API security is not enabled (API_ENABLE_SECURITY=false)")
+			zap.L().Warn("Gateway mode has no use if API security is not enabled (HTTP_SERVER_API_ENABLE_SECURITY=false)")
 			config.GatewayMode = false
 		}
 	}
 	if config.Security && config.GatewayMode && config.AuthenticationMode == "SAML" {
-		zap.L().Warn("SAML Authentication mode is not compatible with API_ENABLE_GATEWAY_MODE=true")
+		zap.L().Warn("SAML Authentication mode is not compatible with HTTP_SERVER_API_ENABLE_GATEWAY_MODE=true")
 		config.GatewayMode = false
 	}
 	if config.AuthenticationMode != "BASIC" && config.AuthenticationMode != "SAML" {

@@ -68,16 +68,16 @@ func main() {
 		}
 	}
 
-	serverPort := viper.GetInt("SERVER_PORT")
-	serverEnableTLS := viper.GetBool("SERVER_ENABLE_TLS")
-	serverTLSCert := viper.GetString("SERVER_TLS_FILE_CRT")
-	serverTLSKey := viper.GetString("SERVER_TLS_FILE_KEY")
+	serverPort := viper.GetInt("HTTP_SERVER_PORT")
+	serverEnableTLS := viper.GetBool("HTTP_SERVER_ENABLE_TLS")
+	serverTLSCert := viper.GetString("HTTP_SERVER_TLS_FILE_CRT")
+	serverTLSKey := viper.GetString("HTTP_SERVER_TLS_FILE_KEY")
 
 	routerConfig := router.Config{
 		Production:         viper.GetBool("LOGGER_PRODUCTION"),
-		CORS:               viper.GetBool("API_ENABLE_CORS"),
-		Security:           viper.GetBool("API_ENABLE_SECURITY"),
-		GatewayMode:        viper.GetBool("API_ENABLE_GATEWAY_MODE"),
+		CORS:               viper.GetBool("HTTP_SERVER_API_ENABLE_CORS"),
+		Security:           viper.GetBool("HTTP_SERVER_API_ENABLE_SECURITY"),
+		GatewayMode:        viper.GetBool("HTTP_SERVER_API_ENABLE_GATEWAY_MODE"),
 		AuthenticationMode: viper.GetString("AUTHENTICATION_MODE"),
 		LogLevel:           zapConfig.Level,
 		Plugins:            plugins,
