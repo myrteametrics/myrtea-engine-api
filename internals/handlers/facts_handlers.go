@@ -295,14 +295,12 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 // @Tags Facts
 // @Produce json
 // @Param id path string true "Fact ID"
-// @Param situationid query int false "Situation ID (optional)"
-// @Param instanceid query int false "Instance ID (optional)"
-// // @Param byName query string false "Find fact by it's name"
+// @Param byName query string false "Find fact by it's name"
 // @Param time query string true "Timestamp used for the fact execution"
 // @Param cache query string false "Cache maximum age in minutes(go duration: 10m, 1h, ...). If unset, use cache with no limit of age. If set to 0, disable cache"
 // @Param nhit query int false "Hit per page"
 // @Param offset query int false "Offset number"
-// // @Param placeholders query string false "Placeholders (format: key1:value1,key2:value2)"
+// @Param placeholders query string false "Placeholders (format: key1:value1,key2:value2)"
 // @Param debug query string false "Debug true/false"
 // @Security Bearer
 // @Success 200 "Status OK"
@@ -314,23 +312,6 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 	_debug := r.URL.Query().Get("debug")
 	if _debug == "true" {
 		debug = true
-	}
-
-	id := chi.URLParam(r, "id")
-	factID, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		zap.L().Warn("Error on parsing fact id", zap.String("factID", id), zap.Error(err))
-		return
-	}
-
-	situationID, err := OptionnalQueryParamToInt64(r, "situationid", 0)
-	if err != nil {
-		return
-	}
-
-	instanceID, err := OptionnalQueryParamToInt64(r, "instanceid", 0)
-	if err != nil {
-		return
 	}
 
 	useCache := (r.URL.Query().Get("cache") != "0")
@@ -362,24 +343,32 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	placeholders, err := QueryParamToOptionnalKeyValues(r, "placeholders", make(map[string]string))
+	if err != nil {
+		zap.L().Warn("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
+		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
+		return
+	}
+
+	byName := false
+	_byName := r.URL.Query().Get("byName")
+	if _byName == "true" {
+		byName = true
+	}
+
+	id := chi.URLParam(r, "id")
+	f, apiError, err := lookupFact(byName, id)
+	if err != nil {
+		render.Error(w, r, apiError, err)
+		return
+	}
+
+	// Might be a security Issue (because we lookup for the fact ID / Name before any control)
+	// Should be better to just remove the "lookup by name" feature (which is not used anymore, and has no sense in this API)
 	userCtx, _ := GetUserFromContext(r)
-	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(factID, 10), permissions.ActionGet)) {
+	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(f.ID, 10), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
-	}
-
-	f, found, err := fact.R().Get(factID)
-	if err != nil {
-		zap.L().Error("Error while fetching fact", zap.Int64("factid", factID), zap.Error(err))
-		return
-	}
-	if !found {
-		zap.L().Warn("Fact does not exists", zap.String("factid", id))
-		return
-	}
-
-	if f.IsTemplate && instanceID == 0 {
-		// error
 	}
 
 	// TODO: Reimplement fact handler cache system
@@ -405,39 +394,6 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		zap.L().Debug("Use elasticsearch to resolve query")
 		if debug {
 			zap.L().Debug("Debugging fact", zap.Any("f", f))
-		}
-
-		s, found, err := situation.R().Get(situationID)
-		if err != nil {
-			zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", situationID), zap.Error(err))
-			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-			return
-		}
-		if !found {
-			zap.L().Warn("Situation does not exists", zap.Int64("situationID", situationID))
-			render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
-			return
-		}
-
-		instance, found, err := situation.R().GetTemplateInstance(instanceID)
-		if err != nil {
-			zap.L().Error("Cannot retrieve situation Instance", zap.Int64("situationInstanceID", instanceID), zap.Error(err))
-			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-			return
-		}
-		if !found {
-			zap.L().Warn("Situation Instance does not exists", zap.Int64("situationInstanceID", instanceID))
-			render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
-			return
-		}
-
-		placeholders := make(map[string]string)
-		for key, param := range s.Parameters {
-			placeholders[key] = param
-		}
-
-		for key, param := range instance.Parameters {
-			placeholders[key] = param
 		}
 
 		pf, err := fact.Prepare(&f, nhit, offset, t, placeholders, false)
@@ -527,7 +483,7 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	placeholders, err := ParsePlaceholders(r.URL.Query().Get("placeholders"))
+	placeholders, err := QueryParamToOptionnalKeyValues(r, "placeholders", make(map[string]string))
 	if err != nil {
 		zap.L().Error("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
 		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
@@ -793,7 +749,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	placeholders, err := ParsePlaceholders(r.URL.Query().Get("placeholders"))
+	placeholders, err := QueryParamToOptionnalKeyValues(r, "placeholders", make(map[string]string))
 	if err != nil {
 		zap.L().Warn("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
 		render.Error(w, r, render.ErrAPIParsingKeyValue, err)

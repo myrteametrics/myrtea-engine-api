@@ -27,6 +27,12 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 		return history.GetHistorySituationsOptions{}, render.ErrAPIParsingInteger, err
 	}
 
+	parameterFilters, err := QueryParamToOptionnalKeyValues(r, "parameterfilters", make(map[string]string))
+	if err != nil {
+		zap.L().Warn("Parse input parameterfilters", zap.Error(err), zap.String("parameterfilters", r.URL.Query().Get("parameterfilters")))
+		return history.GetHistorySituationsOptions{}, render.ErrAPIParsingKeyValue, err
+	}
+
 	maxDate, err := OptionnalQueryParamToTime(r, "maxdate", time.Time{})
 	if err != nil {
 		zap.L().Warn("Parse input maxdate", zap.Error(err), zap.String("maxdate", r.URL.Query().Get("maxdate")))
@@ -46,6 +52,7 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 	options := history.GetHistorySituationsOptions{
 		SituationID:         situationID,
 		SituationInstanceID: situationInstanceID,
+		ParameterFilters:    parameterFilters,
 		FromTS:              minDate,
 		ToTS:                maxDate,
 	}

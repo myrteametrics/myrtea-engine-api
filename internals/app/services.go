@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connector"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connectorconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/coordinator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/action"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/draft"
@@ -50,6 +51,7 @@ func initRepositories() {
 	rule.ReplaceGlobals(rule.NewPostgresRepository(dbClient))
 	modeler.ReplaceGlobals(modeler.NewPostgresRepository(dbClient))
 	externalconfig.ReplaceGlobals(externalconfig.NewPostgresRepository(dbClient))
+	connectorconfig.ReplaceGlobals(connectorconfig.NewPostgresRepository(dbClient))
 	history.ReplaceGlobals(history.New(dbClient))
 }
 

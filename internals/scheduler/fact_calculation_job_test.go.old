@@ -189,9 +189,9 @@ func TestExpressionFact(t *testing.T) {
 		t.Skip("skipping postgresql + elasticseach test in short mode")
 	}
 
-	zapCfg := zap.NewDevelopmentConfig()
-	zapCfg.Level.SetLevel(zap.InfoLevel)
-	logger, err := zapCfg.Build(zap.AddStacktrace(zap.ErrorLevel))
+	zapConfig := zap.NewDevelopmentConfig()
+	zapConfig.Level.SetLevel(zap.InfoLevel)
+	logger, err := zapConfig.Build(zap.AddStacktrace(zap.ErrorLevel))
 	if err != nil {
 		log.Fatalf("can't initialize zap logger: %v", err)
 	}

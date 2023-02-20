@@ -38,3 +38,15 @@ func TestHoursInterval(t *testing.T) {
 	t.Log(hoursInterval{FromHour: 22, FromMinute: 0, ToHour: 23, ToMinute: 59}.containsWithTz(time.Date(2000, 1, 0, 23, 00, 0, 0, tzFR), tzUTC), true)
 	t.Log(hoursInterval{FromHour: 22, FromMinute: 0, ToHour: 23, ToMinute: 59}.containsWithTz(time.Date(2000, 2, 0, 00, 00, 0, 0, tzFR), tzUTC), true)
 }
+
+func TestWeekday(t *testing.T) {
+	tzFR, _ := time.LoadLocation("Europe/Paris")
+	// tzUTC, _ := time.LoadLocation("UTC")
+
+	t.Log(dayWeekInterval{From: time.Friday, To: time.Sunday}.containsWithTz(time.Date(2022, time.November, 26, 12, 0, 0, 0, tzFR), tzFR), true)
+	t.Log(dayWeekInterval{From: time.Friday, To: time.Saturday}.containsWithTz(time.Date(2022, time.November, 26, 12, 0, 0, 0, tzFR), tzFR), true)
+	t.Log(dayWeekInterval{From: time.Saturday, To: time.Sunday}.containsWithTz(time.Date(2022, time.November, 26, 12, 0, 0, 0, tzFR), tzFR), true)
+
+	t.Log(dayWeekInterval{From: time.Friday, To: time.Sunday}.containsWithTz(time.Date(2022, time.November, 24, 12, 0, 0, 0, tzFR), tzFR), false)
+	t.Log(dayWeekInterval{From: time.Saturday, To: time.Wednesday}.containsWithTz(time.Date(2022, time.November, 24, 12, 0, 0, 0, tzFR), tzFR), false)
+}

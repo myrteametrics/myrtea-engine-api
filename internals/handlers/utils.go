@@ -62,6 +62,24 @@ func OptionnalQueryParamToBool(r *http.Request, name string, orDefault bool) (bo
 	return orDefault, nil
 }
 
+// QueryParamToOptionnalKeyValues parse multiple key:value entries separated by commas from a string
+func QueryParamToOptionnalKeyValues(r *http.Request, name string, orDefault map[string]string) (map[string]string, error) {
+	param := r.URL.Query().Get(name)
+	if param != "" {
+		keyValues := make(map[string]string)
+		rawKeyValues := strings.Split(param, ",")
+		for _, rawKeyValue := range rawKeyValues {
+			keyValue := strings.Split(rawKeyValue, ":")
+			if len(keyValue) != 2 {
+				return nil, fmt.Errorf("invalid placeholder key-value : %s", keyValue)
+			}
+			keyValues[keyValue[0]] = keyValue[1]
+		}
+		return keyValues, nil
+	}
+	return orDefault, nil
+}
+
 // ParseTime try to parse a supposed time string as a time.Time or returns time.Now()
 func ParseTime(tStr string) (time.Time, error) {
 	t, err := time.Parse("2006-01-02T15:04:05.000Z07:00", tStr)
@@ -93,22 +111,6 @@ func ParseDuration(dStr string) (time.Duration, error) {
 		return d, nil
 	}
 	return 0, nil
-}
-
-// ParsePlaceholders parse multiple key:value entries separated by commas from a string
-func ParsePlaceholders(pStr string) (map[string]string, error) {
-	placeholders := make(map[string]string)
-	if pStr != "" {
-		rawPlaceholders := strings.Split(pStr, ",")
-		for _, rawPlaceholder := range rawPlaceholders {
-			keyValue := strings.Split(rawPlaceholder, ":")
-			if len(keyValue) != 2 {
-				return nil, fmt.Errorf("Invalid placeholder key-value : %s", keyValue)
-			}
-			placeholders[keyValue[0]] = keyValue[1]
-		}
-	}
-	return placeholders, nil
 }
 
 // sortByRegex is a regex matching expression similar to <order>(<field>)

@@ -25,6 +25,9 @@ Gopkg.toml
 # VS Code
 .vscode
 
+# GoLand
+.idea/
+
 # Logs
 *.log
 

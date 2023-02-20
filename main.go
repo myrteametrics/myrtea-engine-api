@@ -15,6 +15,7 @@ import (
 	plugin "github.com/myrteametrics/myrtea-engine-api/v5/plugins"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/assistant"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
+	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v4/server"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -42,7 +43,7 @@ var (
 func main() {
 
 	app.InitConfiguration()
-	zapConfig := app.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
+	zapConfig := helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
 
 	app.Init()
 	defer app.Stop()
@@ -74,16 +75,16 @@ func main() {
 		}
 	}
 
-	serverPort := viper.GetInt("SERVER_PORT")
-	serverEnableTLS := viper.GetBool("SERVER_ENABLE_TLS")
-	serverTLSCert := viper.GetString("SERVER_TLS_FILE_CRT")
-	serverTLSKey := viper.GetString("SERVER_TLS_FILE_KEY")
+	serverPort := viper.GetInt("HTTP_SERVER_PORT")
+	serverEnableTLS := viper.GetBool("HTTP_SERVER_ENABLE_TLS")
+	serverTLSCert := viper.GetString("HTTP_SERVER_TLS_FILE_CRT")
+	serverTLSKey := viper.GetString("HTTP_SERVER_TLS_FILE_KEY")
 
 	routerConfig := router.Config{
 		Production:         viper.GetBool("LOGGER_PRODUCTION"),
-		CORS:               viper.GetBool("API_ENABLE_CORS"),
-		Security:           viper.GetBool("API_ENABLE_SECURITY"),
-		GatewayMode:        viper.GetBool("API_ENABLE_GATEWAY_MODE"),
+		CORS:               viper.GetBool("HTTP_SERVER_API_ENABLE_CORS"),
+		Security:           viper.GetBool("HTTP_SERVER_API_ENABLE_SECURITY"),
+		GatewayMode:        viper.GetBool("HTTP_SERVER_API_ENABLE_GATEWAY_MODE"),
 		AuthenticationMode: viper.GetString("AUTHENTICATION_MODE"),
 		LogLevel:           zapConfig.Level,
 		Plugins:            plugins,

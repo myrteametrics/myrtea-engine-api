@@ -12,6 +12,7 @@ type HistorySituationsBuilder struct{}
 type GetHistorySituationsOptions struct {
 	SituationID         int64
 	SituationInstanceID int64
+	ParameterFilters    map[string]string
 	FromTS              time.Time
 	ToTS                time.Time
 }
@@ -35,6 +36,9 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsBase(options GetH
 	}
 	if !options.ToTS.IsZero() {
 		q = q.Where(sq.Lt{"ts": options.ToTS})
+	}
+	for k, v := range options.ParameterFilters {
+		q = q.Where(sq.Eq{"parameters->>'" + k + "'": v})
 	}
 	return q
 }
@@ -61,9 +65,10 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsByCustomInterval(
 
 func (builder HistorySituationsBuilder) GetHistorySituationsDetails(subQueryIds string, subQueryIdsArgs []interface{}) sq.SelectBuilder {
 	return builder.newStatement().
-		Select("sh.*, s.name, si.name").
+		Select("sh.*, s.name, coalesce(si.name, ''), c.id, c.name, c.description, c.timezone").
 		From("situation_definition_v1 s").
 		LeftJoin("situation_template_instances_v1 si on s.id = si.situation_id").
+		LeftJoin("calendar_v1 c on c.id = COALESCE(si.calendar_id, s.calendar_id)").
 		InnerJoin("situation_history_v5 sh on (s.id = sh.situation_id and (sh.situation_instance_id = si.id OR sh.situation_instance_id = 0))").
 		Where("sh.id = any ("+subQueryIds+")", subQueryIdsArgs...)
 }
@@ -73,4 +78,13 @@ func (builder HistorySituationsBuilder) Insert(history HistorySituationsV4, para
 		Columns("id", "situation_id", "situation_instance_id", "ts", "parameters", "expression_facts", "metadatas").
 		Values(sq.Expr("DEFAULT"), history.SituationID, history.SituationInstanceID, history.Ts, parametersJSON, expressionFactsJSON, metadatasJSON).
 		Suffix("RETURNING id")
+}
+
+func (builder HistorySituationsBuilder) Update(id int64, parametersJSON []byte, expressionFactsJSON []byte, metadatasJSON []byte) sq.UpdateBuilder {
+	return builder.newStatement().
+		Update("situation_history_v5").
+		Where(sq.Eq{"id": id}).
+		Set("parameters", parametersJSON).
+		Set("expression_facts", expressionFactsJSON).
+		Set("metadatas", metadatasJSON)
 }

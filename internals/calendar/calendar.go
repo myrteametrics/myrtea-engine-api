@@ -89,9 +89,12 @@ func setCalendar(calendar Calendar) {
 // - For each sub-calendar (with respect of order)
 //    - Sub-calendar Periods (with respect of order)
 // - Calendar Periods (with respect of order)
-func (c Calendar) ResolveCalendar(joinedCalendars []int64) Calendar {
+func (c Calendar) ResolveCalendar(enabledCalendars map[int64]Calendar, joinedCalendars []int64) Calendar {
 	joinedCalendars = append(joinedCalendars, c.ID)
 	periods := make([]Period, 0)
+
+	// Append current calendar periods
+	periods = append(periods, c.Periods...)
 
 	// Append unioned calendars periods
 	for _, unionCalendarID := range c.UnionCalendarIDs {
@@ -108,22 +111,15 @@ func (c Calendar) ResolveCalendar(joinedCalendars []int64) Calendar {
 			continue
 		}
 
-		unionCalendar, found, err := getCalendar(unionCalendarID)
+		unionCalendar, found := enabledCalendars[unionCalendarID]
 		if !found {
 			zap.L().Warn("The calendar to join was not found", zap.Int64("calendarID", c.ID), zap.Int64("unionedCalendarID", unionCalendarID))
 			continue
 		}
-		if err != nil {
-			zap.L().Error("Cannot get calendar", zap.Int64("calendarID", c.ID), zap.Int64("unionedCalendarID", unionCalendarID), zap.Error(err))
-			continue
-		}
 
-		unionCalendarResolved := unionCalendar.ResolveCalendar(joinedCalendars)
+		unionCalendarResolved := unionCalendar.ResolveCalendar(enabledCalendars, joinedCalendars)
 		periods = append(periods, unionCalendarResolved.Periods...)
 	}
-
-	// Append current calendar periods
-	periods = append(periods, c.Periods...)
 
 	return Calendar{
 		ID:               c.ID,
