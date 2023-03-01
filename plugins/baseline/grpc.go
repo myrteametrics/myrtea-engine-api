@@ -1,8 +1,10 @@
 package baseline
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/go-plugin"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline/proto"
 	"go.uber.org/zap"
@@ -69,9 +71,24 @@ func (m *GRPCClient) GetBaselineValues(id int64, factID int64, situationID int64
 	return baselineValues, nil
 }
 
+func (m *GRPCClient) BuildBaselineValues(baselineID int64) error {
+
+	fmt.Println("Client build")
+	_, err := m.client.BuildBaselineValues(context.Background(), &proto.BuildBaselineRequest{
+		Id: baselineID,
+	})
+	if err != nil {
+		fmt.Println("error", err)
+		return err
+	}
+
+	return nil
+}
+
 type GRPCServer struct {
 	// This is the real implementation
 	Impl BaselineService
+	proto.UnimplementedBaselineServer
 }
 
 func (m *GRPCServer) GetBaselineValues(ctx context.Context, req *proto.BaselineValueRequest) (*proto.BaselineValues, error) {
@@ -97,3 +114,14 @@ func (m *GRPCServer) GetBaselineValues(ctx context.Context, req *proto.BaselineV
 
 	return &proto.BaselineValues{Values: baselineValues}, err
 }
+
+func (m *GRPCServer) BuildBaselineValues(ctx context.Context, req *proto.BuildBaselineRequest) (*empty.Empty, error) {
+
+	fmt.Println("server build")
+
+	err := m.Impl.BuildBaselineValues(req.Id)
+
+	return &empty.Empty{}, err
+}
+
+// func (UnimplementedBaselineServer) mustEmbedUnimplementedBaselineServer() {}

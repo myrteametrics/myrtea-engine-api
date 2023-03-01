@@ -23,7 +23,6 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/lestrrat-go/jwx v1.2.6
 	github.com/lib/pq v1.0.0
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/myrteametrics/myrtea-sdk/v4 v4.2.6
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/prataprc/goparsec v0.0.0-20180806094145-2600a2a4a410
@@ -36,4 +35,5 @@ require (
 	go.uber.org/zap v1.21.0
 	golang.org/x/net v0.4.0
 	google.golang.org/grpc v1.40.0
+	google.golang.org/protobuf v1.28.1
 )

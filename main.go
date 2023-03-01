@@ -65,6 +65,8 @@ func main() {
 		zap.L().Error("baseline plugin not available")
 	}
 	fmt.Println(p.BaselineService.GetBaselineValues(-1, 19, 4, 111, time.Now()))
+	fmt.Println(p.BaselineService.BuildBaselineValues(1))
+	return
 
 	if assistantPlugin := assistant.NewAssistantPlugin(); assistantPlugin != nil {
 		defer assistantPlugin.Stop()

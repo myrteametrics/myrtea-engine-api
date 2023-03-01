@@ -8,6 +8,7 @@ import (
 type BaselineService interface {
 	// GetBaselineValue(id int64, factID int64, situationID int64, situationInstanceID int64, time time.Time) (BaselineValue, error)
 	GetBaselineValues(id int64, factID int64, situationID int64, situationInstanceID int64, ti time.Time) (map[string]BaselineValue, error)
+	BuildBaselineValues(baselineID int64) error
 }
 
 type BaselineValue struct {
@@ -18,4 +19,7 @@ type BaselineValue struct {
 	Avg        float64   `json:"avg,omitempty"`
 	Std        float64   `json:"std,omitempty"`
 	Median     float64   `json:"median,omitempty"`
+}
+
+type UnimplementedBaselineServer struct {
 }
