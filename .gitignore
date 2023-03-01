@@ -14,7 +14,7 @@ Gopkg.toml
 /certs
 
 # Swaggo docs
-/docs
+# /docs
 
 # Document
 /document
