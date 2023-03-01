@@ -73,12 +73,10 @@ func (m *GRPCClient) GetBaselineValues(id int64, factID int64, situationID int64
 
 func (m *GRPCClient) BuildBaselineValues(baselineID int64) error {
 
-	fmt.Println("Client build")
 	_, err := m.client.BuildBaselineValues(context.Background(), &proto.BuildBaselineRequest{
 		Id: baselineID,
 	})
 	if err != nil {
-		fmt.Println("error", err)
 		return err
 	}
 

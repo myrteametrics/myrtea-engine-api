@@ -8,7 +8,6 @@ package proto
 
 import (
 	context "context"
-	"fmt"
 
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
@@ -48,11 +47,9 @@ func (c *baselineClient) GetBaselineValues(ctx context.Context, in *BaselineValu
 }
 
 func (c *baselineClient) BuildBaselineValues(ctx context.Context, in *BuildBaselineRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	fmt.Println("grpc client build")
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/proto.Baseline/BuildBaselineValues", in, out, opts...)
 	if err != nil {
-		fmt.Println("grpc client build error", err)
 		return nil, err
 	}
 	return out, nil
