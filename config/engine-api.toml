@@ -31,7 +31,7 @@ HTTP_SERVER_TLS_FILE_KEY = "certs/server.rsa.key"
 # Enable or disable CORS policy on the API
 # See https://enable-cors.org/
 # Default value: "false"
-HTTP_SERVER_API_ENABLE_CORS = "true"
+HTTP_SERVER_API_ENABLE_CORS = "false"
 
 # Enable or disable API security
 # If unsecured = false, a valid JWT (JSON Web Token) is required to access the API
