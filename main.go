@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -60,11 +59,10 @@ func main() {
 		}
 	}
 
-	p, err := baseline.P()
+	_, err := baseline.P()
 	if err != nil {
-		zap.L().Error("baseline plugin not available")
+		zap.L().Error("baseline plugin not available", zap.Error(err))
 	}
-	fmt.Println(p.BaselineService.GetBaselineValues(-1, 19, 4, 111, time.Now()))
 
 	if assistantPlugin := assistant.NewAssistantPlugin(); assistantPlugin != nil {
 		defer assistantPlugin.Stop()

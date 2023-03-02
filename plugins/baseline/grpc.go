@@ -1,7 +1,6 @@
 package baseline
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -79,7 +78,6 @@ func (m *GRPCClient) BuildBaselineValues(baselineID int64) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -114,12 +112,6 @@ func (m *GRPCServer) GetBaselineValues(ctx context.Context, req *proto.BaselineV
 }
 
 func (m *GRPCServer) BuildBaselineValues(ctx context.Context, req *proto.BuildBaselineRequest) (*empty.Empty, error) {
-
-	fmt.Println("server build")
-
 	err := m.Impl.BuildBaselineValues(req.Id)
-
 	return &empty.Empty{}, err
 }
-
-// func (UnimplementedBaselineServer) mustEmbedUnimplementedBaselineServer() {}

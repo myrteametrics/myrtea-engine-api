@@ -1,11 +1,9 @@
 package pluginutils
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
-	"strings"
 
 	"github.com/hashicorp/go-hclog"
 	"go.uber.org/zap"
@@ -41,16 +39,16 @@ func (w ZapWrapper) Error(msg string, args ...interface{}) {
 
 // Log logs messages with four simplified levels - Debug,Warn,Error and Info as a default.
 func (w ZapWrapper) Log(lvl Level, msg string, args ...interface{}) {
-	// switch lvl {
-	// case hclog.Debug:
-	// 	w.Debug(msg, args...)
-	// case hclog.Warn:
-	// 	w.Warn(msg, args...)
-	// case hclog.Error:
-	// 	w.Error(msg, args...)
-	// case hclog.DefaultLevel, hclog.Info, hclog.NoLevel, hclog.Trace:
-	// 	w.Info(msg, args...)
-	// }
+	switch lvl {
+	case hclog.Debug:
+		w.Debug(msg, args...)
+	case hclog.Warn:
+		w.Warn(msg, args...)
+	case hclog.Error:
+		w.Error(msg, args...)
+	case hclog.DefaultLevel, hclog.Info, hclog.NoLevel, hclog.Trace:
+		w.Info(msg, args...)
+	}
 }
 
 // Trace will log an info-level message in Zap.
@@ -136,18 +134,4 @@ func convertToZapAny(args ...interface{}) []zapcore.Field {
 	}
 
 	return fields
-}
-
-func formatMsg(msg string) string {
-
-	entries := strings.Split(msg, "\t")
-
-	m := map[string]string{
-		"path":     entries[2],
-		"msg":      entries[3],
-		"response": entries[4],
-	}
-
-	jsonString, _ := json.Marshal(m)
-	return string(jsonString)
 }

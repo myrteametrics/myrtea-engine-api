@@ -38,7 +38,6 @@ func (schedule *InternalSchedule) IsValid() (bool, error) {
 		return false, errors.New("missing JobType")
 	}
 	if schedule.JobType != "fact" && schedule.JobType != "baseline" {
-		// if schedule.JobType != "fact" {
 		return false, errors.New("invalid JobType")
 	}
 	if schedule.Job == nil {

@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"sync"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-plugin"
@@ -124,19 +123,18 @@ func (p *BaselinePlugin) Start() error {
 	return nil
 }
 
-func (p *BaselinePlugin) Test() {
-	result, err := p.BaselineService.GetBaselineValues(-1, 19, 4, 111, time.Now())
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println(result)
-}
+// func (p *BaselinePlugin) Test() {
+// 	result, err := p.BaselineService.GetBaselineValues(-1, 19, 4, 111, time.Now())
+// 	if err != nil {
+// 		fmt.Println(err.Error())
+// 	}
+// 	fmt.Println(result)
+// }
 
 func (p *BaselinePlugin) Handler() http.Handler {
 	r := chi.NewRouter()
 
 	// Add HTTP routes for every method exposed in the plugin interface GetBaselineValues
-	// r.Get("/engine/baselines", )
 
 	return r
 }
