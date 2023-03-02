@@ -14,15 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func QueryParamToInt64(r *http.Request, name string) (int64, error) {
-	param := r.URL.Query().Get(name)
-	if param != "" {
-		return strconv.ParseInt(param, 10, 64)
-	}
-	return 0, fmt.Errorf("missing query parameter %s", name)
-}
-
-func OptionnalQueryParamToInt64(r *http.Request, name string, orDefault int64) (int64, error) {
+func QueryParamToOptionnalInt64(r *http.Request, name string, orDefault int64) (int64, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
 		return strconv.ParseInt(param, 10, 64)
@@ -30,7 +22,7 @@ func OptionnalQueryParamToInt64(r *http.Request, name string, orDefault int64) (
 	return orDefault, nil
 }
 
-func OptionnalQueryParamToTime(r *http.Request, name string, orDefault time.Time) (time.Time, error) {
+func QueryParamToOptionnalTime(r *http.Request, name string, orDefault time.Time) (time.Time, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
 		return time.Parse("2006-01-02T15:04:05.000Z07:00", param)
@@ -46,7 +38,7 @@ func QueryParamToTime(r *http.Request, name string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("missing query parameter %s", name)
 }
 
-func OptionnalQueryParamToDuration(r *http.Request, name string, orDefault time.Duration) (time.Duration, error) {
+func QueryParamToOptionnalDuration(r *http.Request, name string, orDefault time.Duration) (time.Duration, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
 		return time.ParseDuration(param)
@@ -54,7 +46,7 @@ func OptionnalQueryParamToDuration(r *http.Request, name string, orDefault time.
 	return orDefault, nil
 }
 
-func OptionnalQueryParamToBool(r *http.Request, name string, orDefault bool) (bool, error) {
+func QueryParamToOptionnalBool(r *http.Request, name string, orDefault bool) (bool, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
 		return strconv.ParseBool(param)

@@ -25,14 +25,14 @@ import (
 func GetlastConnectorExecutionDateTime(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	successOnly, err := OptionnalQueryParamToBool(r, "successOnly", false)
+	successOnly, err := QueryParamToOptionnalBool(r, "successOnly", false)
 	if err != nil {
 		zap.L().Error("Parse input boolean", zap.Error(err), zap.String("successOnly", r.URL.Query().Get("successOnly")))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
 		return
 	}
 
-	maxAgeDays, err := OptionnalQueryParamToInt64(r, "maxage", 10)
+	maxAgeDays, err := QueryParamToOptionnalInt64(r, "maxage", 10)
 	if err != nil {
 		zap.L().Error("Parse input duration", zap.Error(err), zap.String("maxage", r.URL.Query().Get("maxage")))
 		render.Error(w, r, render.ErrAPIParsingDuration, err)
