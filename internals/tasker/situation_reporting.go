@@ -115,7 +115,7 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 	}
 
 	if len(task.Columns) != len(task.ColumnsLabel) {
-		return task, errors.New("parameters 'columns' and 'colomns label' have different length")
+		return task, errors.New("parameters 'columns' and 'columns label' have different length")
 	}
 
 	if val, ok := parameters["smtpHost"].(string); ok && val != "" {
