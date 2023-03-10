@@ -74,7 +74,7 @@ func New(config Config) *chi.Mux {
 			AllowedOrigins:   []string{"*"},
 			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-			ExposedHeaders:   []string{"Link", "Authenticate-To"},
+			ExposedHeaders:   []string{"Link", "Authenticate-To", "Content-Disposition"},
 			AllowCredentials: true,
 			MaxAge:           300, // Maximum value not ignored by any of major browsers
 		})

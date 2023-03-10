@@ -51,29 +51,29 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fullHits, err := export.ExportFactHitsFull(idFact)
+
+	if err != nil {
+		zap.L().Error("Error getting fact hits", zap.Error(err))
+		render.Error(w, r, render.ErrAPIProcessError, err)
+		return
+	}
+
 	var file []byte
 
 	// type checker, to handle other files types like xml or json (defaults to csv)
 	switch r.URL.Query().Get("type") {
 	default:
 		// Process needed parameters
-		columns := []string{"test"}
-		columnsLabel := []string{"test"}
+		columns := []string{"delay"}
+		columnsLabel := []string{"delay"}
 		separator := ','
-
-		fullHits, err := export.ExportFactHitsFull(idFact)
-
-		if err != nil {
-			zap.L().Error("Error getting actions", zap.Error(err))
-			render.Error(w, r, render.ErrAPIProcessError, err)
-			return
-		}
 
 		file, err = export.ConvertHitsToCSV(fullHits, columns, columnsLabel, separator)
 		break
 	}
 
-	filename := f.Name + "_export_" + time.Now().Format("02_01_2006_15_04") + ".csv"
+	filename := f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
 
 	render.File(w, filename, file)
 }
