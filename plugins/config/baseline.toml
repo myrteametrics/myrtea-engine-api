@@ -9,7 +9,7 @@ DEBUG_MODE = "false"
 
 # Enable or disable production log
 # Default value: true
-LOGGER_PRODUCTION = "true"
+LOGGER_PRODUCTION = "false"
 
 # Specify the server running port. API (including swagger) will be reachable through this port
 # Default value: "9082"

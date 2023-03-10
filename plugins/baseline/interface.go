@@ -20,6 +20,3 @@ type BaselineValue struct {
 	Std        float64   `json:"std,omitempty"`
 	Median     float64   `json:"median,omitempty"`
 }
-
-type UnimplementedBaselineServer struct {
-}

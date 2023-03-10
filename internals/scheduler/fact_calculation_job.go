@@ -425,12 +425,6 @@ func calculateFact(t time.Time, f engine.Fact, situationID int64, situationInsta
 			zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
 		}
 		widgetData.Aggregates.Baselines = values
-		// zap.L().Info("BASELINE VALUES",
-		// 	zap.Any("f.ID", f.ID),
-		// 	zap.Any("situationID", situationID),
-		// 	zap.Any("situationInstanceID", situationInstanceID),
-		// 	zap.Any("t", t),
-		// 	zap.Any("values", values))
 	}
 	return *widgetData, nil
 }

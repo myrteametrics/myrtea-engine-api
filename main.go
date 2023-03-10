@@ -59,11 +59,6 @@ func main() {
 		}
 	}
 
-	_, err := baseline.P()
-	if err != nil {
-		zap.L().Error("baseline plugin not available", zap.Error(err))
-	}
-
 	if assistantPlugin := assistant.NewAssistantPlugin(); assistantPlugin != nil {
 		defer assistantPlugin.Stop()
 		if err := assistantPlugin.Start(); err == nil {
