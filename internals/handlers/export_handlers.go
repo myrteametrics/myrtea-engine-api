@@ -10,8 +10,16 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
+	"unicode/utf8"
 )
+
+type CSVParameters struct {
+	columns      []string
+	columnsLabel []string
+	separator    rune
+}
 
 // ExportFact godoc
 // @Summary Export facts
@@ -46,7 +54,7 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !found {
-		zap.L().Warn("fact does not exists", zap.Int64("factID", idFact))
+		zap.L().Warn("fact does not exist", zap.Int64("factID", idFact))
 		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
 		return
 	}
@@ -65,15 +73,39 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Query().Get("type") {
 	default:
 		// Process needed parameters
-		columns := []string{"delay"}
-		columnsLabel := []string{"delay"}
-		separator := ','
-
-		file, err = export.ConvertHitsToCSV(fullHits, columns, columnsLabel, separator)
+		params := GetCSVParameters(r)
+		file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.separator)
 		break
 	}
 
 	filename := f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
 
 	render.File(w, filename, file)
+}
+
+func GetCSVParameters(r *http.Request) CSVParameters {
+	result := CSVParameters{separator: ','}
+
+	// Priority to parameters
+	columns := r.URL.Query().Get("columns")
+	if columns != "" {
+		result.columns = strings.Split(columns, ",")
+	}
+
+	columnsLabel := r.URL.Query().Get("columnsLabel")
+	if columnsLabel != "" {
+		result.columnsLabel = strings.Split(columnsLabel, ",")
+	}
+
+	separator := r.URL.Query().Get("separator")
+	if separator != "" {
+		sep, size := utf8.DecodeRuneInString(separator)
+		if size != 1 {
+			result.separator = ','
+		} else {
+			result.separator = sep
+		}
+	}
+
+	return result
 }
