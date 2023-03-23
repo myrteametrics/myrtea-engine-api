@@ -1,5 +1,10 @@
 syntax = "proto3";
+
+option go_package = "github.com/myrteametrics/myrtea-engine-api/plugins/baseline/proto";
+
 package proto;
+
+import "google/protobuf/empty.proto";
 
 message BaselineValueRequest {
     int64 id = 1;
@@ -7,6 +12,10 @@ message BaselineValueRequest {
     int64 situation_id = 3;
     int64 situation_instance_id = 4;
     string time = 5;
+}
+
+message BuildBaselineRequest {
+    int64 id = 1;
 }
 
 message BaselineValue {
@@ -24,6 +33,7 @@ message BaselineValues {
 }
 
 service Baseline {
-    // rpc GetBaselineValue(BaselineValueRequest) returns (BaselineValue);
-    rpc GetBaselineValues(BaselineValueRequest) returns (BaselineValues);
+    // rpc GetBaselineValue(BaselineValueRequest) returns (BaselineValue)
+    rpc GetBaselineValues(BaselineValueRequest) returns (BaselineValues) {}
+    rpc BuildBaselineValues(BuildBaselineRequest) returns (google.protobuf.Empty) {}
 }
