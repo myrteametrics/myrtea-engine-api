@@ -321,7 +321,6 @@ func TestFactCaltulationJob(t *testing.T) {
 	s2HistoryRecords, _ := search.R().GetSituationHistoryRecords(s2, 0, dt, dt, dt, true, true, true, true, search.DownSampling{})
 	s3HistoryRecords, _ := search.R().GetSituationHistoryRecords(s3, 0, dt, dt, dt, true, true, true, true, search.DownSampling{})
 
-	fmt.Println(s1HistoryRecords)
 
 	if s1HistoryRecords[0].Situations[0].Facts[0].FactName != "fact_1" || s1HistoryRecords[0].Situations[0].Facts[0].Value.(float64) != 40 {
 		t.Error("Situation1 records are not as expected")

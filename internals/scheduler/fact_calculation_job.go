@@ -15,6 +15,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tasker"
+	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"github.com/myrteametrics/myrtea-sdk/v4/expression"
 	"github.com/myrteametrics/myrtea-sdk/v4/ruleeng"
@@ -34,7 +35,7 @@ type FactCalculationJob struct {
 	ScheduleID     int64   `json:"-"`
 }
 
-//ResolveFromAndTo resolves the expressions in parameters From and To
+// ResolveFromAndTo resolves the expressions in parameters From and To
 func (job *FactCalculationJob) ResolveFromAndTo(t time.Time) (time.Time, time.Time, error) {
 
 	var from time.Time
@@ -417,14 +418,14 @@ func calculateFact(t time.Time, f engine.Fact, situationID int64, situationInsta
 		return reader.WidgetData{}, err
 	}
 
-	// pluginBaseline, err := baseline.P()
-	// if err == nil {
-	// 	values, err := pluginBaseline.Baseline.GetBaselineValues(-1, f.ID, situationID, situationInstanceID, t)
-	// 	if err != nil {
-	// 		zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
-	// 	}
-	// 	widgetData.Aggregates.Baselines = values
-	// }
+	pluginBaseline, err := baseline.P()
+	if err == nil {
+		values, err := pluginBaseline.BaselineService.GetBaselineValues(-1, f.ID, situationID, situationInstanceID, t)
+		if err != nil {
+			zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
+		}
+		widgetData.Aggregates.Baselines = values
+	}
 	return *widgetData, nil
 }
 
