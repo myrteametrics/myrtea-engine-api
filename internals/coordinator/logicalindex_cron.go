@@ -8,27 +8,26 @@ import (
 	"sync"
 	"time"
 
+	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv6"
 	"github.com/myrteametrics/myrtea-sdk/v4/index"
 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
 	"github.com/myrteametrics/myrtea-sdk/v4/models"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 )
 
-// LogicalIndex abstracts a group a technical elasticsearch indices, which are accessibles with specific aliases
+// LogicalIndex abstracts a group a technical elasticsearchv6 indices, which are accessibles with specific aliases
 type LogicalIndexCron struct {
 	Initialized bool
 	Name        string
 	Cron        *cron.Cron
-	Executor    *elasticsearch.EsExecutor
 	Model       modeler.Model
 	mu          sync.RWMutex
 }
 
-func NewLogicalIndexCron(instanceName string, model modeler.Model, executor *elasticsearch.EsExecutor) (*LogicalIndexCron, error) {
+func NewLogicalIndexCron(instanceName string, model modeler.Model) (*LogicalIndexCron, error) {
 
 	logicalIndexName := fmt.Sprintf("%s-%s", instanceName, model.Name)
 
@@ -42,58 +41,57 @@ func NewLogicalIndexCron(instanceName string, model modeler.Model, executor *ela
 		Initialized: false,
 		Name:        logicalIndexName,
 		Cron:        nil,
-		Executor:    executor,
 		Model:       model,
 	}
 
 	ctx := context.Background()
 	indexPatern := fmt.Sprintf("%s-active-*", logicalIndexName)
-	exists, err := executor.IndexExists(ctx, indexPatern)
+	exists, err := elasticsearchv6.C().IndexExists(ctx, indexPatern)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
 		// Build and put template
 		templateName := fmt.Sprintf("template-%s", logicalIndexName)
-		templateBody := models.NewTemplate(
+		templateBody := models.NewTemplateV6(
 			[]string{indexPatern},
 			model.ToElasticsearchMappingProperties(),
 			model.ElasticsearchOptions.AdvancedSettings,
 		)
 
-		err := executor.PutTemplate(ctx, templateName, templateBody)
+		err := elasticsearchv6.C().PutTemplate(ctx, templateName, templateBody)
 		if err != nil {
-			zap.L().Error("executor.PutTemplate()", zap.Error(err))
+			zap.L().Error("elasticsearchv6.C().PutTemplate()", zap.Error(err))
 			return nil, err
 		}
 
 		// Put bootstrap index if missing
-		err = executor.PutIndex(ctx, logicalIndexName+"-active-*", logicalIndexName+"-active-000001")
+		err = elasticsearchv6.C().PutIndex(ctx, logicalIndexName+"-active-*", logicalIndexName+"-active-000001")
 		if err != nil {
-			zap.L().Error("executor.PutIndex()", zap.Error(err))
+			zap.L().Error("elasticsearchv6.C().PutIndex()", zap.Error(err))
 			return nil, err
 		}
 
 		// Adding current active index alias
-		err = executor.PutAlias(ctx, logicalIndexName+"-active-*", logicalIndexName+"-current")
+		err = elasticsearchv6.C().PutAlias(ctx, logicalIndexName+"-active-*", logicalIndexName+"-current")
 		if err != nil {
-			zap.L().Error("executor.PutAlias()", zap.Error(err))
+			zap.L().Error("elasticsearchv6.C().PutAlias()", zap.Error(err))
 			return nil, err
 		}
 
 		if model.ElasticsearchOptions.PatchAliasMaxIndices > 0 {
 			// Adding current active index alias
-			err = executor.PutAlias(ctx, logicalIndexName+"-*", logicalIndexName+"-patch")
+			err = elasticsearchv6.C().PutAlias(ctx, logicalIndexName+"-*", logicalIndexName+"-patch")
 			if err != nil {
-				zap.L().Error("executor.PutAlias()", zap.Error(err))
+				zap.L().Error("elasticsearchv6.C().PutAlias()", zap.Error(err))
 				return nil, err
 			}
 		}
 
 		// Adding search alias on all active index
-		err = executor.PutAlias(ctx, logicalIndexName+"-*", logicalIndexName+"-search")
+		err = elasticsearchv6.C().PutAlias(ctx, logicalIndexName+"-*", logicalIndexName+"-search")
 		if err != nil {
-			zap.L().Error("executor.PutAlias()", zap.Error(err))
+			zap.L().Error("elasticsearchv6.C().PutAlias()", zap.Error(err))
 			return nil, err
 		}
 
@@ -157,14 +155,14 @@ func (logicalIndex *LogicalIndexCron) rollover() {
 
 	// Using rollover API to manage alias swap and indices names
 	// TODO: Change this dirty abuse of rollover API (triggered every day "max_docx = 0")
-	_, newIndex, err := logicalIndex.Executor.RollOver(ctx, logicalIndex.Name+"-current", "1d", 0)
+	_, newIndex, err := elasticsearchv6.C().RollOver(ctx, logicalIndex.Name+"-current", "1d", 0)
 	if err != nil {
 		zap.L().Error("RollOverV2", zap.Error(err), zap.String("index", newIndex))
 		return
 	}
 
 	// Roll patch alias
-	patchIndices, err := logicalIndex.Executor.GetIndicesByAlias(ctx, logicalIndex.Name+"-patch")
+	patchIndices, err := elasticsearchv6.C().GetIndicesByAlias(ctx, logicalIndex.Name+"-patch")
 	if err != nil {
 		zap.L().Error("GetIndicesByAlias", zap.Error(err), zap.String("index", newIndex))
 		return
@@ -172,7 +170,7 @@ func (logicalIndex *LogicalIndexCron) rollover() {
 	sort.Strings(patchIndices)
 
 	alias := logicalIndex.Name + "-patch"
-	aliasCmd := logicalIndex.Executor.Client.Alias()
+	aliasCmd := elasticsearchv6.C().Client.Alias()
 	if len(patchIndices) <= logicalIndex.Model.ElasticsearchOptions.PatchAliasMaxIndices {
 		if len(patchIndices) >= logicalIndex.Model.ElasticsearchOptions.PatchAliasMaxIndices {
 			aliasCmd = aliasCmd.Remove(patchIndices[0], alias)
@@ -198,7 +196,7 @@ func (logicalIndex *LogicalIndexCron) rollover() {
 	// Adding search alias on the newly created active index
 	// Includes every active + inactive indices
 	// TODO: Remove this step when template are reworked (and include this search alias)
-	err = logicalIndex.Executor.PutAlias(ctx, logicalIndex.Name+"-*", logicalIndex.Name+"-search")
+	err = elasticsearchv6.C().PutAlias(ctx, logicalIndex.Name+"-*", logicalIndex.Name+"-search")
 	if err != nil {
 		zap.L().Error("Putting alias", zap.Error(err), zap.String("index", logicalIndex.Name+"-*"),
 			zap.String("alias", logicalIndex.Name+"-search"))
@@ -212,7 +210,7 @@ func (logicalIndex *LogicalIndexCron) rollover() {
 
 	// Purge outdated indices
 	if logicalIndex.Model.ElasticsearchOptions.EnablePurge {
-		searchIndices, err := logicalIndex.Executor.GetIndicesByAlias(ctx, logicalIndex.Name+"-search")
+		searchIndices, err := elasticsearchv6.C().GetIndicesByAlias(ctx, logicalIndex.Name+"-search")
 		if err != nil {
 			zap.L().Error("GetIndicesByAlias", zap.Error(err), zap.String("alias", logicalIndex.Name+"-search"))
 			return
@@ -221,7 +219,7 @@ func (logicalIndex *LogicalIndexCron) rollover() {
 
 		if len(searchIndices) > logicalIndex.Model.ElasticsearchOptions.PurgeMaxConcurrentIndices {
 			toDelete := searchIndices[0] // oldest indices
-			err := logicalIndex.Executor.DeleteIndices(ctx, []string{toDelete})
+			err := elasticsearchv6.C().DeleteIndices(ctx, []string{toDelete})
 			if err != nil {
 				zap.L().Error("DeleteIndex", zap.Error(err), zap.String("index", searchIndices[0]))
 				return

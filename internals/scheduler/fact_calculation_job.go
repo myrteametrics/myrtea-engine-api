@@ -321,7 +321,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 		}
 
 		if !f.IsTemplate {
-			widgetData, err := calculateFact(t, f, 0, 0, nil, false)
+			widgetData, err := fact.ExecuteFact(t, f, 0, 0, nil, -1, -1, false)
 			if err != nil {
 				zap.L().Error("Fact calculation Error, skipping fact calculation...", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
 				continue
@@ -363,7 +363,8 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 				var fCopy engine.Fact
 				fData, _ := json.Marshal(f)
 				json.Unmarshal(fData, &fCopy)
-				widgetData, err := calculateFact(t, fCopy, sh.SituationID, sh.SituationInstanceID, sh.Parameters, false)
+
+				widgetData, err := fact.ExecuteFact(t, fCopy, sh.SituationID, sh.SituationInstanceID, sh.Parameters, -1, -1, false)
 				if err != nil {
 					zap.L().Error("Fact calculation Error, skipping fact calculation...", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
 					continue
@@ -402,30 +403,6 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 	}
 
 	return situationsToUpdate, nil
-}
-
-func calculateFact(t time.Time, f engine.Fact, situationID int64, situationInstanceID int64, placeholders map[string]string, update bool) (reader.WidgetData, error) {
-	pf, err := fact.Prepare(&f, -1, -1, t, placeholders, update)
-	if err != nil {
-		zap.L().Error("Cannot prepare fact", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
-		return reader.WidgetData{}, err
-	}
-
-	widgetData, err := fact.Execute(pf)
-	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Int64("id", f.ID), zap.Any("pf", pf), zap.Error(err))
-		return reader.WidgetData{}, err
-	}
-
-	// pluginBaseline, err := baseline.P()
-	// if err == nil {
-	// 	values, err := pluginBaseline.Baseline.GetBaselineValues(-1, f.ID, situationID, situationInstanceID, t)
-	// 	if err != nil {
-	// 		zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
-	// 	}
-	// 	widgetData.Aggregates.Baselines = values
-	// }
-	return *widgetData, nil
 }
 
 func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situationsToUpdate map[string]history.HistoryRecordV4) ([]tasker.TaskBatch, error) {

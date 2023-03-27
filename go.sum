@@ -135,6 +135,10 @@ github.com/eapache/go-resiliency v1.3.0/go.mod h1:5yPzW0MIvSe0JDsv0v+DvcjEv2FyD6
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
 github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
+github.com/elastic/elastic-transport-go/v8 v8.0.0-20211216131617-bbee439d559c h1:onA2RpIyeCPvYAj1LFYiiMTrSpqVINWMfYFRS7lofJs=
+github.com/elastic/elastic-transport-go/v8 v8.0.0-20211216131617-bbee439d559c/go.mod h1:87Tcz8IVNe6rVSLdBux1o/PEItLtyabHU3naC7IoqKI=
+github.com/elastic/go-elasticsearch/v8 v8.6.0 h1:xMaSe8jIh7NHzmNo9YBkewmaD2Pr+tX+zLkXxhieny4=
+github.com/elastic/go-elasticsearch/v8 v8.6.0/go.mod h1:Usvydt+x0dv9a1TzEUaovqbJor8rmOHy5dSmPeMAE2k=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
@@ -468,6 +472,16 @@ github.com/myrteametrics/myrtea-sdk/v4 v4.1.9 h1:PZtyYH5rhjPS22B503WUQBYo2u1M26e
 github.com/myrteametrics/myrtea-sdk/v4 v4.1.9/go.mod h1:zggsRVUSbb9pEaMDvywjqvxTFueuDI8L5T1l/u81nEk=
 github.com/myrteametrics/myrtea-sdk/v4 v4.2.6 h1:fIBNW2V2hex0E9BZXWYKNB6hrJQmxaH/SYaEibss7AU=
 github.com/myrteametrics/myrtea-sdk/v4 v4.2.6/go.mod h1:1l/xh9IrtKIRKgwPHJRvvlKm76PnsPeiVvpg+fsRBTg=
+github.com/myrteametrics/myrtea-sdk/v4 v4.2.14-0.20230324204737-9bcf0a6d6ccd h1:SBaWDFDm7dZpGaRcSSh+zLwVsgqFp3unfHtm4wMt2u4=
+github.com/myrteametrics/myrtea-sdk/v4 v4.2.14-0.20230324204737-9bcf0a6d6ccd/go.mod h1:AevZKb79a0zNohnTpvN82gCQXgxW1vJXM/jMrsUy04I=
+github.com/myrteametrics/myrtea-sdk/v4 v4.2.14-0.20230327081513-bed25592f0e8 h1:BzV2BTXsrgn+5vDFtA2CA1nFGgjMmP2vVaqBuifytVc=
+github.com/myrteametrics/myrtea-sdk/v4 v4.2.14-0.20230327081513-bed25592f0e8/go.mod h1:AevZKb79a0zNohnTpvN82gCQXgxW1vJXM/jMrsUy04I=
+github.com/myrteametrics/myrtea-sdk/v4 v4.2.14-0.20230327093353-f79f7adf5102 h1:i1tDiEsbf3pZsYZeI+S4FAw4fhfYetCUJag3uqbsqE0=
+github.com/myrteametrics/myrtea-sdk/v4 v4.2.14-0.20230327093353-f79f7adf5102/go.mod h1:AevZKb79a0zNohnTpvN82gCQXgxW1vJXM/jMrsUy04I=
+github.com/myrteametrics/myrtea-sdk/v4 v4.2.14-0.20230327134351-30e162b188cb h1:7zHbiRhBWFMK5Vtatgz4hfI0MlR8sZJ/X4Q7Ovm/Xco=
+github.com/myrteametrics/myrtea-sdk/v4 v4.2.14-0.20230327134351-30e162b188cb/go.mod h1:AevZKb79a0zNohnTpvN82gCQXgxW1vJXM/jMrsUy04I=
+github.com/myrteametrics/myrtea-sdk/v4 v4.2.14-0.20230327153843-5cf32c4d0706 h1:on0j24c36qNIJnQmlmY5KGq0W34mM2741rZ3YU392Uw=
+github.com/myrteametrics/myrtea-sdk/v4 v4.2.14-0.20230327153843-5cf32c4d0706/go.mod h1:AevZKb79a0zNohnTpvN82gCQXgxW1vJXM/jMrsUy04I=
 github.com/nats-io/jwt v1.2.2/go.mod h1:/xX356yQA6LuXI9xWW7mZNpxgF2mBmGecH+Fj34sP5Q=
 github.com/nats-io/jwt/v2 v2.0.3/go.mod h1:VRP+deawSXyhNjXmxPCHskrR6Mq50BqpEI5SEcNiGlY=
 github.com/nats-io/nats-server/v2 v2.5.0/go.mod h1:Kj86UtrXAL6LwYRA6H4RqzkHhK0Vcv2ZnKD5WbQ1t3g=

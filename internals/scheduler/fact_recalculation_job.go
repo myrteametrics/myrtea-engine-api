@@ -233,7 +233,8 @@ func (job FactRecalculationJob) RecalculateAndUpdateFacts(factIDs []int64, facts
 				s := mapSituations[mapFactSituation[fh.ID]]
 				parameters = s.Parameters
 			}
-			widgetData, err := calculateFact(fh.Ts, f, fh.SituationID, fh.SituationInstanceID, parameters, true)
+
+			widgetData, err := fact.ExecuteFact(fh.Ts, f, fh.SituationID, fh.SituationInstanceID, parameters, -1, -1, true)
 			if err != nil {
 				zap.L().Error("", zap.Error(err))
 			}

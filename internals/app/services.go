@@ -104,8 +104,7 @@ func initCoordinator() {
 	}
 
 	instanceName := viper.GetString("INSTANCE_NAME")
-	urls := viper.GetStringSlice("ELASTICSEARCH_URLS")
-	if err = coordinator.InitInstance(instanceName, urls, models); err != nil {
+	if err = coordinator.InitInstance(instanceName, models); err != nil {
 		zap.L().Fatal("Intialisation of coordinator master", zap.Error(err))
 	}
 	if viper.GetBool("ENABLE_CRONS_ON_START") {

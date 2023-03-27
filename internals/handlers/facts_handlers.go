@@ -396,22 +396,9 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 			zap.L().Debug("Debugging fact", zap.Any("f", f))
 		}
 
-		pf, err := fact.Prepare(&f, nhit, offset, t, placeholders, false)
+		data, err := fact.ExecuteFact(t, f, 0, 0, placeholders, nhit, offset, false)
 		if err != nil {
-			zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
-			render.Error(w, r, render.ErrAPIResourceInvalid, err)
-			return
-		}
-
-		if debug {
-			zap.L().Debug("Debugging prepared fact", zap.Any("pf", pf))
-			source, _ := builder.BuildEsSearchSource(pf)
-			zap.L().Debug("Debugging final elastic query", zap.Any("query", source))
-		}
-
-		data, err = fact.Execute(pf)
-		if err != nil {
-			zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("prepared-query", pf))
+			zap.L().Error("Cannot execute fact", zap.Error(err))
 			render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
 			return
 		}
@@ -508,22 +495,9 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 		zap.L().Debug("Debugging fact", zap.Any("newFact", newFact))
 	}
 
-	pf, err := fact.Prepare(&newFact, nhit, offset, t, placeholders, false)
+	item, err := fact.ExecuteFact(t, newFact, 0, 0, placeholders, nhit, offset, false)
 	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("newFact", newFact))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
-		return
-	}
-
-	if debug {
-		zap.L().Debug("Debugging prepared fact", zap.Any("pf", pf))
-		source, _ := builder.BuildEsSearchSource(pf)
-		zap.L().Debug("Debugging final elastic query", zap.Any("query", source))
-	}
-
-	item, err := fact.Execute(pf)
-	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("prepared-query", pf))
+		zap.L().Error("Cannot execute fact", zap.Error(err))
 		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
 		return
 	}
@@ -548,12 +522,6 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/facts/{id}/hits [get]
 func GetFactHits(w http.ResponseWriter, r *http.Request) {
-
-	debug := false
-	_debug := r.URL.Query().Get("debug")
-	if _debug == "true" {
-		debug = true
-	}
 
 	t, err := ParseTime(r.URL.Query().Get("time"))
 	if err != nil {
@@ -678,22 +646,9 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 	// Change the behaviour of the Fact
 	f.Intent.Operator = engine.Select
 
-	pf, err := fact.Prepare(&f, nhit, offset, t, placeholders, false)
+	data, err = fact.ExecuteFact(t, f, 0, 0, placeholders, nhit, offset, false)
 	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
-		return
-	}
-
-	if debug {
-		zap.L().Debug("Debugging prepared fact", zap.Any("pf", pf))
-		source, _ := builder.BuildEsSearchSource(pf)
-		zap.L().Debug("Debugging final elastic query", zap.Any("query", source))
-	}
-
-	data, err = fact.Execute(pf)
-	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("prepared-query", pf))
+		zap.L().Error("Cannot execute fact", zap.Error(err))
 		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
 		return
 	}
@@ -823,7 +778,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		zap.L().Debug("Debugging fact", zap.Any("f", f))
 	}
 
-	pf, err := fact.Prepare(&f, nhit, offset, t, parameters, false)
+	pf, err := fact.PrepareV6(&f, nhit, offset, t, parameters, false)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
 		render.Error(w, r, render.ErrAPIResourceInvalid, err)

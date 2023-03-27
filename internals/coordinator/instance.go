@@ -1,10 +1,8 @@
 package coordinator
 
 import (
-	"context"
 	"sync"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
 	"go.uber.org/zap"
 )
@@ -14,7 +12,6 @@ type Instance struct {
 	Initialized    bool
 	Name           string
 	Urls           []string
-	Executor       *elasticsearch.EsExecutor
 	LogicalIndices map[string]LogicalIndex
 }
 
@@ -31,27 +28,19 @@ func (i *Instance) LogicalIndex(modelName string) LogicalIndex {
 	return i.LogicalIndices[modelName]
 }
 
-func InitInstance(instanceName string, urls []string, models map[int64]modeler.Model) error {
+func InitInstance(instanceName string, models map[int64]modeler.Model) error {
 	zap.L().Info("Initialize coordinator instance", zap.String("instanceName", instanceName))
 
 	instance := &Instance{
 		Initialized:    false,
 		Name:           instanceName,
-		Urls:           urls,
-		Executor:       nil,
 		LogicalIndices: make(map[string]LogicalIndex),
 	}
 
 	for _, model := range models {
-		executor, err := elasticsearch.NewEsExecutor(context.Background(), instance.Urls)
-		if err != nil {
-			zap.L().Error("elasticsearch.NewEsExecutor()", zap.Error(err))
-			return err
-		}
-
 		switch model.ElasticsearchOptions.Rollmode {
 		case "cron":
-			logicalIndex, err := NewLogicalIndexCron(instance.Name, model, executor)
+			logicalIndex, err := NewLogicalIndexCron(instance.Name, model)
 			if err != nil {
 				zap.L().Error("logicalIndex.initialize()", zap.Error(err))
 				return err
@@ -59,9 +48,9 @@ func InitInstance(instanceName string, urls []string, models map[int64]modeler.M
 			instance.LogicalIndices[model.Name] = logicalIndex
 
 		case "timebased":
-			logicalIndex, err := NewLogicalIndexTimeBased(instance.Name, model, executor)
+			logicalIndex, err := NewLogicalIndexTimeBasedV6(instance.Name, model)
 			if err != nil {
-				zap.L().Error("NewLogicalIndexTimeBased()", zap.Error(err))
+				zap.L().Error("NewLogicalIndexTimeBasedV6()", zap.Error(err))
 				return err
 			}
 			instance.LogicalIndices[model.Name] = logicalIndex

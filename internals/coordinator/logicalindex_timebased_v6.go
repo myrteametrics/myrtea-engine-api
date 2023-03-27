@@ -11,27 +11,26 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
 	"github.com/myrteametrics/myrtea-sdk/v4/models"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
+	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv6"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 )
 
-// LogicalIndex abstracts a group a technical elasticsearch indices, which are accessibles with specific aliases
-type LogicalIndexTimeBased struct {
+// LogicalIndex abstracts a group a technical elasticsearchv6 indices, which are accessibles with specific aliases
+type LogicalIndexTimeBasedV6 struct {
 	Initialized bool
 	Name        string
 	Cron        *cron.Cron
-	Executor    *elasticsearch.EsExecutor
 	Model       modeler.Model
 	LiveIndices []string
 	mu          sync.RWMutex
 }
 
-func NewLogicalIndexTimeBased(instanceName string, model modeler.Model, executor *elasticsearch.EsExecutor) (*LogicalIndexTimeBased, error) {
+func NewLogicalIndexTimeBasedV6(instanceName string, model modeler.Model) (*LogicalIndexTimeBasedV6, error) {
 
 	logicalIndexName := fmt.Sprintf("%s-%s", instanceName, model.Name)
 
-	zap.L().Info("Initialize logicalIndex (LogicalIndexTimeBased)", zap.String("name", logicalIndexName), zap.String("model", model.Name), zap.Any("options", model.ElasticsearchOptions))
+	zap.L().Info("Initialize logicalIndex (LogicalIndexTimeBasedV6)", zap.String("name", logicalIndexName), zap.String("model", model.Name), zap.Any("options", model.ElasticsearchOptions))
 
 	if model.ElasticsearchOptions.Rollmode != "timebased" {
 		return nil, errors.New("invalid rollmode for this logicalIndex type")
@@ -40,26 +39,25 @@ func NewLogicalIndexTimeBased(instanceName string, model modeler.Model, executor
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 	templateName := fmt.Sprintf("template-%s", logicalIndexName)
-	templateExists, err := executor.Client.IndexTemplateExists(templateName).Do(ctx)
+	templateExists, err := elasticsearchv6.C().Client.IndexTemplateExists(templateName).Do(ctx)
 	if err != nil {
 		zap.L().Error("IndexTemplateExists()", zap.Error(err))
 		return nil, err
 	}
 	if !templateExists {
 		indexPatern := fmt.Sprintf("%s-*", logicalIndexName)
-		templateBody := models.NewTemplate([]string{indexPatern}, model.ToElasticsearchMappingProperties(), model.ElasticsearchOptions.AdvancedSettings)
-		err := executor.PutTemplate(ctx, templateName, templateBody)
+		templateBody := models.NewTemplateV6([]string{indexPatern}, model.ToElasticsearchMappingProperties(), model.ElasticsearchOptions.AdvancedSettings)
+		err := elasticsearchv6.C().PutTemplate(ctx, templateName, templateBody)
 		if err != nil {
 			zap.L().Error("PutTemplate()", zap.Error(err))
 			return nil, err
 		}
 	}
 
-	logicalIndex := &LogicalIndexTimeBased{
+	logicalIndex := &LogicalIndexTimeBasedV6{
 		Initialized: false,
 		Name:        logicalIndexName,
 		Cron:        nil,
-		Executor:    executor,
 		Model:       model,
 		LiveIndices: make([]string, 0),
 	}
@@ -87,11 +85,11 @@ func NewLogicalIndexTimeBased(instanceName string, model modeler.Model, executor
 	return logicalIndex, nil
 }
 
-func (logicalIndex *LogicalIndexTimeBased) GetCron() *cron.Cron {
+func (logicalIndex *LogicalIndexTimeBasedV6) GetCron() *cron.Cron {
 	return logicalIndex.Cron
 }
 
-func (logicalIndex *LogicalIndexTimeBased) purge() {
+func (logicalIndex *LogicalIndexTimeBasedV6) purge() {
 	if !logicalIndex.Model.ElasticsearchOptions.EnablePurge {
 		return
 	}
@@ -101,9 +99,9 @@ func (logicalIndex *LogicalIndexTimeBased) purge() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
-	catIndicesResponse, err := logicalIndex.Executor.Client.CatIndices().Index(fmt.Sprintf("%s-*", logicalIndex.Name)).Columns("index").Do(ctx)
+	catIndicesResponse, err := elasticsearchv6.C().Client.CatIndices().Index(fmt.Sprintf("%s-*", logicalIndex.Name)).Columns("index").Do(ctx)
 	if err != nil {
-		zap.L().Error("elasticsearch CatIndices", zap.Error(err))
+		zap.L().Error("elasticsearchv6 CatIndices", zap.Error(err))
 		return
 	}
 
@@ -120,7 +118,7 @@ func (logicalIndex *LogicalIndexTimeBased) purge() {
 	if len(indices) > 0 {
 		ctxDelete, cancelDelete := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancelDelete()
-		_, err = logicalIndex.Executor.Client.DeleteIndex(indices...).Do(ctxDelete)
+		_, err = elasticsearchv6.C().Client.DeleteIndex(indices...).Do(ctxDelete)
 		if err != nil {
 			zap.L().Warn("Delete index", zap.Error(err))
 		}
@@ -130,12 +128,12 @@ func (logicalIndex *LogicalIndexTimeBased) purge() {
 
 }
 
-func (logicalIndex *LogicalIndexTimeBased) FetchIndices() {
+func (logicalIndex *LogicalIndexTimeBasedV6) FetchIndices() {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
-	catIndicesResponse, err := logicalIndex.Executor.Client.CatIndices().Index(fmt.Sprintf("%s-*", logicalIndex.Name)).Columns("index").Do(ctx)
+	catIndicesResponse, err := elasticsearchv6.C().Client.CatIndices().Index(fmt.Sprintf("%s-*", logicalIndex.Name)).Columns("index").Do(ctx)
 	if err != nil {
-		zap.L().Error("elasticsearch CatIndices", zap.Error(err))
+		zap.L().Error("elasticsearchv6 CatIndices", zap.Error(err))
 		return
 	}
 
@@ -150,7 +148,7 @@ func (logicalIndex *LogicalIndexTimeBased) FetchIndices() {
 	logicalIndex.mu.Unlock()
 }
 
-func (logicalIndex *LogicalIndexTimeBased) FindIndices(t time.Time, depthDays int64) ([]string, error) {
+func (logicalIndex *LogicalIndexTimeBasedV6) FindIndices(t time.Time, depthDays int64) ([]string, error) {
 	tsStart := t.Add(time.Duration(depthDays) * -1 * 24 * time.Hour)
 	indexEnd := fmt.Sprintf("%s-%s", logicalIndex.Name, t.Format("2006-01-02"))
 	indexStart := fmt.Sprintf("%s-%s", logicalIndex.Name, tsStart.Format("2006-01-02"))
