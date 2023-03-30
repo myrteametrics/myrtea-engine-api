@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -37,24 +38,39 @@ func InitInstance(instanceName string, models map[int64]modeler.Model) error {
 		LogicalIndices: make(map[string]LogicalIndex),
 	}
 
+	version := viper.GetInt("ELASTICSEARCH_VERSION")
 	for _, model := range models {
+		var err error
+		var logicalIndex LogicalIndex
 		switch model.ElasticsearchOptions.Rollmode {
 		case "cron":
-			logicalIndex, err := NewLogicalIndexCron(instance.Name, model)
-			if err != nil {
-				zap.L().Error("logicalIndex.initialize()", zap.Error(err))
-				return err
+			switch version {
+			case 6:
+				logicalIndex, err = NewLogicalIndexCronV6(instance.Name, model)
+			case 7:
+				fallthrough
+			case 8:
+				logicalIndex, err = NewLogicalIndexCronV8(instance.Name, model)
+			default:
+				zap.L().Fatal("Unsupported Elasticsearch version", zap.Int("version", version))
 			}
-			instance.LogicalIndices[model.Name] = logicalIndex
 
 		case "timebased":
-			logicalIndex, err := NewLogicalIndexTimeBasedV6(instance.Name, model)
-			if err != nil {
-				zap.L().Error("NewLogicalIndexTimeBasedV6()", zap.Error(err))
-				return err
+			switch version {
+			case 6:
+				logicalIndex, err = NewLogicalIndexTimeBasedV6(instance.Name, model)
+			case 7:
+				fallthrough
+			case 8:
+				logicalIndex, err = NewLogicalIndexTimeBasedV8(instance.Name, model)
+			default:
+				zap.L().Fatal("Unsupported Elasticsearch version", zap.Int("version", version))
 			}
-			instance.LogicalIndices[model.Name] = logicalIndex
 		}
+		if err != nil {
+			return err
+		}
+		instance.LogicalIndices[model.Name] = logicalIndex
 	}
 
 	_instance = instance

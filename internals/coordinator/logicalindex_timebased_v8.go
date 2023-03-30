@@ -123,7 +123,7 @@ func (logicalIndex *LogicalIndexTimeBasedV8) putTemplate(name string, indexPater
 		zap.L().Error("PutTemplate", zap.Error(err))
 	}
 	defer res.Body.Close()
-	if res.StatusCode >= 200 && res.StatusCode < 300 {
+	if !(res.StatusCode >= 200 && res.StatusCode < 300) {
 		zap.L().Error("PutTemplate", zap.Int("statuscode", res.StatusCode))
 	}
 }
