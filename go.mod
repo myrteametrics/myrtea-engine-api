@@ -8,7 +8,7 @@ require (
 	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
 	github.com/crewjam/saml v0.4.6
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/elastic/go-elasticsearch/v8 v8.6.0 // indirect
+	github.com/elastic/go-elasticsearch/v8 v8.7.0
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/cors v1.2.1
@@ -23,8 +23,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/lestrrat-go/jwx v1.2.6
 	github.com/lib/pq v1.0.0
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/myrteametrics/myrtea-sdk/v4 v4.2.14-0.20230327153843-5cf32c4d0706
+	github.com/myrteametrics/myrtea-sdk/v4 v4.2.14-0.20230331074927-5f911bab5090
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/prataprc/goparsec v0.0.0-20180806094145-2600a2a4a410
 	github.com/robfig/cron/v3 v3.0.0

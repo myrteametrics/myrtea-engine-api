@@ -3,13 +3,13 @@ package reader
 import (
 	"encoding/json"
 
+	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv8"
 	"go.uber.org/zap"
 )
 
 // ParseV8 parse a elasticsearch SearchResponse (hits and aggregations) and returns a WidgetData
-func ParseV8(res elasticsearchv8.SearchResponse) (*WidgetData, error) {
+func ParseV8(res *search.Response) (*WidgetData, error) {
 	item := &Item{}
 
 	// Parse Aggregations
@@ -31,10 +31,13 @@ func ParseV8(res elasticsearchv8.SearchResponse) (*WidgetData, error) {
 	// Parse Hits
 	hits := make([]Hit, 0)
 	for _, hit := range res.Hits.Hits {
-		fields, ok := hit.Source_.(map[string]interface{})
-		if ok {
-			hits = append(hits, Hit{ID: hit.Id_, Fields: fields})
+		var fields map[string]interface{}
+		err := json.Unmarshal(hit.Source_, &fields)
+		if err != nil {
+			zap.L().Warn("Cannot unmarshall Source", zap.Any("source", hit.Source_))
+			continue
 		}
+		hits = append(hits, Hit{ID: hit.Id_, Fields: fields})
 	}
 
 	widgetData := WidgetData{

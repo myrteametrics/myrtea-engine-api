@@ -2,7 +2,6 @@ package fact
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 	"time"
 
@@ -28,7 +27,7 @@ func ExecuteFactV8(
 
 	indices := FindIndices(f, ti, update)
 
-	res, err := elasticsearchv8.C().Search().
+	response, err := elasticsearchv8.C().Search().
 		Index(strings.Join(indices, ",")).
 		From(offset).
 		Size(nhit).
@@ -38,16 +37,16 @@ func ExecuteFactV8(
 		zap.L().Error("ES Search failed", zap.Error(err))
 		return nil, err
 	}
-	defer res.Body.Close()
+	// defer res.Body.Close()
 
-	var searchResponse elasticsearchv8.SearchResponse
-	err = json.NewDecoder(res.Body).Decode(&searchResponse)
-	if err != nil {
-		zap.L().Error("Decode Search response", zap.Error(err))
-		return nil, err
-	}
+	// var response elasticsearchv8.SearchResponse
+	// err = json.NewDecoder(res.Body).Decode(&response)
+	// if err != nil {
+	// 	zap.L().Error("Decode Search response", zap.Error(err))
+	// 	return nil, err
+	// }
 
-	widgetData, err := reader.ParseV8(searchResponse)
+	widgetData, err := reader.ParseV8(response)
 	if err != nil {
 		return nil, err
 	}

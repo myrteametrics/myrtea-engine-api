@@ -2,7 +2,6 @@ package coordinator
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -118,13 +117,12 @@ func (logicalIndex *LogicalIndexTimeBasedV8) putTemplate(name string, indexPater
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
-	res, err := elasticsearchv8.C().Indices.PutTemplate(name).Request(req).Do(ctx)
+	response, err := elasticsearchv8.C().Indices.PutTemplate(name).Request(req).Do(ctx)
 	if err != nil {
 		zap.L().Error("PutTemplate", zap.Error(err))
 	}
-	defer res.Body.Close()
-	if !(res.StatusCode >= 200 && res.StatusCode < 300) {
-		zap.L().Error("PutTemplate", zap.Int("statuscode", res.StatusCode))
+	if !response.Acknowledged {
+		zap.L().Error("PutTemplate failed")
 	}
 }
 
@@ -152,25 +150,17 @@ func (logicalIndex *LogicalIndexTimeBasedV8) FetchIndices() {
 func (logicalIndex *LogicalIndexTimeBasedV8) GetAllIndices() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
-	res, err := elasticsearchv8.C().Cat.Indices().Index(fmt.Sprintf("%s-*", logicalIndex.Name)).Do(ctx)
+	response, err := elasticsearchv8.C().Cat.Indices().Index(fmt.Sprintf("%s-*", logicalIndex.Name)).Do(ctx)
 	if err != nil {
 		zap.L().Error("elasticsearchv8 CatIndices", zap.Error(err))
 		return make([]string, 0)
 	}
-	defer res.Body.Close()
-
-	var catIndicesResponse []struct {
-		Index string `json:"index"`
-	}
-	err = json.NewDecoder(res.Body).Decode(&catIndicesResponse)
-	if err != nil {
-		zap.L().Error("elasticsearchv8 CatIndices parse body", zap.Error(err))
-		return make([]string, 0)
-	}
 
 	indices := make([]string, 0)
-	for _, index := range catIndicesResponse {
-		indices = append(indices, index.Index)
+	for _, index := range response {
+		if index.Index != nil {
+			indices = append(indices, *index.Index)
+		}
 	}
 	sort.Strings(indices)
 	return indices
