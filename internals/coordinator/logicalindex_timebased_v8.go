@@ -53,6 +53,7 @@ func NewLogicalIndexTimeBasedV8(instanceName string, model modeler.Model) (*Logi
 		return nil, err
 	}
 	if !templateExists {
+		zap.L().Info("template doesn't exists, creating it", zap.String("logicalIndexName", logicalIndexName))
 		indexPatern := fmt.Sprintf("%s-*", logicalIndexName)
 		logicalIndex.putTemplate(templateName, indexPatern, model)
 	}

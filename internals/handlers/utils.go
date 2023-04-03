@@ -14,6 +14,14 @@ import (
 	"go.uber.org/zap"
 )
 
+func QueryParamToOptionnalInt(r *http.Request, name string, orDefault int) (int, error) {
+	param := r.URL.Query().Get(name)
+	if param != "" {
+		return strconv.Atoi(param)
+	}
+	return orDefault, nil
+}
+
 func QueryParamToOptionnalInt64(r *http.Request, name string, orDefault int64) (int64, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
