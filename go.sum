@@ -133,6 +133,10 @@ github.com/eapache/go-resiliency v1.3.0/go.mod h1:5yPzW0MIvSe0JDsv0v+DvcjEv2FyD6
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
 github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
+github.com/elastic/elastic-transport-go/v8 v8.2.0 h1:hkK5IIs/15mpSXzd5THWVlWTKJyMw6cbCWM3T/B2S5E=
+github.com/elastic/elastic-transport-go/v8 v8.2.0/go.mod h1:87Tcz8IVNe6rVSLdBux1o/PEItLtyabHU3naC7IoqKI=
+github.com/elastic/go-elasticsearch/v8 v8.7.0 h1:ZvbT1YHppBC0QxGnMmaDUxoDa26clwhRaB3Gp5E3UcY=
+github.com/elastic/go-elasticsearch/v8 v8.7.0/go.mod h1:lVb8SvJV8McVkdswpL8YR5QKIkhlWaoSq60YpHilOLI=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
@@ -451,6 +455,8 @@ github.com/myrteametrics/myrtea-sdk/v4 v4.2.6 h1:fIBNW2V2hex0E9BZXWYKNB6hrJQmxaH
 github.com/myrteametrics/myrtea-sdk/v4 v4.2.6/go.mod h1:1l/xh9IrtKIRKgwPHJRvvlKm76PnsPeiVvpg+fsRBTg=
 github.com/myrteametrics/myrtea-sdk/v4 v4.2.14 h1:PxWwzqPupzXw0X/SsGjIWXMraPv7mW0KJKX+HxfL+cw=
 github.com/myrteametrics/myrtea-sdk/v4 v4.2.14/go.mod h1:1l/xh9IrtKIRKgwPHJRvvlKm76PnsPeiVvpg+fsRBTg=
+github.com/myrteametrics/myrtea-sdk/v4 v4.3.0 h1:xEnq6Habi28EodPHA2g5urkmEUNSJc8pZwjKET1XQUs=
+github.com/myrteametrics/myrtea-sdk/v4 v4.3.0/go.mod h1:59meLRbqV1uNyqPc+aaUIjsFfSa6T9tyxH5tjNR7XAg=
 github.com/nats-io/jwt v1.2.2/go.mod h1:/xX356yQA6LuXI9xWW7mZNpxgF2mBmGecH+Fj34sP5Q=
 github.com/nats-io/jwt/v2 v2.0.3/go.mod h1:VRP+deawSXyhNjXmxPCHskrR6Mq50BqpEI5SEcNiGlY=
 github.com/nats-io/nats-server/v2 v2.5.0/go.mod h1:Kj86UtrXAL6LwYRA6H4RqzkHhK0Vcv2ZnKD5WbQ1t3g=

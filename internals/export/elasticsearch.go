@@ -5,7 +5,6 @@ import (
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
-	"github.com/myrteametrics/myrtea-sdk/v4/builder"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
 )
@@ -46,24 +45,10 @@ func ExportFactHits(ti time.Time, factID int64, placeholders map[string]string, 
 	// Change the behaviour of the Fact
 	f.Intent.Operator = engine.Select
 
-	pf, err := fact.Prepare(&f, nhit, offset, ti, placeholders, false)
+	widgetData, err := fact.ExecuteFact(ti, f, 0, 0, placeholders, nhit, offset, false)
 	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
-		return nil, err
+		zap.L().Error("ExecuteFact", zap.Error(err))
 	}
 
-	debug := true
-	if debug {
-		zap.L().Debug("Debugging prepared fact", zap.Any("pf", pf))
-		source, _ := builder.BuildEsSearchSource(pf)
-		zap.L().Debug("Debugging final elastic query", zap.Any("query", source))
-	}
-
-	data, err := fact.Execute(pf)
-	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("prepared-query", pf))
-		return nil, err
-	}
-
-	return data.Hits, nil
+	return widgetData.Hits, nil
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
@@ -296,7 +297,7 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Fact ID"
 // @Param byName query string false "Find fact by it's name"
-// @Param time query string true "Timestamp used for the fact execution"
+// @Param time query string false "Timestamp used for the fact execution"
 // @Param cache query string false "Cache maximum age in minutes(go duration: 10m, 1h, ...). If unset, use cache with no limit of age. If set to 0, disable cache"
 // @Param nhit query int false "Hit per page"
 // @Param offset query int false "Offset number"
@@ -308,35 +309,21 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 // @Router /engine/facts/{id}/execute [get]
 func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 
-	debug := false
-	_debug := r.URL.Query().Get("debug")
-	if _debug == "true" {
-		debug = true
-	}
-
-	useCache := (r.URL.Query().Get("cache") != "0")
-	cacheDuration, err := ParseDuration(r.URL.Query().Get("cache"))
-	if err != nil {
-		zap.L().Warn("Parse input cache", zap.Error(err), zap.String("rawCache", r.URL.Query().Get("cache")))
-		render.Error(w, r, render.ErrAPIParsingDuration, err)
-		return
-	}
-
-	t, err := ParseTime(r.URL.Query().Get("time"))
+	t, err := QueryParamToOptionnalTime(r, "time", time.Now())
 	if err != nil {
 		zap.L().Warn("Parse input time", zap.Error(err), zap.String("rawTime", r.URL.Query().Get("time")))
 		render.Error(w, r, render.ErrAPIParsingDateTime, err)
 		return
 	}
 
-	nhit, err := ParseInt(r.URL.Query().Get("nhit"))
+	nhit, err := QueryParamToOptionnalInt(r, "nhit", 0)
 	if err != nil {
 		zap.L().Warn("Parse input nhit", zap.Error(err), zap.String("rawNhit", r.URL.Query().Get("nhit")))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
 		return
 	}
 
-	offset, err := ParseInt(r.URL.Query().Get("offset"))
+	offset, err := QueryParamToOptionnalInt(r, "offset", 0)
 	if err != nil {
 		zap.L().Warn("Parse input offset", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("offset")))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
@@ -371,61 +358,22 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Reimplement fact handler cache system
-	var data *reader.WidgetData
-	_ = useCache
-	_ = cacheDuration
-	// if useCache {
-	// 	zap.L().Debug("Use history cache to resolve query")
-	// 	item, _, err := fact.GetFactResultFromHistory(f.ID, t, -1, 0, true, cacheDuration)
-	// 	if err != nil {
-	// 		zap.L().Error("Cannot fetch fact history", zap.Int64("id", f.ID), zap.Time("t", t), zap.Duration("cache", cacheDuration), zap.Error(err))
-	// 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-	// 		return
-	// 	}
-	// 	if item != nil {
-	// 		data = &reader.WidgetData{
-	// 			Aggregates: item,
-	// 		}
-	// 	}
-	// }
+	data, err := fact.ExecuteFact(t, f, 0, 0, placeholders, nhit, offset, false)
+	if err != nil {
+		zap.L().Error("Cannot execute fact", zap.Error(err))
+		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
+		return
+	}
 
-	if data == nil {
-		zap.L().Debug("Use elasticsearch to resolve query")
-		if debug {
-			zap.L().Debug("Debugging fact", zap.Any("f", f))
-		}
-
-		pf, err := fact.Prepare(&f, nhit, offset, t, placeholders, false)
-		if err != nil {
-			zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
-			render.Error(w, r, render.ErrAPIResourceInvalid, err)
-			return
-		}
-
-		if debug {
-			zap.L().Debug("Debugging prepared fact", zap.Any("pf", pf))
-			source, _ := builder.BuildEsSearchSource(pf)
-			zap.L().Debug("Debugging final elastic query", zap.Any("query", source))
-		}
-
-		data, err = fact.Execute(pf)
-		if err != nil {
-			zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("prepared-query", pf))
-			render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
-			return
-		}
-
-		if data.Aggregates != nil {
-			pluginBaseline, err := baseline.P()
-			if err == nil {
-				// value, err := pluginBaseline.Baseline.GetBaselineValue(0, f.ID, situationID, situationInstanceID, t)
-				values, err := pluginBaseline.BaselineService.GetBaselineValues(-1, f.ID, 0, 0, t)
-				if err != nil {
-					zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
-				}
-				data.Aggregates.Baselines = values
+	if data.Aggregates != nil {
+		pluginBaseline, err := baseline.P()
+		if err == nil {
+			// value, err := pluginBaseline.Baseline.GetBaselineValue(0, f.ID, situationID, situationInstanceID, t)
+			values, err := pluginBaseline.BaselineService.GetBaselineValues(-1, f.ID, 0, 0, t)
+			if err != nil {
+				zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
 			}
+			data.Aggregates.Baselines = values
 		}
 	}
 
@@ -508,22 +456,9 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 		zap.L().Debug("Debugging fact", zap.Any("newFact", newFact))
 	}
 
-	pf, err := fact.Prepare(&newFact, nhit, offset, t, placeholders, false)
+	item, err := fact.ExecuteFact(t, newFact, 0, 0, placeholders, nhit, offset, false)
 	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("newFact", newFact))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
-		return
-	}
-
-	if debug {
-		zap.L().Debug("Debugging prepared fact", zap.Any("pf", pf))
-		source, _ := builder.BuildEsSearchSource(pf)
-		zap.L().Debug("Debugging final elastic query", zap.Any("query", source))
-	}
-
-	item, err := fact.Execute(pf)
-	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("prepared-query", pf))
+		zap.L().Error("Cannot execute fact", zap.Error(err))
 		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
 		return
 	}
@@ -548,12 +483,6 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/facts/{id}/hits [get]
 func GetFactHits(w http.ResponseWriter, r *http.Request) {
-
-	debug := false
-	_debug := r.URL.Query().Get("debug")
-	if _debug == "true" {
-		debug = true
-	}
 
 	t, err := ParseTime(r.URL.Query().Get("time"))
 	if err != nil {
@@ -678,22 +607,9 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 	// Change the behaviour of the Fact
 	f.Intent.Operator = engine.Select
 
-	pf, err := fact.Prepare(&f, nhit, offset, t, placeholders, false)
+	data, err = fact.ExecuteFact(t, f, 0, 0, placeholders, nhit, offset, false)
 	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
-		return
-	}
-
-	if debug {
-		zap.L().Debug("Debugging prepared fact", zap.Any("pf", pf))
-		source, _ := builder.BuildEsSearchSource(pf)
-		zap.L().Debug("Debugging final elastic query", zap.Any("query", source))
-	}
-
-	data, err = fact.Execute(pf)
-	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("prepared-query", pf))
+		zap.L().Error("Cannot execute fact", zap.Error(err))
 		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
 		return
 	}
@@ -823,7 +739,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		zap.L().Debug("Debugging fact", zap.Any("f", f))
 	}
 
-	pf, err := fact.Prepare(&f, nhit, offset, t, parameters, false)
+	pf, err := fact.PrepareV6(&f, nhit, offset, t, parameters, false)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
 		render.Error(w, r, render.ErrAPIResourceInvalid, err)

@@ -47,8 +47,6 @@ insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('000
 insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000003', 'fact', '*', 'get');
 insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000004', 'frontend', 'user-settings', 'access');
 insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000005', 'frontend', 'settings', 'access');
-insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000006', 'frontend', 'supervision.integration-colis.colis360', 'access');
-insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0003-000000000007', 'frontend', 'supervision.integration-colis.search_colis', 'access');
 insert into users_roles_v4 (user_id, role_id) VALUES ('00000000-0000-0000-0003-000000000000', '00000000-0000-0001-0003-000000000000');
 insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0003-000000000000', '00000000-0000-0002-0003-000000000000');
 insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0003-000000000000', '00000000-0000-0002-0003-000000000001');
@@ -67,8 +65,6 @@ insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('000
 insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0004-000000000002', '*', '*', 'search');
 insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0004-000000000003', 'frontend', 'user-settings', 'access');
 insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0004-000000000004', 'frontend', 'settings', 'access');
-insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0004-000000000005', 'frontend', 'supervision.integration-colis', 'access');
-insert into permissions_v4 (id, resource_type, resource_id, action) VALUES ('00000000-0000-0002-0004-000000000006', 'frontend', 'supervision.plateforme-tri.tri-sur-annonces', 'access');
 insert into users_roles_v4 (user_id, role_id) VALUES ('00000000-0000-0000-0004-000000000000', '00000000-0000-0001-0004-000000000000');
 insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0004-000000000000', '00000000-0000-0002-0004-000000000000');
 insert into roles_permissions_v4 (role_id, permission_id) VALUES ('00000000-0000-0001-0004-000000000000', '00000000-0000-0002-0004-000000000001');

@@ -98,21 +98,9 @@ func (m *AssistantPlugin) SendMessage(w http.ResponseWriter, r *http.Request) {
 		dim.DateInterval = "1h"
 	}
 
-	pf, err := fact.Prepare(&f, -1, -1, t, nil, false)
+	widgetData, err := fact.ExecuteFact(t, f, 0, 0, nil, -1, -1, false)
 	if err != nil {
-		zap.L().Error("Cannot prepare fact", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
-		err := PersistInteractionTrace(receiveTs, t, &message, &nlpTokens, &f, nil, err)
-		if err != nil {
-			zap.L().Warn("Persist interaction trace", zap.Error(err))
-		}
-		return
-	}
-
-	widgetData, err := fact.Execute(pf)
-	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("prepared-query", pf))
-		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
+		zap.L().Error("Cannot execute fact", zap.Error(err))
 		err := PersistInteractionTrace(receiveTs, t, &message, &nlpTokens, &f, nil, err)
 		if err != nil {
 			zap.L().Warn("Persist interaction trace", zap.Error(err))

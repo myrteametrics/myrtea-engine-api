@@ -13,7 +13,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
+	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv6"
 	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/spf13/viper"
@@ -81,10 +81,10 @@ func TestFactRecalculationJobRun(t *testing.T) {
 	zap.ReplaceGlobals(logger)
 
 	loadConfiguration()
-	executorCredentials := &elasticsearch.Credentials{
+	credentials := &elasticsearchv6.Credentials{
 		URLs: []string{"http://localhost:9200"},
 	}
-	elasticsearch.ReplaceGlobals(executorCredentials)
+	elasticsearchv6.ReplaceGlobals(credentials)
 
 	db := tests.DBClient(t)
 	postgres.ReplaceGlobals(db)

@@ -1,179 +1,155 @@
 package handlers
 
-import (
-	"fmt"
-	"net/http"
+// // GetAlias godoc
+// // @Title GetAlias
+// // @Description returns an alias based on an instance, a document type and a depth
+// // @tags Alias
+// // @Resource /coordinator
+// // @Router /coordinator/alias [post]
+// // @Accept json
+// // @Success 200 "OK"
+// // @Failure 400 "Bad Request"
+// // @Failure 500 "Internal Server Error"
+// func GetAlias(w http.ResponseWriter, r *http.Request) {
+// 	instance := chi.URLParam(r, "instance")
+// 	logicalIndex := fmt.Sprintf("%s-%s", instance, chi.URLParam(r, "documenttype"))
+// 	depth := chi.URLParam(r, "depth")
 
-	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/coordinator"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
-)
+// 	li, ok := coordinator.GetInstance().LogicalIndex(logicalIndex)
+// 	if !ok {
+// 		render.Error(w, r, render.ErrAPIDBResourceNotFound, fmt.Errorf("coordinator instance %s with index %s not found", instance, logicalIndex))
+// 	}
 
-// GetAlias godoc
-// @Title GetAlias
-// @Description returns an alias based on an instance, a document type and a depth
-// @tags Alias
-// @Resource /coordinator
-// @Router /coordinator/alias [post]
-// @Accept json
-// @Success 200 "OK"
-// @Failure 400 "Bad Request"
-// @Failure 500 "Internal Server Error"
-func GetAlias(w http.ResponseWriter, r *http.Request) {
-	instance := chi.URLParam(r, "instance")
-	logicalIndex := fmt.Sprintf("%s-%s", instance, chi.URLParam(r, "documenttype"))
-	depth := chi.URLParam(r, "depth")
+// 	resp := make(map[string]string)
+// 	resp["alias"] = fmt.Sprintf("%s-%s", li.Name, depth)
 
-	ins, ok := coordinator.GetInstance().Instances[instance]
-	if !ok {
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, fmt.Errorf("coordinator instance %s with index %s not found", instance, logicalIndex))
-	}
+// 	render.JSON(w, r, resp)
+// }
 
-	li, ok := ins.LogicalIndices[logicalIndex]
-	if !ok {
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, fmt.Errorf("coordinator instance %s with index %s not found", instance, logicalIndex))
-	}
+// // GetAllCron godoc
+// // @Title GetAllCron
+// // @Description returns an overview of every defined crons
+// // @tags Cron
+// // @Resource /coordinator
+// // @Router /coordinator/crons [get]
+// // @Accept json
+// // @Success 200 "OK"
+// // @Failure 400 "Bad Request"
+// // @Failure 500 "Internal Server Error"
+// func GetAllCron(w http.ResponseWriter, r *http.Request) {
 
-	resp := make(map[string]string)
-	resp["alias"] = fmt.Sprintf("%s-%s", li.Name, depth)
+// 	cronByIndice := make(map[string]interface{})
+// 	for _, li := range coordinator.GetInstance().LogicalIndices {
+// 		cronByIndice[li.Name] = map[string]interface{}{
+// 			"name":     li.Name,
+// 			"location": li.Cron.Location().String(),
+// 			"exp":      li.Model.ElasticsearchOptions.Rollcron,
+// 			"prev":     li.Cron.Entries()[0].Prev,
+// 			"next":     li.Cron.Entries()[0].Next,
+// 		}
+// 	}
 
-	render.JSON(w, r, resp)
-}
+// 	render.JSON(w, r, cronByIndice)
 
-// GetAllCron godoc
-// @Title GetAllCron
-// @Description returns an overview of every defined crons
-// @tags Cron
-// @Resource /coordinator
-// @Router /coordinator/crons [get]
-// @Accept json
-// @Success 200 "OK"
-// @Failure 400 "Bad Request"
-// @Failure 500 "Internal Server Error"
-func GetAllCron(w http.ResponseWriter, r *http.Request) {
-	cronByInstance := make(map[string]interface{})
-	for _, ins := range coordinator.GetInstance().Instances {
-		cronByIndice := make(map[string]interface{})
-		for _, li := range ins.LogicalIndices {
-			cronByIndice[li.Name] = map[string]interface{}{
-				"name":     li.Name,
-				"location": li.Cron.Location().String(),
-				"exp":      li.Model.ElasticsearchOptions.Rollcron,
-				"prev":     li.Cron.Entries()[0].Prev,
-				"next":     li.Cron.Entries()[0].Next,
-			}
-		}
-		cronByInstance[ins.Name] = cronByIndice
-	}
+// 	render.NotImplemented(w, r)
+// }
 
-	render.JSON(w, r, cronByInstance)
+// // StartAllCron godoc
+// // @Title StartAllCron
+// // @Description starts every defined crons
+// // @tags Cron
+// // @Resource /coordinator
+// // @Router /coordinator/crons/start [post]
+// // @Accept json
+// // @Success 200 "OK"
+// // @Failure 400 "Bad Request"
+// // @Failure 500 "Internal Server Error"
+// func StartAllCron(w http.ResponseWriter, r *http.Request) {
+// 	for _, li := range coordinator.GetInstance().LogicalIndices {
+// 		li.GetCron().Start()
+// 	}
 
-	render.NotImplemented(w, r)
-}
+// 	render.OK(w, r)
+// }
 
-// StartAllCron godoc
-// @Title StartAllCron
-// @Description starts every defined crons
-// @tags Cron
-// @Resource /coordinator
-// @Router /coordinator/crons/start [post]
-// @Accept json
-// @Success 200 "OK"
-// @Failure 400 "Bad Request"
-// @Failure 500 "Internal Server Error"
-func StartAllCron(w http.ResponseWriter, r *http.Request) {
-	for _, ins := range coordinator.GetInstance().Instances {
-		for _, li := range ins.LogicalIndices {
-			li.Cron.Start()
-		}
-	}
+// // StopAllCron godoc
+// // @Title StopAllCron
+// // @Description stops every defined crons
+// // @tags Cron
+// // @Resource /coordinator
+// // @Router /coordinator/crons/stop [post]
+// // @Accept json
+// // @Success 200 "OK"
+// // @Failure 400 "Bad Request"
+// // @Failure 500 "Internal Server Error"
+// // FIXME: Not working
+// func StopAllCron(w http.ResponseWriter, r *http.Request) {
+// 	for _, li := range coordinator.GetInstance().LogicalIndices {
+// 		li.GetCron().Stop()
+// 	}
 
-	render.OK(w, r)
-}
+// 	render.NotImplemented(w, r)
+// }
 
-// StopAllCron godoc
-// @Title StopAllCron
-// @Description stops every defined crons
-// @tags Cron
-// @Resource /coordinator
-// @Router /coordinator/crons/stop [post]
-// @Accept json
-// @Success 200 "OK"
-// @Failure 400 "Bad Request"
-// @Failure 500 "Internal Server Error"
-// FIXME: Not working
-func StopAllCron(w http.ResponseWriter, r *http.Request) {
-	for _, ins := range coordinator.GetInstance().Instances {
-		for _, li := range ins.LogicalIndices {
-			li.Cron.Stop()
-		}
-	}
+// // GetCron godoc
+// // @Title GetCron
+// // @Description returns an overview of a single cron
+// // @tags Cron
+// // @Resource /coordinator
+// // @Router /coordinator/cron [get]
+// // @Accept json
+// // @Success 200 "OK"
+// // @Failure 400 "Bad Request"
+// // @Failure 500 "Internal Server Error"
+// // TODO: ADD URL PARAMS SWAGGER ANNOTATION
+// func GetCron(w http.ResponseWriter, r *http.Request) {
+// 	logicalIndex := chi.URLParam(r, "logicalIndex")
+// 	li := coordinator.GetInstance().LogicalIndex(logicalIndex)
 
-	render.NotImplemented(w, r)
-}
+// 	cron := make(map[string]interface{})
+// 	cron["name"] = li.Name
+// 	cron["location"] = li.Cron.Location().String()
+// 	cron["exp"] = li.Model.ElasticsearchOptions.Rollcron
+// 	cron["prev"] = li.Cron.Entries()[0].Prev
+// 	cron["next"] = li.Cron.Entries()[0].Next
 
-// GetCron godoc
-// @Title GetCron
-// @Description returns an overview of a single cron
-// @tags Cron
-// @Resource /coordinator
-// @Router /coordinator/cron [get]
-// @Accept json
-// @Success 200 "OK"
-// @Failure 400 "Bad Request"
-// @Failure 500 "Internal Server Error"
-// TODO: ADD URL PARAMS SWAGGER ANNOTATION
-func GetCron(w http.ResponseWriter, r *http.Request) {
-	instance := chi.URLParam(r, "instance")
-	logicalIndex := chi.URLParam(r, "logicalIndex")
-	li := coordinator.GetInstance().Instances[instance].LogicalIndices[logicalIndex]
+// 	render.JSON(w, r, cron)
 
-	cron := make(map[string]interface{})
-	cron["name"] = li.Name
-	cron["location"] = li.Cron.Location().String()
-	cron["exp"] = li.Model.ElasticsearchOptions.Rollcron
-	cron["prev"] = li.Cron.Entries()[0].Prev
-	cron["next"] = li.Cron.Entries()[0].Next
+// 	render.NotImplemented(w, r)
+// }
 
-	render.JSON(w, r, cron)
+// // StartCron godoc
+// // @Title StartCron
+// // @Description starts a single cron
+// // @tags Cron
+// // @Resource /coordinator
+// // @Router /coordinator/cron/start [post]
+// // @Accept json
+// // @Success 200 "OK"
+// // @Failure 400 "Bad Request"
+// // @Failure 500 "Internal Server Error"
+// func StartCron(w http.ResponseWriter, r *http.Request) {
+// 	logicalIndex := chi.URLParam(r, "logicalIndex")
 
-	render.NotImplemented(w, r)
-}
+// 	coordinator.GetInstance().LogicalIndex(logicalIndex).GetCron().Start()
 
-// StartCron godoc
-// @Title StartCron
-// @Description starts a single cron
-// @tags Cron
-// @Resource /coordinator
-// @Router /coordinator/cron/start [post]
-// @Accept json
-// @Success 200 "OK"
-// @Failure 400 "Bad Request"
-// @Failure 500 "Internal Server Error"
-func StartCron(w http.ResponseWriter, r *http.Request) {
-	instance := chi.URLParam(r, "instance")
-	logicalIndex := chi.URLParam(r, "logicalIndex")
+// 	render.NotImplemented(w, r)
+// }
 
-	coordinator.GetInstance().Instances[instance].LogicalIndices[logicalIndex].Cron.Start()
+// // StopCron godoc
+// // @Title StopCron
+// // @Description stops a single cron
+// // @tags Cron
+// // @Resource /coordinator
+// // @Router /coordinator/cron/stop [post]
+// // @Accept json
+// // @Success 200 "OK"
+// // @Failure 400 "Bad Request"
+// // @Failure 500 "Internal Server Error"
+// func StopCron(w http.ResponseWriter, r *http.Request) {
+// 	logicalIndex := chi.URLParam(r, "logicalIndex")
 
-	render.NotImplemented(w, r)
-}
+// 	coordinator.GetInstance().LogicalIndex(logicalIndex).GetCron().Stop()
 
-// StopCron godoc
-// @Title StopCron
-// @Description stops a single cron
-// @tags Cron
-// @Resource /coordinator
-// @Router /coordinator/cron/stop [post]
-// @Accept json
-// @Success 200 "OK"
-// @Failure 400 "Bad Request"
-// @Failure 500 "Internal Server Error"
-func StopCron(w http.ResponseWriter, r *http.Request) {
-	instance := chi.URLParam(r, "instance")
-	logicalIndex := chi.URLParam(r, "logicalIndex")
-
-	coordinator.GetInstance().Instances[instance].LogicalIndices[logicalIndex].Cron.Stop()
-
-	render.NotImplemented(w, r)
-}
+// 	render.NotImplemented(w, r)
+// }
