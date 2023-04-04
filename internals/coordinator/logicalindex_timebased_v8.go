@@ -114,7 +114,7 @@ func (logicalIndex *LogicalIndexTimeBasedV8) purge() {
 }
 
 func (logicalIndex *LogicalIndexTimeBasedV8) putTemplate(name string, indexPatern string, model modeler.Model) {
-	req := elasticsearchv8.NewTemplateV8([]string{indexPatern}, model)
+	req := elasticsearchv8.NewPutTemplateRequestV8([]string{indexPatern}, model)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
