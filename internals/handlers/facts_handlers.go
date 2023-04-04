@@ -369,7 +369,7 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		pluginBaseline, err := baseline.P()
 		if err == nil {
 			// value, err := pluginBaseline.Baseline.GetBaselineValue(0, f.ID, situationID, situationInstanceID, t)
-			values, err := pluginBaseline.Baseline.GetBaselineValues(-1, f.ID, 0, 0, t)
+			values, err := pluginBaseline.BaselineService.GetBaselineValues(-1, f.ID, 0, 0, t)
 			if err != nil {
 				zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
 			}

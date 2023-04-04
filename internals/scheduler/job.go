@@ -37,8 +37,7 @@ func (schedule *InternalSchedule) IsValid() (bool, error) {
 	if schedule.JobType == "" {
 		return false, errors.New("missing JobType")
 	}
-	// if schedule.JobType != "fact" && schedule.JobType != "baseline" {
-	if schedule.JobType != "fact" {
+	if schedule.JobType != "fact" && schedule.JobType != "baseline" {
 		return false, errors.New("invalid JobType")
 	}
 	if schedule.Job == nil {
@@ -81,11 +80,11 @@ func UnmarshalInternalJob(t string, b json.RawMessage, scheduleID int64) (Intern
 		tJob.ScheduleID = scheduleID
 		job = tJob
 
-	// case "baseline":
-	// 	var tJob BaselineCalculationJob
-	// 	err = json.Unmarshal(b, &tJob)
-	// 	tJob.ScheduleID = scheduleID
-	// 	job = tJob
+	case "baseline":
+		var tJob BaselineCalculationJob
+		err = json.Unmarshal(b, &tJob)
+		tJob.ScheduleID = scheduleID
+		job = tJob
 
 	default:
 		zap.L().Error("unknown internal job type", zap.String("type", t))

@@ -3,8 +3,10 @@ package baseline
 import (
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/go-plugin"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline/proto"
+	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -15,7 +17,7 @@ type BaselineGRPCPlugin struct {
 	// GRPCPlugin must still implement the Plugin interface
 	plugin.Plugin
 	// Concrete implementation, written in Go. This is only used for plugins that are written in Go.
-	Impl Baseline
+	Impl BaselineService
 }
 
 func (p *BaselineGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
@@ -48,8 +50,9 @@ func (m *GRPCClient) GetBaselineValues(id int64, factID int64, situationID int64
 	}
 
 	for k, v := range resp.Values {
-		vTime, err := time.Parse(v.GetTime(), timeLayout)
+		vTime, err := time.Parse(timeLayout, v.GetTime())
 		if err != nil {
+			zap.L().Warn("parse baseline ti", zap.Error(err))
 			continue
 		}
 		baselineValues[k] = BaselineValue{
@@ -67,9 +70,21 @@ func (m *GRPCClient) GetBaselineValues(id int64, factID int64, situationID int64
 	return baselineValues, nil
 }
 
+func (m *GRPCClient) BuildBaselineValues(baselineID int64) error {
+
+	_, err := m.client.BuildBaselineValues(context.Background(), &proto.BuildBaselineRequest{
+		Id: baselineID,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 type GRPCServer struct {
 	// This is the real implementation
-	Impl Baseline
+	Impl BaselineService
+	proto.UnimplementedBaselineServer
 }
 
 func (m *GRPCServer) GetBaselineValues(ctx context.Context, req *proto.BaselineValueRequest) (*proto.BaselineValues, error) {
@@ -94,4 +109,9 @@ func (m *GRPCServer) GetBaselineValues(ctx context.Context, req *proto.BaselineV
 	}
 
 	return &proto.BaselineValues{Values: baselineValues}, err
+}
+
+func (m *GRPCServer) BuildBaselineValues(ctx context.Context, req *proto.BuildBaselineRequest) (*empty.Empty, error) {
+	err := m.Impl.BuildBaselineValues(req.Id)
+	return &empty.Empty{}, err
 }

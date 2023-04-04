@@ -34,7 +34,7 @@ type FactCalculationJob struct {
 	ScheduleID     int64   `json:"-"`
 }
 
-//ResolveFromAndTo resolves the expressions in parameters From and To
+// ResolveFromAndTo resolves the expressions in parameters From and To
 func (job *FactCalculationJob) ResolveFromAndTo(t time.Time) (time.Time, time.Time, error) {
 
 	var from time.Time

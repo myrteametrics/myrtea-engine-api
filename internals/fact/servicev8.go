@@ -7,6 +7,7 @@ import (
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/coordinator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
+	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
 	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv8"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"github.com/myrteametrics/myrtea-sdk/v4/index"
@@ -41,6 +42,15 @@ func ExecuteFactV8(
 	widgetData, err := reader.ParseV8(response)
 	if err != nil {
 		return nil, err
+	}
+
+	pluginBaseline, err := baseline.P()
+	if err == nil {
+		values, err := pluginBaseline.BaselineService.GetBaselineValues(-1, f.ID, situationID, situationInstanceID, ti)
+		if err != nil {
+			zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
+		}
+		widgetData.Aggregates.Baselines = values
 	}
 
 	return widgetData, nil
