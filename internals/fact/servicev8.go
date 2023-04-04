@@ -37,14 +37,6 @@ func ExecuteFactV8(
 		zap.L().Error("ES Search failed", zap.Error(err))
 		return nil, err
 	}
-	// defer res.Body.Close()
-
-	// var response elasticsearchv8.SearchResponse
-	// err = json.NewDecoder(res.Body).Decode(&response)
-	// if err != nil {
-	// 	zap.L().Error("Decode Search response", zap.Error(err))
-	// 	return nil, err
-	// }
 
 	widgetData, err := reader.ParseV8(response)
 	if err != nil {

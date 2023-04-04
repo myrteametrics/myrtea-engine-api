@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// ParseV8 parse a elasticsearch SearchResponse (hits and aggregations) and returns a WidgetData
+// ParseV8 parse a elasticsearch search.Response (hits and aggregations) and returns a WidgetData
 func ParseV8(res *search.Response) (*WidgetData, error) {
 	item := &Item{}
 
