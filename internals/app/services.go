@@ -104,14 +104,14 @@ func initCoordinator() {
 	}
 
 	instanceName := viper.GetString("INSTANCE_NAME")
-	urls := viper.GetStringSlice("ELASTICSEARCH_URLS")
-	if err = coordinator.GetInstance().InitInstance(instanceName, urls, models); err != nil {
+	if err = coordinator.InitInstance(instanceName, models); err != nil {
 		zap.L().Fatal("Intialisation of coordinator master", zap.Error(err))
 	}
 	if viper.GetBool("ENABLE_CRONS_ON_START") {
-		for _, ins := range coordinator.GetInstance().Instances {
-			for _, li := range ins.LogicalIndices {
-				li.Cron.Start()
+		for _, li := range coordinator.GetInstance().LogicalIndices {
+			cron := li.GetCron()
+			if cron != nil {
+				cron.Start()
 			}
 		}
 	}
