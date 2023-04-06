@@ -5,6 +5,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connector"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connectorconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/coordinator"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/email"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/action"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/draft"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
@@ -61,6 +62,7 @@ func initServices() {
 	initScheduler()
 	initTasker()
 	initCalendars()
+	initEmailSender()
 }
 
 func stopServices() {
@@ -115,4 +117,9 @@ func initCoordinator() {
 			}
 		}
 	}
+}
+
+func initEmailSender() {
+	email.Init()
+
 }

@@ -175,3 +175,19 @@ AUTHENTICATION_SAML_ADMIN_GROUP_NAME = "administrators"
 # Specify the SAML cookie max age
 # Default value: "1h"
 AUTHENTICATION_SAML_COOKIE_MAX_AGE_DURATION = "1h"
+
+# Specify the SMTP Username
+# Default value : "smtp@example.com"
+AUTHENTICATION_SMTP_USERNAME = "smtp@example.com"
+
+# Specify the SMTP Password
+# Default value : "password"
+AUTHENTICATION_SMTP_PASSWORD = "password"
+
+# Specify the SMTP host
+# Default value : "smtp.example.com"
+AUTHENTICATION_SMTP_HOST =  "smtp.example.com"
+
+# Specify the SMTP Port
+# Default value : "465"
+AUTHENTICATION_SMTP_PORT = "465"

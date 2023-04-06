@@ -39,6 +39,10 @@ var AllowedConfigKey = [][]helpers.ConfigKey{
 		{Type: helpers.StringFlag, Name: "AUTHENTICATION_SAML_ATTRIBUTE_USER_MEMBEROF", DefaultValue: "groups", Description: "SAML Attribute memberOf"},
 		{Type: helpers.StringFlag, Name: "AUTHENTICATION_SAML_ADMIN_GROUP_NAME", DefaultValue: "administrator", Description: "SAML Admin group name"},
 		{Type: helpers.StringFlag, Name: "AUTHENTICATION_SAML_COOKIE_MAX_AGE_DURATION", DefaultValue: "1h", Description: "SAML Cookie max age (time.Duration)"},
+		{Type: helpers.StringFlag, Name: "AUTHENTICATION_SMTP_USERNAME", DefaultValue: "smtp@example.com", Description: "SMTP Authentication Username"},
+		{Type: helpers.StringFlag, Name: "AUTHENTICATION_SMTP_PASSWORD", DefaultValue: "password", Description: "SMTP Authentication password"},
+		{Type: helpers.StringFlag, Name: "AUTHENTICATION_SMTP_HOST", DefaultValue: "smtp.example.com", Description: "SMTP Authentication host"},
+		{Type: helpers.StringFlag, Name: "AUTHENTICATION_SMTP_PORT", DefaultValue: "465", Description: "SMTP Authentication port"},
 	},
 }
 

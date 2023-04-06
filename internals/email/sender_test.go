@@ -3,7 +3,8 @@ package email
 import (
 	"bytes"
 	"encoding/csv"
-	"os"
+
+	//"os"
 	"testing"
 )
 
@@ -38,13 +39,14 @@ func mockMessage(t *testing.T) Message {
 
 func TestSenderSend(t *testing.T) {
 	t.Skip() // Development test
-	host := os.Getenv("TEST_SMTP_HOST")
-	port := os.Getenv("TEST_SMTP_PORT")
-	username := os.Getenv("TEST_SMTP_USERNAME")
-	password := os.Getenv("TEST_SMTP_PASSWORD")
+	// host := os.Getenv("TEST_SMTP_HOST")
+	// port := os.Getenv("TEST_SMTP_PORT")
+	// username := os.Getenv("TEST_SMTP_USERNAME")
+	// password := os.Getenv("TEST_SMTP_PASSWORD")
 
-	sender := NewSender(username, password, host, port)
-	err := sender.Send(mockMessage(t))
+	// sender := NewSender(username, password, host, port)
+    InitUnitTestSenderSend()
+	err := S().Send(mockMessage(t))
 	if err != nil {
 		t.Log(err)
 		t.FailNow()
@@ -53,13 +55,14 @@ func TestSenderSend(t *testing.T) {
 
 func TestSenderSendGmail(t *testing.T) {
 	t.Skip() // Development test
-	username := os.Getenv("TEST_SMTP_USERNAME")
-	password := os.Getenv("TEST_SMTP_PASSWORD")
-	host := "smtp.gmail.com"
-	port := "587"
+	// username := os.Getenv("TEST_SMTP_USERNAME")
+	// password := os.Getenv("TEST_SMTP_PASSWORD")
+	// host := "smtp.gmail.com"
+	// port := "587"
 
-	sender := NewSender(username, password, host, port)
-	err := sender.Send(mockMessage(t))
+	// sender := NewSender(username, password, host, port)
+	InitUnitTestSenderGmail()
+	err := S().Send(mockMessage(t))
 	if err != nil {
 		t.Log(err)
 		t.FailNow()
