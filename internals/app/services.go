@@ -120,6 +120,11 @@ func initCoordinator() {
 }
 
 func initEmailSender() {
-	email.Init()
+
+	username := viper.GetString("SMTP_USERNAME")
+	password := viper.GetString("SMTP_PASSWORD")
+	host := viper.GetString("SMTP_HOST")
+	port := viper.GetString("SMTP_PORT")
+	email.InitSender(username,password,host,port)
 
 }
