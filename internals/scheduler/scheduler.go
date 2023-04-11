@@ -86,10 +86,13 @@ func (s *InternalScheduler) Init() error {
 		return err
 	}
 	for _, fs := range schedules {
-		err := s.AddJobSchedule(fs)
-		if err != nil {
-			return err
+		if (fs.Enabled){
+			err := s.AddJobSchedule(fs)
+			if err != nil {
+				return err
+			}
 		}
+		
 	}
 	return nil
 }
