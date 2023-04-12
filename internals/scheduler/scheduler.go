@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/robfig/cron/v3"
@@ -56,15 +57,21 @@ func NewScheduler() *InternalScheduler {
 func (s *InternalScheduler) AddJobSchedule(schedule InternalSchedule) error {
 	zap.L().Info("Adding new schedule", zap.Any("schedule", schedule))
 
-	if entryID, ok := s.Jobs[schedule.ID]; ok {
-		s.C.Remove(entryID)
-	}
+	// if entryID, ok := s.Jobs[schedule.ID]; ok {
+	// 	s.C.Remove(entryID)
+	// }
+	s.RemoveJobSchedule(schedule.ID)
 
-	entryID, err := s.C.AddJob(schedule.CronExpr, schedule.Job)
-	if err != nil {
-		return err
+	if( schedule.Enabled){
+        entryID, err := s.C.AddJob(schedule.CronExpr, schedule.Job)
+		if err != nil {
+			return err
+		}
+		s.Jobs[schedule.ID] = entryID
+	}else{
+		return  errors.New("The scheduler is disable")
 	}
-	s.Jobs[schedule.ID] = entryID
+	
 
 	return nil
 }
