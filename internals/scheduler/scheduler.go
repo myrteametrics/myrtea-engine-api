@@ -69,7 +69,7 @@ func (s *InternalScheduler) AddJobSchedule(schedule InternalSchedule) error {
 		}
 		s.Jobs[schedule.ID] = entryID
 	}else{
-		return  errors.New("The scheduler is disable")
+		zap.L().Info("the scheduler is not added because it is disable", zap.Any("schedule", schedule))
 	}
 	
 
