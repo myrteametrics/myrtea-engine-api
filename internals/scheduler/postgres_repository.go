@@ -10,13 +10,13 @@ import (
 	"go.uber.org/zap"
 )
 
-//PostgresRepository is a repository containing the rules based on a PSQL database and
-//implementing the repository interface
+// PostgresRepository is a repository containing the rules based on a PSQL database and
+// implementing the repository interface
 type PostgresRepository struct {
 	conn *sqlx.DB
 }
 
-//NewPostgresRepository returns a new instance of PostgresRulesRepository
+// NewPostgresRepository returns a new instance of PostgresRulesRepository
 func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	r := PostgresRepository{
 		conn: dbClient,
@@ -43,7 +43,7 @@ func (r *PostgresRepository) Create(schedule InternalSchedule) (int64, error) {
 		"job_type":      schedule.JobType,
 		"job_data":      string(scheduleData),
 		"last_modified": timestamp,
-		"enabled": schedule.Enabled,
+		"enabled":       schedule.Enabled,
 	}
 
 	rows, err := r.conn.NamedQuery(query, params)
@@ -61,7 +61,7 @@ func (r *PostgresRepository) Create(schedule InternalSchedule) (int64, error) {
 	return id, nil
 }
 
-//Get search and returns a job schedule from the repository by its id
+// Get search and returns a job schedule from the repository by its id
 func (r *PostgresRepository) Get(id int64) (InternalSchedule, bool, error) {
 	query := `SELECT id, name, cronexpr, job_type, job_data, enabled FROM job_schedules_v1 WHERE id = :id`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
@@ -111,7 +111,7 @@ func (r *PostgresRepository) Update(schedule InternalSchedule) error {
 		"job_type":      schedule.JobType,
 		"job_data":      string(scheduleData),
 		"last_modified": t,
-		"enabled": schedule.Enabled,
+		"enabled":       schedule.Enabled,
 	})
 	if err != nil {
 		return errors.New("couldn't query the database:" + err.Error())

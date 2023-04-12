@@ -21,7 +21,7 @@ type InternalSchedule struct {
 	CronExpr string      `json:"cronexpr" example:"0 */15 * * *"`
 	JobType  string      `json:"jobtype" enums:"fact,baseline"`
 	Job      InternalJob `json:"job"`
-	Enabled     bool     `json:"enabled"`
+	Enabled  bool        `json:"enabled"`
 }
 
 // IsValid checks if an internal schedule definition is valid and has no missing mandatory fields
