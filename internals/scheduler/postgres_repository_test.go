@@ -42,6 +42,7 @@ func TestCreateFactJob(t *testing.T) {
 		Job: FactCalculationJob{
 			FactIds: []int64{1, 2},
 		},
+		Enabled: true,
 	}
 	_, err := r.Create(schedule)
 	if err != nil {
@@ -65,6 +66,7 @@ func TestGetJobs(t *testing.T) {
 		Job: FactCalculationJob{
 			FactIds: []int64{1, 2},
 		},
+		Enabled: true,
 	}
 	_, err := r.Create(schedule1)
 	if err != nil {
@@ -78,6 +80,7 @@ func TestGetJobs(t *testing.T) {
 		Job: FactCalculationJob{
 			FactIds: []int64{1, 2},
 		},
+		Enabled: true,
 	}
 	_, err = r.Create(schedule2)
 	if err != nil {
