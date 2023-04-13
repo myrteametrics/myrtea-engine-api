@@ -10,13 +10,13 @@ import (
 	"go.uber.org/zap"
 )
 
-//PostgresRepository is a repository containing the rules based on a PSQL database and
-//implementing the repository interface
+// PostgresRepository is a repository containing the rules based on a PSQL database and
+// implementing the repository interface
 type PostgresRepository struct {
 	conn *sqlx.DB
 }
 
-//NewPostgresRepository returns a new instance of PostgresRulesRepository
+// NewPostgresRepository returns a new instance of PostgresRulesRepository
 func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	r := PostgresRepository{
 		conn: dbClient,
@@ -35,14 +35,15 @@ func (r *PostgresRepository) Create(schedule InternalSchedule) (int64, error) {
 			"\nError from Marshal" + err.Error())
 	}
 
-	query := `INSERT INTO job_schedules_v1 (id, name, cronexpr, job_type, job_data, last_modified) 
-		VALUES (DEFAULT, :name, :cronexpr, :job_type, :job_data, :last_modified) RETURNING id`
+	query := `INSERT INTO job_schedules_v1 (id, name, cronexpr, job_type, job_data, last_modified, enabled) 
+		VALUES (DEFAULT, :name, :cronexpr, :job_type, :job_data, :last_modified, :enabled) RETURNING id`
 	params := map[string]interface{}{
 		"name":          schedule.Name,
 		"cronexpr":      schedule.CronExpr,
 		"job_type":      schedule.JobType,
 		"job_data":      string(scheduleData),
 		"last_modified": timestamp,
+		"enabled":       schedule.Enabled,
 	}
 
 	rows, err := r.conn.NamedQuery(query, params)
@@ -60,9 +61,9 @@ func (r *PostgresRepository) Create(schedule InternalSchedule) (int64, error) {
 	return id, nil
 }
 
-//Get search and returns a job schedule from the repository by its id
+// Get search and returns a job schedule from the repository by its id
 func (r *PostgresRepository) Get(id int64) (InternalSchedule, bool, error) {
-	query := `SELECT id, name, cronexpr, job_type, job_data FROM job_schedules_v1 WHERE id = :id`
+	query := `SELECT id, name, cronexpr, job_type, job_data, enabled FROM job_schedules_v1 WHERE id = :id`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
 		"id": id,
 	})
@@ -75,7 +76,7 @@ func (r *PostgresRepository) Get(id int64) (InternalSchedule, bool, error) {
 	if rows.Next() {
 		var schedule InternalSchedule
 		var jobData string
-		err := rows.Scan(&schedule.ID, &schedule.Name, &schedule.CronExpr, &schedule.JobType, &jobData)
+		err := rows.Scan(&schedule.ID, &schedule.Name, &schedule.CronExpr, &schedule.JobType, &jobData, &schedule.Enabled)
 		if err != nil {
 			return InternalSchedule{}, false, errors.New("couldn't scan the retrieved data: " + err.Error())
 		}
@@ -102,7 +103,7 @@ func (r *PostgresRepository) Update(schedule InternalSchedule) error {
 	}
 
 	query := `UPDATE job_schedules_v1 SET name = :name, cronexpr = :cronexpr, 
-		job_type = :job_type, job_data = :job_data, last_modified = :last_modified WHERE id = :id`
+		job_type = :job_type, job_data = :job_data, last_modified = :last_modified, enabled = :enabled WHERE id = :id`
 	res, err := r.conn.NamedExec(query, map[string]interface{}{
 		"id":            schedule.ID,
 		"name":          schedule.Name,
@@ -110,6 +111,7 @@ func (r *PostgresRepository) Update(schedule InternalSchedule) error {
 		"job_type":      schedule.JobType,
 		"job_data":      string(scheduleData),
 		"last_modified": t,
+		"enabled":       schedule.Enabled,
 	})
 	if err != nil {
 		return errors.New("couldn't query the database:" + err.Error())
@@ -147,7 +149,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 // GetAll returns all job schedules in the repository
 func (r *PostgresRepository) GetAll() (map[int64]InternalSchedule, error) {
 
-	query := `SELECT id, name, cronexpr, job_type, job_data FROM job_schedules_v1`
+	query := `SELECT id, name, cronexpr, job_type, job_data, enabled FROM job_schedules_v1`
 	rows, err := r.conn.Query(query)
 
 	if err != nil {
@@ -160,7 +162,7 @@ func (r *PostgresRepository) GetAll() (map[int64]InternalSchedule, error) {
 	for rows.Next() {
 		var schedule InternalSchedule
 		var jobData string
-		err := rows.Scan(&schedule.ID, &schedule.Name, &schedule.CronExpr, &schedule.JobType, &jobData)
+		err := rows.Scan(&schedule.ID, &schedule.Name, &schedule.CronExpr, &schedule.JobType, &jobData, &schedule.Enabled)
 		if err != nil {
 			return nil, errors.New("couldn't scan the retrieved data: " + err.Error())
 		}

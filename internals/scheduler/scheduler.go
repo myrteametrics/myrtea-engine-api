@@ -56,15 +56,15 @@ func NewScheduler() *InternalScheduler {
 func (s *InternalScheduler) AddJobSchedule(schedule InternalSchedule) error {
 	zap.L().Info("Adding new schedule", zap.Any("schedule", schedule))
 
-	if entryID, ok := s.Jobs[schedule.ID]; ok {
-		s.C.Remove(entryID)
-	}
+	s.RemoveJobSchedule(schedule.ID)
 
-	entryID, err := s.C.AddJob(schedule.CronExpr, schedule.Job)
-	if err != nil {
-		return err
+	if schedule.Enabled {
+		entryID, err := s.C.AddJob(schedule.CronExpr, schedule.Job)
+		if err != nil {
+			return err
+		}
+		s.Jobs[schedule.ID] = entryID
 	}
-	s.Jobs[schedule.ID] = entryID
 
 	return nil
 }
@@ -86,10 +86,13 @@ func (s *InternalScheduler) Init() error {
 		return err
 	}
 	for _, fs := range schedules {
-		err := s.AddJobSchedule(fs)
-		if err != nil {
-			return err
+		if fs.Enabled {
+			err := s.AddJobSchedule(fs)
+			if err != nil {
+				return err
+			}
 		}
+
 	}
 	return nil
 }
