@@ -3,6 +3,7 @@ package email
 import (
 	"bytes"
 	"encoding/csv"
+
 	"os"
 	"testing"
 )
@@ -58,7 +59,7 @@ func TestSenderSendGmail(t *testing.T) {
 	host := "smtp.gmail.com"
 	port := "587"
 
-	sender := NewSender(username, password, host, port)
+    sender := NewSender(username, password, host, port)
 	err := sender.Send(mockMessage(t))
 	if err != nil {
 		t.Log(err)
