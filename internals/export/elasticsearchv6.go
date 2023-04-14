@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func ExportFactHitsFullV6(factID int64) ([]reader.Hit, error) {
+func ExportFactHitsFullV6(f engine.Fact) ([]reader.Hit, error) {
 	ti := time.Now()
 	placeholders := make(map[string]string)
 	nhit := 10000
@@ -17,7 +17,7 @@ func ExportFactHitsFullV6(factID int64) ([]reader.Hit, error) {
 
 	fullHits := make([]reader.Hit, 0)
 	for {
-		hits, err := ExportFactHitsV6(ti, factID, placeholders, nhit, offset)
+		hits, err := ExportFactHitsV6(ti, f, placeholders, nhit, offset)
 		if err != nil {
 			return nil, err
 		}
@@ -33,15 +33,7 @@ func ExportFactHitsFullV6(factID int64) ([]reader.Hit, error) {
 	return fullHits, nil
 }
 
-func ExportFactHitsV6(ti time.Time, factID int64, placeholders map[string]string, nhit int, offset int) ([]reader.Hit, error) {
-	f, found, err := fact.R().Get(factID)
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return nil, err
-	}
-
+func ExportFactHitsV6(ti time.Time, f engine.Fact, placeholders map[string]string, nhit int, offset int) ([]reader.Hit, error) {
 	// Change the behaviour of the Fact
 	f.Intent.Operator = engine.Select
 

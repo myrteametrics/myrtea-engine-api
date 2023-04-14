@@ -15,18 +15,18 @@ import (
 	"go.uber.org/zap"
 )
 
-func ExportFactHitsFullV8(factID int64) ([]reader.Hit, error) {
+func ExportFactHitsFullV8(f engine.Fact) ([]reader.Hit, error) {
 	ti := time.Now()
 	placeholders := make(map[string]string)
 	fullHits := make([]reader.Hit, 0)
 
-	f, found, err := fact.R().Get(factID)
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return nil, err
-	}
+	//f, found, err := fact.R().Get(factID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if !found {
+	//	return nil, err
+	//}
 
 	// Change the behaviour of the Fact
 	f.Intent.Operator = engine.Select
@@ -46,12 +46,12 @@ func ExportFactHitsFullV8(factID int64) ([]reader.Hit, error) {
 		zap.L().Error("OpenPointInTime failed", zap.Error(err))
 		return nil, err
 	}
-	searchRequest.Pit.Id = pit.Id
+	searchRequest.Pit = &types.PointInTimeReference{Id: pit.Id, KeepAlive: "1m"}
 	searchRequest.SearchAfter = []types.FieldValue{}
 
 	for {
 		response, err := elasticsearchv8.C().Search().
-			Index(indicesStr).
+			//Index(indicesStr).
 			Size(10000).
 			Request(searchRequest).
 			Sort("_shard_doc:asc").
@@ -107,15 +107,7 @@ func ExportFactHitsFullV8(factID int64) ([]reader.Hit, error) {
 	return fullHits, nil
 }
 
-func ExportFactHitsV8(ti time.Time, factID int64, placeholders map[string]string, nhit int, offset int) ([]reader.Hit, error) {
-	f, found, err := fact.R().Get(factID)
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return nil, err
-	}
-
+func ExportFactHitsV8(ti time.Time, f engine.Fact, placeholders map[string]string, nhit int, offset int) ([]reader.Hit, error) {
 	// Change the behaviour of the Fact
 	f.Intent.Operator = engine.Select
 
