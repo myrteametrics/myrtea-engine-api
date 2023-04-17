@@ -59,7 +59,7 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fullHits, err := export.ExportFactHitsFull(idFact)
+	fullHits, err := export.ExportFactHitsFull(f)
 
 	if err != nil {
 		zap.L().Error("Error getting fact hits", zap.Error(err))

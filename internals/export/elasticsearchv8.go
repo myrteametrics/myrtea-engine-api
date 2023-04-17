@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/closepointintime"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
 	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv8"
 	"strings"
 	"time"
@@ -57,15 +56,6 @@ func ExportFactHitsFullV8(f engine.Fact) ([]reader.Hit, error) {
 		widgetData, err := reader.ParseV8(response)
 		if err != nil {
 			return nil, err
-		}
-
-		pluginBaseline, err := baseline.P()
-		if err == nil {
-			values, err := pluginBaseline.BaselineService.GetBaselineValues(-1, f.ID, 0, 0, ti)
-			if err != nil {
-				zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
-			}
-			widgetData.Aggregates.Baselines = values
 		}
 
 		// Check if response contains at least one hit
