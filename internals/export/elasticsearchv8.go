@@ -39,6 +39,7 @@ func ExportFactHitsFullV8(f engine.Fact) ([]reader.Hit, error) {
 	}
 	searchRequest.Pit = &types.PointInTimeReference{Id: pit.Id, KeepAlive: "1m"}
 	searchRequest.SearchAfter = []types.FieldValue{}
+	// searchRequest.TrackTotalHits = false // Speeds up pagination (maybe impl?)
 
 	for {
 		response, err := elasticsearchv8.C().Search().
@@ -53,23 +54,23 @@ func ExportFactHitsFullV8(f engine.Fact) ([]reader.Hit, error) {
 			return nil, err
 		}
 
-		widgetData, err := reader.ParseV8(response)
-		if err != nil {
-			return nil, err
-		}
-
 		// Check if response contains at least one hit
 		hitsLen := len(response.Hits.Hits)
 		if hitsLen == 0 {
 			break
 		}
 
+		widgetData, err := reader.ParseV8(response)
+		if err != nil {
+			return nil, err
+		}
+
 		// Handle SearchAfter to paginate
 		searchRequest.SearchAfter = response.Hits.Hits[hitsLen-1].Sort
 		fullHits = append(fullHits, widgetData.Hits...)
 
-		// TODO: Maybe remove?
-		if len(widgetData.Hits) < 10000 {
+		// avoids a useless search request
+		if len(response.Hits.Hits) < 10000 {
 			break
 		}
 	}
@@ -79,10 +80,8 @@ func ExportFactHitsFullV8(f engine.Fact) ([]reader.Hit, error) {
 		Do(context.Background())
 
 	if err != nil {
-		return nil, err // TODO: log soft err
-	}
-
-	if !do.Succeeded {
+		zap.L().Error("Error during PointInTime closing", zap.Error(err))
+	} else if !do.Succeeded {
 		zap.L().Warn("Could not close PointInTime")
 	}
 

@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 	"unicode/utf8"
 )
@@ -68,6 +67,7 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var file []byte
+	var filename = r.URL.Query().Get("fileName")
 
 	// type checker, to handle other files types like xml or json (defaults to csv)
 	switch r.URL.Query().Get("type") {
@@ -75,10 +75,11 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 		// Process needed parameters
 		params := GetCSVParameters(r)
 		file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.separator)
+		if filename != "" {
+			filename = f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
+		}
 		break
 	}
-
-	filename := f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
 
 	render.File(w, filename, file)
 }
@@ -86,16 +87,8 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 func GetCSVParameters(r *http.Request) CSVParameters {
 	result := CSVParameters{separator: ','}
 
-	// Priority to parameters
-	columns := r.URL.Query().Get("columns")
-	if columns != "" {
-		result.columns = strings.Split(columns, ",")
-	}
-
-	columnsLabel := r.URL.Query().Get("columnsLabel")
-	if columnsLabel != "" {
-		result.columnsLabel = strings.Split(columnsLabel, ",")
-	}
+	result.columns = QueryParamToOptionalStringArray(r, "columns", ",", []string{})
+	result.columnsLabel = QueryParamToOptionalStringArray(r, "columnsLabel", ",", []string{})
 
 	separator := r.URL.Query().Get("separator")
 	if separator != "" {
