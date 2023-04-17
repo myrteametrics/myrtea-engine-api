@@ -20,14 +20,6 @@ func ExportFactHitsFullV8(f engine.Fact) ([]reader.Hit, error) {
 	placeholders := make(map[string]string)
 	fullHits := make([]reader.Hit, 0)
 
-	//f, found, err := fact.R().Get(factID)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if !found {
-	//	return nil, err
-	//}
-
 	// Change the behaviour of the Fact
 	f.Intent.Operator = engine.Select
 
@@ -58,7 +50,7 @@ func ExportFactHitsFullV8(f engine.Fact) ([]reader.Hit, error) {
 			Do(context.Background())
 		if err != nil {
 			zap.L().Error("ES Search failed", zap.Error(err))
-			// TODO: maybe close PIT?
+			// TODO: maybe close PIT (defer close function?)
 			return nil, err
 		}
 
@@ -97,7 +89,7 @@ func ExportFactHitsFullV8(f engine.Fact) ([]reader.Hit, error) {
 		Do(context.Background())
 
 	if err != nil {
-		return nil, err // TODO:
+		return nil, err // TODO: log soft err
 	}
 
 	if !do.Succeeded {

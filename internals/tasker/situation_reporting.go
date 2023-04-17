@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"html/template"
 	"strconv"
 	"strings"
@@ -172,7 +173,15 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 
 	attachments := make([]email.MessageAttachment, 0)
 	for i, attachmentFactID := range task.AttachmentFactIDs {
-		fullHits, err := export.ExportFactHitsFull(attachmentFactID)
+		f, found, err := fact.R().Get(attachmentFactID)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return err
+		}
+
+		fullHits, err := export.ExportFactHitsFull(f)
 		if err != nil {
 			return err
 		}
