@@ -22,6 +22,11 @@ func ExportFactHitsFullV8(f engine.Fact) ([]reader.Hit, error) {
 	// Change the behaviour of the Fact
 	f.Intent.Operator = engine.Select
 
+	err := f.ContextualizeCondition(ti, placeholders)
+	if err != nil {
+		return nil, err
+	}
+
 	searchRequest, err := elasticsearchv8.ConvertFactToSearchRequestV8(f, ti, placeholders)
 	if err != nil {
 		zap.L().Error("ConvertFactToSearchRequestV8 failed", zap.Error(err))

@@ -92,9 +92,9 @@ func TestExportFactHits(t *testing.T) {
 		Name:             "test",
 		IsObject:         false,
 		IsTemplate:       false,
-		Model:            "model_test",
+		Model:            "test", // Don't forget to change to an existing model (model, term & field)
 		CalculationDepth: 90,
-		Intent:           &engine.IntentFragment{Name: "doc_count", Operator: engine.Count, Term: "model_test"},
+		Intent:           &engine.IntentFragment{Name: "doc_count", Operator: engine.Count, Term: "test"},
 		Condition: &engine.BooleanFragment{Operator: engine.And, Fragments: []engine.ConditionFragment{
 			&engine.LeafConditionFragment{Operator: engine.For, Field: "my_bool", Value: true},
 		},
