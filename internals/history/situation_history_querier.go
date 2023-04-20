@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"go.uber.org/zap"
 )
@@ -26,7 +26,7 @@ type HistorySituationsV4 struct {
 	Calendar              *calendar.Calendar
 }
 
-// HistoryRecordV4 represents a single and unique situation history entry
+// HistoryRecordV4 represents a single and unique situation history entry.
 type HistoryRecordV4 struct {
 	SituationID         int64
 	SituationInstanceID int64
@@ -36,7 +36,7 @@ type HistoryRecordV4 struct {
 	ExpressionFacts     map[string]interface{}
 }
 
-// OverrideParameters overrides the parameters of the History Record
+// OverrideParameters overrides the parameters of the History Record.
 func (hr HistoryRecordV4) OverrideParameters(p map[string]string) {
 	for key, value := range p {
 		hr.Parameters[key] = value
@@ -68,6 +68,7 @@ func (querier HistorySituationsQuerier) Insert(history HistorySituationsV4) (int
 	if err != nil {
 		return -1, err
 	}
+
 	return id, nil
 }
 
@@ -91,6 +92,7 @@ func (querier HistorySituationsQuerier) Update(history HistorySituationsV4) erro
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -105,6 +107,16 @@ func (querier HistorySituationsQuerier) ExecUpdate(builder sq.UpdateBuilder) err
 	} else if count == 0 {
 		return errors.New("no rows inserted")
 	}
+
+	return nil
+}
+
+func (querier HistorySituationsQuerier) ExecDelete(builder sq.DeleteBuilder) error {
+	_, err := builder.RunWith(querier.conn.DB).Exec()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -114,6 +126,7 @@ func (querier HistorySituationsQuerier) QueryReturning(builder sq.InsertBuilder)
 		return -1, err
 	}
 	defer rows.Close()
+
 	return querier.scanID(rows)
 }
 
@@ -123,6 +136,7 @@ func (querier HistorySituationsQuerier) Query(builder sq.SelectBuilder) ([]Histo
 		return make([]HistorySituationsV4, 0), err
 	}
 	defer rows.Close()
+
 	return querier.scanAll(rows)
 }
 
@@ -132,19 +146,24 @@ func (querier HistorySituationsQuerier) QueryIDs(builder sq.SelectBuilder) ([]in
 		return make([]int64, 0), err
 	}
 	defer rows.Close()
+
 	return querier.scanAllIDs(rows)
 }
 
 func (querier HistorySituationsQuerier) scanAllIDs(rows *sql.Rows) ([]int64, error) {
 	ids := make([]int64, 0)
+
 	for rows.Next() {
 		var id int64
+
 		err := rows.Scan(&id)
 		if err != nil {
 			return []int64{}, err
 		}
+
 		ids = append(ids, id)
 	}
+
 	return ids, nil
 }
 
@@ -155,19 +174,22 @@ func (querier HistorySituationsQuerier) scanID(rows *sql.Rows) (int64, error) {
 	} else {
 		return -1, errors.New("no id returned")
 	}
+
 	return id, nil
 }
 
 func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV4, error) {
-	var rawParameters []byte
-	var rawExpressionFacts []byte
-	var rawMetadatas []byte
+	var (
+		rawParameters       []byte
+		rawExpressionFacts  []byte
+		rawMetadatas        []byte
+		calendarId          sql.NullInt64
+		calendarName        sql.NullString
+		calendarDescription sql.NullString
+		calendarTimezone    sql.NullString
+	)
+
 	item := HistorySituationsV4{}
-	//
-	var calendarId sql.NullInt64
-	var calendarName sql.NullString
-	var calendarDescription sql.NullString
-	var calendarTimezone sql.NullString
 
 	err := rows.Scan(&item.ID, &item.SituationID, &item.SituationInstanceID, &item.Ts, &rawParameters,
 		&rawExpressionFacts, &rawMetadatas, &item.SituationName, &item.SituationInstanceName,
@@ -180,6 +202,7 @@ func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV
 		err = json.Unmarshal(rawParameters, &item.Parameters)
 		if err != nil {
 			zap.L().Error("Unmarshal", zap.Error(err))
+
 			return HistorySituationsV4{}, err
 		}
 	}
@@ -188,6 +211,7 @@ func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV
 		err = json.Unmarshal(rawExpressionFacts, &item.ExpressionFacts)
 		if err != nil {
 			zap.L().Error("Unmarshal", zap.Error(err))
+
 			return HistorySituationsV4{}, err
 		}
 	}
@@ -196,6 +220,7 @@ func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV
 		err = json.Unmarshal(rawMetadatas, &item.Metadatas)
 		if err != nil {
 			zap.L().Error("Unmarshal", zap.Error(err))
+
 			return HistorySituationsV4{}, err
 		}
 	}
@@ -214,13 +239,16 @@ func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV
 
 func (querier HistorySituationsQuerier) scanAll(rows *sql.Rows) ([]HistorySituationsV4, error) {
 	users := make([]HistorySituationsV4, 0)
+
 	for rows.Next() {
 		user, err := querier.scan(rows)
 		if err != nil {
 			return []HistorySituationsV4{}, err
 		}
+
 		users = append(users, user)
 	}
+
 	return users, nil
 }
 

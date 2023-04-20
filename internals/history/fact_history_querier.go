@@ -36,6 +36,7 @@ func (querier HistoryFactsQuerier) Insert(history HistoryFactsV4) (int64, error)
 	if err != nil {
 		return -1, err
 	}
+
 	return id, nil
 }
 
@@ -50,6 +51,7 @@ func (querier HistoryFactsQuerier) Exec(builder sq.InsertBuilder) error {
 	} else if count == 0 {
 		return errors.New("no rows inserted")
 	}
+
 	return nil
 }
 
@@ -63,6 +65,7 @@ func (querier HistoryFactsQuerier) Update(history HistoryFactsV4) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -77,6 +80,16 @@ func (querier HistoryFactsQuerier) ExecUpdate(builder sq.UpdateBuilder) error {
 	} else if count == 0 {
 		return errors.New("no rows inserted")
 	}
+
+	return nil
+}
+
+func (querier HistoryFactsQuerier) ExecDelete(builder sq.DeleteBuilder) error {
+	_, err := builder.RunWith(querier.conn.DB).Exec()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -86,6 +99,7 @@ func (querier HistoryFactsQuerier) QueryReturning(builder sq.InsertBuilder) (int
 		return -1, err
 	}
 	defer rows.Close()
+
 	return querier.scanID(rows)
 }
 
@@ -95,6 +109,7 @@ func (querier HistoryFactsQuerier) QueryOne(builder sq.SelectBuilder) (HistoryFa
 		return HistoryFactsV4{}, err
 	}
 	defer rows.Close()
+
 	return querier.scanFirst(rows)
 }
 
@@ -104,6 +119,7 @@ func (querier HistoryFactsQuerier) Query(builder sq.SelectBuilder) ([]HistoryFac
 		return make([]HistoryFactsV4, 0), err
 	}
 	defer rows.Close()
+
 	return querier.scanAll(rows)
 }
 
@@ -114,12 +130,15 @@ func (querier HistoryFactsQuerier) scanID(rows *sql.Rows) (int64, error) {
 	} else {
 		return -1, errors.New("no id returned")
 	}
+
 	return id, nil
 }
 
 func (querier HistoryFactsQuerier) scan(rows *sql.Rows) (HistoryFactsV4, error) {
 	var rawResult []byte
+
 	item := HistoryFactsV4{}
+
 	err := rows.Scan(&item.ID, &item.FactID, &item.SituationID, &item.SituationInstanceID, &item.Ts, &rawResult, &item.FactName)
 	if err != nil {
 		return HistoryFactsV4{}, err
@@ -135,13 +154,16 @@ func (querier HistoryFactsQuerier) scan(rows *sql.Rows) (HistoryFactsV4, error) 
 
 func (querier HistoryFactsQuerier) scanAll(rows *sql.Rows) ([]HistoryFactsV4, error) {
 	users := make([]HistoryFactsV4, 0)
+
 	for rows.Next() {
 		user, err := querier.scan(rows)
 		if err != nil {
 			return []HistoryFactsV4{}, err
 		}
+
 		users = append(users, user)
 	}
+
 	return users, nil
 }
 
@@ -149,6 +171,7 @@ func (querier HistoryFactsQuerier) scanFirst(rows *sql.Rows) (HistoryFactsV4, er
 	if rows.Next() {
 		return querier.scan(rows)
 	}
+
 	return HistoryFactsV4{}, nil
 }
 
