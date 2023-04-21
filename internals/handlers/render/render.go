@@ -3,6 +3,7 @@ package render
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/spf13/viper"
@@ -117,4 +118,17 @@ func Error(w http.ResponseWriter, r *http.Request, apiError APIError, err error)
 		return
 	}
 
+}
+
+// File handles file responses which allows the download of a filename containing data
+func File(w http.ResponseWriter, filename string, data []byte) {
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filename))
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	_, err := w.Write(data)
+	if err != nil {
+		zap.L().Error("Error during file write to http response", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }

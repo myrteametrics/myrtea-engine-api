@@ -1,54 +1,41 @@
 package export
 
 import (
+	"fmt"
+	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/spf13/viper"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
 )
 
-func ExportFactHitsFull(factID int64) ([]reader.Hit, error) {
-	ti := time.Now()
-	placeholders := make(map[string]string)
-	nhit := 10000
-	offset := 0
-
-	fullHits := make([]reader.Hit, 0)
-	for {
-		hits, err := ExportFactHits(ti, factID, placeholders, nhit, offset)
-		if err != nil {
-			return nil, err
-		}
-
-		fullHits = append(fullHits, hits...)
-
-		if len(hits) < 10000 {
-			break
-		}
-		offset += 10000
+func ExportFactHitsFull(f engine.Fact) ([]reader.Hit, error) {
+	version := viper.GetInt("ELASTICSEARCH_VERSION")
+	switch version {
+	case 6:
+		return ExportFactHitsFullV6(f)
+	case 7:
+		fallthrough
+	case 8:
+		return ExportFactHitsFullV8(f)
+	default:
+		zap.L().Fatal("Unsupported Elasticsearch version", zap.Int("version", version))
+		return nil, fmt.Errorf("unsupported Elasticsearch version")
 	}
-
-	return fullHits, nil
 }
 
-func ExportFactHits(ti time.Time, factID int64, placeholders map[string]string, nhit int, offset int) ([]reader.Hit, error) {
-	f, found, err := fact.R().Get(factID)
-	if err != nil {
-		return nil, err
+func ExportFactHits(ti time.Time, f engine.Fact, placeholders map[string]string, nhit int, offset int) ([]reader.Hit, error) {
+	version := viper.GetInt("ELASTICSEARCH_VERSION")
+	switch version {
+	case 6:
+		return ExportFactHitsV6(ti, f, placeholders, nhit, offset)
+	case 7:
+		fallthrough
+	case 8:
+		return ExportFactHitsFullV8(f)
+	default:
+		zap.L().Fatal("Unsupported Elasticsearch version", zap.Int("version", version))
+		return nil, fmt.Errorf("unsupported Elasticsearch version")
 	}
-	if !found {
-		return nil, err
-	}
-
-	// Change the behaviour of the Fact
-	f.Intent.Operator = engine.Select
-
-	widgetData, err := fact.ExecuteFact(ti, f, 0, 0, placeholders, nhit, offset, false)
-	if err != nil {
-		zap.L().Error("ExecuteFact", zap.Error(err))
-	}
-
-	return widgetData.Hits, nil
 }

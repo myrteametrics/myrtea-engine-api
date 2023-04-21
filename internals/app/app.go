@@ -11,7 +11,7 @@ func Init() {
 	docs.SwaggerInfo.Host = viper.GetString("SWAGGER_HOST")
 	docs.SwaggerInfo.BasePath = viper.GetString("SWAGGER_BASEPATH")
 
-	initElasticsearch()
+	InitElasticsearch()
 	initPostgres()
 	initRepositories()
 	initServices()
