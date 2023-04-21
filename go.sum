@@ -453,6 +453,12 @@ github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRW
 github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
 github.com/myrteametrics/myrtea-sdk/v4 v4.3.2 h1:KYleYit5SGDsMrGQv82Ii2nbMBgjJiAacr1AZ5rT9yk=
 github.com/myrteametrics/myrtea-sdk/v4 v4.3.2/go.mod h1:59meLRbqV1uNyqPc+aaUIjsFfSa6T9tyxH5tjNR7XAg=
+github.com/myrteametrics/myrtea-sdk/v4 v4.3.0 h1:xEnq6Habi28EodPHA2g5urkmEUNSJc8pZwjKET1XQUs=
+github.com/myrteametrics/myrtea-sdk/v4 v4.3.0/go.mod h1:59meLRbqV1uNyqPc+aaUIjsFfSa6T9tyxH5tjNR7XAg=
+github.com/myrteametrics/myrtea-sdk/v4 v4.3.1-0.20230413123359-09e8c40e59ab h1:7qIHCE+nf749itS9cLR42Id58EcoubkucfHgyoK52NM=
+github.com/myrteametrics/myrtea-sdk/v4 v4.3.1-0.20230413123359-09e8c40e59ab/go.mod h1:59meLRbqV1uNyqPc+aaUIjsFfSa6T9tyxH5tjNR7XAg=
+github.com/myrteametrics/myrtea-sdk/v4 v4.3.1 h1:MrDnlEmtF26uPk2qAvUM9V+shbGRXCStLXgORLJvtJM=
+github.com/myrteametrics/myrtea-sdk/v4 v4.3.1/go.mod h1:59meLRbqV1uNyqPc+aaUIjsFfSa6T9tyxH5tjNR7XAg=
 github.com/nats-io/jwt v1.2.2/go.mod h1:/xX356yQA6LuXI9xWW7mZNpxgF2mBmGecH+Fj34sP5Q=
 github.com/nats-io/jwt/v2 v2.0.3/go.mod h1:VRP+deawSXyhNjXmxPCHskrR6Mq50BqpEI5SEcNiGlY=
 github.com/nats-io/nats-server/v2 v2.5.0/go.mod h1:Kj86UtrXAL6LwYRA6H4RqzkHhK0Vcv2ZnKD5WbQ1t3g=

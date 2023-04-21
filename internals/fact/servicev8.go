@@ -2,6 +2,7 @@ package fact
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -21,12 +22,21 @@ func ExecuteFactV8(
 	nhit int, offset int, update bool,
 ) (*reader.WidgetData, error) {
 
+	f.ContextualizeDimensions(ti, parameters)
+	err := f.ContextualizeCondition(ti, parameters)
+	if err != nil {
+		return nil, err
+	}
+
 	searchRequest, err := elasticsearchv8.ConvertFactToSearchRequestV8(f, ti, parameters)
 	if err != nil {
 		zap.L().Error("ConvertFactToSearchRequestV8 failed", zap.Error(err))
+		return nil, err
 	}
+	searchRequest.TrackTotalHits = true
 
 	indices := FindIndices(f, ti, update)
+	zap.L().Debug("search", zap.Strings("indices", indices), zap.Any("request", searchRequest))
 
 	response, err := elasticsearchv8.C().Search().
 		Index(strings.Join(indices, ",")).
@@ -37,6 +47,10 @@ func ExecuteFactV8(
 	if err != nil {
 		zap.L().Error("ES Search failed", zap.Error(err))
 		return nil, err
+	}
+	if response.Shards_.Failed > 0 {
+		zap.L().Warn("search", zap.Any("failures", response.Shards_.Failures))
+		return nil, errors.New("search failed")
 	}
 
 	widgetData, err := reader.ParseV8(response)

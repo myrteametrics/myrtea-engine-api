@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func QueryParamToOptionnalInt(r *http.Request, name string, orDefault int) (int, error) {
+func QueryParamToOptionalInt(r *http.Request, name string, orDefault int) (int, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
 		return strconv.Atoi(param)
@@ -22,7 +22,7 @@ func QueryParamToOptionnalInt(r *http.Request, name string, orDefault int) (int,
 	return orDefault, nil
 }
 
-func QueryParamToOptionnalInt64(r *http.Request, name string, orDefault int64) (int64, error) {
+func QueryParamToOptionalInt64(r *http.Request, name string, orDefault int64) (int64, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
 		return strconv.ParseInt(param, 10, 64)
@@ -30,7 +30,15 @@ func QueryParamToOptionnalInt64(r *http.Request, name string, orDefault int64) (
 	return orDefault, nil
 }
 
-func QueryParamToOptionnalTime(r *http.Request, name string, orDefault time.Time) (time.Time, error) {
+func QueryParamToOptionalStringArray(r *http.Request, name string, separator string, orDefault []string) []string {
+	param := r.URL.Query().Get(name)
+	if param != "" {
+		return strings.Split(param, separator)
+	}
+	return orDefault
+}
+
+func QueryParamToOptionalTime(r *http.Request, name string, orDefault time.Time) (time.Time, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
 		return time.Parse("2006-01-02T15:04:05.000Z07:00", param)
@@ -46,7 +54,7 @@ func QueryParamToTime(r *http.Request, name string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("missing query parameter %s", name)
 }
 
-func QueryParamToOptionnalDuration(r *http.Request, name string, orDefault time.Duration) (time.Duration, error) {
+func QueryParamToOptionalDuration(r *http.Request, name string, orDefault time.Duration) (time.Duration, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
 		return time.ParseDuration(param)
@@ -54,7 +62,7 @@ func QueryParamToOptionnalDuration(r *http.Request, name string, orDefault time.
 	return orDefault, nil
 }
 
-func QueryParamToOptionnalBool(r *http.Request, name string, orDefault bool) (bool, error) {
+func QueryParamToOptionalBool(r *http.Request, name string, orDefault bool) (bool, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
 		return strconv.ParseBool(param)
@@ -62,8 +70,8 @@ func QueryParamToOptionnalBool(r *http.Request, name string, orDefault bool) (bo
 	return orDefault, nil
 }
 
-// QueryParamToOptionnalKeyValues parse multiple key:value entries separated by commas from a string
-func QueryParamToOptionnalKeyValues(r *http.Request, name string, orDefault map[string]string) (map[string]string, error) {
+// QueryParamToOptionalKeyValues parse multiple key:value entries separated by commas from a string
+func QueryParamToOptionalKeyValues(r *http.Request, name string, orDefault map[string]string) (map[string]string, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
 		keyValues := make(map[string]string)

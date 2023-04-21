@@ -169,6 +169,8 @@ func engineRouter() http.Handler {
 
 	r.Get("/connector/{id}/executions/last", handlers.GetlastConnectorExecutionDateTime)
 
+	r.Get("/facts/{id}/export", handlers.ExportFact)
+
 	return r
 }
 
