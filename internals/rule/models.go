@@ -72,6 +72,7 @@ func (r *Rule) UnmarshalJSON(data []byte) error {
 		Cases       []ruleeng.Case         `json:"cases"`
 		Version     int64                  `json:"version"`
 		Parameters  map[string]interface{} `json:"parameters"`
+		EvaluateAllCases bool               `json:"evaluateallcase"`
 	}
 	aux := Alias{}
 
@@ -87,6 +88,7 @@ func (r *Rule) UnmarshalJSON(data []byte) error {
 	r.Cases = aux.Cases
 	r.Version = aux.Version
 	r.Parameters = aux.Parameters
+	r.EvaluateAllCases = aux.EvaluateAllCases
 
 	return nil
 }
