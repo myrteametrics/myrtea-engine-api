@@ -25,21 +25,27 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsBase(options GetH
 	q := builder.newStatement().
 		Select("id").
 		From("situation_history_v5")
+
 	if options.SituationID != -1 {
 		q = q.Where(sq.Eq{"situation_id": options.SituationID})
 	}
+
 	if options.SituationInstanceID != -1 {
 		q = q.Where(sq.Eq{"situation_instance_id": options.SituationInstanceID})
 	}
+
 	if !options.FromTS.IsZero() {
 		q = q.Where(sq.GtOrEq{"ts": options.FromTS})
 	}
+
 	if !options.ToTS.IsZero() {
 		q = q.Where(sq.Lt{"ts": options.ToTS})
 	}
+
 	for k, v := range options.ParameterFilters {
 		q = q.Where(sq.Eq{"parameters->>'" + k + "'": v})
 	}
+
 	return q
 }
 
@@ -58,6 +64,7 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsByStandardInterva
 func (builder HistorySituationsBuilder) GetHistorySituationsIdsByCustomInterval(options GetHistorySituationsOptions, interval time.Duration, referenceDate time.Time) sq.SelectBuilder {
 	intervalSeconds := fmt.Sprintf("%d", int64(interval.Seconds()))
 	referenceDateStr := referenceDate.Format("2006-01-02T15:04:05Z07:00")
+
 	return builder.GetHistorySituationsIdsBase(options).
 		Options("distinct on (situation_id, situation_instance_id, CAST('"+referenceDateStr+"' AS TIMESTAMPTZ) + INTERVAL '1 second' * "+intervalSeconds+" * FLOOR(DATE_PART('epoch', ts- '"+referenceDateStr+"')/"+intervalSeconds+"))").
 		OrderBy("situation_id", "situation_instance_id", "CAST('"+referenceDateStr+"' AS TIMESTAMPTZ) + INTERVAL '1 second' * "+intervalSeconds+" * FLOOR(DATE_PART('epoch', ts- '"+referenceDateStr+"')/"+intervalSeconds+") desc, ts desc")
@@ -87,4 +94,17 @@ func (builder HistorySituationsBuilder) Update(id int64, parametersJSON []byte, 
 		Set("parameters", parametersJSON).
 		Set("expression_facts", expressionFactsJSON).
 		Set("metadatas", metadatasJSON)
+}
+
+func (builder HistorySituationsBuilder) DeleteOrphans() sq.DeleteBuilder {
+	return builder.newStatement().
+		Delete("situation_history_v5").
+		Where(
+			builder.newStatement().
+				Select("1").
+				From("situation_fact_history_v5").
+				Where("situation_history_v5.id = situation_fact_history_v5.situation_history_id").
+				Prefix("NOT EXISTS (").
+				Suffix(")"),
+		)
 }

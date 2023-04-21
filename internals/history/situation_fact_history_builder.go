@@ -24,5 +24,16 @@ func (builder HistorySituationFactsBuilder) InsertBulk(historySituationFacts []H
 	for _, hishistorySituationFact := range historySituationFacts {
 		b = b.Values(hishistorySituationFact.HistorySituationID, hishistorySituationFact.HistoryFactID, hishistorySituationFact.FactID)
 	}
+
 	return b
+}
+
+func (builder HistorySituationFactsBuilder) DeleteHistoryFrom(situationHistoryQueryBuilder sq.SelectBuilder) sq.DeleteBuilder {
+	return builder.newStatement().
+		Delete("situation_fact_history_v5").
+		Where(
+			situationHistoryQueryBuilder.
+				Prefix("situation_history_id NOT IN (").
+				Suffix(")"),
+		)
 }

@@ -12,7 +12,6 @@ import (
 )
 
 func ExtractHistoryDataSearch(historySituations []HistorySituationsV4, historySituationFacts []HistorySituationFactsV4, historyFacts []HistoryFactsV4) search.QueryResult {
-
 	mapFacts := make(map[int64]HistoryFactsV4)
 	for _, historyFact := range historyFacts {
 		mapFacts[historyFact.ID] = historyFact
@@ -28,73 +27,9 @@ func ExtractHistoryDataSearch(historySituations []HistorySituationsV4, historySi
 	}
 
 	situationRecords := make([]search.SituationHistoryRecord, 0)
+
 	for _, historySituation := range historySituations {
-
-		factIds, exists := mapSituationFact[historySituation.ID]
-		if !exists {
-			zap.L().Error("SHOULD EXISTS ?!")
-		}
-
-		factRecords := make([]search.FactHistoryRecord, 0)
-		for _, factId := range factIds {
-			factHistory := mapFacts[factId]
-
-			var value interface{}
-			var docCount interface{}
-			for k, v := range factHistory.Result.Aggs {
-				if k == "doc_count" {
-					docCount = v.Value
-					if value == nil {
-						value = v.Value
-					}
-				} else {
-					value = v.Value
-				}
-			}
-
-			factHistoryRecord := search.FactHistoryRecord{
-				FactID:    factHistory.FactID,
-				FactName:  factHistory.FactName,
-				DateTime:  factHistory.Ts,
-				Value:     value,
-				DocCount:  docCount,
-				Buckets:   factHistory.Result.Buckets,
-				Baselines: factHistory.Result.Baselines,
-			}
-			factRecords = append(factRecords, factHistoryRecord)
-		}
-
-		metadatas := make(map[string]interface{})
-		for _, metadata := range historySituation.Metadatas {
-			metadatas[metadata.Key] = metadata.Value
-		}
-
-		parameters := make(map[string]interface{})
-		for k, v := range historySituation.Parameters {
-			parameters[k] = v
-		}
-
-		situationRecord := search.SituationHistoryRecord{
-			SituationID:           historySituation.SituationID,
-			SituationName:         historySituation.SituationName,
-			SituationInstanceID:   historySituation.SituationInstanceID,
-			SituationInstanceName: historySituation.SituationInstanceName,
-			DateTime:              historySituation.Ts,
-			Parameters:            parameters,
-			ExpressionFacts:       historySituation.ExpressionFacts,
-			MetaData:              metadatas,
-			Facts:                 factRecords,
-		}
-
-		if historySituation.Calendar != nil {
-			situationRecord.Calendar = &search.SituationHistoryCalendarRecord{
-				Id:          historySituation.Calendar.ID,
-				Name:        historySituation.Calendar.Name,
-				Description: historySituation.Calendar.Description,
-				Timezone:    historySituation.Calendar.Timezone,
-			}
-		}
-
+		situationRecord := buildSituationHistoryRecord(historySituation, mapFacts, mapSituationFact)
 		situationRecords = append(situationRecords, situationRecord)
 	}
 
@@ -116,6 +51,83 @@ func ExtractHistoryDataSearch(historySituations []HistorySituationsV4, historySi
 	return searchResult
 }
 
+func buildSituationHistoryRecord(historySituation HistorySituationsV4, mapFacts map[int64]HistoryFactsV4, mapSituationFact map[int64][]int64) search.SituationHistoryRecord {
+	factIds, exists := mapSituationFact[historySituation.ID]
+	if !exists {
+		zap.L().Error("SHOULD EXISTS ?!")
+	}
+
+	factRecords := make([]search.FactHistoryRecord, 0)
+
+	for _, factId := range factIds {
+		factHistoryRecord := buildFactHistoryRecord(factId, mapFacts)
+		factRecords = append(factRecords, factHistoryRecord)
+	}
+
+	metadatas := make(map[string]interface{})
+	for _, metadata := range historySituation.Metadatas {
+		metadatas[metadata.Key] = metadata.Value
+	}
+
+	parameters := make(map[string]interface{})
+	for k, v := range historySituation.Parameters {
+		parameters[k] = v
+	}
+
+	situationRecord := search.SituationHistoryRecord{
+		SituationID:           historySituation.SituationID,
+		SituationName:         historySituation.SituationName,
+		SituationInstanceID:   historySituation.SituationInstanceID,
+		SituationInstanceName: historySituation.SituationInstanceName,
+		DateTime:              historySituation.Ts,
+		Parameters:            parameters,
+		ExpressionFacts:       historySituation.ExpressionFacts,
+		MetaData:              metadatas,
+		Facts:                 factRecords,
+	}
+
+	if historySituation.Calendar != nil {
+		situationRecord.Calendar = &search.SituationHistoryCalendarRecord{
+			Id:          historySituation.Calendar.ID,
+			Name:        historySituation.Calendar.Name,
+			Description: historySituation.Calendar.Description,
+			Timezone:    historySituation.Calendar.Timezone,
+		}
+	}
+
+	return situationRecord
+}
+
+func buildFactHistoryRecord(factId int64, mapFacts map[int64]HistoryFactsV4) search.FactHistoryRecord {
+	factHistory := mapFacts[factId]
+
+	var value, docCount interface{}
+
+	for k, v := range factHistory.Result.Aggs {
+		if k == "doc_count" {
+			docCount = v.Value
+
+			if value == nil {
+				value = v.Value
+			}
+		} else {
+			value = v.Value
+		}
+	}
+
+	factHistoryRecord := search.FactHistoryRecord{
+		FactID:    factHistory.FactID,
+		FactName:  factHistory.FactName,
+		DateTime:  factHistory.Ts,
+		Value:     value,
+		DocCount:  docCount,
+		Buckets:   factHistory.Result.Buckets,
+		Baselines: factHistory.Result.Baselines,
+	}
+
+	return factHistoryRecord
+}
+
 func ExtractSituationData(situationID int64, situationInstanceID int64) (situation.Situation, map[string]string, error) {
 	parameters := make(map[string]string)
 
@@ -123,9 +135,11 @@ func ExtractSituationData(situationID int64, situationInstanceID int64) (situati
 	if err != nil {
 		return situation.Situation{}, make(map[string]string), err
 	}
+
 	if !found {
 		return situation.Situation{}, make(map[string]string), errors.New("situation not found")
 	}
+
 	for k, v := range s.Parameters {
 		parameters[k] = v
 	}
@@ -135,9 +149,11 @@ func ExtractSituationData(situationID int64, situationInstanceID int64) (situati
 		if err != nil {
 			return situation.Situation{}, make(map[string]string), err
 		}
+
 		if !found {
 			return situation.Situation{}, make(map[string]string), errors.New("situation instance not found")
 		}
+
 		for k, v := range si.Parameters {
 			parameters[k] = v
 		}
@@ -148,11 +164,13 @@ func ExtractSituationData(situationID int64, situationInstanceID int64) (situati
 
 func EvaluateExpressionFacts(expressionFacts []situation.ExpressionFact, data map[string]interface{}) map[string]interface{} {
 	expressionFactsEvaluated := make(map[string]interface{})
+
 	for _, expressionFact := range expressionFacts {
 		result, err := expression.Process(expression.LangEval, expressionFact.Expression, data)
 		if err != nil {
 			continue
 		}
+
 		if expression.IsInvalidNumber(result) {
 			continue
 		}
@@ -160,5 +178,6 @@ func EvaluateExpressionFacts(expressionFacts []situation.ExpressionFact, data ma
 		data[expressionFact.Name] = result
 		expressionFactsEvaluated[expressionFact.Name] = result
 	}
+
 	return expressionFactsEvaluated
 }

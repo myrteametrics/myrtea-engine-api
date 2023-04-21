@@ -20,7 +20,6 @@ func (builder HistoryFactsBuilder) GetHistoryFactLast(situationID int64, instanc
 		Where(sq.Eq{"fh.situation_id": situationID}).
 		Where(sq.Eq{"fh.situation_instance_id": instanceID}).
 		Where(sq.Eq{"fh.fact_id": factID})
-
 }
 
 func (builder HistoryFactsBuilder) GetHistoryFacts(historyFactsIds []int64) sq.SelectBuilder {
@@ -44,4 +43,17 @@ func (builder HistoryFactsBuilder) Update(id int64, resultJSON []byte) sq.Update
 		Update("fact_history_v5").
 		Where(sq.Eq{"id": id}).
 		Set("result", resultJSON)
+}
+
+func (builder HistoryFactsBuilder) DeleteOrphans() sq.DeleteBuilder {
+	return builder.newStatement().
+		Delete("fact_history_v5").
+		Where(
+			builder.newStatement().
+				Select("1").
+				From("situation_fact_history_v5").
+				Where("fact_history_v5.id = situation_fact_history_v5.fact_history_id").
+				Prefix("NOT EXISTS (").
+				Suffix(")"),
+		)
 }
