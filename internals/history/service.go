@@ -26,47 +26,64 @@ func New(db *sqlx.DB) HistoryService {
 	}
 }
 
-// R is used to access the global service singleton
+// R is used to access the global service singleton.
 func S() HistoryService {
 	_globalHistoryServiceMu.RLock()
 	defer _globalHistoryServiceMu.RUnlock()
 
 	service := _globalHistoryService
+
 	return service
 }
 
-// ReplaceGlobals affect a new service to the global service singleton
+// ReplaceGlobals affect a new service to the global service singleton.
 func ReplaceGlobals(service HistoryService) func() {
 	_globalHistoryServiceMu.Lock()
 	defer _globalHistoryServiceMu.Unlock()
 
 	prev := _globalHistoryService
 	_globalHistoryService = service
+
 	return func() { ReplaceGlobals(prev) }
 }
 
 func (service HistoryService) GetHistorySituationsIdsLast(options GetHistorySituationsOptions) ([]HistorySituationsV4, error) {
-	subQuery, subQueryArgs, err := service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsLast(options).ToSql()
+	subQuery, subQueryArgs, err := service.HistorySituationsQuerier.Builder.
+		GetHistorySituationsIdsLast(options).
+		ToSql()
 	if err != nil {
 		return make([]HistorySituationsV4, 0), err
 	}
-	return service.HistorySituationsQuerier.Query(service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs))
+
+	return service.HistorySituationsQuerier.Query(
+		service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs),
+	)
 }
 
 func (service HistoryService) GetHistorySituationsIdsByStandardInterval(options GetHistorySituationsOptions, interval string) ([]HistorySituationsV4, error) {
-	subQuery, subQueryArgs, err := service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsByStandardInterval(options, interval).ToSql()
+	subQuery, subQueryArgs, err := service.HistorySituationsQuerier.Builder.
+		GetHistorySituationsIdsByStandardInterval(options, interval).
+		ToSql()
 	if err != nil {
 		return make([]HistorySituationsV4, 0), err
 	}
-	return service.HistorySituationsQuerier.Query(service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs))
+
+	return service.HistorySituationsQuerier.Query(
+		service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs),
+	)
 }
 
 func (service HistoryService) GetHistorySituationsIdsByCustomInterval(options GetHistorySituationsOptions, interval time.Duration, referenceDate time.Time) ([]HistorySituationsV4, error) {
-	subQuery, subQueryArgs, err := service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsByCustomInterval(options, interval, referenceDate).ToSql()
+	subQuery, subQueryArgs, err := service.HistorySituationsQuerier.Builder.
+		GetHistorySituationsIdsByCustomInterval(options, interval, referenceDate).
+		ToSql()
 	if err != nil {
 		return make([]HistorySituationsV4, 0), err
 	}
-	return service.HistorySituationsQuerier.Query(service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs))
+
+	return service.HistorySituationsQuerier.Query(
+		service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs),
+	)
 }
 
 func (service HistoryService) GetHistoryFactsFromSituation(historySituations []HistorySituationsV4) ([]HistoryFactsV4, []HistorySituationFactsV4, error) {
@@ -74,11 +91,14 @@ func (service HistoryService) GetHistoryFactsFromSituation(historySituations []H
 	for _, item := range historySituations {
 		historySituationsIds = append(historySituationsIds, item.ID)
 	}
+
 	return service.GetHistoryFactsFromSituationIds(historySituationsIds)
 }
 
 func (service HistoryService) GetHistoryFactsFromSituationIds(historySituationsIds []int64) ([]HistoryFactsV4, []HistorySituationFactsV4, error) {
-	historySituationFacts, err := service.HistorySituationFactsQuerier.Query(service.HistorySituationFactsQuerier.Builder.GetHistorySituationFacts(historySituationsIds))
+	historySituationFacts, err := service.HistorySituationFactsQuerier.Query(
+		service.HistorySituationFactsQuerier.Builder.GetHistorySituationFacts(historySituationsIds),
+	)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -88,10 +108,39 @@ func (service HistoryService) GetHistoryFactsFromSituationIds(historySituationsI
 		historyFactsIds = append(historyFactsIds, item.HistoryFactID)
 	}
 
-	historyFacts, err := service.HistoryFactsQuerier.Query(service.HistoryFactsQuerier.Builder.GetHistoryFacts(historyFactsIds))
+	historyFacts, err := service.HistoryFactsQuerier.Query(
+		service.HistoryFactsQuerier.Builder.GetHistoryFacts(historyFactsIds),
+	)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return historyFacts, historySituationFacts, nil
+}
+
+func (service HistoryService) PurgeHistory(options GetHistorySituationsOptions, interval string) error {
+	err := service.HistorySituationFactsQuerier.ExecDelete(
+		service.HistorySituationFactsQuerier.Builder.DeleteHistoryFrom(
+			service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsByStandardInterval(options, interval),
+		),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = service.HistorySituationsQuerier.ExecDelete(
+		service.HistorySituationsQuerier.Builder.DeleteOrphans(),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = service.HistoryFactsQuerier.ExecDelete(
+		service.HistoryFactsQuerier.Builder.DeleteOrphans(),
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

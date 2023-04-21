@@ -30,6 +30,16 @@ func (querier HistorySituationFactsQuerier) Execute(builder sq.InsertBuilder) er
 	} else if count == 0 {
 		return errors.New("no rows inserted")
 	}
+
+	return nil
+}
+
+func (querier HistorySituationFactsQuerier) ExecDelete(builder sq.DeleteBuilder) error {
+	_, err := builder.RunWith(querier.conn.DB).Exec()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -39,27 +49,33 @@ func (querier HistorySituationFactsQuerier) Query(builder sq.SelectBuilder) ([]H
 		return make([]HistorySituationFactsV4, 0), err
 	}
 	defer rows.Close()
+
 	return querier.scanAll(rows)
 }
 
 func (querier HistorySituationFactsQuerier) scan(rows *sql.Rows) (HistorySituationFactsV4, error) {
 	item := HistorySituationFactsV4{}
+
 	err := rows.Scan(&item.HistorySituationID, &item.HistoryFactID, &item.FactID)
 	if err != nil {
 		return HistorySituationFactsV4{}, errors.New("couldn't scan the retrieved data: " + err.Error())
 	}
+
 	return item, nil
 }
 
 func (querier HistorySituationFactsQuerier) scanAll(rows *sql.Rows) ([]HistorySituationFactsV4, error) {
 	users := make([]HistorySituationFactsV4, 0)
+
 	for rows.Next() {
 		user, err := querier.scan(rows)
 		if err != nil {
 			return []HistorySituationFactsV4{}, err
 		}
+
 		users = append(users, user)
 	}
+
 	return users, nil
 }
 
