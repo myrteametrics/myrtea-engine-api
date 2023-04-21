@@ -15,31 +15,31 @@ import (
 
 func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHistorySituationsOptions, render.APIError, error) {
 
-	situationID, err := QueryParamToOptionnalInt64(r, "situationid", -1)
+	situationID, err := QueryParamToOptionalInt64(r, "situationid", -1)
 	if err != nil {
 		zap.L().Warn("Error on parsing situationid", zap.String("situationID", r.URL.Query().Get("situationid")), zap.Error(err))
 		return history.GetHistorySituationsOptions{}, render.ErrAPIParsingInteger, err
 	}
 
-	situationInstanceID, err := QueryParamToOptionnalInt64(r, "situationinstanceid", -1)
+	situationInstanceID, err := QueryParamToOptionalInt64(r, "situationinstanceid", -1)
 	if err != nil {
 		zap.L().Warn("Error on parsing situationinstanceid", zap.String("situationInstanceID", r.URL.Query().Get("situationinstanceid")), zap.Error(err))
 		return history.GetHistorySituationsOptions{}, render.ErrAPIParsingInteger, err
 	}
 
-	parameterFilters, err := QueryParamToOptionnalKeyValues(r, "parameterfilters", make(map[string]string))
+	parameterFilters, err := QueryParamToOptionalKeyValues(r, "parameterfilters", make(map[string]string))
 	if err != nil {
 		zap.L().Warn("Parse input parameterfilters", zap.Error(err), zap.String("parameterfilters", r.URL.Query().Get("parameterfilters")))
 		return history.GetHistorySituationsOptions{}, render.ErrAPIParsingKeyValue, err
 	}
 
-	maxDate, err := QueryParamToOptionnalTime(r, "maxdate", time.Time{})
+	maxDate, err := QueryParamToOptionalTime(r, "maxdate", time.Time{})
 	if err != nil {
 		zap.L().Warn("Parse input maxdate", zap.Error(err), zap.String("maxdate", r.URL.Query().Get("maxdate")))
 		return history.GetHistorySituationsOptions{}, render.ErrAPIParsingDateTime, err
 	}
 
-	minDate, err := QueryParamToOptionnalTime(r, "mindate", time.Time{})
+	minDate, err := QueryParamToOptionalTime(r, "mindate", time.Time{})
 	if err != nil {
 		zap.L().Warn("Parse input mindate", zap.Error(err), zap.String("mindate", r.URL.Query().Get("mindate")))
 		return history.GetHistorySituationsOptions{}, render.ErrAPIParsingDateTime, err

@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func initElasticsearch() {
+func InitElasticsearch() {
 	version := viper.GetInt("ELASTICSEARCH_VERSION")
 	urls := viper.GetStringSlice("ELASTICSEARCH_URLS")
 
