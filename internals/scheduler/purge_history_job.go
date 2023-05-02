@@ -52,23 +52,21 @@ func (job PurgeHistoryJob) Run() {
 	zap.L().Info("Purge history  job started", zap.Int64("id Schedule ", job.ScheduleID))
 
 	fromOffsetDuration, err := parseDuration(job.FromOffset)
-
 	if err != nil {
-		zap.L().Info("Error parsing the Purge's FromOffset ", zap.Error(err), zap.Int64("id 	Schedule  ", job.ScheduleID))
+		zap.L().Info("Error parsing the Purge's FromOffset ", zap.Error(err), zap.Int64("idSchedule", job.ScheduleID))
 		S().RemoveRunningJob(job.ScheduleID)
 		return
 	}
 
 	toOffsetDuration, err := parseDuration(job.ToOffset)
-
 	if err != nil {
-		zap.L().Info("Error parsing the Purge's FromOffset ", zap.Error(err), zap.Int64("id 	Schedule  ", job.ScheduleID))
+		zap.L().Info("Error parsing the Purge's FromOffset ", zap.Error(err), zap.Int64("idSchedule", job.ScheduleID))
 		S().RemoveRunningJob(job.ScheduleID)
 		return
 	}
 
 	if toOffsetDuration < fromOffsetDuration {
-		zap.L().Info("the Purge's FromOffset Duration must be less than ToOffset duration ", zap.Error(err), zap.Int64("id 	Schedule  ", job.ScheduleID))
+		zap.L().Info("the Purge's FromOffset Duration must be less than ToOffset duration ", zap.Error(err), zap.Int64("idSchedule", job.ScheduleID))
 		S().RemoveRunningJob(job.ScheduleID)
 		return
 	}
