@@ -70,7 +70,7 @@ func (job CompactHistoryJob) Run() {
 
 	interval := job.Interval
 
-	history.S().PurgeHistory(options, interval)
+	history.S().CompactHistory(options, interval)
 
 	zap.L().Info("Compact history  job  Ended", zap.Int64("id Schedule", job.ScheduleID))
 

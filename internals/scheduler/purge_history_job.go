@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/history"
@@ -16,7 +15,6 @@ type PurgeHistoryJob struct {
 	ParameterFilters    map[string]string `json:"parameterFilters"`
 	FromOffset          string            `json:"fromOffset"`
 	ToOffset            string            `json:"toOffset"`
-	Interval            string            `json:"interval"`
 	ScheduleID          int64             `json:"-"`
 }
 
@@ -37,10 +35,6 @@ func (job PurgeHistoryJob) IsValid() (bool, error) {
 
 	if toOffsetDuration < fromOffsetDuration  {
 		return false, errors.New(`FromOffset Duration must be less than ToOffset duration `)
-	}
-
-	if !strings.EqualFold(job.Interval, Day) && !strings.EqualFold(job.Interval, Hour) {
-		return false, errors.New(`the Purge's  Internal value is unknown`)
 	}
 
 	return true, nil
@@ -69,9 +63,8 @@ func (job PurgeHistoryJob) Run() {
 		ParameterFilters:    make(map[string]string),
 	}
 
-	interval := job.Interval
 
-	history.S().PurgeHistory(options, interval)
+	history.S().PurgeHistory(options)
 
 	zap.L().Info("Purge history  job  Ended", zap.Int64("id Schedule", job.ScheduleID))
 
