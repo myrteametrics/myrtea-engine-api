@@ -93,7 +93,7 @@ func (job CompactHistoryJob) Run() {
 
 	err = history.S().CompactHistory(options, interval)
 	if err != nil {
-		zap.L().Info("Compact History job error", zap.Error(err), zap.Int64("id 	Schedule  ", job.ScheduleID))
+		zap.L().Info("Compact History job error", zap.Error(err), zap.Int64("idSchedule", job.ScheduleID))
 		S().RemoveRunningJob(job.ScheduleID)
 		return
 	}
