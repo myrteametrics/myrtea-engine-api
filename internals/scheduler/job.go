@@ -24,13 +24,12 @@ type InternalSchedule struct {
 	Enabled  bool        `json:"enabled"`
 }
 
-// Internal Job 
+// Internal Job
 
 const (
 	Day  string = "day"
 	Hour string = "hour"
 )
-
 
 // IsValid checks if an internal schedule definition is valid and has no missing mandatory fields
 func (schedule *InternalSchedule) IsValid() (bool, error) {

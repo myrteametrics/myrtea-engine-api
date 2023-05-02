@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/history"
 	"go.uber.org/zap"
 )
 
@@ -13,31 +14,35 @@ type PurgeHistoryJob struct {
 	SituationID         int64             `json:"situationId"`
 	SituationInstanceID int64             `json:"situationInstanceId"`
 	ParameterFilters    map[string]string `json:"parameterFilters"`
-	FromTS              time.Time         `json:"fromTs"`
-	ToTS                time.Time         `json:"toTs"`
+	FromOffset          string            `json:"fromOffset"`
+	ToOffset            string            `json:"toOffset"`
 	Interval            string            `json:"interval"`
 	ScheduleID          int64             `json:"-"`
 }
 
-
-
 // IsValid checks if an internal schedule job definition is valid and has no missing mandatory fields
 func (job PurgeHistoryJob) IsValid() (bool, error) {
-    
-	if job.FromTS.IsZero() {
-		return false, errors.New("missing the start date of the Purge history")
-	}
-	if job.ToTS.IsZero(){
-		return false, errors.New("missing the end date of the Purge history")
+
+	var err error
+	var fromOffsetDuration time.Duration
+	var toOffsetDuration time.Duration
+
+	if fromOffsetDuration, err = parseDuration(job.FromOffset); err != nil {
+		return false, errors.New(`Error parsing the  Purge's FromOffset `)
 	}
 
-	if !strings.EqualFold(job.Interval,Day) && !strings.EqualFold(job.Interval,Hour) {
+	if toOffsetDuration, err = parseDuration(job.ToOffset); err != nil {
+		return false, errors.New(`Error parsing the  Purge's FromOffset `)
+	}
+
+	if toOffsetDuration < fromOffsetDuration  {
+		return false, errors.New(`FromOffset Duration must be less than ToOffset duration `)
+	}
+
+	if !strings.EqualFold(job.Interval, Day) && !strings.EqualFold(job.Interval, Hour) {
 		return false, errors.New(`the Purge's  Internal value is unknown`)
 	}
 
-	if job.ToTS.Before(job.FromTS) || job.ToTS == job.FromTS{
-		return false, errors.New("Start date must be less than end date ")
-	}
 	return true, nil
 }
 
@@ -51,6 +56,22 @@ func (job PurgeHistoryJob) Run() {
 	S().AddRunningJob(job.ScheduleID)
 
 	zap.L().Info("Purge history  job started", zap.Int64("id Schedule ", job.ScheduleID))
+
+	// calculer Duration
+	fromOffsetDuration, _ := parseDuration(job.FromOffset)
+	toOffsetDuration, _ := parseDuration(job.ToOffset)
+
+	options := history.GetHistorySituationsOptions{
+		SituationID:         -1,
+		SituationInstanceID: -1,
+		FromTS:              time.Now().Add(-1 * fromOffsetDuration),
+		ToTS:                time.Now().Add(-1 * toOffsetDuration),
+		ParameterFilters:    make(map[string]string),
+	}
+
+	interval := job.Interval
+
+	history.S().PurgeHistory(options, interval)
 
 	zap.L().Info("Purge history  job  Ended", zap.Int64("id Schedule", job.ScheduleID))
 
