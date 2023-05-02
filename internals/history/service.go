@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -118,11 +119,21 @@ func (service HistoryService) GetHistoryFactsFromSituationIds(historySituationsI
 	return historyFacts, historySituationFacts, nil
 }
 
-func (service HistoryService) PurgeHistory(options GetHistorySituationsOptions, interval string) error {
+func (service HistoryService) PurgeHistory(options GetHistorySituationsOptions) error {
+	return service.deleteHistory(
+		service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsBase(options),
+	)
+}
+
+func (service HistoryService) CompactHistory(options GetHistorySituationsOptions, interval string) error {
+	return service.deleteHistory(
+		service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsByStandardInterval(options, interval),
+	)
+}
+
+func (service HistoryService) deleteHistory(selector sq.SelectBuilder) error {
 	err := service.HistorySituationFactsQuerier.ExecDelete(
-		service.HistorySituationFactsQuerier.Builder.DeleteHistoryFrom(
-			service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsByStandardInterval(options, interval),
-		),
+		service.HistorySituationFactsQuerier.Builder.DeleteHistoryFrom(selector),
 	)
 	if err != nil {
 		return err

@@ -2,11 +2,12 @@ package export
 
 import (
 	"context"
+	"strings"
+	"time"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/closepointintime"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv8"
-	"strings"
-	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
