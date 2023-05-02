@@ -14,6 +14,13 @@ type InternalJob interface {
 	IsValid() (bool, error)
 }
 
+var jobTypes = map[string]struct{}{
+	"fact":     {},
+	"baseline": {},
+	"compact":  {},
+	"purge":    {},
+}
+
 // InternalSchedule wrap a schedule
 type InternalSchedule struct {
 	ID       int64       `json:"id"`
@@ -23,13 +30,6 @@ type InternalSchedule struct {
 	Job      InternalJob `json:"job"`
 	Enabled  bool        `json:"enabled"`
 }
-
-// Internal Job
-
-const (
-	Day  string = "day"
-	Hour string = "hour"
-)
 
 // IsValid checks if an internal schedule definition is valid and has no missing mandatory fields
 func (schedule *InternalSchedule) IsValid() (bool, error) {
@@ -45,7 +45,7 @@ func (schedule *InternalSchedule) IsValid() (bool, error) {
 	if schedule.JobType == "" {
 		return false, errors.New("missing JobType")
 	}
-	if schedule.JobType != "fact" && schedule.JobType != "baseline" && schedule.JobType != "compact" && schedule.JobType != "purge" {
+	if _, ok := jobTypes[schedule.JobType]; !ok{
 		return false, errors.New("invalid JobType")
 	}
 	if schedule.Job == nil {

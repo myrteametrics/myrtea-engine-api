@@ -33,7 +33,7 @@ func (job PurgeHistoryJob) IsValid() (bool, error) {
 		return false, errors.New(`Error parsing the  Purge's FromOffset `)
 	}
 
-	if toOffsetDuration < fromOffsetDuration  {
+	if toOffsetDuration < fromOffsetDuration {
 		return false, errors.New(`FromOffset Duration must be less than ToOffset duration `)
 	}
 
@@ -51,9 +51,27 @@ func (job PurgeHistoryJob) Run() {
 
 	zap.L().Info("Purge history  job started", zap.Int64("id Schedule ", job.ScheduleID))
 
-	// calculer Duration
-	fromOffsetDuration, _ := parseDuration(job.FromOffset)
-	toOffsetDuration, _ := parseDuration(job.ToOffset)
+	fromOffsetDuration, err := parseDuration(job.FromOffset)
+
+	if err != nil {
+		zap.L().Info("Error parsing the Purge's FromOffset ", zap.Error(err), zap.Int64("id 	Schedule  ", job.ScheduleID))
+		S().RemoveRunningJob(job.ScheduleID)
+		return
+	}
+
+	toOffsetDuration, err := parseDuration(job.ToOffset)
+
+	if err != nil {
+		zap.L().Info("Error parsing the Purge's FromOffset ", zap.Error(err), zap.Int64("id 	Schedule  ", job.ScheduleID))
+		S().RemoveRunningJob(job.ScheduleID)
+		return
+	}
+
+	if toOffsetDuration < fromOffsetDuration {
+		zap.L().Info("the Purge's FromOffset Duration must be less than ToOffset duration ", zap.Error(err), zap.Int64("id 	Schedule  ", job.ScheduleID))
+		S().RemoveRunningJob(job.ScheduleID)
+		return
+	}
 
 	options := history.GetHistorySituationsOptions{
 		SituationID:         -1,
@@ -63,8 +81,13 @@ func (job PurgeHistoryJob) Run() {
 		ParameterFilters:    make(map[string]string),
 	}
 
+	err = history.S().PurgeHistory(options)
 
-	history.S().PurgeHistory(options)
+	if err != nil {
+		zap.L().Info("Purge History job error", zap.Error(err), zap.Int64("id 	Schedule  ", job.ScheduleID))
+		S().RemoveRunningJob(job.ScheduleID)
+		return
+	}
 
 	zap.L().Info("Purge history  job  Ended", zap.Int64("id Schedule", job.ScheduleID))
 

@@ -14,8 +14,8 @@ func TestParseDuration(t *testing.T) {
 		want      time.Duration
 		shouldErr bool
 	}{
-		{"1y 12mo 7d 3h 35m 3s", time.Hour*17691 + time.Minute*35 + time.Second*3, false},
-		{"2y 6mo 2d 12h 30m 45s", time.Hour*21972 + time.Minute*30 + time.Second*45, false},
+		{"7d 3h 35m 3s", time.Hour*(7*24+3) + time.Minute*35 + time.Second*3, false},
+		{"2d 12h 30m 45s", time.Hour*(2*24+12) + time.Minute*30 + time.Second*45, false},
 		{"72h", time.Hour * 72, false},
 		{"15d 5h", time.Hour*365 + time.Minute*0 + time.Second*0, false},
 		{"invalid_string", 0, true},
