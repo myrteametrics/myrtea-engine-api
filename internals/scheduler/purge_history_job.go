@@ -82,7 +82,7 @@ func (job PurgeHistoryJob) Run() {
 	err = history.S().PurgeHistory(options)
 
 	if err != nil {
-		zap.L().Info("Purge History job error", zap.Error(err), zap.Int64("id 	Schedule  ", job.ScheduleID))
+		zap.L().Info("Purge History job error", zap.Error(err), zap.Int64("idSchedule", job.ScheduleID))
 		S().RemoveRunningJob(job.ScheduleID)
 		return
 	}
