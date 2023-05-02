@@ -14,12 +14,19 @@ type InternalJob interface {
 	IsValid() (bool, error)
 }
 
+var jobTypes = map[string]struct{}{
+	"fact":     {},
+	"baseline": {},
+	"compact":  {},
+	"purge":    {},
+}
+
 // InternalSchedule wrap a schedule
 type InternalSchedule struct {
 	ID       int64       `json:"id"`
 	Name     string      `json:"name"`
 	CronExpr string      `json:"cronexpr" example:"0 */15 * * *"`
-	JobType  string      `json:"jobtype" enums:"fact,baseline"`
+	JobType  string      `json:"jobtype" enums:"fact,baseline,compact,purge"`
 	Job      InternalJob `json:"job"`
 	Enabled  bool        `json:"enabled"`
 }
@@ -38,7 +45,7 @@ func (schedule *InternalSchedule) IsValid() (bool, error) {
 	if schedule.JobType == "" {
 		return false, errors.New("missing JobType")
 	}
-	if schedule.JobType != "fact" && schedule.JobType != "baseline" {
+	if _, ok := jobTypes[schedule.JobType]; !ok{
 		return false, errors.New("invalid JobType")
 	}
 	if schedule.Job == nil {
@@ -83,6 +90,16 @@ func UnmarshalInternalJob(t string, b json.RawMessage, scheduleID int64) (Intern
 
 	case "baseline":
 		var tJob BaselineCalculationJob
+		err = json.Unmarshal(b, &tJob)
+		tJob.ScheduleID = scheduleID
+		job = tJob
+	case "compact":
+		var tJob CompactHistoryJob
+		err = json.Unmarshal(b, &tJob)
+		tJob.ScheduleID = scheduleID
+		job = tJob
+	case "purge":
+		var tJob PurgeHistoryJob
 		err = json.Unmarshal(b, &tJob)
 		tJob.ScheduleID = scheduleID
 		job = tJob
