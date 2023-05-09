@@ -13,6 +13,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"go.uber.org/zap"
 )
@@ -465,6 +466,88 @@ func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 	render.OK(w, r)
 }
 
+// PostIssuesDraft godoc
+// @Summary Send a rootcauses/actions feedback draft on many issues
+// @Description Post a rootcauses/actions recommendation tree as a feedback draft on many issues
+// @Tags Issues
+// @Accept json
+// @Produce json
+// @Param issue body models.IssuesIdsToDraf true "Issues IDs"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Failure 500 "Status" internal server error"
+// @Router /engine/issues/draft [post]
+func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
+	var ids models.IssuesIdsToDraf
+	err := json.NewDecoder(r.Body).Decode(&ids)
+	if err != nil {
+		zap.L().Warn("Body decode", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+	var errorMessages string
+	allOk := true
+	successCount := 0
+
+	userCtx, _ := GetUserFromContext(r)
+
+	for _, idIssue := range ids.Ids {
+		if err, apiError := processSingleIssueDraft(idIssue, userCtx); err != nil {
+			allOk = false
+			errorMessages += "ID Issue: " + strconv.FormatInt(idIssue, 10) +
+				"error: " + err.Error() +
+				"\t Api_Error ( Status " + strconv.Itoa(apiError.Status) +
+				", ErrType " + apiError.ErrType +
+				", Code " + strconv.Itoa(apiError.Code) +
+				", Message " + apiError.Message + " ) \n"
+		}else {
+			successCount++
+		}
+	}
+
+	if allOk {
+		render.OK(w, r)
+	} else {
+		if successCount == 0 {
+			render.Error(w, r, render.ErrAPIProcessError, errors.New(errorMessages))
+		} else {
+			render.Error(w, r, render.ErrAPIPartialSuccess, errors.New(errorMessages))
+		}
+	}
+
+}
+
+func processSingleIssueDraft(idIssue int64, userCtx users.UserWithPermissions) (error, render.APIError) {
+
+	issue, found, err := issues.R().Get(idIssue)
+	if err != nil {
+		zap.L().Error("Cannot retrieve issue", zap.Error(err), zap.Int64("Id Issues ", idIssue))
+		return err, render.ErrAPIDBSelectFailed
+	}
+	if !found {
+		zap.L().Warn("issue does not exist", zap.Int64("issueID", idIssue), zap.Int64("Id Issues ", idIssue))
+		return errors.New("issue not found"), render.ErrAPIDBResourceNotFound
+	}
+
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+		return errors.New("missing permission"), render.ErrAPISecurityNoPermissions
+	}
+
+	newDraft := models.FrontRecommendation{
+		ConcurrencyUUID: "",
+		Tree:            []*models.FrontRootCause{},
+	}
+
+	err = explainer.SaveIssueDraft(nil, issue, newDraft, userCtx.User)
+	if err != nil {
+		zap.L().Error("SaveIssueDraft", zap.Error(err))
+		return err, render.ErrAPIDBInsertFailed
+	}
+
+	return nil, render.APIError{}
+}
+
 // PostIssueCloseWithFeedback godoc
 // @Summary Send a rootcauses/actions feedback on an issue
 // @Description Post a rootcauses/actions recommendation tree as a feedback on an issue
@@ -585,6 +668,86 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.OK(w, r)
+}
+
+
+// PostIssuesCloseWithoutFeedback godoc
+// @Summary Close many issues without feedback
+// @Description Close many issues without feedback
+// @Tags Issues
+// @Accept json
+// @Produce json
+// @Param issue body models.IssuesIdsToClose true "Issues IDs"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 400 "Status Bad Request"
+// @Failure 500 "Status" internal server error"
+// @Router /engine/issues/close [post]
+func PostIssuesCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
+	var ids models.IssuesIdsToDraf
+	err := json.NewDecoder(r.Body).Decode(&ids)
+	if err != nil {
+		zap.L().Warn("Body decode", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+	var errorMessages string
+	allOk := true
+	successCount := 0
+
+	userCtx, _ := GetUserFromContext(r)
+
+	for _, idIssue := range ids.Ids {
+		if err, apiError := processSingleIssueCloseWithoutFeedback(idIssue, userCtx); err != nil {
+			allOk = false
+			errorMessages += "ID Issue: " + strconv.FormatInt(idIssue, 10) +
+				"error: " + err.Error() +
+				"\t Api_Error ( Status " + strconv.Itoa(apiError.Status) +
+				", ErrType " + apiError.ErrType +
+				", Code " + strconv.Itoa(apiError.Code) +
+				", Message " + apiError.Message + " ) \n"
+		}else {
+			successCount++
+		}
+	}
+
+	if allOk {
+		render.OK(w, r)
+	} else {
+		if successCount == 0 {
+			render.Error(w, r, render.ErrAPIProcessError, errors.New(errorMessages))
+		} else {
+			render.Error(w, r, render.ErrAPIPartialSuccess, errors.New(errorMessages))
+		}
+	}
+
+}
+
+func processSingleIssueCloseWithoutFeedback(idIssue int64, userCtx users.UserWithPermissions) (error, render.APIError) {
+	issue, found, err := issues.R().Get(idIssue)
+	if err != nil {
+		zap.L().Error("Cannot retrieve issue", zap.Error(err), zap.Int64("IdIssues", idIssue))
+		return err, render.ErrAPIDBSelectFailed
+	}
+	if !found {
+		zap.L().Warn("issue does not exist", zap.Int64("issueID", idIssue), zap.Int64("IdIssues ", idIssue))
+		return errors.New("issue not found"), render.ErrAPIDBResourceNotFound
+	}
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+		return errors.New("missing permission"), render.ErrAPISecurityNoPermissions
+	}
+
+	reason := models.Reason{
+		S: "unknown",
+	}
+
+	err = explainer.CloseIssueWithoutFeedback(postgres.DB(), issue, reason.S, userCtx.User)
+	if err != nil {
+		zap.L().Error("CloseIssueWithoutFeedback", zap.Error(err))
+		return nil, render.ErrAPIDBUpdateFailed
+	}
+
+	return nil, render.APIError{}
 }
 
 // PostIssueDetectionFeedback godoc
