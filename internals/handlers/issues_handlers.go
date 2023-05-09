@@ -501,7 +501,7 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 				", ErrType " + apiError.ErrType +
 				", Code " + strconv.Itoa(apiError.Code) +
 				", Message " + apiError.Message + " ) \n"
-		}else {
+		} else {
 			successCount++
 		}
 	}
@@ -534,12 +534,13 @@ func processSingleIssueDraft(idIssue int64, userCtx users.UserWithPermissions) (
 		return errors.New("missing permission"), render.ErrAPISecurityNoPermissions
 	}
 
-	newDraft := models.FrontRecommendation{
-		ConcurrencyUUID: "",
-		Tree:            []*models.FrontRootCause{},
+	tree, err := explainer.GetRecommendationTree(issue)
+	if err != nil {
+		zap.L().Error("Generating rootcauses / actions tree", zap.Int64("id", issue.ID), zap.Error(err))
+		return errors.New("recommendation tree based on issue resolution stats table"), render.ErrAPIDBSelectFailed
 	}
 
-	err = explainer.SaveIssueDraft(nil, issue, newDraft, userCtx.User)
+	err = explainer.SaveIssueDraft(nil, issue, *tree, userCtx.User)
 	if err != nil {
 		zap.L().Error("SaveIssueDraft", zap.Error(err))
 		return err, render.ErrAPIDBInsertFailed
@@ -670,7 +671,6 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 	render.OK(w, r)
 }
 
-
 // PostIssuesCloseWithoutFeedback godoc
 // @Summary Close many issues without feedback
 // @Description Close many issues without feedback
@@ -706,7 +706,7 @@ func PostIssuesCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 				", ErrType " + apiError.ErrType +
 				", Code " + strconv.Itoa(apiError.Code) +
 				", Message " + apiError.Message + " ) \n"
-		}else {
+		} else {
 			successCount++
 		}
 	}
