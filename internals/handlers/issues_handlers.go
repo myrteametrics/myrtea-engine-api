@@ -13,7 +13,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"go.uber.org/zap"
 )
@@ -493,7 +492,33 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 
 	for _, idIssue := range ids.Ids {
-		if err, apiError := processSingleIssueDraft(idIssue, userCtx); err != nil {
+		var apiError render.APIError
+		issue, found, err := issues.R().Get(idIssue)
+		if err != nil {
+			zap.L().Error("Cannot retrieve issue", zap.Error(err), zap.Int64("Id Issues ", idIssue))
+			apiError = render.ErrAPIDBSelectFailed
+		} else if !found {
+			zap.L().Warn("issue does not exist", zap.Int64("issueID", idIssue), zap.Int64("Id Issues ", idIssue))
+			err, apiError = errors.New("issue not found"), render.ErrAPIDBResourceNotFound
+		} else if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+			err, apiError = errors.New("missing permission"), render.ErrAPISecurityNoPermissions
+		} else {
+			tree, err := explainer.GetRecommendationTree(issue)
+			if err != nil {
+				zap.L().Error("Generating rootcauses / actions tree", zap.Int64("id", issue.ID), zap.Error(err))
+				err, apiError = errors.New("recommendation tree based on issue resolution stats table"), render.ErrAPIDBSelectFailed
+			} else {
+				err = explainer.SaveIssueDraft(nil, issue, *tree, userCtx.User)
+				if err != nil {
+					zap.L().Error("SaveIssueDraft", zap.Error(err))
+					apiError = render.ErrAPIDBInsertFailed
+				} else {
+					err, apiError = nil, render.APIError{}
+				}
+			}
+		}
+
+		if err != nil {
 			allOk = false
 			errorMessages += "ID Issue: " + strconv.FormatInt(idIssue, 10) +
 				"error: " + err.Error() +
@@ -515,38 +540,6 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 			render.Error(w, r, render.ErrAPIPartialSuccess, errors.New(errorMessages))
 		}
 	}
-
-}
-
-func processSingleIssueDraft(idIssue int64, userCtx users.UserWithPermissions) (error, render.APIError) {
-
-	issue, found, err := issues.R().Get(idIssue)
-	if err != nil {
-		zap.L().Error("Cannot retrieve issue", zap.Error(err), zap.Int64("Id Issues ", idIssue))
-		return err, render.ErrAPIDBSelectFailed
-	}
-	if !found {
-		zap.L().Warn("issue does not exist", zap.Int64("issueID", idIssue), zap.Int64("Id Issues ", idIssue))
-		return errors.New("issue not found"), render.ErrAPIDBResourceNotFound
-	}
-
-	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		return errors.New("missing permission"), render.ErrAPISecurityNoPermissions
-	}
-
-	tree, err := explainer.GetRecommendationTree(issue)
-	if err != nil {
-		zap.L().Error("Generating rootcauses / actions tree", zap.Int64("id", issue.ID), zap.Error(err))
-		return errors.New("recommendation tree based on issue resolution stats table"), render.ErrAPIDBSelectFailed
-	}
-
-	err = explainer.SaveIssueDraft(nil, issue, *tree, userCtx.User)
-	if err != nil {
-		zap.L().Error("SaveIssueDraft", zap.Error(err))
-		return err, render.ErrAPIDBInsertFailed
-	}
-
-	return nil, render.APIError{}
 }
 
 // PostIssueCloseWithFeedback godoc
@@ -698,7 +691,31 @@ func PostIssuesCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 
 	for _, idIssue := range ids.Ids {
-		if err, apiError := processSingleIssueCloseWithoutFeedback(idIssue, userCtx); err != nil {
+		var apiError render.APIError
+		issue, found, err := issues.R().Get(idIssue)
+		if err != nil {
+			zap.L().Error("Cannot retrieve issue", zap.Error(err), zap.Int64("IdIssues", idIssue))
+			apiError = render.ErrAPIDBSelectFailed
+		} else if !found {
+			zap.L().Warn("issue does not exist", zap.Int64("issueID", idIssue), zap.Int64("IdIssues ", idIssue))
+			err, apiError = errors.New("issue not found"), render.ErrAPIDBResourceNotFound
+		} else if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+			err, apiError = errors.New("missing permission"), render.ErrAPISecurityNoPermissions
+		} else {
+			reason := models.Reason{
+				S: "unknown",
+			}
+
+			err = explainer.CloseIssueWithoutFeedback(postgres.DB(), issue, reason.S, userCtx.User)
+			if err != nil {
+				zap.L().Error("CloseIssueWithoutFeedback", zap.Error(err))
+				apiError = render.ErrAPIDBUpdateFailed
+			} else {
+				err, apiError = nil, render.APIError{}
+			}
+		}
+
+		if err != nil {
 			allOk = false
 			errorMessages += "ID Issue: " + strconv.FormatInt(idIssue, 10) +
 				"error: " + err.Error() +
@@ -720,34 +737,6 @@ func PostIssuesCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 			render.Error(w, r, render.ErrAPIPartialSuccess, errors.New(errorMessages))
 		}
 	}
-
-}
-
-func processSingleIssueCloseWithoutFeedback(idIssue int64, userCtx users.UserWithPermissions) (error, render.APIError) {
-	issue, found, err := issues.R().Get(idIssue)
-	if err != nil {
-		zap.L().Error("Cannot retrieve issue", zap.Error(err), zap.Int64("IdIssues", idIssue))
-		return err, render.ErrAPIDBSelectFailed
-	}
-	if !found {
-		zap.L().Warn("issue does not exist", zap.Int64("issueID", idIssue), zap.Int64("IdIssues ", idIssue))
-		return errors.New("issue not found"), render.ErrAPIDBResourceNotFound
-	}
-	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		return errors.New("missing permission"), render.ErrAPISecurityNoPermissions
-	}
-
-	reason := models.Reason{
-		S: "unknown",
-	}
-
-	err = explainer.CloseIssueWithoutFeedback(postgres.DB(), issue, reason.S, userCtx.User)
-	if err != nil {
-		zap.L().Error("CloseIssueWithoutFeedback", zap.Error(err))
-		return nil, render.ErrAPIDBUpdateFailed
-	}
-
-	return nil, render.APIError{}
 }
 
 // PostIssueDetectionFeedback godoc
