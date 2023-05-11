@@ -478,68 +478,49 @@ func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/issues/draft [post]
 func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
-	var ids models.IssuesIdsToDraf
-	err := json.NewDecoder(r.Body).Decode(&ids)
+	var issueIdsToDraft models.IssuesIdsToDraf
+	err := json.NewDecoder(r.Body).Decode(&issueIdsToDraft)
 	if err != nil {
 		zap.L().Warn("Body decode", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
 		return
 	}
-	var errorMessages string
-	allOk := true
-	successCount := 0
 
+	status := &models.DraftIssuesStatus{}
+	var idIssuesOk []int64
 	userCtx, _ := GetUserFromContext(r)
 
-	for _, idIssue := range ids.Ids {
-		var apiError render.APIError
+	for _, idIssue := range issueIdsToDraft.Ids {
 		issue, found, err := issues.R().Get(idIssue)
 		if err != nil {
 			zap.L().Error("Cannot retrieve issue", zap.Error(err), zap.Int64("Id Issues ", idIssue))
-			apiError = render.ErrAPIDBSelectFailed
-		} else if !found {
+			explainer.DrafHandleError(status, idIssue, err, render.ErrAPIDBSelectFailed)
+			continue
+		}
+		if !found {
 			zap.L().Warn("issue does not exist", zap.Int64("issueID", idIssue), zap.Int64("Id Issues ", idIssue))
-			err, apiError = errors.New("issue not found"), render.ErrAPIDBResourceNotFound
-		} else if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-			err, apiError = errors.New("missing permission"), render.ErrAPISecurityNoPermissions
-		} else {
-			tree, err := explainer.GetRecommendationTree(issue)
-			if err != nil {
-				zap.L().Error("Generating rootcauses / actions tree", zap.Int64("id", issue.ID), zap.Error(err))
-				err, apiError = errors.New("recommendation tree based on issue resolution stats table"), render.ErrAPIDBSelectFailed
-			} else {
-				err = explainer.SaveIssueDraft(nil, issue, *tree, userCtx.User)
-				if err != nil {
-					zap.L().Error("SaveIssueDraft", zap.Error(err))
-					apiError = render.ErrAPIDBInsertFailed
-				} else {
-					err, apiError = nil, render.APIError{}
-				}
-			}
+			explainer.DrafHandleError(status, idIssue, errors.New("issue not found"), render.ErrAPIDBResourceNotFound)
+			continue
 		}
-
-		if err != nil {
-			allOk = false
-			errorMessages += "ID Issue: " + strconv.FormatInt(idIssue, 10) +
-				"error: " + err.Error() +
-				"\t Api_Error ( Status " + strconv.Itoa(apiError.Status) +
-				", ErrType " + apiError.ErrType +
-				", Code " + strconv.Itoa(apiError.Code) +
-				", Message " + apiError.Message + " ) \n"
-		} else {
-			successCount++
+		if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+			explainer.DrafHandleError(status, idIssue, errors.New("missing permission"), render.ErrAPISecurityNoPermissions)
+			continue
 		}
+		idIssuesOk = append(idIssuesOk, idIssue)
+		status.SuccessCount++
 	}
 
-	if allOk {
+	explainer.DraftIssues(idIssuesOk, userCtx.User, status)
+
+	if status.AllOk {
 		render.OK(w, r)
-	} else {
-		if successCount == 0 {
-			render.Error(w, r, render.ErrAPIProcessError, errors.New(errorMessages))
-		} else {
-			render.Error(w, r, render.ErrAPIPartialSuccess, errors.New(errorMessages))
-		}
+		return
 	}
+	if status.SuccessCount == 0 {
+		render.Error(w, r, render.ErrAPIProcessError, errors.New(status.ErrorMessages))
+		return
+	}
+	render.Error(w, r, render.ErrAPIPartialSuccess, errors.New(status.ErrorMessages))
 }
 
 // PostIssueCloseWithFeedback godoc
@@ -677,66 +658,49 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/issues/close [post]
 func PostIssuesCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
-	var ids models.IssuesIdsToDraf
-	err := json.NewDecoder(r.Body).Decode(&ids)
+	var issueIdsToClose models.IssuesIdsToDraf
+	err := json.NewDecoder(r.Body).Decode(&issueIdsToClose)
 	if err != nil {
 		zap.L().Warn("Body decode", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
 		return
 	}
-	var errorMessages string
-	allOk := true
-	successCount := 0
 
+	status := &models.CloseIssuesStatus{}
+	var idIssuesOk []int64
 	userCtx, _ := GetUserFromContext(r)
 
-	for _, idIssue := range ids.Ids {
-		var apiError render.APIError
+	for _, idIssue := range issueIdsToClose.Ids {
 		issue, found, err := issues.R().Get(idIssue)
 		if err != nil {
 			zap.L().Error("Cannot retrieve issue", zap.Error(err), zap.Int64("IdIssues", idIssue))
-			apiError = render.ErrAPIDBSelectFailed
-		} else if !found {
+			explainer.CloseHandleError(status, idIssue, err, render.ErrAPIDBSelectFailed)
+			continue
+		}
+		if !found {
 			zap.L().Warn("issue does not exist", zap.Int64("issueID", idIssue), zap.Int64("IdIssues ", idIssue))
-			err, apiError = errors.New("issue not found"), render.ErrAPIDBResourceNotFound
-		} else if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-			err, apiError = errors.New("missing permission"), render.ErrAPISecurityNoPermissions
-		} else {
-			reason := models.Reason{
-				S: "unknown",
-			}
-
-			err = explainer.CloseIssueWithoutFeedback(postgres.DB(), issue, reason.S, userCtx.User)
-			if err != nil {
-				zap.L().Error("CloseIssueWithoutFeedback", zap.Error(err))
-				apiError = render.ErrAPIDBUpdateFailed
-			} else {
-				err, apiError = nil, render.APIError{}
-			}
+			explainer.CloseHandleError(status, idIssue, errors.New("issue not found"), render.ErrAPIDBResourceNotFound)
+			continue
 		}
-
-		if err != nil {
-			allOk = false
-			errorMessages += "ID Issue: " + strconv.FormatInt(idIssue, 10) +
-				"error: " + err.Error() +
-				"\t Api_Error ( Status " + strconv.Itoa(apiError.Status) +
-				", ErrType " + apiError.ErrType +
-				", Code " + strconv.Itoa(apiError.Code) +
-				", Message " + apiError.Message + " ) \n"
-		} else {
-			successCount++
+		if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
+			explainer.CloseHandleError(status, idIssue, errors.New("missing permission"), render.ErrAPISecurityNoPermissions)
+			continue
 		}
+		idIssuesOk = append(idIssuesOk, idIssue)
+		status.SuccessCount++
 	}
 
-	if allOk {
+	explainer.CloseIssues(idIssuesOk, userCtx.User, status)
+
+	if status.AllOk {
 		render.OK(w, r)
-	} else {
-		if successCount == 0 {
-			render.Error(w, r, render.ErrAPIProcessError, errors.New(errorMessages))
-		} else {
-			render.Error(w, r, render.ErrAPIPartialSuccess, errors.New(errorMessages))
-		}
+		return
 	}
+	if status.SuccessCount == 0 {
+		render.Error(w, r, render.ErrAPIProcessError, errors.New(status.ErrorMessages))
+		return
+	}
+	render.Error(w, r, render.ErrAPIPartialSuccess, errors.New(status.ErrorMessages))
 }
 
 // PostIssueDetectionFeedback godoc

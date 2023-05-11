@@ -39,3 +39,10 @@ type FrontAction struct {
 type IssuesIdsToDraf struct{
 	Ids  []int64 `json:"ids"`
 }
+
+//  status 
+type DraftIssuesStatus struct {
+    ErrorMessages string
+    AllOk         bool
+    SuccessCount  int
+}

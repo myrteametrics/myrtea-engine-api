@@ -10,3 +10,11 @@ type Reason struct {
     S string `json:"reason"`
 }
 
+//  status 
+type CloseIssuesStatus struct {
+    ErrorMessages string
+    AllOk         bool
+    SuccessCount  int
+}
+
+
