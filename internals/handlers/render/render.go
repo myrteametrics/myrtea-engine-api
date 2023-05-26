@@ -73,6 +73,27 @@ var (
 	ErrAPISecurityMissingContext = APIError{Status: http.StatusUnauthorized, ErrType: "SecurityError", Code: 6000, Message: `Security error. Please contact an administrator`}
 	// ErrAPISecurityNoPermissions must be used when the user is properly authenticated but doesn't have the required rights to access the resource
 	ErrAPISecurityNoPermissions = APIError{Status: http.StatusForbidden, ErrType: "SecurityError", Code: 6001, Message: `Security error. Please contact an administrator`}
+	
+	// ErrAPIGenerateRandomStateFailed doit être utilisé lorsque la génération d'un état aléatoire échoue
+	ErrAPIGenerateRandomStateFailed = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 7000, Message: `Failed to generate a random state`}
+	// ErrAPIInvalidOIDCState doit être utilisé lorsque le "state" dans le callback OIDC ne correspond pas à l'état attendu
+	ErrAPIInvalidOIDCState = APIError{Status: http.StatusBadRequest, ErrType: "SecurityError", Code: 7002, Message: `Invalid OIDC state. The state parameter in the callback does not match the expected state`}
+	// ErrAPIExchangeTokenFailed doit être utilisé lorsque l'échange de token OIDC échoue
+	ErrAPIExchangeOIDCTokenFailed = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 7003, Message: `Failed to exchange OIDC token`}
+	// ErrAPINoIDToken doit être utilisé lorsqu'aucun ID Token n'est trouvé
+	ErrAPINoIDOIDCToken = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 7004, Message: `No ID token found`}
+	// ErrAPIVerifyIDTokenFailed doit être utilisé lorsque la vérification de l'ID Token échoue
+	ErrAPIVerifyIDOIDCTokenFailed = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 7005, Message: `Failed to verify ID token`}
+	// ErrAPIMissingAuthCookie doit être utilisé lorsqu'un cookie d'authentification est manquant
+	ErrAPIMissingAuthCookie = APIError{Status: http.StatusUnauthorized, ErrType: "ProcessError", Code: 7006, Message: `Missing auth cookie`}
+	// ErrAPIInvalidAuthToken doit être utilisé lorsqu'un token d'authentification est invalide
+	ErrAPIInvalidAuthToken = APIError{Status: http.StatusUnauthorized, ErrType: "ProcessError", Code: 7007, Message: `Invalid auth token`}
+	// ErrAPIExpiredAuthToken doit être utilisé lorsqu'un token d'authentification a expiré
+	ErrAPIExpiredAuthToken = APIError{Status: http.StatusUnauthorized, ErrType: "ProcessError", Code: 7008, Message: `Expired auth token`}
+	// ErrAPIMissingIDTokenFromContext doit être utilisé lorsqu'un token d'ID est manquant du contexte
+	ErrAPIMissingIDTokenFromContext = APIError{Status: http.StatusUnauthorized, ErrType: "ProcessError", Code: 7009, Message: `Missing idToken from context`}
+	// ErrAPIFailedToGetUserClaims doit être utilisé lorsque la récupération des claims de l'utilisateur échoue
+	ErrAPIFailedToGetUserClaims = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 7010, Message: `Failed to get user claims`}
 )
 
 // OK returns a HTTP status 200 with an empty body
@@ -131,4 +152,9 @@ func File(w http.ResponseWriter, filename string, data []byte) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+
+// Redirect is a helper function to redirect the user to a specified location
+func Redirect(w http.ResponseWriter, r *http.Request, location string, code int) {
+	http.Redirect(w, r, location, code)
 }

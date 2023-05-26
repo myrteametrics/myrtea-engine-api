@@ -4,6 +4,11 @@ import (
 	"testing"
 	"time"
 
+	"errors"
+	"net/http"
+	"net/http/httptest"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 )
 
@@ -111,5 +116,92 @@ func TestParseSortByInvalidField(t *testing.T) {
 	if err == nil {
 		t.Error("sortby expression must be invalid")
 		t.Log(sortOptions)
+	}
+}
+
+func TestHandleError(t *testing.T) {
+	// response writer and request
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+
+	err := errors.New("test error expected")
+	handleError(w, r, "test message", err, render.ErrAPIProcessError)
+
+	if err == nil {
+		t.Error(err)
+	}
+	if w.Code != http.StatusInternalServerError {
+		t.Error("not a same code Http")
+	}
+}
+
+func TestGenerateRandomState(t *testing.T) {
+	state, err := generateRandomState()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if state == "" {
+		t.Error("must not be empty")
+	}
+}
+
+func TestGenerateEncryptedState(t *testing.T) {
+	// encryption key with length 12
+	key := []byte("test key")
+	encryptedState, err := generateEncryptedState(key)
+
+	if err == nil {
+		t.Error(err)
+	}
+
+	if encryptedState != "" {
+		t.Error("must be empty")
+	}
+
+	// encryption key with length 24
+	key = []byte("thisis24characterslongs.")
+	encryptedState, err = generateEncryptedState(key)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if encryptedState == "" {
+		t.Error("must not be empty")
+	}
+
+}
+
+func TestVerifyEncryptedState(t *testing.T) {
+	// encryption key
+	key := []byte("thisis24characterslongs.")
+
+	// Generate an encrypted state
+	encryptedState, err := generateEncryptedState(key)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	decryptedState, err := verifyEncryptedState(encryptedState, key)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if decryptedState == "" {
+		t.Error("must not be empty")
+	}
+
+	decryptedState, err = verifyEncryptedState("Fake", key)
+
+	if err == nil {
+		t.Error(err)
+	}
+
+	if decryptedState != "" {
+		t.Error("must be empty")
 	}
 }

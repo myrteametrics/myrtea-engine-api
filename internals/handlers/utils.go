@@ -1,7 +1,12 @@
 package handlers
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
@@ -9,9 +14,21 @@ import (
 
 	"net/http"
 
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"go.uber.org/zap"
+)
+
+const (
+	ExpectedStateErr = "Error to generate a random State for OIDC Authentification"
+	InvalidStateErr  = "OIDC authentication invalid state"
+	TokenExchangeErr = "OIDC authentication Failed to exchange token"
+	NoIDTokenErr     = "OIDC authentication No ID token found"
+	IDTokenVerifyErr = "OIDC authentication Failed to verify ID token"
+	TokenName        = "token"
+	CookiePath       = "/"
+	SameSiteMode     = http.SameSiteNoneMode
 )
 
 func QueryParamToOptionalInt(r *http.Request, name string, orDefault int) (int, error) {
@@ -175,4 +192,68 @@ func GetUserFromContext(r *http.Request) (users.UserWithPermissions, bool) {
 	}
 	user := _user.(users.UserWithPermissions)
 	return user, true
+}
+
+// handleError is a helper function that logs the error and sends a response.
+func handleError(w http.ResponseWriter, r *http.Request, message string, err error, apiError render.APIError) {
+	zap.L().Error(message, zap.Error(err))
+	render.Error(w, r, apiError, err)
+}
+
+// Generate a State use by OIDC authentification
+func generateRandomState() (string, error) {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(b), nil
+}
+func generateEncryptedState(key []byte) (string, error) {
+	// Generate random state
+	plainState, err := generateRandomState()
+	if err != nil {
+		return "", err
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	ciphertext := make([]byte, aes.BlockSize+len(plainState))
+	iv := ciphertext[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return "", err
+	}
+
+	stream := cipher.NewCFBEncrypter(block, iv)
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], []byte(plainState))
+
+	// Encode to base64
+	b64State := base64.StdEncoding.EncodeToString(ciphertext)
+	return b64State, nil
+}
+func verifyEncryptedState(state string, key []byte) (string, error) {
+	// Decode from base64
+	decodedState, err := base64.StdEncoding.DecodeString(state)
+	if err != nil {
+		return "", err
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	if len(decodedState) < aes.BlockSize {
+		return "", fmt.Errorf("ciphertext too short")
+	}
+	iv := decodedState[:aes.BlockSize]
+	decodedState = decodedState[aes.BlockSize:]
+
+	stream := cipher.NewCFBDecrypter(block, iv)
+	stream.XORKeyStream(decodedState, decodedState)
+
+	return string(decodedState), nil
 }

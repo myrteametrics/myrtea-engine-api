@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
+	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/crewjam/saml v0.4.6
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/elastic/go-elasticsearch/v8 v8.7.0
@@ -34,7 +35,8 @@ require (
 	github.com/swaggo/http-swagger v1.3.3
 	github.com/swaggo/swag v1.8.1
 	go.uber.org/zap v1.21.0
-	golang.org/x/net v0.4.0
+	golang.org/x/net v0.8.0
+	golang.org/x/oauth2 v0.6.0
 	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.28.1
 )
