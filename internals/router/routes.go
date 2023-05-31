@@ -177,8 +177,9 @@ func engineRouter() http.Handler {
 func serviceRouter() http.Handler {
 	r := chi.NewRouter()
 
+	processorHandler := handlers.NewProcessorHandler()
 	r.Post("/objects", handlers.PostObjects)
-	r.Post("/aggregates", handlers.PostAggregates)
+	r.Post("/ingester", processorHandler.PostAggregates)
 
 	r.Get("/externalconfigs", handlers.GetExternalConfigs)
 	r.Get("/externalconfigs/{id}", handlers.GetExternalConfig)

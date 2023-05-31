@@ -3,16 +3,27 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/ingester"
 	"net/http"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/processor"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/scheduler"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tasker"
 	"github.com/myrteametrics/myrtea-sdk/v4/models"
 	"go.uber.org/zap"
 )
+
+// ProcessorHandler is a basic struct allowing to set up a single aggregateIngester instance for all handlers
+type ProcessorHandler struct {
+	aggregateIngester *ingester.AggregateIngester
+}
+
+// NewProcessorHandler returns a pointer to an ProcessorHandler instance
+func NewProcessorHandler() *ProcessorHandler {
+	return &ProcessorHandler{
+		aggregateIngester: ingester.NewAggregateIngester(),
+	}
+}
 
 // PostObjects godoc
 // @Summary Receive objects to be evaluated
@@ -30,7 +41,7 @@ func PostObjects(w http.ResponseWriter, r *http.Request) {
 	factObjectName := r.URL.Query().Get("fact")
 	if factObjectName == "" {
 		zap.L().Warn("fact object name missing")
-		render.Error(w, r, render.ErrAPIMissingParam, errors.New(`Parameter "fact" is missing`))
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New(`parameter "fact" is missing`))
 		return
 	}
 
@@ -53,17 +64,18 @@ func PostObjects(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostAggregates godoc
-// @Summary Receive aggregates to be evaluated
-// @Description Receive aggregates to be evaluated
+// @Summary Receive ingester to be evaluated
+// @Description Receive ingester to be evaluated
 // @Tags Service
 // @Consume json
 // @Produce json
 // @Param query body []ExternalAggregate true "query (json)"
 // @Security Bearer
 // @Success 200 "Status OK"
+// @Failure 429 "Processing queue is full please retry later"
 // @Failure 500 "internal server error"
-// @Router /service/aggregates [post]
-func PostAggregates(w http.ResponseWriter, r *http.Request) {
+// @Router /service/ingester [post]
+func (handler *ProcessorHandler) PostAggregates(w http.ResponseWriter, r *http.Request) {
 	var aggregates []scheduler.ExternalAggregate
 	err := json.NewDecoder(r.Body).Decode(&aggregates)
 	if err != nil {
@@ -72,37 +84,19 @@ func PostAggregates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = ReceiveAggregates(aggregates)
+	err = handler.aggregateIngester.Ingest(aggregates)
 	if err != nil {
+
+		// Checks whether the queue is full, sends a 429 to prompt the sender to retry
+		if err.Error() == "channel overload" {
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+
 		zap.L().Error("ReceiveAggregates", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-// ReceiveAggregates process a slice of ExternalAggregates and trigger all standard fact-situation-rule process
-func ReceiveAggregates(aggregates []scheduler.ExternalAggregate) error {
-	localRuleEngine, err := evaluator.BuildLocalRuleEngine("external-aggs")
-	if err != nil {
-		zap.L().Error("BuildLocalRuleEngine", zap.Error(err))
-		return err
-	}
-
-	situationsToUpdate, err := scheduler.ReceiveAndPersistFacts(aggregates)
-	if err != nil {
-		zap.L().Error("ReceiveAndPersistFacts", zap.Error(err))
-		return err
-	}
-
-	taskBatchs, err := scheduler.CalculateAndPersistSituations(localRuleEngine, situationsToUpdate)
-	if err != nil {
-		zap.L().Error("CalculateAndPersistSituations", zap.Error(err))
-		return err
-	}
-
-	tasker.T().BatchReceiver <- taskBatchs
-
-	return nil
 }

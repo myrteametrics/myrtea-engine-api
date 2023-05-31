@@ -13,7 +13,7 @@ import (
 // WidgetData is a standard api response format for fact
 type WidgetData struct {
 	Hits       []Hit `json:"hits"`
-	Aggregates *Item `json:"aggregates"`
+	Aggregates *Item `json:"ingester"`
 }
 
 // Hit is used to represent a object Hit
