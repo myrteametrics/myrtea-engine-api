@@ -179,7 +179,7 @@ func serviceRouter() http.Handler {
 
 	processorHandler := handlers.NewProcessorHandler()
 	r.Post("/objects", handlers.PostObjects)
-	r.Post("/ingester", processorHandler.PostAggregates)
+	r.Post("/aggregates", processorHandler.PostAggregates)
 
 	r.Get("/externalconfigs", handlers.GetExternalConfigs)
 	r.Get("/externalconfigs/{id}", handlers.GetExternalConfig)
