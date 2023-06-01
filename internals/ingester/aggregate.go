@@ -66,6 +66,8 @@ func (ingester *AggregateIngester) Run() {
 func (ingester *AggregateIngester) Ingest(aggregates []scheduler.ExternalAggregate) error {
 	dataLen := len(ingester.Data)
 
+	zap.L().Debug("Ingesting data", zap.Any("aggregates", aggregates))
+
 	// Check for channel overloading
 	if dataLen+1 >= cap(ingester.Data) {
 		zap.L().Debug("Buffered channel would be overloaded with incoming bulkIngestRequest")
