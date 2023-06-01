@@ -13,13 +13,16 @@ import (
 
 // AggregateIngester is a component which process scheduler.ExternalAggregate
 type AggregateIngester struct {
-	Data                              chan []scheduler.ExternalAggregate
-	metricAggregateIngesterQueueGauge stdprometheus.Gauge
+	Data             chan []scheduler.ExternalAggregate
+	metricQueueGauge *stdprometheus.Gauge
 }
 
-// NewAggregateIngester returns a pointer to a new AggregateIngester instance
-func NewAggregateIngester() *AggregateIngester {
-	var aggregateIngesterGauge = stdprometheus.NewGauge(stdprometheus.GaugeOpts{
+var (
+	_aggregateIngesterGauge = _newRegisteredGauge()
+)
+
+func _newRegisteredGauge() *stdprometheus.Gauge {
+	var gauge = stdprometheus.NewGauge(stdprometheus.GaugeOpts{
 		Namespace:   metrics.MetricNamespace,
 		ConstLabels: metrics.MetricPrometheusLabels,
 		Name:        "aggregateingester_queue",
@@ -27,12 +30,17 @@ func NewAggregateIngester() *AggregateIngester {
 	})
 
 	// Register metrics
-	stdprometheus.MustRegister(aggregateIngesterGauge)
-	aggregateIngesterGauge.Set(0)
+	stdprometheus.MustRegister(gauge)
+	gauge.Set(0)
 
+	return &gauge
+}
+
+// NewAggregateIngester returns a pointer to a new AggregateIngester instance
+func NewAggregateIngester() *AggregateIngester {
 	return &AggregateIngester{
-		Data:                              make(chan []scheduler.ExternalAggregate, viper.GetInt("AGGREGATEINGESTER_QUEUE_BUFFER_SIZE")),
-		metricAggregateIngesterQueueGauge: aggregateIngesterGauge,
+		Data:             make(chan []scheduler.ExternalAggregate, viper.GetInt("AGGREGATEINGESTER_QUEUE_BUFFER_SIZE")),
+		metricQueueGauge: _aggregateIngesterGauge,
 	}
 }
 
@@ -49,7 +57,7 @@ func (ingester *AggregateIngester) Run() {
 		}
 
 		// Update queue gauge
-		ingester.metricAggregateIngesterQueueGauge.Set(float64(len(ingester.Data)))
+		(*ingester.metricQueueGauge).Set(float64(len(ingester.Data)))
 	}
 
 }
@@ -61,7 +69,7 @@ func (ingester *AggregateIngester) Ingest(aggregates []scheduler.ExternalAggrega
 	// Check for channel overloading
 	if dataLen+1 >= cap(ingester.Data) {
 		zap.L().Debug("Buffered channel would be overloaded with incoming bulkIngestRequest")
-		ingester.metricAggregateIngesterQueueGauge.Set(float64(dataLen))
+		(*ingester.metricQueueGauge).Set(float64(dataLen))
 		return errors.New("channel overload")
 	}
 
