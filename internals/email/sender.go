@@ -31,7 +31,7 @@ func (s *Sender) Send(m Message) error {
 		s.auth,
 		s.username,
 		m.To,
-		m.ToBytes(),
+		m.ToBytes(s.username),
 	)
 }
 

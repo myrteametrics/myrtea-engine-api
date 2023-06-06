@@ -48,5 +48,5 @@ func TestToBytes(t *testing.T) {
 		Body:            "<body>\n\t<h2>Hello !<h2/>\n\t<p>Some random content...</p>\n</body>",
 		Attachments:     attachments,
 	}
-	t.Log("\n" + string(message.ToBytes()))
+	t.Log("\n" + string(message.ToBytes("sender@exemple.com")))
 }
