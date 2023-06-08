@@ -34,3 +34,15 @@ type FrontAction struct {
 	Occurrence  int64   `json:"occurrence"`
 	UsageRate   float64 `json:"usageRate"`
 }
+
+// Ids of Issues to draf
+type IssuesIdsToDraf struct{
+	Ids  []int64 `json:"ids"`
+}
+
+//  status 
+type DraftIssuesStatus struct {
+    ErrorMessages string
+    AllOk         bool
+    SuccessCount  int
+}

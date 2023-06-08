@@ -73,6 +73,12 @@ var (
 	ErrAPISecurityMissingContext = APIError{Status: http.StatusUnauthorized, ErrType: "SecurityError", Code: 6000, Message: `Security error. Please contact an administrator`}
 	// ErrAPISecurityNoPermissions must be used when the user is properly authenticated but doesn't have the required rights to access the resource
 	ErrAPISecurityNoPermissions = APIError{Status: http.StatusForbidden, ErrType: "SecurityError", Code: 6001, Message: `Security error. Please contact an administrator`}
+
+	// ErrAPIPartialSuccess must be used when some requests succeeded, and others failed.
+	// This error is used to indicate that the processing of a batch of requests has
+	// encountered issues, but not all of them have failed. The error should provide
+	// information about the requests that succeeded and those that failed.
+	ErrAPIPartialSuccess = APIError{Status: http.StatusPartialContent, ErrType: "MixedResult", Code: 7000, Message: `Some requests have succeeded, while others have failed.`}
 )
 
 // OK returns a HTTP status 200 with an empty body
