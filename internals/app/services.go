@@ -1,6 +1,8 @@
 package app
 
 import (
+	"strings"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connector"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connectorconfig"
@@ -18,6 +20,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/modeler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
+	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internals/router/oidc"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/scheduler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/search"
@@ -29,7 +32,6 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/router/oidc"
 )
 
 // InitializeRepositories initialize all myrtea Postgresql repositories
@@ -64,7 +66,7 @@ func initServices() {
 	initTasker()
 	initCalendars()
 	initEmailSender()
-	oidcAuth.InitOidc()
+	initOidcAuthentication()
 }
 
 func stopServices() {
@@ -127,6 +129,27 @@ func initEmailSender() {
 	password := viper.GetString("SMTP_PASSWORD")
 	host := viper.GetString("SMTP_HOST")
 	port := viper.GetString("SMTP_PORT")
-	email.InitSender(username,password,host,port)
+	email.InitSender(username, password, host, port)
+
+}
+
+func initOidcAuthentication() {
+	authenticationMode := viper.GetString("AUTHENTICATION_MODE")
+
+	if authenticationMode == "OIDC" {
+		oidcIssuerUrl := viper.GetString("AUTHENTICATION_OIDC_ISSUER_URL")
+		oidcClientID := viper.GetString("AUTHENTICATION_OIDC_CLIENT_ID")
+		oidcClientSecret := viper.GetString("AUTHENTICATION_OIDC_CLIENT_SECRET")
+		oidcRedirectURL := viper.GetString("AUTHENTICATION_OIDC_REDIRECT_URL")
+		scopesString := viper.GetString("AUTHENTICATION_OIDC_SCOPES")
+		oidcScopes := strings.Split(scopesString, ",")
+
+		if oidcIssuerUrl == "" || oidcClientID == "" || oidcClientSecret == "" || oidcRedirectURL == "" || scopesString == "" {
+			zap.L().Error("Missing OIDC configuration")
+			return
+		}
+
+		oidcAuth.InitOidc(oidcIssuerUrl, oidcClientID, oidcClientSecret, oidcRedirectURL, oidcScopes)
+	}
 
 }

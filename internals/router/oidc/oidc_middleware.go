@@ -31,7 +31,13 @@ func OIDCMiddleware(next http.Handler) http.Handler {
 		rawIDToken := tokencookie.Value
 
 		// Check the token with the OIDC server
-		idToken, err := Provider.Verifier(&oidc.Config{ClientID: OidcConfig.ClientID}).Verify(r.Context(), rawIDToken)
+		instanceOidc, err := GetOidcInstance()
+		if err != nil {
+			zap.L().Error("", zap.Error(err))
+			render.Error(w, r, render.ErrAPIProcessError ,err)
+			return
+		}
+		idToken, err := instanceOidc.Provider.Verifier(&oidc.Config{ClientID: instanceOidc.OidcConfig.ClientID}).Verify(r.Context(), rawIDToken)
 		if err != nil {
 			zap.L().Error("Invalide OIDC auth Token", zap.Error(err))
 			render.Error(w, r, render.ErrAPIInvalidAuthToken, err)

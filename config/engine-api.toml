@@ -194,21 +194,26 @@ SMTP_PORT = "465"
 
 # OIDC Client Id: A unique identifier representing the client application seeking access to the server's resources. (Only if AUTHENTICATION_MODE="OIDC")
 # Default value: ""
-AUTHENTICATION_OIDC_CLIENT_ID = "nil"
+AUTHENTICATION_OIDC_CLIENT_ID = ""
 
 # OIDC Client Secret: A shared secret between the client application and the authentication server to prove the client's identity. (Only if AUTHENTICATION_MODE="OIDC")
 # Note: This secret should be securely stored and never shared.
 # Default value: ""
-AUTHENTICATION_OIDC_CLIENT_SECRET = "nil"
+AUTHENTICATION_OIDC_CLIENT_SECRET = ""
 
 # OIDC Redirect Url: The redirection URL to which the user will be redirected after successful authentication. (Only if AUTHENTICATION_MODE="OIDC")
 # This URL should be configured as a valid redirection URL in the OIDC client application settings.
 # Default value: "https://127.0.0.1:5556/auth/oidc/callback"
-AUTHENTICATION_OIDC_REDIRECT_URL = "https://127.0.0.1:9001/api/v5/auth/oidc/callback"
+AUTHENTICATION_OIDC_REDIRECT_URL = "https://127.0.0.1:9000/api/v5/auth/oidc/callback"
 
 # OIDC URL: The URL of the OIDC (OpenID Connect) server providing the authentication service. (Only if AUTHENTICATION_MODE="OIDC")
 # Default value: "https://accounts.google.com"
 AUTHENTICATION_OIDC_ISSUER_URL = "https://accounts.google.com"
+
+# OIDC Scopes: The scopes of access requested when authenticating with the OIDC server. (Only if AUTHENTICATION_MODE="OIDC")
+# These should be a list of scopes separated by commas.
+# Default value: "profile,email"
+AUTHENTICATION_OIDC_SCOPES = "profile,email"
 
 # FRONT_END_URL: The URL of the front-end application to which the user will be redirected after successful OIDC authentication. 
 # Default value: "https://127.0.0.1:4200"
@@ -217,8 +222,8 @@ FRONT_END_URL = "https://127.0.0.1:4200"
 # FRONT_END_DOMAIN: The domain where the authentication cookie will be set and made available after a successful OIDC authentication.
 # This is also the domain to which the user will be redirected after authentication OIDC.
 # The user will use the token in the cookie to access the backend.
-# Default value: "127.0.0.1"
-FRONT_END_DOMAIN = "127.0.0.1" 
+# Default value: "https://127.0.0.1:4200"
+FRONT_END_DOMAIN = "https://127.0.0.1:4200" 
 
 # OIDC_ENCRYPTION_KEY: The secret key used for state encryption/decryption in the OpenID Connect authentication process.
 # This should be a secure, randomly generated string of exactly 16, 24 or 32 characters that is kept secret.
@@ -229,9 +234,3 @@ FRONT_END_DOMAIN = "127.0.0.1"
 # It must be exactly 16, 24 or 32 characters long.
 # Default value: "thisis24characterslongs." (24 characters)
 OIDC_ENCRYPTION_KEY = "thisis24characterslongs."
-
-
-
-
-
-

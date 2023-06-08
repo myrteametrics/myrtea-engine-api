@@ -18,7 +18,12 @@ func HandleOIDCRedirect(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, ExpectedStateErr, err, render.ErrAPIGenerateRandomStateFailed)
 		return
 	}
-	render.Redirect(w, r, oidcAuth.OidcConfig.AuthCodeURL(expectedState), http.StatusFound)
+	instanceOidc, err := oidcAuth.GetOidcInstance()
+	if err != nil {
+		handleError(w, r, "", err, render.ErrAPIProcessError)
+		return
+	}
+	render.Redirect(w, r, instanceOidc.OidcConfig.AuthCodeURL(expectedState), http.StatusFound)
 }
 
 func HandleOIDCCallback(w http.ResponseWriter, r *http.Request) {
@@ -30,7 +35,12 @@ func HandleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oauth2Token, err := oidcAuth.OidcConfig.Exchange(r.Context(), r.URL.Query().Get("code"))
+	instanceOidc, err := oidcAuth.GetOidcInstance()
+	if err != nil {
+		handleError(w, r, "", err, render.ErrAPIProcessError)
+		return
+	}
+	oauth2Token, err := instanceOidc.OidcConfig.Exchange(r.Context(), r.URL.Query().Get("code"))
 	if err != nil {
 		handleError(w, r, TokenExchangeErr, err, render.ErrAPIExchangeOIDCTokenFailed)
 		return
@@ -43,19 +53,19 @@ func HandleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = oidcAuth.Provider.Verifier(&oidc.Config{ClientID: oidcAuth.OidcConfig.ClientID}).Verify(r.Context(), rawIDToken)
+	_, err = instanceOidc.Provider.Verifier(&oidc.Config{ClientID: instanceOidc.OidcConfig.ClientID}).Verify(r.Context(), rawIDToken)
 
 	if err != nil {
 		handleError(w, r, IDTokenVerifyErr, err, render.ErrAPIVerifyIDOIDCTokenFailed)
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
-		Name:     "token",
+		Name:     TokenName,
 		Value:    rawIDToken,
 		HttpOnly: true,
 		Secure:   true,
 		Domain:   viper.GetString("FRONT_END_DOMAIN"),
-		Path:     "/",
+		Path:     AllowedCookiePath,
 		Expires:  time.Now().Add(24 * time.Hour),
 		SameSite: http.SameSiteNoneMode,
 	})
