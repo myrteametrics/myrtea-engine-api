@@ -2,16 +2,17 @@ package handlers
 
 import (
 	"errors"
+	"net/http"
+	"strconv"
+	"time"
+	"unicode/utf8"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"go.uber.org/zap"
-	"net/http"
-	"strconv"
-	"time"
-	"unicode/utf8"
 )
 
 type CSVParameters struct {
@@ -24,7 +25,7 @@ type CSVParameters struct {
 // @Summary Export facts
 // @Description Get all action definitions
 // @Tags ExportFact
-// @Produce file
+// @Produce octet-stream
 // @Security Bearer
 // @Success 200 {file} Returns data to be saved into a file
 // @Failure 500 "internal server error"
