@@ -1,15 +1,70 @@
-# linters-settings:
+# See reference : https://raw.githubusercontent.com/golangci/golangci-lint/master/.golangci.reference.yml
+# See configuration : https://golangci-lint.run/usage/configuration/
 
-# linters:
-#   # disable-all: true
-#   disable:
-#     - errcheck
-#   enable:
-#     - bodyclose
-  
-# issues:
-
+# Options for analysis running.
 run:
+  concurrency: 4
   timeout: 5m
-  # skip-dirs:
-  #   - test/testdata_
+  # issues-exit-code: 2
+  # tests: false
+  # build-tags:
+  #   - mytag
+  skip-dirs:
+    - protobuf
+  skip-dirs-use-default: false
+  skip-files:
+    - ".*\\.pb\\.go$"
+  # allow-parallel-runners: false
+  go: '1.20'
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  fix: false
+
+# severity:
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  uniq-by-line: true
+  path-prefix: ""
+
+linters:
+  # fast: true
+  fast: false
+  # disable-all: true
+  # enable:
+  # - godot # Check if comments end in a period [fast: true, auto-fix: true]
+  # - gofmt # Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification [fast: true, auto-fix: true]
+  # - gofumpt # Gofumpt checks whether code was gofumpt-ed. [fast: true, auto-fix: true]
+  # - goimports # Check import statements are formatted according to the 'goimport' command. Reformat imports in autofix mode. [fast: true, auto-fix: true]
+  # - misspell # Finds commonly misspelled English words in comments [fast: true, auto-fix: true]
+  # - whitespace # Tool for detection of leading and trailing whitespace [fast: true, auto-fix: true]
+  # - dupword # NO AUTO-FIX : checks for duplicate words in the source code [fast: true, auto-fix: true]
+  
+  enable-all: true
+  disable: 
+  - ifshort # deprecated
+  - nosnakecase # deprecated
+  - scopelint # deprecated
+  - deadcode # deprecated by owner
+  - structcheck # deprecated by owner
+  - golint # deprecated by owner
+  - interfacer # deprecated by owner
+  - exhaustivestruct # deprecated by owner
+  - maligned # deprecated by owner
+  - varcheck # deprecated by owner
+  
+  # large codebase fix
+  # - wsl # large (whitespace handling / line break on right spot)
+  # - nlreturn # large (line break before a return)
+  # - lll # large (line too long)
+  
+  # non-opinionated
+  - testpackage
+  - paralleltest # Should everything runnable
+  
+  # not applicable
+  - ireturn
