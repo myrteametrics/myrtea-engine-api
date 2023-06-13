@@ -1,6 +1,6 @@
 module github.com/myrteametrics/myrtea-engine-api/v5
 
-go 1.14
+go 1.20
 
 require (
 	github.com/Masterminds/squirrel v1.5.3
@@ -37,4 +37,58 @@ require (
 	golang.org/x/net v0.4.0
 	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.28.1
+)
+
+require (
+	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/PaesslerAG/gval v1.0.1 // indirect
+	github.com/beevik/etree v1.1.0 // indirect
+	github.com/crewjam/httperr v0.2.0 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
+	github.com/elastic/elastic-transport-go/v8 v8.2.0 // indirect
+	github.com/fatih/color v1.13.0 // indirect
+	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/go-openapi/jsonpointer v0.19.5 // indirect
+	github.com/go-openapi/jsonreference v0.20.0 // indirect
+	github.com/go-openapi/spec v0.20.6 // indirect
+	github.com/go-openapi/swag v0.19.15 // indirect
+	github.com/goccy/go-json v0.7.6 // indirect
+	github.com/golang-jwt/jwt/v4 v4.4.1 // indirect
+	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
+	github.com/jonboulle/clockwork v0.2.2 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
+	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
+	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
+	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
+	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
+	github.com/lestrrat-go/httpcc v1.0.0 // indirect
+	github.com/lestrrat-go/iter v1.0.1 // indirect
+	github.com/lestrrat-go/option v1.0.0 // indirect
+	github.com/magiconair/properties v1.8.0 // indirect
+	github.com/mailru/easyjson v0.7.6 // indirect
+	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.16 // indirect
+	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
+	github.com/mitchellh/mapstructure v1.4.2 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/oklog/run v1.0.0 // indirect
+	github.com/pelletier/go-toml v1.2.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/rickar/cal v1.0.2-0.20191101183814-0e8e6fcfe1c2 // indirect
+	github.com/spf13/afero v1.1.2 // indirect
+	github.com/spf13/cast v1.3.0 // indirect
+	github.com/spf13/jwalterweatherman v1.0.0 // indirect
+	github.com/spf13/pflag v1.0.3 // indirect
+	github.com/swaggo/files v0.0.0-20220610200504-28940afbdbfe // indirect
+	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/multierr v1.8.0 // indirect
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
+	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/tools v0.1.12 // indirect
+	google.golang.org/genproto v0.0.0-20210917145530-b395a37504d4 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
