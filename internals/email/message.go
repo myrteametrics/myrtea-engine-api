@@ -12,6 +12,7 @@ import (
 
 type Message struct {
 	To              []string
+	From            string
 	CC              []string
 	BCC             []string
 	Subject         string
@@ -52,10 +53,10 @@ func (m *Message) AttachFile(src string, mime string, fileName string) error {
 	return nil
 }
 
-func (m *Message) ToBytes(from string) []byte {
+func (m *Message) ToBytes() []byte {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString("MIME-Version: 1.0\n")
-	buf.WriteString(fmt.Sprintf("From: %s\n", from))
+	buf.WriteString(fmt.Sprintf("From: %s\n", m.From))
 	buf.WriteString(fmt.Sprintf("Subject: %s\n", m.Subject))
 	buf.WriteString(fmt.Sprintf("To: %s\n", strings.Join(m.To, ",")))
 	if len(m.CC) > 0 {
