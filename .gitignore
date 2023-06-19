@@ -1,14 +1,14 @@
 # Golang executables
 /bin
-engine-api
 
 # Golang dependencies
 Gopkg.lock
 Gopkg.toml
 /vendor
 
-# Golang test coverage
-/coverage
+# Golang test and lint reporting
+/reporting
+.scannerwork
 
 # Certificates
 /certs
@@ -22,10 +22,8 @@ Gopkg.toml
 # Profiling dump
 *.prof
 
-# VS Code
+# IDE
 .vscode
-
-# GoLand
 .idea/
 
 # Logs
@@ -37,15 +35,4 @@ Gopkg.toml
 # Version file (used in CI)
 version
 
-*.plugin
-
-# Security files (certs, private keys, metadatas)
-resources/saml/certs/sp
-resources/saml/certs/source
-resources/saml/certs/*.key
-resources/saml/certs/*.crt
-resources/saml/metadata/*.xml
-# Default example security file
-!resources/saml/certs/myservice.key
-!resources/saml/certs/myservice.crt
-!resources/saml/metadata/idp-samltestid.metadata.xml
+/certs
