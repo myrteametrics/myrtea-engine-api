@@ -8,10 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv6"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/rollover"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/updatealiases"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/some"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
+	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv8"
 	"github.com/myrteametrics/myrtea-sdk/v4/index"
 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
-	"github.com/myrteametrics/myrtea-sdk/v4/models"
 
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/robfig/cron/v3"
@@ -46,55 +49,43 @@ func NewLogicalIndexCronV8(instanceName string, model modeler.Model) (*LogicalIn
 
 	ctx := context.Background()
 	indexPatern := fmt.Sprintf("%s-active-*", logicalIndexName)
-	exists, err := elasticsearchv6.C().IndexExists(ctx, indexPatern)
+	exists, err := elasticsearchv8.C().Indices.Exists(indexPatern).Do(ctx)
+	// exists, err := elasticsearchv6.C().IndexExists(ctx, indexPatern)
 	if err != nil {
 		return nil, err
 	}
-	if !exists {
-		// Build and put template
+	if exists != nil {
+
 		templateName := fmt.Sprintf("template-%s", logicalIndexName)
-		templateBody := models.NewTemplateV6(
-			[]string{indexPatern},
-			model.ToElasticsearchMappingProperties(),
-			model.ElasticsearchOptions.AdvancedSettings,
-		)
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
 
-		// TODO: upgrade to v8 client
-		err := elasticsearchv6.C().PutTemplate(ctx, templateName, templateBody)
+		logicalIndex.putTemplate(templateName, indexPatern, model)
+
+		_, err := elasticsearchv8.C().Indices.Create(logicalIndexName + "-active-000001").Do(ctx)
 		if err != nil {
-			zap.L().Error("elasticsearchv6.C().PutTemplate()", zap.Error(err))
+			zap.L().Error("elasticsearchv8.C().PutIndex()", zap.Error(err))
 			return nil, err
 		}
 
-		// TODO: upgrade to v8 client
-		// Put bootstrap index if missing
-		err = elasticsearchv6.C().PutIndex(ctx, logicalIndexName+"-active-*", logicalIndexName+"-active-000001")
+		_, err = elasticsearchv8.C().Indices.PutAlias(logicalIndexName+"-active-*", logicalIndexName+"-current").Do(ctx)
 		if err != nil {
-			zap.L().Error("elasticsearchv6.C().PutIndex()", zap.Error(err))
-			return nil, err
-		}
-
-		// TODO: upgrade to v8 client
-		// Adding current active index alias
-		err = elasticsearchv6.C().PutAlias(ctx, logicalIndexName+"-active-*", logicalIndexName+"-current")
-		if err != nil {
-			zap.L().Error("elasticsearchv6.C().PutAlias()", zap.Error(err))
+			zap.L().Error("elasticsearchv8.C().PutAlias()", zap.Error(err))
 			return nil, err
 		}
 
 		if model.ElasticsearchOptions.PatchAliasMaxIndices > 0 {
-			// Adding current active index alias
-			err = elasticsearchv6.C().PutAlias(ctx, logicalIndexName+"-*", logicalIndexName+"-patch")
+			_, err = elasticsearchv8.C().Indices.PutAlias(logicalIndexName+"-*", logicalIndexName+"-patch").Do(ctx)
 			if err != nil {
-				zap.L().Error("elasticsearchv6.C().PutAlias()", zap.Error(err))
+				zap.L().Error("elasticsearchv8.C().PutAlias()", zap.Error(err))
 				return nil, err
 			}
 		}
 
 		// Adding search alias on all active index
-		err = elasticsearchv6.C().PutAlias(ctx, logicalIndexName+"-*", logicalIndexName+"-search")
+		_, err = elasticsearchv8.C().Indices.PutAlias(logicalIndexName+"-*", logicalIndexName+"-search").Do(ctx)
 		if err != nil {
-			zap.L().Error("elasticsearchv6.C().PutAlias()", zap.Error(err))
+			zap.L().Error("elasticsearchv8.C().PutAlias()", zap.Error(err))
 			return nil, err
 		}
 
@@ -116,6 +107,20 @@ func NewLogicalIndexCronV8(instanceName string, model modeler.Model) (*LogicalIn
 	logicalIndex.Initialized = true
 
 	return logicalIndex, nil
+}
+
+func (logicalIndex *LogicalIndexCronV8) putTemplate(name string, indexPatern string, model modeler.Model) {
+	req := elasticsearchv8.NewPutTemplateRequestV8([]string{indexPatern}, model)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+	response, err := elasticsearchv8.C().Indices.PutTemplate(name).Request(req).Do(ctx)
+	if err != nil {
+		zap.L().Error("PutTemplate", zap.Error(err))
+	}
+	if !response.Acknowledged {
+		zap.L().Error("PutTemplate failed")
+	}
 }
 
 func (logicalIndex *LogicalIndexCronV8) GetCron() *cron.Cron {
@@ -156,42 +161,51 @@ func (logicalIndex *LogicalIndexCronV8) FindIndices(t time.Time, depthDays int64
 func (logicalIndex *LogicalIndexCronV8) rollover() {
 	ctx := context.Background()
 
-	// TODO: upgrade to v8 client
 	// Using rollover API to manage alias swap and indices names
 	// TODO: Change this dirty abuse of rollover API (triggered every day "max_docx = 0")
-	_, newIndex, err := elasticsearchv6.C().RollOver(ctx, logicalIndex.Name+"-current", "1d", 0)
+	req := rollover.NewRequest()
+	req.Conditions.MaxAge = 24 * time.Hour
+	req.Conditions.MaxDocs = some.Int64(0)
+	resRollover, err := elasticsearchv8.C().Indices.Rollover(logicalIndex.Name + "-current").Request(req).Do(ctx)
 	if err != nil {
-		zap.L().Error("RollOverV2", zap.Error(err), zap.String("index", newIndex))
+		zap.L().Error("RollOverV2", zap.Error(err), zap.String("index", resRollover.NewIndex))
 		return
 	}
 
 	// Roll patch alias
-	// TODO: upgrade to v8 client
-	patchIndices, err := elasticsearchv6.C().GetIndicesByAlias(ctx, logicalIndex.Name+"-patch")
+	alias := logicalIndex.Name + "-patch"
+	resAlias, err := elasticsearchv8.C().Indices.GetAlias().Name(alias).Do(ctx)
 	if err != nil {
-		zap.L().Error("GetIndicesByAlias", zap.Error(err), zap.String("index", newIndex))
+		zap.L().Error("GetIndicesByAlias", zap.Error(err))
 		return
+	}
+	patchIndices := make([]string, 0)
+	for indexName := range resAlias {
+		patchIndices = append(patchIndices, indexName)
 	}
 	sort.Strings(patchIndices)
 
-	alias := logicalIndex.Name + "-patch"
-	aliasCmd := elasticsearchv6.C().Client.Alias()
 	if len(patchIndices) <= logicalIndex.Model.ElasticsearchOptions.PatchAliasMaxIndices {
-		// TODO: upgrade to v8 client
-		if len(patchIndices) >= logicalIndex.Model.ElasticsearchOptions.PatchAliasMaxIndices {
-			aliasCmd = aliasCmd.Remove(patchIndices[0], alias)
-		}
-		aliasCmd = aliasCmd.Add(newIndex, alias)
-		aliasResult, err := aliasCmd.Do(context.Background())
+		updateAliasesRequest := updatealiases.NewRequest()
 
+		if len(patchIndices) >= logicalIndex.Model.ElasticsearchOptions.PatchAliasMaxIndices {
+			updateAliasesRequest.Actions = append(updateAliasesRequest.Actions,
+				types.IndicesAction{Remove: &types.RemoveAction{Index: some.String(patchIndices[0]), Alias: some.String(alias)}},
+			)
+		}
+		updateAliasesRequest.Actions = append(updateAliasesRequest.Actions,
+			types.IndicesAction{Add: &types.AddAction{Index: some.String(resRollover.NewIndex), Alias: some.String(alias)}},
+		)
+
+		updateAliasesResponse, err := elasticsearchv8.C().Indices.UpdateAliases().Request(updateAliasesRequest).Do(ctx)
 		if err != nil {
-			zap.L().Error("Putting alias", zap.Error(err), zap.String("index", newIndex),
+			zap.L().Error("Putting alias", zap.Error(err), zap.String("index", resRollover.NewIndex),
 				zap.String("alias", alias))
 			return
 		}
-		if !aliasResult.Acknowledged {
+		if !updateAliasesResponse.Acknowledged {
 			err := errors.New("es API return false acknowledged")
-			zap.L().Error("Putting alias", zap.Error(err), zap.String("index", newIndex),
+			zap.L().Error("Putting alias", zap.Error(err), zap.String("index", resRollover.NewIndex),
 				zap.String("alias", alias))
 			return
 		}
@@ -202,33 +216,35 @@ func (logicalIndex *LogicalIndexCronV8) rollover() {
 	// Adding search alias on the newly created active index
 	// Includes every active + inactive indices
 	// TODO: Remove this step when template are reworked (and include this search alias)
-	// TODO: upgrade to v8 client
-	err = elasticsearchv6.C().PutAlias(ctx, logicalIndex.Name+"-*", logicalIndex.Name+"-search")
+	_, err = elasticsearchv8.C().Indices.PutAlias(logicalIndex.Name+"-*", logicalIndex.Name+"-search").Do(ctx)
 	if err != nil {
 		zap.L().Error("Putting alias", zap.Error(err), zap.String("index", logicalIndex.Name+"-*"),
 			zap.String("alias", logicalIndex.Name+"-search"))
 		return
 	}
 
-	err = logicalIndex.persistTechnicalIndex(newIndex, time.Now().UTC())
+	err = logicalIndex.persistTechnicalIndex(resRollover.NewIndex, time.Now().UTC())
 	if err != nil {
 		zap.L().Error("Could not persist technical index data", zap.Error(err))
 	}
 
 	// Purge outdated indices
 	if logicalIndex.Model.ElasticsearchOptions.EnablePurge {
-		// TODO: upgrade to v8 client
-		searchIndices, err := elasticsearchv6.C().GetIndicesByAlias(ctx, logicalIndex.Name+"-search")
+		resAlias, err := elasticsearchv8.C().Indices.GetAlias().Name(logicalIndex.Name + "-search").Do(ctx)
 		if err != nil {
-			zap.L().Error("GetIndicesByAlias", zap.Error(err), zap.String("alias", logicalIndex.Name+"-search"))
+			zap.L().Error("GetIndicesByAlias", zap.Error(err))
 			return
+		}
+		searchIndices := make([]string, 0)
+		for indexName := range resAlias {
+			searchIndices = append(searchIndices, indexName)
 		}
 		sort.Strings(searchIndices)
 
 		if len(searchIndices) > logicalIndex.Model.ElasticsearchOptions.PurgeMaxConcurrentIndices {
 			toDelete := searchIndices[0] // oldest indices
-			// TODO: upgrade to v8 client
-			err := elasticsearchv6.C().DeleteIndices(ctx, []string{toDelete})
+
+			_, err := elasticsearchv8.C().Indices.Delete(toDelete).Do(ctx)
 			if err != nil {
 				zap.L().Error("DeleteIndex", zap.Error(err), zap.String("index", searchIndices[0]))
 				return
