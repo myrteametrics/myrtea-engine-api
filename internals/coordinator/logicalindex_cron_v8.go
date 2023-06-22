@@ -49,14 +49,18 @@ func NewLogicalIndexCronV8(instanceName string, model modeler.Model) (*LogicalIn
 
 	ctx := context.Background()
 	indexPatern := fmt.Sprintf("%s-active-*", logicalIndexName)
-	exists, err := elasticsearchv8.C().Indices.Exists(indexPatern).Do(ctx)
-	// exists, err := elasticsearchv6.C().IndexExists(ctx, indexPatern)
+	//exists, err := elasticsearchv8.C().Indices.Exists(indexPatern).Do(ctx)
+	//exists, err := elasticsearchv8.C().Indices.ExistsTemplate()
+	templateName := fmt.Sprintf("template-%s", logicalIndexName)
+	templateExists, err := elasticsearchv8.C().Indices.ExistsTemplate(templateName).IsSuccess(ctx)
 	if err != nil {
+		zap.L().Error("IndexTemplateExists()", zap.Error(err))
 		return nil, err
 	}
-	if exists != nil {
 
-		templateName := fmt.Sprintf("template-%s", logicalIndexName)
+	if !templateExists {
+
+		//templateName := fmt.Sprintf("template-%s", logicalIndexName)
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 		defer cancel()
 
