@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
@@ -350,6 +351,8 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 						Ts:                  t,
 						Parameters:          sh.Parameters,
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
+						EnableDependsOn:     sh.EnableDependsOn,
+						DependsOnParameters: sh.DependsOnParameters,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -392,6 +395,8 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 						Ts:                  t,
 						Parameters:          sh.Parameters,
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
+						EnableDependsOn:     sh.EnableDependsOn,
+						DependsOnParameters: sh.DependsOnParameters,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -511,7 +516,54 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		}
 	}
 
-	return taskBatchs, nil
+	filteredTaskBatch := filterTaskBatch(situationsToUpdate, taskBatchs)
+
+	return filteredTaskBatch, nil
+}
+
+// filtration
+func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, TaskBatch []tasker.TaskBatch) []tasker.TaskBatch {
+	filteredTaskBatch := append([]tasker.TaskBatch(nil), TaskBatch...)
+
+	for _, situation := range situationsToUpdate {
+		if situation.EnableDependsOn {
+
+			for _, task := range TaskBatch {
+				situationID, ok1 := task.Context["situationID"].(int64)
+				templateInstanceID, ok2 := task.Context["templateInstanceID"].(int64)
+				situationIDStr := strconv.FormatInt(situationID, 10)
+				templateInstanceIDStr := strconv.FormatInt(templateInstanceID, 10)
+
+				if ok1 && ok2 && situationIDStr == situation.DependsOnParameters["id_situation_depends_on"] &&
+					templateInstanceIDStr == situation.DependsOnParameters["id_instance_depends_on"] {
+					for _, agenda := range task.Agenda {
+						if agenda.GetName() == "set" &&
+							agenda.GetEnableDependsForALLAction() &&
+							!agenda.GetDisableDepends() {
+							DependsOnMetadata := situation.DependsOnParameters["depends_on_metadata"]
+							DependsOnMetadataValue := situation.DependsOnParameters["depends_on_metadata_value"]
+							metadataInterface, ok3 := agenda.GetParameters()[DependsOnMetadata]
+							if ok3 {
+								metadata, ok4 := metadataInterface.(string)
+								if ok4 && metadata == DependsOnMetadataValue {
+									for i := 0; i < len(filteredTaskBatch); i++ {
+										childSituationID, ok5 := filteredTaskBatch[i].Context["situationID"].(int64)
+										childtemplateInstanceID, ok6 := filteredTaskBatch[i].Context["templateInstanceID"].(int64)
+										if ok5 && ok6 && childSituationID == situation.SituationID &&
+											childtemplateInstanceID == situation.SituationInstanceID {
+											filteredTaskBatch = append(filteredTaskBatch[:i], filteredTaskBatch[i+1:]...)
+											i--
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return filteredTaskBatch
 }
 
 // GetLinkedSituations returns all situation linked to a fact
@@ -599,6 +651,8 @@ func GetEnabledSituations(fact engine.Fact, t time.Time) ([]history.HistoryRecor
 						SituationID:         s.ID,
 						SituationInstanceID: ti.ID,
 						Parameters:          map[string]string{},
+						EnableDependsOn:     ti.EnableDependsOn,
+						DependsOnParameters: ti.DependsOnParameters,
 					}
 					sh.OverrideParameters(s.Parameters)
 					sh.OverrideParameters(ti.Parameters)
