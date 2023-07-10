@@ -412,6 +412,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 
 func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situationsToUpdate map[string]history.HistoryRecordV4) ([]tasker.TaskBatch, error) {
 	taskBatchs := make([]tasker.TaskBatch, 0)
+	situationHistoryMetadata := make(map[models.Key]map[string]interface{})
 	for _, situationToUpdate := range situationsToUpdate {
 
 		// zap.L().Sugar().Info(situationToUpdate)
@@ -485,6 +486,9 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		}
 		// zap.L().Sugar().Info("insert new situation", historySituationNew)
 
+		situationHistoryMetadata[models.Key{SituationID: situationToUpdate.SituationID, SituationInstanceID: situationToUpdate.SituationInstanceID}] = map[string]interface{}{
+			"HistorySituation": historySituationNew,
+		}
 		// Build and insert HistorySituationFactsV4
 		historySituationFactNew := make([]history.HistorySituationFactsV4, 0)
 		for _, historyFactNew := range historyFactsAll {
@@ -516,51 +520,106 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		}
 	}
 
-	filteredTaskBatch := filterTaskBatch(situationsToUpdate, taskBatchs)
+	filteredTaskBatch := filterTaskBatch(situationsToUpdate, taskBatchs, situationHistoryMetadata )
 
 	return filteredTaskBatch, nil
 }
 
 // filtration
-func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, TaskBatch []tasker.TaskBatch) []tasker.TaskBatch {
+func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, TaskBatch []tasker.TaskBatch, situationHistoryMetadata map[models.Key]map[string]interface{}) []tasker.TaskBatch {
 	filteredTaskBatch := append([]tasker.TaskBatch(nil), TaskBatch...)
 
 	for _, situation := range situationsToUpdate {
 		if situation.EnableDependsOn {
 
-			for _, task := range TaskBatch {
-				situationID, ok1 := task.Context["situationID"].(int64)
-				templateInstanceID, ok2 := task.Context["templateInstanceID"].(int64)
-				situationIDStr := strconv.FormatInt(situationID, 10)
-				templateInstanceIDStr := strconv.FormatInt(templateInstanceID, 10)
+			DependsOnMetadata := situation.DependsOnParameters["depends_on_metadata"]
+			DependsOnMetadataValue := situation.DependsOnParameters["depends_on_metadata_value"]
 
-				if ok1 && ok2 && situationIDStr == situation.DependsOnParameters["id_situation_depends_on"] &&
-					templateInstanceIDStr == situation.DependsOnParameters["id_instance_depends_on"] {
-					for _, agenda := range task.Agenda {
-						if agenda.GetName() == "set" &&
-							agenda.GetEnableDependsForALLAction() &&
-							!agenda.GetDisableDepends() {
-							DependsOnMetadata := situation.DependsOnParameters["depends_on_metadata"]
-							DependsOnMetadataValue := situation.DependsOnParameters["depends_on_metadata_value"]
-							metadataInterface, ok3 := agenda.GetParameters()[DependsOnMetadata]
-							if ok3 {
-								metadata, ok4 := metadataInterface.(string)
-								if ok4 && metadata == DependsOnMetadataValue {
-									for i := 0; i < len(filteredTaskBatch); i++ {
-										childSituationID, ok5 := filteredTaskBatch[i].Context["situationID"].(int64)
-										childtemplateInstanceID, ok6 := filteredTaskBatch[i].Context["templateInstanceID"].(int64)
-										if ok5 && ok6 && childSituationID == situation.SituationID &&
-											childtemplateInstanceID == situation.SituationInstanceID {
-											filteredTaskBatch = append(filteredTaskBatch[:i], filteredTaskBatch[i+1:]...)
-											i--
+			IsChildCritical := false  
+			var IdChildCritical int
+             
+
+			// check if child is also critical
+			for i := 0; i < len(filteredTaskBatch); i++ {
+				childSituationID, err1 := filteredTaskBatch[i].Context["situationID"].(int64)
+				childtemplateInstanceID, err2 := filteredTaskBatch[i].Context["templateInstanceID"].(int64)
+				if err1 && err2 && childSituationID == situation.SituationID && 
+				   childtemplateInstanceID == situation.SituationInstanceID {
+                   for _, agenda := range filteredTaskBatch[i].Agenda{
+					  if agenda.GetName() == "set" && 
+						 agenda.GetEnableDependsForALLAction() &&
+						 !agenda.GetDisableDepends() {
+						  metadataInterface, err5 := agenda.GetParameters()[DependsOnMetadata]
+						  if err5 {
+							metadata, err6 := metadataInterface.(string)
+							if err6 && metadata == DependsOnMetadataValue {
+								IsChildCritical = true;
+								IdChildCritical = i;
+								break
+							}
+							
+						}
+				      }
+					}
+				}
+			}
+
+			if IsChildCritical {
+				// check if there an parent who is critical 
+				for _, task := range TaskBatch {
+					situationID, err3 := task.Context["situationID"].(int64)
+					templateInstanceID, err4 := task.Context["templateInstanceID"].(int64)
+					situationIDStr := strconv.FormatInt(situationID, 10)
+					templateInstanceIDStr := strconv.FormatInt(templateInstanceID, 10)
+
+					if err3 && err4 && situationIDStr == situation.DependsOnParameters["id_situation_depends_on"] &&
+						templateInstanceIDStr == situation.DependsOnParameters["id_instance_depends_on"] {
+						for _, agenda := range task.Agenda {
+							if agenda.GetName() == "set" &&
+								agenda.GetEnableDependsForALLAction() &&
+								!agenda.GetDisableDepends() {
+								metadataInterface, err5 := agenda.GetParameters()[DependsOnMetadata]
+								if err5 {
+									metadata, err6 := metadataInterface.(string)
+									if err6 && metadata == DependsOnMetadataValue {
+                                        // filtre l'agenda pour supprimer les action qui ne  repsect la gestion dependance
+
+										filteredTaskBatch = append(filteredTaskBatch[:IdChildCritical], filteredTaskBatch[IdChildCritical+1:]...)
+                                        filteredAgenda := make([]ruleeng.Action, 0)
+										for _, action := range filteredTaskBatch[IdChildCritical].Agenda {
+											if (action.GetEnableDependsForALLAction() == false) || (action.GetEnableDependsForALLAction() == true && action.GetDisableDepends() == true) {
+												filteredAgenda = append(filteredAgenda, action)
+											}
 										}
+										filteredTaskBatch[IdChildCritical].Agenda = filteredAgenda
+ 
+									    // Modifie la table SituationHistory pour change le status critical en pending  
+										valuesituationHistoryMetadata := situationHistoryMetadata[models.Key{SituationID: situation.SituationID ,
+																			SituationInstanceID: situation.SituationInstanceID,}]
+										historySituation := valuesituationHistoryMetadata["HistorySituation"].(history.HistorySituationsV4)
+
+										for i, metadata := range historySituation.Metadatas {
+											if metadata.Key == "statut_lag" {
+												historySituation.Metadatas[i].Value = "pending"
+												break
+											}
+										}
+
+										err10 := history.S().HistorySituationsQuerier.Update(historySituation)
+										if err10 != nil {
+											zap.L().Error("", zap.Error(err10))
+										}
+										
+										break
 									}
+									
 								}
 							}
 						}
 					}
 				}
 			}
+			
 		}
 	}
 	return filteredTaskBatch
