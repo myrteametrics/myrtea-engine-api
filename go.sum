@@ -214,6 +214,8 @@ github.com/myrteametrics/myrtea-sdk/v4 v4.3.5-0.20230705115654-a9c882cb7988 h1:V
 github.com/myrteametrics/myrtea-sdk/v4 v4.3.5-0.20230705115654-a9c882cb7988/go.mod h1:/FgypOICeiv78VQ9dcnEGtQeuTso7DKyPw8o2SQhIaY=
 github.com/myrteametrics/myrtea-sdk/v4 v4.3.5-0.20230709152716-033b5dc00b34 h1:a96kaVF8+19+Qkpoc87HXoEpQ2nCEViBbd20MfPRXw4=
 github.com/myrteametrics/myrtea-sdk/v4 v4.3.5-0.20230709152716-033b5dc00b34/go.mod h1:/FgypOICeiv78VQ9dcnEGtQeuTso7DKyPw8o2SQhIaY=
+github.com/myrteametrics/myrtea-sdk/v4 v4.3.5-0.20230711091245-5c6e7e396c69 h1:kh4x2+RDxeLa/fI+mGQNMOCjG+yJ/nl5ZdZxxLJO2Uc=
+github.com/myrteametrics/myrtea-sdk/v4 v4.3.5-0.20230711091245-5c6e7e396c69/go.mod h1:/FgypOICeiv78VQ9dcnEGtQeuTso7DKyPw8o2SQhIaY=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/oklog/run v1.0.0 h1:Ru7dDtJNOyC66gQ5dQmaCa0qIsAUFY3sFpK1Xk8igrw=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=

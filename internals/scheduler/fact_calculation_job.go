@@ -548,7 +548,7 @@ func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, Task
                    for _, agenda := range filteredTaskBatch[i].Agenda{
 					  if agenda.GetName() == "set" && 
 						 agenda.GetEnableDependsForALLAction() &&
-						 !agenda.GetDisableDepends() {
+						 agenda.GetEnabledDependsAction() {
 						  metadataInterface, err5 := agenda.GetParameters()[DependsOnMetadata]
 						  if err5 {
 							metadata, err6 := metadataInterface.(string)
@@ -577,17 +577,15 @@ func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, Task
 						for _, agenda := range task.Agenda {
 							if agenda.GetName() == "set" &&
 								agenda.GetEnableDependsForALLAction() &&
-								!agenda.GetDisableDepends() {
+								 agenda.GetEnabledDependsAction() {
 								metadataInterface, err5 := agenda.GetParameters()[DependsOnMetadata]
 								if err5 {
 									metadata, err6 := metadataInterface.(string)
 									if err6 && metadata == DependsOnMetadataValue {
                                         // filtre l'agenda pour supprimer les action qui ne  repsect la gestion dependance
-
-										filteredTaskBatch = append(filteredTaskBatch[:IdChildCritical], filteredTaskBatch[IdChildCritical+1:]...)
                                         filteredAgenda := make([]ruleeng.Action, 0)
 										for _, action := range filteredTaskBatch[IdChildCritical].Agenda {
-											if (action.GetEnableDependsForALLAction() == false) || (action.GetEnableDependsForALLAction() == true && action.GetDisableDepends() == true) {
+											if (action.GetEnableDependsForALLAction() == false) || (action.GetEnableDependsForALLAction() == true && action.GetEnabledDependsAction() == false) {
 												filteredAgenda = append(filteredAgenda, action)
 											}
 										}
