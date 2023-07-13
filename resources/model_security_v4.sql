@@ -55,3 +55,11 @@ alter table issue_detection_feedback_v3 add constraint unq_issueid_userid unique
  update rule_versions_v1 set data = replace(data::text, 'timeZone', 'timezone')::json;
 
 alter table job_schedules_v1 add column enabled boolean;
+
+-- add new champs 
+
+ALTER TABLE public.situation_template_instances_v1 
+ADD COLUMN enable_depends_on BOOLEAN DEFAULT false;
+
+ALTER TABLE public.situation_template_instances_v1 
+ADD COLUMN depends_on_parameters JSON DEFAULT '{}'::json;

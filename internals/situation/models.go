@@ -62,9 +62,11 @@ func (s Situation) MarshalJSON() ([]byte, error) {
 
 // TemplateInstance is a struct used to represent a situation template instance
 type TemplateInstance struct {
-	ID          int64             `json:"id"`
-	Name        string            `json:"name"`
-	SituationID int64             `json:"situationId"`
-	Parameters  map[string]string `json:"parameters"`
-	CalendarID  int64             `json:"calendarId"`
+	ID                  int64             `json:"id"`
+	Name                string            `json:"name"`
+	SituationID         int64             `json:"situationId"`
+	Parameters          map[string]string `json:"parameters"`
+	CalendarID          int64             `json:"calendarId"`
+	EnableDependsOn     bool              `json:"enableDependsOn"`
+	DependsOnParameters map[string]string `json:"dependsOnParameters"`
 }

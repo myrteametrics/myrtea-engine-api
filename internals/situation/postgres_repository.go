@@ -12,7 +12,7 @@ import (
 )
 
 // PostgresRepository is a repository containing the situation definition based on a PSQL database and
-//implementing the repository interface
+// implementing the repository interface
 type PostgresRepository struct {
 	conn *sqlx.DB
 }
@@ -577,15 +577,22 @@ func (r *PostgresRepository) CreateTemplateInstance(situationID int64, instance 
 		return -1, err
 	}
 
+	dependsOnParametresData, err := json.Marshal(instance.DependsOnParameters)
+	if err != nil {
+		return -1, err
+	}
+
 	timestamp := time.Now().Truncate(1 * time.Millisecond).UTC()
-	query := `INSERT INTO situation_template_instances_v1 (situation_id, id, name, parameters, calendar_id, last_modified)
-		VALUES (:situation_id, DEFAULT, :name, :parameters, :calendar_id, :last_modified) RETURNING id`
+	query := `INSERT INTO situation_template_instances_v1 (situation_id, id, name, parameters, calendar_id, last_modified, enable_depends_on, depends_on_parameters)
+		VALUES (:situation_id, DEFAULT, :name, :parameters, :calendar_id, :last_modified, :enable_depends_on, :depends_on_parameters) RETURNING id`
 	params := map[string]interface{}{
-		"situation_id":  situationID,
-		"name":          instance.Name,
-		"parameters":    string(parametersData),
-		"calendar_id":   instance.CalendarID,
-		"last_modified": timestamp,
+		"situation_id":          situationID,
+		"name":                  instance.Name,
+		"parameters":            string(parametersData),
+		"calendar_id":           instance.CalendarID,
+		"last_modified":         timestamp,
+		"enable_depends_on":     instance.EnableDependsOn,
+		"depends_on_parameters": string(dependsOnParametresData),
 	}
 
 	if instance.CalendarID == 0 {
@@ -625,7 +632,9 @@ func (r *PostgresRepository) UpdateTemplateInstance(instanceID int64, instance T
 	query := `UPDATE situation_template_instances_v1 SET situation_id = :situation_id,
 					name = :name, parameters = :parameters,
 					calendar_id = :calendar_id,
-					last_modified = :last_modified WHERE id = :id`
+					last_modified = :last_modified,
+					enable_depends_on = :enable_depends_on,
+					depends_on_parameters = :depends_on_parameters WHERE id = :id`
 
 	//This is necessary because within the definition we don't have the id
 	instance.ID = instanceID
@@ -635,15 +644,22 @@ func (r *PostgresRepository) UpdateTemplateInstance(instanceID int64, instance T
 		return errors.New("couldn't marshall the provided situation parameters" + err.Error())
 	}
 
+	dependsOnParametresData, err := json.Marshal(instance.DependsOnParameters)
+	if err != nil {
+		return errors.New("couldn't marshall the provided situation dependsOn Parameters" + err.Error())
+	}
+
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
 
 	params := map[string]interface{}{
-		"id":            instanceID,
-		"situation_id":  instance.SituationID,
-		"name":          instance.Name,
-		"parameters":    string(parametersData),
-		"calendar_id":   instance.CalendarID,
-		"last_modified": t,
+		"id":                    instanceID,
+		"situation_id":          instance.SituationID,
+		"name":                  instance.Name,
+		"parameters":            string(parametersData),
+		"calendar_id":           instance.CalendarID,
+		"last_modified":         t,
+		"enable_depends_on":     instance.EnableDependsOn,
+		"depends_on_parameters": string(dependsOnParametresData),
 	}
 
 	if instance.CalendarID == 0 {
@@ -712,7 +728,8 @@ func (r *PostgresRepository) DeleteTemplateInstance(instanceID int64) error {
 
 // GetTemplateInstance returns the situation template instance
 func (r *PostgresRepository) GetTemplateInstance(instanceID int64) (TemplateInstance, bool, error) {
-	query := `SELECT name, situation_id, parameters, calendar_id FROM situation_template_instances_v1 WHERE id = :id`
+	query := `SELECT name, situation_id, parameters, calendar_id, enable_depends_on, depends_on_parameters
+				 FROM situation_template_instances_v1 WHERE id = :id`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
 		"id": instanceID,
 	})
@@ -726,17 +743,24 @@ func (r *PostgresRepository) GetTemplateInstance(instanceID int64) (TemplateInst
 		var calendarID sql.NullInt64
 		var name string
 		var paramsData string
-		err := rows.Scan(&name, &situationID, &paramsData, &calendarID)
+		var enableDependsOn bool
+		var dependsOnParamsData string
+		err := rows.Scan(&name, &situationID, &paramsData, &calendarID, &enableDependsOn, &dependsOnParamsData)
 		if err != nil {
 			return TemplateInstance{}, false, err
 		}
 		templateInstance := TemplateInstance{
-			ID:          instanceID,
-			SituationID: situationID,
-			Name:        name,
-			CalendarID:  calendarID.Int64,
+			ID:              instanceID,
+			SituationID:     situationID,
+			Name:            name,
+			CalendarID:      calendarID.Int64,
+			EnableDependsOn: enableDependsOn,
 		}
 		err = json.Unmarshal([]byte(paramsData), &templateInstance.Parameters)
+		if err != nil {
+			return TemplateInstance{}, false, err
+		}
+		err = json.Unmarshal([]byte(dependsOnParamsData), &templateInstance.DependsOnParameters)
 		if err != nil {
 			return TemplateInstance{}, false, err
 		}
@@ -749,7 +773,8 @@ func (r *PostgresRepository) GetTemplateInstance(instanceID int64) (TemplateInst
 
 // GetAllTemplateInstances returns the list of template instances of the situation
 func (r *PostgresRepository) GetAllTemplateInstances(situationID int64) (map[int64]TemplateInstance, error) {
-	query := `SELECT id, name, parameters, calendar_id FROM situation_template_instances_v1 WHERE situation_id = :situation_id`
+	query := `SELECT id, name, parameters, calendar_id, enable_depends_on, depends_on_parameters 
+						FROM situation_template_instances_v1 WHERE situation_id = :situation_id`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
 		"situation_id": situationID,
 	})
@@ -764,17 +789,24 @@ func (r *PostgresRepository) GetAllTemplateInstances(situationID int64) (map[int
 		var name string
 		var paramsData string
 		var calendarID sql.NullInt64
-		err := rows.Scan(&id, &name, &paramsData, &calendarID)
+		var enableDependsOn bool
+		var dependsOnParamsData string
+		err := rows.Scan(&id, &name, &paramsData, &calendarID, &enableDependsOn, &dependsOnParamsData)
 		if err != nil {
 			return nil, err
 		}
 		templateInstance := TemplateInstance{
-			ID:          id,
-			SituationID: situationID,
-			Name:        name,
-			CalendarID:  calendarID.Int64,
+			ID:              id,
+			SituationID:     situationID,
+			Name:            name,
+			CalendarID:      calendarID.Int64,
+			EnableDependsOn: enableDependsOn,
 		}
 		err = json.Unmarshal([]byte(paramsData), &templateInstance.Parameters)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal([]byte(dependsOnParamsData), &templateInstance.DependsOnParameters)
 		if err != nil {
 			return nil, err
 		}
