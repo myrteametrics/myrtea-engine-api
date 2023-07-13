@@ -4,15 +4,24 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
+	"go.uber.org/zap"
 )
 
 func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string, separator rune) ([]byte, error) {
 	b := new(bytes.Buffer)
 	w := csv.NewWriter(b)
 	w.Comma = separator
+
+	dateRegex, err := regexp.Compile(`\d{4}-\d{2}-\d{2}T\d{1,2}:\d{1,2}:\d{1,2}\.\d{3}`)
+	if err != nil {
+		zap.L().Error("Failed to compile date regex", zap.Error(err))
+		return nil, err
+	}
 
 	w.Write(columnsLabel)
 	for _, hit := range hits {
@@ -21,7 +30,22 @@ func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string
 			value, err := nestedMapLookup(hit.Fields, strings.Split(column, ".")...)
 			if err != nil {
 				value = ""
+			} else if strValue, ok := value.(string); ok && dateRegex.MatchString(strValue) {
+				t, err := time.Parse("2006-01-02T15:04:05.000", strValue)
+				// Si cela échoue, on essayez avec un format qui accepte une ou deux occurrences
+				if err != nil {
+					t, err = time.Parse("2006-01-02T15:4:5.000", strValue)
+					// Si cela échoue également, afficher l'erreur et continuez
+					if err != nil {
+						zap.L().Info("Unexpected format", zap.String("value", strValue), zap.Error(err))
+					} else {
+						value = t.Format("2006-01-02 15:04:05") 
+					}
+				} else {
+					value = t.Format("2006-01-02 15:04:05") 
+				}
 			}
+
 			record = append(record, fmt.Sprintf("%v", value))
 		}
 		w.Write(record)
