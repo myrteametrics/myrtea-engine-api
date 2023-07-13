@@ -40,6 +40,13 @@ type MetaData struct {
 	CaseName    string      `json:"caseName"`
 }
 
+
+// struct Key for an map MetaData
+ type Key struct {
+	SituationID  int64
+	SituationInstanceID int64
+}
+
 // IssueLevel state of a issue
 type IssueLevel int
 
