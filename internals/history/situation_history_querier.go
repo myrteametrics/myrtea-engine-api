@@ -34,6 +34,8 @@ type HistoryRecordV4 struct {
 	HistoryFacts        []HistoryFactsV4
 	Parameters          map[string]string
 	ExpressionFacts     map[string]interface{}
+	EnableDependsOn     bool              
+	DependsOnParameters map[string]string
 }
 
 // OverrideParameters overrides the parameters of the History Record.
