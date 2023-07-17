@@ -239,3 +239,16 @@ func (m *SamlSPMiddleware) AdminAuthentificator(next http.Handler) http.Handler 
 		next.ServeHTTP(w, r)
 	})
 }
+
+func (m *SamlSPMiddleware) Deconnexion(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		err := m.Session.DeleteSession(w, r)
+		if err != nil {
+			m.OnError(w, r, err)
+			return
+		}
+
+		handler.ServeHTTP(w, r)
+	})
+}
+
