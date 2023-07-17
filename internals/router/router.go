@@ -224,6 +224,7 @@ func buildRoutesV3SAML(config Config) (func(r chi.Router), error) {
 			rg.Get("/isalive", handlers.IsAlive)
 			rg.Get("/swagger/*", httpSwagger.WrapHandler)
 			rg.Handle("/saml/*", samlSPMiddleware)
+			rg.Handle("/logout", handlers.LogoutHandler(samlSPMiddleware.Deconnexion))
 		})
 
 		// Protected routes
