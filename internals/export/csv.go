@@ -5,15 +5,16 @@ import (
 	"encoding/csv"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
+	"go.uber.org/zap"
 )
 
-func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string, separator rune) ([]byte, error) {
+func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string, formateColumnsData map[string]string, separator rune) ([]byte, error) {
 	b := new(bytes.Buffer)
 	w := csv.NewWriter(b)
 	w.Comma = separator
-
 	w.Write(columnsLabel)
 	for _, hit := range hits {
 		record := make([]string, 0)
@@ -21,6 +22,17 @@ func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string
 			value, err := nestedMapLookup(hit.Fields, strings.Split(column, ".")...)
 			if err != nil {
 				value = ""
+			} else if format, ok := formateColumnsData[column]; ok {
+				if date, ok := value.(time.Time); ok {
+					value = date.Format(format)
+				} else if dateStr, ok := value.(string); ok {
+					date, err := parseDate(dateStr)
+					if err != nil {
+						zap.L().Error("Failed to parse date string:", zap.Any(":", dateStr),zap.Error(err))
+					}else{
+						value = date.Format(format)
+					}
+				}
 			}
 			record = append(record, fmt.Sprintf("%v", value))
 		}
@@ -48,4 +60,21 @@ func nestedMapLookup(m map[string]interface{}, ks ...string) (rval interface{}, 
 	} else {
 		return nestedMapLookup(m, ks[1:]...)
 	}
+}
+
+func parseDate(dateStr string) (time.Time, error) {
+    formats := []string{
+        "2006-01-02T15:04:05.999",
+        "2006-01-02T15:4:05.999",
+        "2006-01-02T15:04:5.999",
+        "2006-01-02T15:4:5.999",
+    }
+
+    for _, format := range formats {
+        if date, err := time.Parse(format, dateStr); err == nil {
+            return date, nil
+        }
+    }
+
+    return time.Time{}, fmt.Errorf("failed to parse date string: %s", dateStr)
 }
