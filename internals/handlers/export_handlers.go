@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -16,9 +17,10 @@ import (
 )
 
 type CSVParameters struct {
-	columns      []string
-	columnsLabel []string
-	separator    rune
+	columns            []string
+	columnsLabel       []string
+	formateColumnsData map[string]string
+	separator          rune
 }
 
 // ExportFact godoc
@@ -75,7 +77,7 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 	default:
 		// Process needed parameters
 		params := GetCSVParameters(r)
-		file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.separator)
+		file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.formateColumnsData, params.separator)
 		if filename == "" {
 			filename = f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
 		}
@@ -90,7 +92,16 @@ func GetCSVParameters(r *http.Request) CSVParameters {
 
 	result.columns = QueryParamToOptionalStringArray(r, "columns", ",", []string{})
 	result.columnsLabel = QueryParamToOptionalStringArray(r, "columnsLabel", ",", []string{})
-
+	formateColumnsData := QueryParamToOptionalStringArray(r, "formateColumns", ",", []string{})
+	result.formateColumnsData = make(map[string]string)
+	for _, formatData := range formateColumnsData {
+		parts := strings.Split(formatData, ";")
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		result.formateColumnsData[key] = parts[1]
+	}
 	separator := r.URL.Query().Get("separator")
 	if separator != "" {
 		sep, size := utf8.DecodeRuneInString(separator)
