@@ -77,7 +77,7 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 	default:
 		// Process needed parameters
 		params := GetCSVParameters(r)
-		file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.FormateColumnsData, params.separator)
+		file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.formateColumnsData, params.separator)
 		if filename == "" {
 			filename = f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
 		}
