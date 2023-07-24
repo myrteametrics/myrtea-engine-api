@@ -19,7 +19,7 @@ import (
 type CSVParameters struct {
 	columns            []string
 	columnsLabel       []string
-	FormateColumnsData map[string]string
+	formateColumnsData map[string]string
 	separator          rune
 }
 
@@ -93,14 +93,14 @@ func GetCSVParameters(r *http.Request) CSVParameters {
 	result.columns = QueryParamToOptionalStringArray(r, "columns", ",", []string{})
 	result.columnsLabel = QueryParamToOptionalStringArray(r, "columnsLabel", ",", []string{})
 	formateColumnsData := QueryParamToOptionalStringArray(r, "formateColumns", ",", []string{})
-	result.FormateColumnsData = make(map[string]string)
+	result.formateColumnsData = make(map[string]string)
 	for _, formatData := range formateColumnsData {
 		parts := strings.Split(formatData, ";")
 		if len(parts) != 2 {
 			continue
 		}
 		key := strings.TrimSpace(parts[0])
-		result.FormateColumnsData[key] = parts[1]
+		result.formateColumnsData[key] = parts[1]
 	}
 	separator := r.URL.Query().Get("separator")
 	if separator != "" {

@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string, FormateColumnsData map[string]string, separator rune) ([]byte, error) {
+func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string, formateColumnsData map[string]string, separator rune) ([]byte, error) {
 	b := new(bytes.Buffer)
 	w := csv.NewWriter(b)
 	w.Comma = separator
@@ -22,7 +22,7 @@ func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string
 			value, err := nestedMapLookup(hit.Fields, strings.Split(column, ".")...)
 			if err != nil {
 				value = ""
-			} else if format, ok := FormateColumnsData[column]; ok {
+			} else if format, ok := formateColumnsData[column]; ok {
 				if date, ok := value.(time.Time); ok {
 					value = date.Format(format)
 				} else if dateStr, ok := value.(string); ok {
