@@ -70,12 +70,16 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// export multiple facts into one file
-	combineFactIds, err := QueryParamToOptionalInt64Array(r, "combineFactIds", ",", []int64{})
+	combineFactIds, err := QueryParamToOptionalInt64Array(r, "combineFactIds", ",", false, []int64{})
 	if err != nil {
 		zap.L().Warn("Could not parse parameter combineFactIds", zap.Error(err))
 	} else {
 
 		for _, factId := range combineFactIds {
+			// no duplicates
+			if factId == idFact {
+				continue
+			}
 
 			combineFact, found, err := fact.R().Get(factId)
 			if err != nil {

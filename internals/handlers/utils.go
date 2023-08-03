@@ -30,7 +30,7 @@ func QueryParamToOptionalInt64(r *http.Request, name string, orDefault int64) (i
 	return orDefault, nil
 }
 
-func QueryParamToOptionalInt64Array(r *http.Request, name string, separator string, orDefault []int64) ([]int64, error) {
+func QueryParamToOptionalInt64Array(r *http.Request, name, separator string, allowDuplicates bool, orDefault []int64) ([]int64, error) {
 	param := r.URL.Query().Get(name)
 	if param == "" {
 		return orDefault, nil
@@ -44,6 +44,10 @@ func QueryParamToOptionalInt64Array(r *http.Request, name string, separator stri
 			return nil, err
 		}
 		result[i] = val
+	}
+
+	if !allowDuplicates {
+		return removeDuplicate(result), nil
 	}
 
 	return result, nil
@@ -194,4 +198,16 @@ func GetUserFromContext(r *http.Request) (users.UserWithPermissions, bool) {
 	}
 	user := _user.(users.UserWithPermissions)
 	return user, true
+}
+
+func removeDuplicate[T string | int | int64](sliceList []T) []T {
+	allKeys := make(map[T]bool)
+	var list []T
+	for _, item := range sliceList {
+		if _, value := allKeys[item]; !value {
+			allKeys[item] = true
+			list = append(list, item)
+		}
+	}
+	return list
 }

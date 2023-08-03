@@ -122,9 +122,26 @@ func TestQueryParamToOptionalInt64Array(t *testing.T) {
 	r.URL.RawQuery = query.Encode()
 
 	expectedResult := []int64{1, 2, 3, 4}
-	result, err := QueryParamToOptionalInt64Array(r, "combineFactIds", ",", []int64{})
+	result, err := QueryParamToOptionalInt64Array(r, "combineFactIds", ",", false, []int64{})
 
 	if err != nil || len(result) != len(expectedResult) {
+		t.FailNow()
+	}
+
+	for i := 0; i < len(expectedResult); i++ {
+		if expectedResult[i] != result[i] {
+			t.FailNow()
+		}
+	}
+
+}
+
+func TestRemoveDuplicate(t *testing.T) {
+	sample := []int64{1, 1, 1, 2, 2, 3, 4}
+	expectedResult := []int64{1, 2, 3, 4}
+	result := removeDuplicate(sample)
+
+	if len(result) != len(expectedResult) {
 		t.FailNow()
 	}
 
