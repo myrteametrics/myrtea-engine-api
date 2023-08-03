@@ -17,10 +17,10 @@ import (
 )
 
 type CSVParameters struct {
-	columns            []string
-	columnsLabel       []string
-	formateColumnsData map[string]string
-	separator          rune
+	columns           []string
+	columnsLabel      []string
+	formatColumnsData map[string]string
+	separator         rune
 }
 
 // ExportFact godoc
@@ -69,6 +69,40 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// export multiple facts into one file
+	combineFactIds, err := QueryParamToOptionalInt64Array(r, "combineFactIds", ",", false, []int64{})
+	if err != nil {
+		zap.L().Warn("Could not parse parameter combineFactIds", zap.Error(err))
+	} else {
+
+		for _, factId := range combineFactIds {
+			// no duplicates
+			if factId == idFact {
+				continue
+			}
+
+			combineFact, found, err := fact.R().Get(factId)
+			if err != nil {
+				zap.L().Error("Export combineFact cannot retrieve fact", zap.Int64("factID", factId), zap.Error(err))
+				continue
+			}
+			if !found {
+				zap.L().Warn("Export combineFact fact does not exist", zap.Int64("factID", factId))
+				continue
+			}
+
+			combineFullHits, err := export.ExportFactHitsFull(combineFact)
+
+			if err != nil {
+				zap.L().Error("Export combineFact getting fact hits", zap.Int64("factID", factId), zap.Error(err))
+			} else {
+				fullHits = append(fullHits, combineFullHits...)
+			}
+
+		}
+
+	}
+
 	var file []byte
 	var filename = r.URL.Query().Get("fileName")
 
@@ -77,7 +111,7 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 	default:
 		// Process needed parameters
 		params := GetCSVParameters(r)
-		file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.formateColumnsData, params.separator)
+		file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.formatColumnsData, params.separator)
 		if filename == "" {
 			filename = f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
 		}
@@ -92,15 +126,16 @@ func GetCSVParameters(r *http.Request) CSVParameters {
 
 	result.columns = QueryParamToOptionalStringArray(r, "columns", ",", []string{})
 	result.columnsLabel = QueryParamToOptionalStringArray(r, "columnsLabel", ",", []string{})
-	formateColumnsData := QueryParamToOptionalStringArray(r, "formateColumns", ",", []string{})
-	result.formateColumnsData = make(map[string]string)
-	for _, formatData := range formateColumnsData {
+
+	formatColumnsData := QueryParamToOptionalStringArray(r, "formateColumns", ",", []string{})
+	result.formatColumnsData = make(map[string]string)
+	for _, formatData := range formatColumnsData {
 		parts := strings.Split(formatData, ";")
 		if len(parts) != 2 {
 			continue
 		}
 		key := strings.TrimSpace(parts[0])
-		result.formateColumnsData[key] = parts[1]
+		result.formatColumnsData[key] = parts[1]
 	}
 	separator := r.URL.Query().Get("separator")
 	if separator != "" {
