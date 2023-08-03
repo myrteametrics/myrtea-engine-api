@@ -169,6 +169,10 @@ func (logicalIndex *LogicalIndexTimeBasedV8) GetAllIndices() []string {
 
 func (logicalIndex *LogicalIndexTimeBasedV8) FindIndices(t time.Time, depthDays int64) ([]string, error) {
 	tsStart := t.Add(time.Duration(depthDays) * -1 * 24 * time.Hour)
+	// FIXME: deduce this from model ?
+	if logicalIndex.Model.ElasticsearchOptions.Rollcron == "0 0 0 * *" {
+		tsStart = tsStart.AddDate(0, -1, 0) // minor trick to handle integration of starting month to keep using efficient string comparison
+	}
 	indexEnd := fmt.Sprintf("%s-%s", logicalIndex.Name, t.Format("2006-01-02"))
 	indexStart := fmt.Sprintf("%s-%s", logicalIndex.Name, tsStart.Format("2006-01-02"))
 
