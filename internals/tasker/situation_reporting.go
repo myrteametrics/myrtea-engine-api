@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"html/template"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/email"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer"
@@ -29,17 +30,18 @@ func verifyCache(key string, timeout time.Duration) bool {
 
 // SituationReportingTask struct for close issues created in the current day from the BRMS
 type SituationReportingTask struct {
-	ID                  string   `json:"id"`
-	IssueID             string   `json:"issueId"`
-	Subject             string   `json:"subject"`
-	BodyTemplate        string   `json:"bodyTemplate"`
-	To                  []string `json:"to"`
-	AttachmentFileNames []string `json:"attachmentFileNames"`
-	AttachmentFactIDs   []int64  `json:"attachmentFactIds"`
-	Columns             []string `json:"columns"`
-	ColumnsLabel        []string `json:"columnsLabel"`
-	Separator           rune     `json:"separator"`
-	Timeout             string   `json:"timeout"`
+	ID                  string            `json:"id"`
+	IssueID             string            `json:"issueId"`
+	Subject             string            `json:"subject"`
+	BodyTemplate        string            `json:"bodyTemplate"`
+	To                  []string          `json:"to"`
+	AttachmentFileNames []string          `json:"attachmentFileNames"`
+	AttachmentFactIDs   []int64           `json:"attachmentFactIds"`
+	Columns             []string          `json:"columns"`
+	FormatColumnsData   map[string]string `json:"formateColumns"`
+	ColumnsLabel        []string          `json:"columnsLabel"`
+	Separator           rune              `json:"separator"`
+	Timeout             string            `json:"timeout"`
 }
 
 func buildSituationReportingTask(parameters map[string]interface{}) (SituationReportingTask, error) {
@@ -99,6 +101,20 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 
 	if val, ok := parameters["columns"].(string); ok && val != "" {
 		task.Columns = strings.Split(val, ",")
+	}
+
+	if val, ok := parameters["formateColumns"].(string); ok && val != "" {
+		formatColumnsData := strings.Split(val, ",")
+		task.FormatColumnsData = make(map[string]string)
+		for _, formatData := range formatColumnsData {
+			parts := strings.Split(formatData, ";")
+			if len(parts) != 2 {
+				continue
+			}
+			key := strings.TrimSpace(parts[0])
+			task.FormatColumnsData[key] = parts[1]
+		}
+
 	}
 
 	if val, ok := parameters["columnsLabel"].(string); ok && val != "" {
@@ -186,7 +202,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 			return err
 		}
 
-		csvAttachment, err := export.ConvertHitsToCSV(fullHits, task.Columns, task.ColumnsLabel, task.Separator)
+		csvAttachment, err := export.ConvertHitsToCSV(fullHits, task.Columns, task.ColumnsLabel, task.FormatColumnsData, task.Separator)
 		if err != nil {
 			return err
 		}

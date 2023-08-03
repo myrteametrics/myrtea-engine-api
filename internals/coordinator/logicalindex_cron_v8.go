@@ -168,11 +168,13 @@ func (logicalIndex *LogicalIndexCronV8) rollover() {
 	// Using rollover API to manage alias swap and indices names
 	// TODO: Change this dirty abuse of rollover API (triggered every day "max_docx = 0")
 	req := rollover.NewRequest()
-	req.Conditions.MaxAge = 24 * time.Hour
-	req.Conditions.MaxDocs = some.Int64(0)
+	// req.Conditions = types.NewRolloverConditions()
+	// req.Conditions.MaxAge = "24 h"
+	// req.Conditions.MaxDocs = some.Int64(0)
+
 	resRollover, err := elasticsearchv8.C().Indices.Rollover(logicalIndex.Name + "-current").Request(req).Do(ctx)
 	if err != nil {
-		zap.L().Error("RollOverV2", zap.Error(err), zap.String("index", resRollover.NewIndex))
+		zap.L().Error("RollOverV2", zap.Error(err))
 		return
 	}
 
