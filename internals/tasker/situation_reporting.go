@@ -38,7 +38,7 @@ type SituationReportingTask struct {
 	AttachmentFileNames []string          `json:"attachmentFileNames"`
 	AttachmentFactIDs   []int64           `json:"attachmentFactIds"`
 	Columns             []string          `json:"columns"`
-	FormateColumnsData  map[string]string `json:"formateColumns"`
+	FormatColumnsData   map[string]string `json:"formateColumns"`
 	ColumnsLabel        []string          `json:"columnsLabel"`
 	Separator           rune              `json:"separator"`
 	Timeout             string            `json:"timeout"`
@@ -104,15 +104,15 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 	}
 
 	if val, ok := parameters["formateColumns"].(string); ok && val != "" {
-		formateColumnsData := strings.Split(val, ",")
-		task.FormateColumnsData = make(map[string]string)
-		for _, formatData := range formateColumnsData {
+		formatColumnsData := strings.Split(val, ",")
+		task.FormatColumnsData = make(map[string]string)
+		for _, formatData := range formatColumnsData {
 			parts := strings.Split(formatData, ";")
 			if len(parts) != 2 {
 				continue
 			}
 			key := strings.TrimSpace(parts[0])
-			task.FormateColumnsData[key] = parts[1]
+			task.FormatColumnsData[key] = parts[1]
 		}
 
 	}
@@ -202,7 +202,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 			return err
 		}
 
-		csvAttachment, err := export.ConvertHitsToCSV(fullHits, task.Columns, task.ColumnsLabel, task.FormateColumnsData, task.Separator)
+		csvAttachment, err := export.ConvertHitsToCSV(fullHits, task.Columns, task.ColumnsLabel, task.FormatColumnsData, task.Separator)
 		if err != nil {
 			return err
 		}

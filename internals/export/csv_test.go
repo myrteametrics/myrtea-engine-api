@@ -15,10 +15,10 @@ func TestConvertHitsToCSV(t *testing.T) {
 	}
 	columns := []string{"a", "b", "c", "d.e", "date"}
 	columnsLabel := []string{"Label A", "Label B", "Label C", "Label D.E", "Date"}
-	formateColumnsData := map[string]string{
+	formatColumnsData := map[string]string{
 		"date": "02/01/2006",
 	}
-	csv, err := ConvertHitsToCSV(hits, columns, columnsLabel, formateColumnsData, ',')
+	csv, err := ConvertHitsToCSV(hits, columns, columnsLabel, formatColumnsData, ',')
 	if err != nil {
 		t.Log(err)
 		t.FailNow()
