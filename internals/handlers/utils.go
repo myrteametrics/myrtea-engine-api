@@ -30,6 +30,25 @@ func QueryParamToOptionalInt64(r *http.Request, name string, orDefault int64) (i
 	return orDefault, nil
 }
 
+func QueryParamToOptionalInt64Array(r *http.Request, name string, separator string, orDefault []int64) ([]int64, error) {
+	param := r.URL.Query().Get(name)
+	if param == "" {
+		return orDefault, nil
+	}
+	split := strings.Split(param, separator)
+	result := make([]int64, len(split))
+
+	for i := 0; i < len(split); i++ {
+		val, err := strconv.ParseInt(split[i], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = val
+	}
+
+	return result, nil
+}
+
 func QueryParamToOptionalStringArray(r *http.Request, name string, separator string, orDefault []string) []string {
 	param := r.URL.Query().Get(name)
 	if param != "" {

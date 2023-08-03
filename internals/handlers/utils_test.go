@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -112,4 +113,25 @@ func TestParseSortByInvalidField(t *testing.T) {
 		t.Error("sortby expression must be invalid")
 		t.Log(sortOptions)
 	}
+}
+
+func TestQueryParamToOptionalInt64Array(t *testing.T) {
+	r := httptest.NewRequest("GET", "http://test/export", nil)
+	query := r.URL.Query()
+	query.Add("combineFactIds", "1,2,3,4")
+	r.URL.RawQuery = query.Encode()
+
+	expectedResult := []int64{1, 2, 3, 4}
+	result, err := QueryParamToOptionalInt64Array(r, "combineFactIds", ",", []int64{})
+
+	if err != nil || len(result) != len(expectedResult) {
+		t.FailNow()
+	}
+
+	for i := 0; i < len(expectedResult); i++ {
+		if expectedResult[i] != result[i] {
+			t.FailNow()
+		}
+	}
+
 }
