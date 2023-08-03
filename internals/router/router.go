@@ -138,7 +138,13 @@ func buildRoutesV3Basic(config Config) (func(r chi.Router), error) {
 					// JWT MUST have been verified before by the API Gateway
 					rg.Use(UnverifiedAuthenticator)
 				} else {
-					rg.Use(jwtauth.Verifier(jwtauth.New(jwa.HS256.String(), signingKey, nil)))
+					rg.Use(func(next http.Handler) http.Handler {
+						// jwtauth.Verifier function only verifies header & cookie but not query
+						// websocket requests only handles uri parameters, so jwtauth.TokenFromHeader
+						// is needed here.
+						return jwtauth.Verify(jwtauth.New(jwa.HS256.String(), signingKey, nil),
+							jwtauth.TokenFromQuery, jwtauth.TokenFromHeader, jwtauth.TokenFromCookie)(next)
+					})
 					rg.Use(CustomAuthenticator)
 				}
 				rg.Use(ContextMiddleware)
