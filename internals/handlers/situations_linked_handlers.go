@@ -188,7 +188,7 @@ func GetSituationRules(w http.ResponseWriter, r *http.Request) {
 // @Description Set the list of rules for the evaluation of a situation
 // @Tags Situations
 // @Param id path string true "Situation ID"
-// @Param ruleIds body {array} true "Situation Rules"
+// @Param ruleIds body []int64 true "Situation Rules"
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
@@ -388,7 +388,7 @@ func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Situation ID"
-// @Param templateInstances body {array} true "Situation template instance list (json array)"
+// @Param templateInstances body []situation.TemplateInstance true "Situation template instance list (json array)"
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"

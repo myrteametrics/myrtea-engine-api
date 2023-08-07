@@ -31,7 +31,7 @@ type CSVParameters struct {
 // @Security Bearer
 // @Success 200 {file} Returns data to be saved into a file
 // @Failure 500 "internal server error"
-// @Router /engine/export/facts/{id}?type=csv [get]
+// @Router /engine/export/facts/{id} [get]
 func ExportFact(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
