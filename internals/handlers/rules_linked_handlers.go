@@ -21,7 +21,7 @@ import (
 // @Produce json
 // @Param id path string true "Rule ID"
 // @Security Bearer
-// @Success 200 {array} situation.Situation "list of situations"
+// @Success 200 "list of situations"
 // @Failure 400 "Status Bad Request"
 // @Failure 401 "Status Unauthorized"
 // @Router /engine/rules/{id}/situations [get]
@@ -59,7 +59,7 @@ func GetRuleSituations(w http.ResponseWriter, r *http.Request) {
 // @Tags Rules
 // @Produce json
 // @Param id path string true "Rule ID"
-// @Param situationIds body {array} true "Situation association"
+// @Param situationIds body []int64 true "Situation association"
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
