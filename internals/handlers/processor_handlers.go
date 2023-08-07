@@ -58,7 +58,7 @@ func PostObjects(w http.ResponseWriter, r *http.Request) {
 // @Tags Service
 // @Consume json
 // @Produce json
-// @Param query body []ExternalAggregate true "query (json)"
+// @Param query body []scheduler.ExternalAggregate true "query (json)"
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 500 "internal server error"
@@ -82,7 +82,7 @@ func PostAggregates(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// ReceiveAggregates process a slice of ExternalAggregates and trigger all standard fact-situation-rule process
+// ReceiveAggregates process a slice of scheduler.ExternalAggregates and trigger all standard fact-situation-rule process
 func ReceiveAggregates(aggregates []scheduler.ExternalAggregate) error {
 	localRuleEngine, err := evaluator.BuildLocalRuleEngine("external-aggs")
 	if err != nil {

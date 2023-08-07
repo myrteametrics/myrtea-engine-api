@@ -1,10 +1,10 @@
 .PHONY: $(shell sed -n -e '/^$$/ { n ; /^[^ .\#][^ ]*:/ { s/:.*$$// ; p ; } ; }' $(MAKEFILE_LIST))
 
 # App config (expected from .env)
-APP ?= 
+APP ?=
 API_MAJOR_VERSION ?=
-PORT ?= 
-SONAR_PROJECTKEY ?= 
+PORT ?=
+SONAR_PROJECTKEY ?=
 
 # override with app specific config
 include .env
@@ -74,7 +74,7 @@ swag-version: $(SWAG) # Check the swag tool version
 	swag --version
 
 swag: swag-version # Generate swagger documentation
-	swag init --generalInfo main.go
+	swag init --parseDependency --generalInfo main.go
 
 test-integration: # Test the code
 	mkdir -p reporting
