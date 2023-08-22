@@ -74,7 +74,7 @@ func PostObjects(w http.ResponseWriter, r *http.Request) {
 // @Tags Service
 // @Consume json
 // @Produce json
-// @Param query body []ExternalAggregate true "query (json)"
+// @Param query body []scheduler.ExternalAggregate true "query (json)"
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 429 "Processing queue is full please retry later"
@@ -98,7 +98,7 @@ func (handler *ProcessorHandler) PostAggregates(w http.ResponseWriter, r *http.R
 			return
 		}
 
-		zap.L().Error("ReceiveAggregates", zap.Error(err))
+		zap.L().Error("PostAggregates aggregateIngester.Ingest", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

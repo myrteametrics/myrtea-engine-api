@@ -26,6 +26,7 @@ func NewSender(username string, password string, host string, port string) *Send
 }
 
 func (s *Sender) Send(m Message) error {
+	m.From = s.username
 	return smtp.SendMail(
 		fmt.Sprintf("%s:%s", s.host, s.port),
 		s.auth,
