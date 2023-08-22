@@ -153,29 +153,29 @@ type ExternalAggregate struct {
 // ReceiveAndPersistFacts process a slice of ExternalAggregates and trigger all standard fact-situation-rule process
 func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.HistoryRecordV4, error) {
 
-	situationsToUpdate := make(map[string]history.HistoryRecordV4, 0)
+	situationsToUpdate := make(map[string]history.HistoryRecordV4)
 	for _, agg := range aggregates {
-		// zap.L().Sugar().Info(agg)
 		t := agg.Time.UTC().Truncate(time.Second)
 
 		f, found, err := fact.R().Get(agg.FactID)
 		if err != nil {
-			return make(map[string]history.HistoryRecordV4), err
+			zap.L().Error("ReceiveAndPersistFacts fact get error, skipping aggregate", zap.Error(err), zap.Int64("situationId", agg.SituationID), zap.Int64("situationInstanceId", agg.SituationInstanceID), zap.Int64("factId", agg.FactID))
+			continue
 		}
 		if !found {
-			return make(map[string]history.HistoryRecordV4), errors.New("not found")
+			zap.L().Error("ReceiveAndPersistFacts fact not found, skipping aggregate", zap.Int64("situationId", agg.SituationID), zap.Int64("situationInstanceId", agg.SituationInstanceID), zap.Int64("factId", agg.FactID))
+			continue
 		}
-
-		// zap.L().Sugar().Info("fact", f)
 
 		s, found, err := situation.R().Get(agg.SituationID)
 		if err != nil {
-			return make(map[string]history.HistoryRecordV4), err
+			zap.L().Error("ReceiveAndPersistFacts situation get error, skipping aggregate", zap.Error(err), zap.Int64("situationId", agg.SituationID), zap.Int64("situationInstanceId", agg.SituationInstanceID), zap.Int64("factId", agg.FactID))
+			continue
 		}
 		if !found {
-			return make(map[string]history.HistoryRecordV4), errors.New("not found")
+			zap.L().Error("ReceiveAndPersistFacts situation not found, skipping aggregate", zap.Int64("situationId", agg.SituationID), zap.Int64("situationInstanceId", agg.SituationInstanceID), zap.Int64("factId", agg.FactID))
+			continue
 		}
-		// zap.L().Sugar().Info("situation", s)
 
 		found = false
 		for _, factID := range s.Facts {
@@ -190,12 +190,13 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 
 		si, found, err := situation.R().GetTemplateInstance(agg.SituationInstanceID)
 		if err != nil {
-			return make(map[string]history.HistoryRecordV4), err
+			zap.L().Error("ReceiveAndPersistFacts situationInstance get error, skipping aggregate", zap.Error(err), zap.Int64("situationId", agg.SituationID), zap.Int64("situationInstanceId", agg.SituationInstanceID), zap.Int64("factId", agg.FactID))
+			continue
 		}
 		if !found {
-			return make(map[string]history.HistoryRecordV4), errors.New("not found")
+			zap.L().Error("ReceiveAndPersistFacts situationInstance not found, skipping aggregate", zap.Int64("situationId", agg.SituationID), zap.Int64("situationInstanceId", agg.SituationInstanceID), zap.Int64("factId", agg.FactID))
+			continue
 		}
-		// zap.L().Sugar().Info("instance", si)
 
 		if s.ID != si.SituationID {
 			zap.L().Warn("invalid s.ID != si.SituationID")
@@ -365,7 +366,11 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 
 				var fCopy engine.Fact
 				fData, _ := json.Marshal(f)
-				json.Unmarshal(fData, &fCopy)
+				err := json.Unmarshal(fData, &fCopy)
+				if err != nil {
+					zap.L().Error("Fact calculation Error (json.Unmarshal), skipping fact calculation...", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
+					continue
+				}
 
 				widgetData, err := fact.ExecuteFact(t, fCopy, sh.SituationID, sh.SituationInstanceID, sh.Parameters, -1, -1, false)
 				if err != nil {
@@ -520,7 +525,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		}
 	}
 
-	filteredTaskBatch := filterTaskBatch(situationsToUpdate, taskBatchs, situationHistoryMetadata )
+	filteredTaskBatch := filterTaskBatch(situationsToUpdate, taskBatchs, situationHistoryMetadata)
 
 	return filteredTaskBatch, nil
 }
@@ -535,37 +540,36 @@ func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, Task
 			DependsOnMetadata := situation.DependsOnParameters["depends_on_metadata"]
 			DependsOnMetadataValue := situation.DependsOnParameters["depends_on_metadata_value"]
 
-			IsChildCritical := false  
+			IsChildCritical := false
 			var IdChildCritical int
-             
 
 			// check if child is also critical
 			for i := 0; i < len(filteredTaskBatch); i++ {
 				childSituationID, err1 := filteredTaskBatch[i].Context["situationID"].(int64)
 				childtemplateInstanceID, err2 := filteredTaskBatch[i].Context["templateInstanceID"].(int64)
-				if err1 && err2 && childSituationID == situation.SituationID && 
-				   childtemplateInstanceID == situation.SituationInstanceID {
-                   for _, agenda := range filteredTaskBatch[i].Agenda{
-					  if agenda.GetName() == "set" && 
-						 agenda.GetEnableDependsForALLAction() &&
-						 agenda.GetEnabledDependsAction() {
-						  metadataInterface, err5 := agenda.GetParameters()[DependsOnMetadata]
-						  if err5 {
-							metadata, err6 := metadataInterface.(string)
-							if err6 && metadata == DependsOnMetadataValue {
-								IsChildCritical = true;
-								IdChildCritical = i;
-								break
+				if err1 && err2 && childSituationID == situation.SituationID &&
+					childtemplateInstanceID == situation.SituationInstanceID {
+					for _, agenda := range filteredTaskBatch[i].Agenda {
+						if agenda.GetName() == "set" &&
+							agenda.GetEnableDependsForALLAction() &&
+							agenda.GetEnabledDependsAction() {
+							metadataInterface, err5 := agenda.GetParameters()[DependsOnMetadata]
+							if err5 {
+								metadata, err6 := metadataInterface.(string)
+								if err6 && metadata == DependsOnMetadataValue {
+									IsChildCritical = true
+									IdChildCritical = i
+									break
+								}
+
 							}
-							
 						}
-				      }
 					}
 				}
 			}
 
 			if IsChildCritical {
-				// check if there an parent who is critical 
+				// check if there an parent who is critical
 				for _, task := range TaskBatch {
 					situationID, err3 := task.Context["situationID"].(int64)
 					templateInstanceID, err4 := task.Context["templateInstanceID"].(int64)
@@ -577,23 +581,23 @@ func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, Task
 						for _, agenda := range task.Agenda {
 							if agenda.GetName() == "set" &&
 								agenda.GetEnableDependsForALLAction() &&
-								 agenda.GetEnabledDependsAction() {
+								agenda.GetEnabledDependsAction() {
 								metadataInterface, err5 := agenda.GetParameters()[DependsOnMetadata]
 								if err5 {
 									metadata, err6 := metadataInterface.(string)
 									if err6 && metadata == DependsOnMetadataValue {
-                                        // filtre l'agenda pour supprimer les action qui ne  repsect la gestion dependance
-                                        filteredAgenda := make([]ruleeng.Action, 0)
+										// filtre l'agenda pour supprimer les action qui ne  repsect la gestion dependance
+										filteredAgenda := make([]ruleeng.Action, 0)
 										for _, action := range filteredTaskBatch[IdChildCritical].Agenda {
 											if (action.GetEnableDependsForALLAction() == false) || (action.GetEnableDependsForALLAction() == true && action.GetEnabledDependsAction() == false) {
 												filteredAgenda = append(filteredAgenda, action)
 											}
 										}
 										filteredTaskBatch[IdChildCritical].Agenda = filteredAgenda
- 
-									    // Modifie la table SituationHistory pour change le status critical en pending  
-										valuesituationHistoryMetadata := situationHistoryMetadata[models.Key{SituationID: situation.SituationID ,
-																			SituationInstanceID: situation.SituationInstanceID,}]
+
+										// Modifie la table SituationHistory pour change le status critical en pending
+										valuesituationHistoryMetadata := situationHistoryMetadata[models.Key{SituationID: situation.SituationID,
+											SituationInstanceID: situation.SituationInstanceID}]
 										historySituation := valuesituationHistoryMetadata["HistorySituation"].(history.HistorySituationsV4)
 
 										for i, metadata := range historySituation.Metadatas {
@@ -607,17 +611,17 @@ func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, Task
 										if err10 != nil {
 											zap.L().Error("", zap.Error(err10))
 										}
-										
+
 										break
 									}
-									
+
 								}
 							}
 						}
 					}
 				}
 			}
-			
+
 		}
 	}
 	return filteredTaskBatch
