@@ -116,6 +116,10 @@ POSTGRESQL_CONN_MAX_LIFETIME = "0"
 # Default value: "true"
 ENABLE_CRONS_ON_START = "true"
 
+# Specify the aggregate-ingesters maximum queue size
+# Default value: "100"
+AGGREGATEINGESTER_QUEUE_BUFFER_SIZE = "100"
+
 # Specify the authentication mode
 # Can either be "BASIC" or "SAML"
 # In case of SAML, some more parameters are required to ensure proper functionning

@@ -27,6 +27,7 @@ require (
 	github.com/myrteametrics/myrtea-sdk/v4 v4.3.5
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/prataprc/goparsec v0.0.0-20180806094145-2600a2a4a410
+	github.com/prometheus/client_golang v1.14.0
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/russellhaering/goxmldsig v1.1.1
 	github.com/satori/go.uuid v1.2.0
@@ -43,6 +44,8 @@ require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PaesslerAG/gval v1.0.1 // indirect
 	github.com/beevik/etree v1.1.0 // indirect
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/crewjam/httperr v0.2.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.2.0 // indirect
@@ -71,6 +74,7 @@ require (
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -78,6 +82,9 @@ require (
 	github.com/oklog/run v1.0.0 // indirect
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/prometheus/client_model v0.3.0 // indirect
+	github.com/prometheus/common v0.37.0 // indirect
+	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rickar/cal v1.0.2-0.20191101183814-0e8e6fcfe1c2 // indirect
 	github.com/spf13/afero v1.1.2 // indirect
 	github.com/spf13/cast v1.3.0 // indirect
