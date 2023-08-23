@@ -33,8 +33,8 @@ func (job PurgeHistoryJob) IsValid() (bool, error) {
 		return false, errors.New(`Error parsing the  Purge's FromOffset `)
 	}
 
-	if toOffsetDuration < fromOffsetDuration {
-		return false, errors.New(`FromOffset Duration must be less than ToOffset duration `)
+	if toOffsetDuration > fromOffsetDuration {
+		return false, errors.New(`ToOffset Duration must be less than FromOffset duration `)
 	}
 
 	return true, nil
@@ -65,8 +65,8 @@ func (job PurgeHistoryJob) Run() {
 		return
 	}
 
-	if toOffsetDuration < fromOffsetDuration {
-		zap.L().Info("the Purge's FromOffset Duration must be less than ToOffset duration ", zap.Error(err), zap.Int64("idSchedule", job.ScheduleID))
+	if toOffsetDuration > fromOffsetDuration {
+		zap.L().Info("the Purge's ToOffset  Duration must be less than FromOffset duration ", zap.Error(err), zap.Int64("idSchedule", job.ScheduleID))
 		S().RemoveRunningJob(job.ScheduleID)
 		return
 	}
@@ -78,7 +78,7 @@ func (job PurgeHistoryJob) Run() {
 		ToTS:                time.Now().Add(-1 * toOffsetDuration),
 		ParameterFilters:    make(map[string]string),
 	}
-
+		
 	err = history.S().PurgeHistory(options)
 
 	if err != nil {
