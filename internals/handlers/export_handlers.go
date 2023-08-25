@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"errors"
+	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -21,6 +23,8 @@ type CSVParameters struct {
 	columnsLabel      []string
 	formatColumnsData map[string]string
 	separator         rune
+	streamed          bool
+	chunkSize         int64
 }
 
 // ExportFact godoc
@@ -111,18 +115,34 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 	default:
 		// Process needed parameters
 		params := GetCSVParameters(r)
-		file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.formatColumnsData, params.separator)
 		if filename == "" {
 			filename = f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
 		}
+
+		if params.streamed {
+			err = HandleStreamedExport(w, f, filename, params)
+			if err != nil {
+				render.Error(w, r, render.ErrAPIProcessError, err)
+			}
+		} else {
+			file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.formatColumnsData, params.separator)
+			render.File(w, filename, file)
+		}
+
 		break
 	}
 
-	render.File(w, filename, file)
 }
 
 func GetCSVParameters(r *http.Request) CSVParameters {
 	result := CSVParameters{separator: ','}
+
+	streamed, err := QueryParamToOptionalBool(r, "streamed", false)
+	if err != nil {
+		result.streamed = false
+	} else {
+		result.streamed = streamed
+	}
 
 	result.columns = QueryParamToOptionalStringArray(r, "columns", ",", []string{})
 	result.columnsLabel = QueryParamToOptionalStringArray(r, "columnsLabel", ",", []string{})
@@ -148,4 +168,66 @@ func GetCSVParameters(r *http.Request) CSVParameters {
 	}
 
 	return result
+}
+
+// HandleStreamedExport actually only handles CSV
+func HandleStreamedExport(w http.ResponseWriter, f engine.Fact, fileName string, params CSVParameters) error {
+	w.Header().Set("Connection", "Keep-Alive")
+	w.Header().Set("Transfer-Encoding", "chunked")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(fileName))
+	w.Header().Set("Content-Type", "application/octet-stream")
+	streamedExport := export.NewStreamedExport(params.chunkSize)
+	var wg sync.WaitGroup
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		return errors.New("expected http.ResponseWriter to be an http.Flusher")
+	}
+
+	// TODO: HANDLE COMBINED FACTS
+
+	// Increment the WaitGroup counter
+	wg.Add(2)
+
+	var err error = nil
+
+	go func() {
+		defer wg.Done()
+		err = streamedExport.StreamedExportFactHitsFullV8(f)
+		if err != nil {
+			wg.Done() // End WaitGroup since an error happened
+			return
+		}
+	}()
+
+	// Chunk handler goroutine
+	go func() {
+		defer wg.Done()
+		first := true
+		labels := params.columnsLabel
+
+		for hits := range streamedExport.Data {
+			data, err := export.ConvertHitsToCSV(hits, params.columns, labels, params.formatColumnsData, params.separator)
+
+			if err != nil {
+				// TODO: how to handle error? stop all or continue and ignore
+				continue
+			}
+
+			// Write data
+			w.Write(data)
+			// Flush data to be sent directly to browser
+			flusher.Flush()
+
+			if first {
+				first = false
+				labels = []string{}
+			}
+		}
+
+	}()
+
+	wg.Wait()
+	return err
 }
