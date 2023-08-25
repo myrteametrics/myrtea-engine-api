@@ -22,6 +22,7 @@ type StreamedExport struct {
 
 // NewStreamedExport returns a pointer to a new StreamedExport instance
 // One instance per StreamedExport since the channel Data will be closed after export is finished
+// TODO: maybe not close channel to handle other exports (ex: combined fact exports) and add an ok channel?
 func NewStreamedExport(chunkSize int64) *StreamedExport {
 	return &StreamedExport{
 		Data:      make(chan []reader.Hit, 10),

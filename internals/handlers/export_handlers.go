@@ -65,6 +65,22 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var filename = r.URL.Query().Get("fileName")
+	if filename == "" {
+		filename = f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
+	}
+
+	// suppose that type is csv
+	params := GetCSVParameters(r)
+
+	if params.streamed {
+		err = HandleStreamedExport(w, f, filename, params)
+		if err != nil {
+			render.Error(w, r, render.ErrAPIProcessError, err)
+		}
+		return
+	}
+
 	fullHits, err := export.ExportFactHitsFull(f)
 
 	if err != nil {
@@ -78,7 +94,6 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Could not parse parameter combineFactIds", zap.Error(err))
 	} else {
-
 		for _, factId := range combineFactIds {
 			// no duplicates
 			if factId == idFact {
@@ -108,27 +123,13 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var file []byte
-	var filename = r.URL.Query().Get("fileName")
 
 	// type checker, to handle other files types like xml or json (defaults to csv)
 	switch r.URL.Query().Get("type") {
 	default:
 		// Process needed parameters
-		params := GetCSVParameters(r)
-		if filename == "" {
-			filename = f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
-		}
-
-		if params.streamed {
-			err = HandleStreamedExport(w, f, filename, params)
-			if err != nil {
-				render.Error(w, r, render.ErrAPIProcessError, err)
-			}
-		} else {
-			file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.formatColumnsData, params.separator)
-			render.File(w, filename, file)
-		}
-
+		file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.formatColumnsData, params.separator)
+		render.File(w, filename, file)
 		break
 	}
 
