@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strings"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connector"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connectorconfig"
@@ -20,6 +21,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/scheduler"
+	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internals/router/oidc"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/search"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/roles"
@@ -63,6 +65,7 @@ func initServices() {
 	initTasker()
 	initCalendars()
 	initEmailSender()
+	initOidcAuthentication()
 }
 
 func stopServices() {
@@ -128,3 +131,26 @@ func initEmailSender() {
 	email.InitSender(username,password,host,port)
 
 }
+
+
+func initOidcAuthentication() {
+	authenticationMode := viper.GetString("AUTHENTICATION_MODE")
+
+	if authenticationMode == "OIDC" {
+		oidcIssuerUrl := viper.GetString("AUTHENTICATION_OIDC_ISSUER_URL")
+		oidcClientID := viper.GetString("AUTHENTICATION_OIDC_CLIENT_ID")
+		oidcClientSecret := viper.GetString("AUTHENTICATION_OIDC_CLIENT_SECRET")
+		oidcRedirectURL := viper.GetString("AUTHENTICATION_OIDC_REDIRECT_URL")
+		scopesString := viper.GetString("AUTHENTICATION_OIDC_SCOPES")
+		oidcScopes := strings.Split(scopesString, ",")
+
+		if oidcIssuerUrl == "" || oidcClientID == "" || oidcClientSecret == "" || oidcRedirectURL == "" || scopesString == "" {
+			zap.L().Error("Missing OIDC configuration")
+			return
+		}
+
+		oidcAuth.InitOidc(oidcIssuerUrl, oidcClientID, oidcClientSecret, oidcRedirectURL, oidcScopes)
+	}
+
+}
+

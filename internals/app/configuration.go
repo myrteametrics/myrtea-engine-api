@@ -43,6 +43,14 @@ var AllowedConfigKey = [][]helpers.ConfigKey{
 		{Type: helpers.StringFlag, Name: "SMTP_PASSWORD", DefaultValue: "password", Description: "SMTP Authentication password"},
 		{Type: helpers.StringFlag, Name: "SMTP_HOST", DefaultValue: "smtp.example.com", Description: "SMTP Authentication host"},
 		{Type: helpers.StringFlag, Name: "SMTP_PORT", DefaultValue: "465", Description: "SMTP Authentication port"},
+		{Type: helpers.StringFlag, Name: "AUTHENTICATION_OIDC_CLIENT_ID", DefaultValue: "", Description: "A unique identifier representing the client application seeking access to the server's resources."},
+		{Type: helpers.StringFlag, Name: "AUTHENTICATION_OIDC_CLIENT_SECRET", DefaultValue: "", Description: "A shared secret between the client application and the authentication server to prove the client's identity."},
+		{Type: helpers.StringFlag, Name: "AUTHENTICATION_OIDC_REDIRECT_URL", DefaultValue: "https://127.0.0.1:5556/auth/oidc/callback", Description: "The redirection URL to which the user will be redirected after successful authentication."},
+		{Type: helpers.StringFlag, Name: "AUTHENTICATION_OIDC_ISSUER_URL", DefaultValue: "", Description: "The URL of the OIDC (OpenID Connect) server providing the authentication service."},
+		{Type: helpers.StringFlag, Name: "FRONT_END_URL", DefaultValue: "https://127.0.0.1:4200", Description: "The URL of the front-end application to which the user will be redirected after successful authentication."},
+		{Type: helpers.StringFlag, Name: "FRONT_END_DOMAIN", DefaultValue: "127.0.0.1", Description: "The domain where the authentication cookie will be set and made available after a successful OIDC authentication."},
+		{Type: helpers.StringFlag, Name: "OIDC_ENCRYPTION_KEY", DefaultValue: "hisis24characterslongs", Description: "The secret key used for state encryption/decryption in the OpenID Connect authentication process."},
+		{Type: helpers.StringFlag, Name: "AUTHENTICATION_OIDC_SCOPES ", DefaultValue: "The scopes of access requested when authenticating with the OIDC server. (Only if AUTHENTICATION_MODE=`OIDC`)"},
 	},
 }
 
