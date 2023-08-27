@@ -38,6 +38,7 @@ type Config struct {
 
 // Check clean up the configuration and logs comments if required
 func (config *Config) Check() {
+	zap.L().Info("", zap.Any("config.Security", config.Security), zap.Any("config.CORD", config.CORS), zap.Any("config.AuthenticationMode", config.AuthenticationMode))
 	if !config.Security {
 		zap.L().Warn("API starting in unsecured mode, be sure to set HTTP_SERVER_API_ENABLE_SECURITY=true in production")
 	}
@@ -56,6 +57,10 @@ func (config *Config) Check() {
 		zap.L().Warn("SAML Authentication mode is not compatible with HTTP_SERVER_API_ENABLE_GATEWAY_MODE=true")
 		config.GatewayMode = false
 	}
+	if config.Security && config.GatewayMode && config.AuthenticationMode == "OIDC" {
+		zap.L().Warn("OIDC Authentication mode is not compatible with HTTP_SERVER_API_ENABLE_GATEWAY_MODE=true")
+		config.GatewayMode = false
+	}
 	if config.AuthenticationMode != "BASIC" && config.AuthenticationMode != "SAML" && config.AuthenticationMode != "OIDC" {
 		zap.L().Warn("Authentication mode not supported. Back to default value 'BASIC'", zap.String("AuthenticationMode", config.AuthenticationMode))
 		config.AuthenticationMode = "BASIC"
@@ -72,8 +77,9 @@ func New(config Config) *chi.Mux {
 	// Global middleware stack
 	// TODO: Add CORS middleware
 	if config.CORS {
+		zap.L().Info("je suis Cors ")
 		cors := cors.New(cors.Options{
-			AllowedOrigins:   []string{viper.GetString("FRONT_END_URL")},
+			AllowedOrigins:   []string{"*"},
 			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 			ExposedHeaders:   []string{"Link", "Authenticate-To", "Content-Disposition"},
@@ -81,6 +87,7 @@ func New(config Config) *chi.Mux {
 			MaxAge:           300, // Maximum value not ignored by any of major browsers
 		})
 		r.Use(cors.Handler)
+		zap.L().Info("je suis Cors2 ")
 	}
 
 	r.Use(chimiddleware.SetHeader("Strict-Transport-Security", "max-age=63072000; includeSubDomains"))

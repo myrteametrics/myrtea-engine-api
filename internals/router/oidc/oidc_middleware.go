@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -20,16 +21,18 @@ import (
 
 func OIDCMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Extract the token from the cookie
-		tokencookie, err := r.Cookie("token")
-		if err != nil {
-			zap.L().Error("Cannot token in the cookie", zap.Error(err))
-			render.Error(w, r, render.ErrAPIMissingAuthCookie, err)
+		
+		authHeader := r.Header.Get("Authorization")
+
+		var tokenStr string
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			tokenStr = strings.TrimPrefix(authHeader, "Bearer ")
+		} else {
+			zap.L().Warn("No token string found in request")
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("missing token"))
 			return
 		}
-
-		rawIDToken := tokencookie.Value
-
+		
 		// Check the token with the OIDC server
 		instanceOidc, err := GetOidcInstance()
 		if err != nil {
@@ -37,7 +40,7 @@ func OIDCMiddleware(next http.Handler) http.Handler {
 			render.Error(w, r, render.ErrAPIProcessError ,err)
 			return
 		}
-		idToken, err := instanceOidc.Provider.Verifier(&oidc.Config{ClientID: instanceOidc.OidcConfig.ClientID}).Verify(r.Context(), rawIDToken)
+		idToken, err := instanceOidc.Provider.Verifier(&oidc.Config{ClientID: instanceOidc.OidcConfig.ClientID}).Verify(r.Context(), tokenStr)
 		if err != nil {
 			zap.L().Error("Invalide OIDC auth Token", zap.Error(err))
 			render.Error(w, r, render.ErrAPIInvalidAuthToken, err)

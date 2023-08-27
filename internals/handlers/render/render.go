@@ -160,7 +160,19 @@ func File(w http.ResponseWriter, filename string, data []byte) {
 }
 
 // Redirect is a helper function to redirect the user to a specified location
+// func Redirect(w http.ResponseWriter, r *http.Request, location string, code int) {
+// 	http.Redirect(w, r, location, code)
+// }
 func Redirect(w http.ResponseWriter, r *http.Request, location string, code int) {
+	zap.L().Info("Redirecting",
+		zap.String("from", r.RequestURI),
+		zap.String("to", location),
+		zap.Int("code", code),
+	)
 	http.Redirect(w, r, location, code)
+	zap.L().Info("Redirect instruction sent",
+		zap.String("from", r.RequestURI),
+		zap.String("to", location),
+	)
 }
 

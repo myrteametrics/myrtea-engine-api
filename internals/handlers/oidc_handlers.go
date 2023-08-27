@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"net/url"
 	"errors"
+	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
@@ -46,7 +47,7 @@ func HandleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate the token and add it to a cookie
+	// Generate the token 
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
 		handleError(w, r, NoIDTokenErr, err, render.ErrAPINoIDOIDCToken)
@@ -59,16 +60,8 @@ func HandleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, IDTokenVerifyErr, err, render.ErrAPIVerifyIDOIDCTokenFailed)
 		return
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     TokenName,
-		Value:    rawIDToken,
-		HttpOnly: true,
-		Secure:   true,
-		Domain:   viper.GetString("FRONT_END_DOMAIN"),
-		Path:     AllowedCookiePath,
-		Expires:  time.Now().Add(24 * time.Hour),
-		SameSite: http.SameSiteNoneMode,
-	})
 
-	render.Redirect(w, r, viper.GetString("FRONT_END_URL"), http.StatusFound)
+	baseURL := viper.GetString("FRONT_END_URL")
+	redirectURL := fmt.Sprintf("%s/auth/oidc/callback?token=%s", baseURL, url.QueryEscape(rawIDToken))
+	render.Redirect(w, r, redirectURL, http.StatusFound)
 }
