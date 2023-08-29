@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/metrics"
 	"net/http"
 	"os"
 	"os/signal"
@@ -40,6 +41,9 @@ var (
 // @name Authorization
 
 func main() {
+
+	hostname, _ := os.Hostname()
+	metrics.InitMetricLabels(hostname)
 
 	app.InitConfiguration()
 	zapConfig := helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
