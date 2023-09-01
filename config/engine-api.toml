@@ -185,8 +185,8 @@ AUTHENTICATION_SAML_COOKIE_MAX_AGE_DURATION = "1h"
 SMTP_USERNAME = "smtp@example.com"
 
 # Specify the SMTP Password
-# Default value : "password"
-SMTP_PASSWORD = "password"
+# Default value : ""
+SMTP_PASSWORD = ""
 
 # Specify the SMTP host
 # Default value : "smtp.example.com"
