@@ -1,20 +1,21 @@
 package handlers
 
 import (
-	"net/url"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internals/router/oidc"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 func HandleOIDCRedirect(w http.ResponseWriter, r *http.Request) {
 	// Generate a random state to prevent CSRF attacks
-	expectedState, err := generateEncryptedState([]byte(viper.GetString("OIDC_ENCRYPTION_KEY")))
+	expectedState, err := generateEncryptedState([]byte(viper.GetString("AUTHENTICATION_OIDC_ENCRYPTION_KEY")))
 	if err != nil {
 		handleError(w, r, ExpectedStateErr, err, render.ErrAPIGenerateRandomStateFailed)
 		return
@@ -30,7 +31,7 @@ func HandleOIDCRedirect(w http.ResponseWriter, r *http.Request) {
 func HandleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 
 	//check if state is the state expected
-	_, err := verifyEncryptedState(r.URL.Query().Get("state"), []byte(viper.GetString("OIDC_ENCRYPTION_KEY")))
+	_, err := verifyEncryptedState(r.URL.Query().Get("state"), []byte(viper.GetString("AUTHENTICATION_OIDC_ENCRYPTION_KEY")))
 	if err != nil {
 		handleError(w, r, InvalidStateErr, errors.New(InvalidStateErr), render.ErrAPIInvalidOIDCState)
 		return
@@ -41,6 +42,15 @@ func HandleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, "", err, render.ErrAPIProcessError)
 		return
 	}
+	zap.L().Info("fmt.Println(r.URL.Query())",zap.Any("",r.URL.Query()))
+	zap.L().Info("Détails de la requête",
+    zap.String("Méthode", r.Method),
+    zap.String("URL", r.URL.String()),
+    zap.String("Agent Utilisateur", r.UserAgent()),
+    zap.String("Hôte", r.Host),
+    zap.Any("En-têtes", r.Header),
+)
+
 	oauth2Token, err := instanceOidc.OidcConfig.Exchange(r.Context(), r.URL.Query().Get("code"))
 	if err != nil {
 		handleError(w, r, TokenExchangeErr, err, render.ErrAPIExchangeOIDCTokenFailed)
@@ -61,7 +71,7 @@ func HandleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	baseURL := viper.GetString("FRONT_END_URL")
+	baseURL := viper.GetString("AUTHENTICATION_OIDC_FRONT_END_URL")
 	redirectURL := fmt.Sprintf("%s/auth/oidc/callback?token=%s", baseURL, url.QueryEscape(rawIDToken))
 	render.Redirect(w, r, redirectURL, http.StatusFound)
 }
