@@ -10,7 +10,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internals/router/oidc"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 )
 
 func HandleOIDCRedirect(w http.ResponseWriter, r *http.Request) {
@@ -42,15 +41,7 @@ func HandleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, "", err, render.ErrAPIProcessError)
 		return
 	}
-	zap.L().Info("fmt.Println(r.URL.Query())",zap.Any("",r.URL.Query()))
-	zap.L().Info("Détails de la requête",
-    zap.String("Méthode", r.Method),
-    zap.String("URL", r.URL.String()),
-    zap.String("Agent Utilisateur", r.UserAgent()),
-    zap.String("Hôte", r.Host),
-    zap.Any("En-têtes", r.Header),
-)
-
+	
 	oauth2Token, err := instanceOidc.OidcConfig.Exchange(r.Context(), r.URL.Query().Get("code"))
 	if err != nil {
 		handleError(w, r, TokenExchangeErr, err, render.ErrAPIExchangeOIDCTokenFailed)
