@@ -100,7 +100,7 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = HandleStreamedExport(w, f, filename, params)
+	err = HandleStreamedExport(w, combineFacts, filename, params)
 	if err != nil {
 		render.Error(w, r, render.ErrAPIProcessError, err)
 	}
@@ -160,7 +160,7 @@ func HandleStreamedExport(w http.ResponseWriter, facts []engine.Fact, fileName s
 	}
 
 	// Increment the WaitGroup counter
-	wg.Add(2 + len(facts)) // 2 goroutines + wait for len(facts) ok messages
+	wg.Add(2) // 2 goroutines
 
 	var err error = nil
 
@@ -171,9 +171,11 @@ func HandleStreamedExport(w http.ResponseWriter, facts []engine.Fact, fileName s
 			err = streamedExport.StreamedExportFactHitsFullV8(f, -1)
 			if err != nil {
 				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
-				wg.Done() // no ok message could be received
+				break // break here when error occurs?
 			}
 		}
+
+		close(streamedExport.Data)
 
 	}()
 
@@ -184,15 +186,21 @@ func HandleStreamedExport(w http.ResponseWriter, facts []engine.Fact, fileName s
 		labels := params.columnsLabel
 
 		for hits := range streamedExport.Data {
-			data, err := export.ConvertHitsToCSV(hits, params.columns, labels, params.formatColumnsData, params.separator)
+			data, e := export.ConvertHitsToCSV(hits, params.columns, labels, params.formatColumnsData, params.separator)
 
-			if err != nil {
-				// TODO: how to handle error? stop all or continue and ignore
+			if e != nil {
+				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(e))
+				// actually errors are ignored (but logged)
 				continue
 			}
 
 			// Write data
-			w.Write(data)
+			_, e = w.Write(data)
+			if e != nil {
+				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(e))
+				// actually errors are ignored (but logged)
+				continue
+			}
 			// Flush data to be sent directly to browser
 			flusher.Flush()
 
@@ -206,5 +214,4 @@ func HandleStreamedExport(w http.ResponseWriter, facts []engine.Fact, fileName s
 
 	wg.Wait()
 	return err
-
 }

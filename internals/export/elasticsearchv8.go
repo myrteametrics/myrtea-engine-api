@@ -17,7 +17,6 @@ import (
 
 type StreamedExport struct {
 	Data chan []reader.Hit
-	Ok   chan bool
 }
 
 // NewStreamedExport returns a pointer to a new StreamedExport instance
@@ -25,11 +24,12 @@ type StreamedExport struct {
 func NewStreamedExport() *StreamedExport {
 	return &StreamedExport{
 		Data: make(chan []reader.Hit, 10),
-		Ok:   make(chan bool, 10),
 	}
 }
 
-func (export *StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact, limit int64) error {
+// StreamedExportFactHitsFullV8 export data from ElasticSearch to a channel
+// Please note that the channel is not closed when this function is executed
+func (export StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact, limit int64) error {
 	ti := time.Now()
 	placeholders := make(map[string]string)
 
@@ -61,15 +61,16 @@ func (export *StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact, limit 
 	// searchRequest.TrackTotalHits = false // Speeds up pagination (maybe impl?)
 
 	processed := int64(0)
+	hasLimit := limit > 0
 	var size int
 
 	for {
 
-		if processed >= limit {
+		if hasLimit && processed >= limit {
 			break
 		}
 
-		if limit-processed > 10000 {
+		if !hasLimit || limit-processed > 10000 {
 			size = 10000
 		} else {
 			size = int(limit - processed)
@@ -87,7 +88,9 @@ func (export *StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact, limit 
 			return err
 		}
 
-		processed += int64(size)
+		if hasLimit {
+			processed += int64(size)
+		}
 
 		// Check if response contains at least one hit
 		hitsLen := len(response.Hits.Hits)
@@ -119,8 +122,6 @@ func (export *StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact, limit 
 	} else if !do.Succeeded {
 		zap.L().Warn("Could not close PointInTime")
 	}
-
-	export.Ok <- true // send done message
 
 	return nil
 }
