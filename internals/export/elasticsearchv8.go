@@ -16,21 +16,20 @@ import (
 )
 
 type StreamedExport struct {
-	Data      chan []reader.Hit
-	ChunkSize int64
+	Data chan []reader.Hit
+	Ok   chan bool
 }
 
 // NewStreamedExport returns a pointer to a new StreamedExport instance
 // One instance per StreamedExport since the channel Data will be closed after export is finished
-// TODO: maybe not close channel to handle other exports (ex: combined fact exports) and add an ok channel?
-func NewStreamedExport(chunkSize int64) *StreamedExport {
+func NewStreamedExport() *StreamedExport {
 	return &StreamedExport{
-		Data:      make(chan []reader.Hit, 10),
-		ChunkSize: chunkSize,
+		Data: make(chan []reader.Hit, 10),
+		Ok:   make(chan bool, 10),
 	}
 }
 
-func (export *StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact) error {
+func (export *StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact, limit int64) error {
 	ti := time.Now()
 	placeholders := make(map[string]string)
 
@@ -61,10 +60,24 @@ func (export *StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact) error 
 	searchRequest.SearchAfter = []types.FieldValue{}
 	// searchRequest.TrackTotalHits = false // Speeds up pagination (maybe impl?)
 
+	processed := int64(0)
+	var size int
+
 	for {
+
+		if processed >= limit {
+			break
+		}
+
+		if limit-processed > 10000 {
+			size = 10000
+		} else {
+			size = int(limit - processed)
+		}
+
 		response, err := elasticsearchv8.C().Search().
 			//Index(indicesStr).
-			Size(10000).
+			Size(size).
 			Request(searchRequest).
 			Sort("_shard_doc:asc").
 			Do(context.Background())
@@ -73,6 +86,8 @@ func (export *StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact) error 
 			// TODO: maybe close PIT (defer close function?)
 			return err
 		}
+
+		processed += int64(size)
 
 		// Check if response contains at least one hit
 		hitsLen := len(response.Hits.Hits)
@@ -90,7 +105,7 @@ func (export *StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact) error 
 		export.Data <- widgetData.Hits // send data through channel
 
 		// avoids a useless search request
-		if len(response.Hits.Hits) < 10000 {
+		if len(response.Hits.Hits) < size {
 			break
 		}
 	}
@@ -105,7 +120,8 @@ func (export *StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact) error 
 		zap.L().Warn("Could not close PointInTime")
 	}
 
-	close(export.Data)
+	export.Ok <- true // send done message
+
 	return nil
 }
 

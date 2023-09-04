@@ -25,11 +25,11 @@ func ExportFactHitsFull(f engine.Fact) ([]reader.Hit, error) {
 	}
 }
 
-func (export StreamedExport) StreamedExportFactHitsFull(f engine.Fact) error {
+func (export StreamedExport) StreamedExportFactHitsFull(f engine.Fact, limit int64) error {
 	version := viper.GetInt("ELASTICSEARCH_VERSION")
 	switch version {
 	case 8:
-		return export.StreamedExportFactHitsFullV8(f)
+		return export.StreamedExportFactHitsFullV8(f, limit)
 	default:
 		zap.L().Fatal("Unsupported Elasticsearch version", zap.Int("version", version))
 		return fmt.Errorf("unsupported Elasticsearch version")
