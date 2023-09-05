@@ -1,6 +1,8 @@
 package export
 
 import (
+	"testing"
+
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/coordinator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
@@ -13,7 +15,6 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/spf13/viper"
-	"testing"
 
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 )
@@ -29,10 +30,10 @@ var EnvPrefix = "MYRTEA"
 
 // AllowedConfigKey list every allowed configuration key
 var AllowedConfigKey = [][]helpers.ConfigKey{
-	helpers.GeneralConfigKeys,
-	helpers.HTTPServerConfigKeys,
-	helpers.PostgresqlConfigKeys,
-	helpers.ElasticsearchConfigKeys,
+	helpers.GetGeneralConfigKeys(),
+	helpers.GetHTTPServerConfigKeys(),
+	helpers.GetPostgresqlConfigKeys(),
+	helpers.GetElasticsearchConfigKeys(),
 	{
 		{Type: helpers.StringFlag, Name: "HTTP_SERVER_API_ENABLE_VERBOSE_ERROR", DefaultValue: "false", Description: "Run the API with verbose error"},
 		{Type: helpers.StringFlag, Name: "SWAGGER_HOST", DefaultValue: "localhost:9000", Description: "Swagger UI target hostname"},
