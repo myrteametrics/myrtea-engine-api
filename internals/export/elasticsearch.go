@@ -1,6 +1,7 @@
 package export
 
 import (
+	"context"
 	"fmt"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"github.com/spf13/viper"
@@ -25,14 +26,17 @@ func ExportFactHitsFull(f engine.Fact) ([]reader.Hit, error) {
 	}
 }
 
-func (export StreamedExport) StreamedExportFactHitsFull(f engine.Fact, limit int64) error {
+func (export StreamedExport) StreamedExportFactHitsFull(ctx context.Context, f engine.Fact, limit int64) error {
 	version := viper.GetInt("ELASTICSEARCH_VERSION")
 	switch version {
+	case 7:
+		fallthrough
 	case 8:
-		return export.StreamedExportFactHitsFullV8(f, limit)
+		return export.StreamedExportFactHitsFullV8(ctx, f, limit)
 	default:
-		zap.L().Fatal("Unsupported Elasticsearch version", zap.Int("version", version))
-		return fmt.Errorf("unsupported Elasticsearch version")
+		// No fatal here, 6 is unsupported
+		//zap.L().Fatal("Unsupported Elasticsearch version", zap.Int("version", version))
+		return fmt.Errorf("export is only supported in Elasticsearch version >= 7")
 	}
 }
 

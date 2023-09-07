@@ -2,6 +2,7 @@ package export
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -27,9 +28,19 @@ func NewStreamedExport() *StreamedExport {
 	}
 }
 
+// DrainChannel Drains the Data channel without processing the remaining values
+func (export StreamedExport) DrainChannel() {
+	for {
+		_, ok := <-export.Data
+		if !ok {
+			break // Channel is closed and empty
+		}
+	}
+}
+
 // StreamedExportFactHitsFullV8 export data from ElasticSearch to a channel
 // Please note that the channel is not closed when this function is executed
-func (export StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact, limit int64) error {
+func (export StreamedExport) StreamedExportFactHitsFullV8(ctx context.Context, f engine.Fact, limit int64) error {
 	ti := time.Now()
 	placeholders := make(map[string]string)
 
@@ -56,6 +67,20 @@ func (export StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact, limit i
 		zap.L().Error("OpenPointInTime failed", zap.Error(err))
 		return err
 	}
+
+	// close point in time
+	defer func() {
+		do, err := elasticsearchv8.C().ClosePointInTime().
+			Request(&closepointintime.Request{Id: pit.Id}).
+			Do(context.Background())
+
+		if err != nil {
+			zap.L().Error("Error during PointInTime closing", zap.Error(err))
+		} else if !do.Succeeded {
+			zap.L().Warn("Could not close PointInTime")
+		}
+	}()
+
 	searchRequest.Pit = &types.PointInTimeReference{Id: pit.Id, KeepAlive: "1m"}
 	searchRequest.SearchAfter = []types.FieldValue{}
 	// searchRequest.TrackTotalHits = false // Speeds up pagination (maybe impl?)
@@ -77,10 +102,11 @@ func (export StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact, limit i
 		}
 
 		response, err := elasticsearchv8.C().Search().
-			//Index(indicesStr).
-			Size(size).
 			Request(searchRequest).
-			Sort("_shard_doc:asc").
+			Size(size).
+			Sort(map[string]interface{}{
+				"_shard_doc": "asc",
+			}).
 			Do(context.Background())
 		if err != nil {
 			zap.L().Error("ES Search failed", zap.Error(err))
@@ -105,22 +131,21 @@ func (export StreamedExport) StreamedExportFactHitsFullV8(f engine.Fact, limit i
 
 		// Handle SearchAfter to paginate
 		searchRequest.SearchAfter = response.Hits.Hits[hitsLen-1].Sort
-		export.Data <- widgetData.Hits // send data through channel
+
+		// if ctx was cancelled, stop data pulling
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case export.Data <- widgetData.Hits:
+			// do nothing
+		default:
+			return errors.New("StreamedExport channel closed unexceptionally")
+		} // send data through channel
 
 		// avoids a useless search request
 		if len(response.Hits.Hits) < size {
 			break
 		}
-	}
-
-	do, err := elasticsearchv8.C().ClosePointInTime().
-		Request(&closepointintime.Request{Id: pit.Id}).
-		Do(context.Background())
-
-	if err != nil {
-		zap.L().Error("Error during PointInTime closing", zap.Error(err))
-	} else if !do.Succeeded {
-		zap.L().Warn("Could not close PointInTime")
 	}
 
 	return nil

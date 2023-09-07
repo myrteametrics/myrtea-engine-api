@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"net/http"
@@ -100,7 +101,7 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = HandleStreamedExport(w, combineFacts, filename, params)
+	err = HandleStreamedExport(r.Context(), w, combineFacts, filename, params)
 	if err != nil {
 		render.Error(w, r, render.ErrAPIProcessError, err)
 	}
@@ -145,7 +146,7 @@ func GetCSVParameters(r *http.Request) CSVParameters {
 }
 
 // HandleStreamedExport actually only handles CSV
-func HandleStreamedExport(w http.ResponseWriter, facts []engine.Fact, fileName string, params CSVParameters) error {
+func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter, facts []engine.Fact, fileName string, params CSVParameters) error {
 	w.Header().Set("Connection", "Keep-Alive")
 	w.Header().Set("Transfer-Encoding", "chunked")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -163,19 +164,20 @@ func HandleStreamedExport(w http.ResponseWriter, facts []engine.Fact, fileName s
 	wg.Add(2) // 2 goroutines
 
 	var err error = nil
+	var writerErr error = nil
+	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
 		defer wg.Done()
+		defer close(streamedExport.Data)
 
 		for _, f := range facts {
-			err = streamedExport.StreamedExportFactHitsFullV8(f, -1)
-			if err != nil {
+			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, params.limit)
+			if writerErr != nil {
 				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
 				break // break here when error occurs?
 			}
 		}
-
-		close(streamedExport.Data)
 
 	}()
 
@@ -185,33 +187,51 @@ func HandleStreamedExport(w http.ResponseWriter, facts []engine.Fact, fileName s
 		first := true
 		labels := params.columnsLabel
 
-		for hits := range streamedExport.Data {
-			data, e := export.ConvertHitsToCSV(hits, params.columns, labels, params.formatColumnsData, params.separator)
+		for {
+			select {
+			case hits, ok := <-streamedExport.Data:
+				if !ok { // channel closed
+					break
+				}
 
-			if e != nil {
-				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(e))
-				// actually errors are ignored (but logged)
-				continue
-			}
+				data, err := export.ConvertHitsToCSV(hits, params.columns, labels, params.formatColumnsData, params.separator)
 
-			// Write data
-			_, e = w.Write(data)
-			if e != nil {
-				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(e))
-				// actually errors are ignored (but logged)
-				continue
-			}
-			// Flush data to be sent directly to browser
-			flusher.Flush()
+				if err != nil {
+					zap.L().Error("ConvertHitsToCSV error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
+					cancel()
+					break
+				}
 
-			if first {
-				first = false
-				labels = []string{}
+				// Write data
+				_, err = w.Write(data)
+				if err != nil {
+					zap.L().Error("Write error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
+					cancel()
+					break
+				}
+				// Flush data to be sent directly to browser
+				flusher.Flush()
+
+				if first {
+					first = false
+					labels = []string{}
+				}
+
+			case <-requestContext.Done():
+				// Browser unexpectedly closed connection
+				writerErr = errors.New("browser unexpectedly closed connection")
+				cancel()
+				break
 			}
 		}
-
 	}()
 
 	wg.Wait()
+
+	// Writer could have some errors
+	if writerErr != nil {
+		return writerErr
+	}
+
 	return err
 }
