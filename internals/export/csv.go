@@ -15,7 +15,12 @@ func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string
 	b := new(bytes.Buffer)
 	w := csv.NewWriter(b)
 	w.Comma = separator
-	w.Write(columnsLabel)
+
+	// avoid to print header when labels are empty
+	if len(columnsLabel) > 0 {
+		w.Write(columnsLabel)
+	}
+
 	for _, hit := range hits {
 		record := make([]string, 0)
 		for _, column := range columns {
