@@ -1,6 +1,8 @@
 package export
 
 import (
+	"testing"
+
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/coordinator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
@@ -13,7 +15,6 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/spf13/viper"
-	"testing"
 
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 )
