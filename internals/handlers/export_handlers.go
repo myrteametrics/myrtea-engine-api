@@ -191,7 +191,7 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 			select {
 			case hits, ok := <-streamedExport.Data:
 				if !ok { // channel closed
-					break
+					return
 				}
 
 				data, err := export.ConvertHitsToCSV(hits, params.columns, labels, params.formatColumnsData, params.separator)
@@ -199,7 +199,7 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 				if err != nil {
 					zap.L().Error("ConvertHitsToCSV error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
 					cancel()
-					break
+					return
 				}
 
 				// Write data
@@ -207,7 +207,7 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 				if err != nil {
 					zap.L().Error("Write error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
 					cancel()
-					break
+					return
 				}
 				// Flush data to be sent directly to browser
 				flusher.Flush()
@@ -221,7 +221,7 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 				// Browser unexpectedly closed connection
 				writerErr = errors.New("browser unexpectedly closed connection")
 				cancel()
-				break
+				return
 			}
 		}
 	}()
