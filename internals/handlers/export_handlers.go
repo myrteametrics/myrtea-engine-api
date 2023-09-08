@@ -167,6 +167,16 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 	var writerErr error = nil
 	ctx, cancel := context.WithCancel(context.Background())
 
+	/**
+	 * How streamed export works:
+	 * 1. Browser opens connection
+	 * 2. Two goroutines are started:
+	 *    - Export goroutine: each fact is processed one by one
+	 *      Each bulk of data is sent through a channel to the receiver goroutine
+	 *    - The receiver handles the incoming channel data and converts them to the CSV format
+	 *      After the conversion, the data is written and sent to the browser
+	 */
+
 	go func() {
 		defer wg.Done()
 		defer close(streamedExport.Data)
