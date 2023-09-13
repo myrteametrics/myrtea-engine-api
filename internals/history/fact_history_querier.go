@@ -26,6 +26,15 @@ type HistoryFactsV4 struct {
 	Result              reader.Item
 }
 
+type GetFactHistory struct {
+	Results []int64  `json:"results"`
+}
+type ParamGetFactHistory struct {
+	FactID              int64 `json:"factID"`
+	SituationID         int64 `json:"situationId"`
+	SituationInstanceID int64 `json:"situationInstanceId"`
+}
+
 func (querier HistoryFactsQuerier) Insert(history HistoryFactsV4) (int64, error) {
 	resultJSON, err := json.Marshal(history.Result)
 	if err != nil {
@@ -173,6 +182,66 @@ func (querier HistoryFactsQuerier) scanFirst(rows *sql.Rows) (HistoryFactsV4, er
 	}
 
 	return HistoryFactsV4{}, nil
+}
+
+func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuilder) (GetFactHistory, error) {
+	rows, err := builder.RunWith(querier.conn).Query()
+	if err != nil {
+		return GetFactHistory{}, err
+	}
+	defer rows.Close()
+
+	var results []int64
+
+	for rows.Next() {
+		var resultBytes []byte
+		err = rows.Scan(&resultBytes)  
+		if err != nil {
+			return GetFactHistory{}, err
+		}
+
+		var parsedResult map[string]map[string]map[string]int64
+		err = json.Unmarshal(resultBytes, &parsedResult)
+		if err != nil {
+			return GetFactHistory{}, err
+		}
+
+		if aggs, ok := parsedResult["aggs"]; ok {
+			if count, ok := aggs["count"]; ok {
+				if value, ok := count["value"]; ok {
+					results = append(results, value)
+				}
+			}
+		}
+	}
+
+	return GetFactHistory{Results: results}, nil
+}
+
+
+func (querier HistoryFactsQuerier) GetTodaysFactResultByParameters(param ParamGetFactHistory) (GetFactHistory, error) {
+	builder := querier.Builder.GetTodaysFactResultByParameters(param)
+	return querier.QueryGetSpecificFields(builder)
+}
+
+func (querier HistoryFactsQuerier) Delete(ID int64) error {
+	error := querier.Builder.Delete(ID)
+	return querier.ExecDelete(error)
+}
+
+func (param ParamGetFactHistory) IsValid() (bool, error) {
+	if param.FactID == 0 {
+		return false, errors.New("Missing FactID ")
+	}
+
+	if param.SituationID == 0 {
+		return false, errors.New("Missing SituationID")
+	}
+
+	if param.SituationInstanceID == 0 {
+		return false, errors.New("Missing SituationInstanceID")
+	}
+	return true, nil
 }
 
 // func (querier HistoryFactsQuerier) checkRowAffected(result sql.Result, nbRows int64) error {
