@@ -106,7 +106,7 @@ func TestGetByCriteria(t *testing.T) {
         t.Fatalf("Expected 1 result, got %d and resulat : %v ", len(results.Results),results)
     }
 
-    if results.Results[0] != int64(value) {
+    if results.Results[0].Value != int64(value) {
         t.Fatalf("Retrieved ID does not match inserted ID")
     }
 }

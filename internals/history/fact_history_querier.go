@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -27,8 +28,14 @@ type HistoryFactsV4 struct {
 }
 
 type GetFactHistory struct {
-	Results []int64  `json:"results"`
+	Results []FactResult `json:"results"`
 }
+
+type FactResult struct {
+	Value int64  `json:"value"`
+	Time  time.Duration  `json:"time"`
+}
+
 type ParamGetFactHistory struct {
 	FactID              int64 `json:"factID"`
 	SituationID         int64 `json:"situationId"`
@@ -185,37 +192,47 @@ func (querier HistoryFactsQuerier) scanFirst(rows *sql.Rows) (HistoryFactsV4, er
 }
 
 func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuilder) (GetFactHistory, error) {
-	rows, err := builder.RunWith(querier.conn).Query()
-	if err != nil {
-		return GetFactHistory{}, err
-	}
-	defer rows.Close()
+    rows, err := builder.RunWith(querier.conn).Query()
+    if err != nil {
+        return GetFactHistory{}, err
+    }
+    defer rows.Close()
 
-	var results []int64
+    var results []FactResult
 
-	for rows.Next() {
-		var resultBytes []byte
-		err = rows.Scan(&resultBytes)  
-		if err != nil {
-			return GetFactHistory{}, err
-		}
+    for rows.Next() {
+        var resultBytes []byte
+        var ts time.Time
+        err = rows.Scan(&resultBytes, &ts)
+        if err != nil {
+            return GetFactHistory{}, err
+        }
 
-		var parsedResult map[string]map[string]map[string]int64
-		err = json.Unmarshal(resultBytes, &parsedResult)
-		if err != nil {
-			return GetFactHistory{}, err
-		}
+        var parsedResult map[string]map[string]map[string]int64
+        err = json.Unmarshal(resultBytes, &parsedResult)
+        if err != nil {
+            return GetFactHistory{}, err
+        }
+
+        duration := time.Duration(ts.Hour())*time.Hour + time.Duration(ts.Minute())*time.Minute + time.Duration(ts.Second())*time.Second
+        factRes := FactResult{Time: duration}
 
 		if aggs, ok := parsedResult["aggs"]; ok {
-			if count, ok := aggs["count"]; ok {
-				if value, ok := count["value"]; ok {
-					results = append(results, value)
+			for key := range aggs {
+				if strings.Contains(key, "count") {
+					if count, ok := aggs[key]; ok {
+						if value, ok := count["value"]; ok {
+							factRes.Value = value
+							break
+						}
+					}
 				}
 			}
 		}
-	}
+		results = append(results, factRes)
+    }
 
-	return GetFactHistory{Results: results}, nil
+    return GetFactHistory{Results: results}, nil
 }
 
 
