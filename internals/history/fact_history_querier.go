@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -24,6 +25,21 @@ type HistoryFactsV4 struct {
 	SituationInstanceID int64
 	Ts                  time.Time
 	Result              reader.Item
+}
+
+type GetFactHistory struct {
+	Results []FactResult `json:"results"`
+}
+
+type FactResult struct {
+	Value int64  `json:"value"`
+	Time  time.Duration  `json:"time"`
+}
+
+type ParamGetFactHistory struct {
+	FactID              int64 `json:"factID"`
+	SituationID         int64 `json:"situationId"`
+	SituationInstanceID int64 `json:"situationInstanceId"`
 }
 
 func (querier HistoryFactsQuerier) Insert(history HistoryFactsV4) (int64, error) {
@@ -173,6 +189,76 @@ func (querier HistoryFactsQuerier) scanFirst(rows *sql.Rows) (HistoryFactsV4, er
 	}
 
 	return HistoryFactsV4{}, nil
+}
+
+func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuilder) (GetFactHistory, error) {
+    rows, err := builder.RunWith(querier.conn).Query()
+    if err != nil {
+        return GetFactHistory{}, err
+    }
+    defer rows.Close()
+
+    var results []FactResult
+
+    for rows.Next() {
+        var resultBytes []byte
+        var ts time.Time
+        err = rows.Scan(&resultBytes, &ts)
+        if err != nil {
+            return GetFactHistory{}, err
+        }
+
+        var parsedResult map[string]map[string]map[string]int64
+        err = json.Unmarshal(resultBytes, &parsedResult)
+        if err != nil {
+            return GetFactHistory{}, err
+        }
+
+        duration := time.Duration(ts.Hour())*time.Hour + time.Duration(ts.Minute())*time.Minute + time.Duration(ts.Second())*time.Second
+        factRes := FactResult{Time: duration}
+
+		if aggs, ok := parsedResult["aggs"]; ok {
+			for key := range aggs {
+				if strings.Contains(key, "count") {
+					if count, ok := aggs[key]; ok {
+						if value, ok := count["value"]; ok {
+							factRes.Value = value
+							break
+						}
+					}
+				}
+			}
+		}
+		results = append(results, factRes)
+    }
+
+    return GetFactHistory{Results: results}, nil
+}
+
+
+func (querier HistoryFactsQuerier) GetTodaysFactResultByParameters(param ParamGetFactHistory) (GetFactHistory, error) {
+	builder := querier.Builder.GetTodaysFactResultByParameters(param)
+	return querier.QueryGetSpecificFields(builder)
+}
+
+func (querier HistoryFactsQuerier) Delete(ID int64) error {
+	error := querier.Builder.Delete(ID)
+	return querier.ExecDelete(error)
+}
+
+func (param ParamGetFactHistory) IsValid() (bool, error) {
+	if param.FactID == 0 {
+		return false, errors.New("Missing FactID ")
+	}
+
+	if param.SituationID == 0 {
+		return false, errors.New("Missing SituationID")
+	}
+
+	if param.SituationInstanceID == 0 {
+		return false, errors.New("Missing SituationInstanceID")
+	}
+	return true, nil
 }
 
 // func (querier HistoryFactsQuerier) checkRowAffected(result sql.Result, nbRows int64) error {
