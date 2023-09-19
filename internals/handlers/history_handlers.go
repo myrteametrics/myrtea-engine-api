@@ -16,7 +16,7 @@ import (
 // @Produce json
 // @Param ParamGetFactHistory body interface{} true "JSON payload containing criteria for fetching today's history fact result."
 // @Security Bearer
-// @Success 200 {object} ResultType "Successfully fetched result"
+// @Success 200 "Successfully fetched result"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
 // @Router /engine/history/facts/today/result [post]
