@@ -163,3 +163,10 @@ func (r *PostgresRepository) CheckExistsWithUUID(tx *sqlx.Tx, issueID int64, uui
 	}
 	return exists, nil
 }
+
+// DeleteOldIssueResolutionsDrafts deletes issue resolution drafts based on the provided timestamp
+func (r *PostgresRepository) DeleteOldIssueResolutionsDrafts(ts time.Time) error {
+	query := `DELETE FROM issue_resolution_draft_v1 WHERE issue_id IN (SELECT id FROM issues_v1 WHERE situation_history_id IN (SELECT id FROM situation_history_v5 WHERE ts < $1))`
+	_, err := r.conn.Exec(query, ts)
+	return err
+}

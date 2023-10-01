@@ -706,3 +706,25 @@ func scanIssue(rows *sqlx.Rows) (models.Issue, error) {
 	}
 	return issue, nil
 }
+
+// DeleteOldIssues deletes issues based on the provided timestamp
+func (r *PostgresRepository) DeleteOldIssues(ts time.Time) error {
+	query := `DELETE FROM issues_v1 WHERE situation_history_id IN (SELECT id FROM situation_history_v5 WHERE ts < $1)`
+	_, err := r.conn.Exec(query, ts)
+	return err
+}
+
+// DeleteOldIssueDetections deletes issue detections based on the provided timestamp
+func (r *PostgresRepository) DeleteOldIssueDetections(ts time.Time) error {
+	query := `DELETE FROM issue_detection_feedback_v3 WHERE issue_id IN (SELECT id FROM issues_v1 WHERE situation_history_id IN (SELECT id FROM situation_history_v5 WHERE ts < $1))`
+	_, err := r.conn.Exec(query, ts)
+	return err
+}
+
+// DeleteOldIssueResolutions deletes issue resolutions based on the provided timestamp
+func (r *PostgresRepository) DeleteOldIssueResolutions(ts time.Time) error {
+	query := `DELETE FROM issue_resolution_v1 WHERE issue_id IN (SELECT id FROM issues_v1 WHERE situation_history_id IN (SELECT id FROM situation_history_v5 WHERE ts < $1))`
+	_, err := r.conn.Exec(query, ts)
+	return err
+}
+

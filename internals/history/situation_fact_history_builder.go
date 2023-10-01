@@ -33,7 +33,7 @@ func (builder HistorySituationFactsBuilder) DeleteHistoryFrom(situationHistoryQu
 		Delete("situation_fact_history_v5").
 		Where(
 			situationHistoryQueryBuilder.
-				Prefix("situation_history_id NOT IN (").
+				Prefix("situation_history_id IN (").
 				Suffix(")"),
 		)
 }

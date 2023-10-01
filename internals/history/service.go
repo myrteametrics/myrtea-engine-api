@@ -6,6 +6,8 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/draft"
 )
 
 var (
@@ -120,8 +122,8 @@ func (service HistoryService) GetHistoryFactsFromSituationIds(historySituationsI
 }
 
 func (service HistoryService) PurgeHistory(options GetHistorySituationsOptions) error {
-	return service.deleteHistory(
-		service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsBase(options),
+	return service.deleteHistoryPurge(
+		service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsBase(options), options ,
 	)
 }
 
@@ -135,6 +137,50 @@ func (service HistoryService) deleteHistory(selector sq.SelectBuilder) error {
 	err := service.HistorySituationFactsQuerier.ExecDelete(
 		service.HistorySituationFactsQuerier.Builder.DeleteHistoryFrom(selector),
 	)
+	if err != nil {
+		return err
+	}
+
+	err = service.HistorySituationsQuerier.ExecDelete(
+		service.HistorySituationsQuerier.Builder.DeleteOrphans(),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = service.HistoryFactsQuerier.ExecDelete(
+		service.HistoryFactsQuerier.Builder.DeleteOrphans(),
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func (service HistoryService) deleteHistoryPurge(selector sq.SelectBuilder, options GetHistorySituationsOptions) error {
+	err := service.HistorySituationFactsQuerier.ExecDelete(
+		service.HistorySituationFactsQuerier.Builder.DeleteHistoryFrom(selector),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = issues.R().DeleteOldIssueDetections(options.DeleteBeforeTs)
+	if err != nil {
+		return err
+	}
+
+	err = issues.R().DeleteOldIssueResolutions(options.DeleteBeforeTs)
+	if err != nil {
+		return err
+	}
+
+	err = draft.R().DeleteOldIssueResolutionsDrafts(options.DeleteBeforeTs)
+	if err != nil {
+		return err
+	}
+
+	err = issues.R().DeleteOldIssues(options.DeleteBeforeTs)
 	if err != nil {
 		return err
 	}

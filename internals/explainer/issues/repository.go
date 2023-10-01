@@ -31,6 +31,10 @@ type Repository interface {
 
 	ChangeState(key string, fromStates []models.IssueState, toState models.IssueState) error
 	ChangeStateBetweenDates(key string, fromStates []models.IssueState, toState models.IssueState, from time.Time, to time.Time) error
+	
+	DeleteOldIssues(ts time.Time) error
+	DeleteOldIssueDetections(ts time.Time) error
+	DeleteOldIssueResolutions(ts time.Time) error
 }
 
 var (
