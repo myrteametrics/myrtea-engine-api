@@ -10,6 +10,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
+	"go.uber.org/zap"
 )
 
 type HistoryFactsQuerier struct {
@@ -101,13 +102,21 @@ func (querier HistoryFactsQuerier) ExecUpdate(builder sq.UpdateBuilder) error {
 }
 
 func (querier HistoryFactsQuerier) ExecDelete(builder sq.DeleteBuilder) error {
-	_, err := builder.RunWith(querier.conn.DB).Exec()
+	result, err := builder.RunWith(querier.conn.DB).Exec()
 	if err != nil {
 		return err
 	}
 
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	zap.L().Info("Purge auto de la table fact_history_v5", zap.Int64("Nombre de lignes supprimées", affectedRows))
+
 	return nil
 }
+
 
 func (querier HistoryFactsQuerier) QueryReturning(builder sq.InsertBuilder) (int64, error) {
 	rows, err := builder.RunWith(querier.conn.DB).Query()

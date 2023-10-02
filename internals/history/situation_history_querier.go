@@ -114,10 +114,18 @@ func (querier HistorySituationsQuerier) ExecUpdate(builder sq.UpdateBuilder) err
 }
 
 func (querier HistorySituationsQuerier) ExecDelete(builder sq.DeleteBuilder) error {
-	_, err := builder.RunWith(querier.conn.DB).Exec()
+	result, err := builder.RunWith(querier.conn.DB).Exec()
 	if err != nil {
 		return err
 	}
+
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	zap.L().Info("Purge auto de la table Situation_history_v5", zap.Int64("Nombre de lignes supprimées", affectedRows))
+
 
 	return nil
 }

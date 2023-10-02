@@ -710,21 +710,51 @@ func scanIssue(rows *sqlx.Rows) (models.Issue, error) {
 // DeleteOldIssues deletes issues based on the provided timestamp
 func (r *PostgresRepository) DeleteOldIssues(ts time.Time) error {
 	query := `DELETE FROM issues_v1 WHERE situation_history_id IN (SELECT id FROM situation_history_v5 WHERE ts < $1)`
-	_, err := r.conn.Exec(query, ts)
-	return err
+	result, err := r.conn.Exec(query, ts)
+	if err != nil {
+		return err
+	}
+
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	zap.L().Info("Purge auto de la table issues_v1", zap.Int64("Nombre de lignes supprimées", affectedRows))
+	return nil
 }
 
 // DeleteOldIssueDetections deletes issue detections based on the provided timestamp
 func (r *PostgresRepository) DeleteOldIssueDetections(ts time.Time) error {
 	query := `DELETE FROM issue_detection_feedback_v3 WHERE issue_id IN (SELECT id FROM issues_v1 WHERE situation_history_id IN (SELECT id FROM situation_history_v5 WHERE ts < $1))`
-	_, err := r.conn.Exec(query, ts)
-	return err
+	result, err := r.conn.Exec(query, ts)
+	if err != nil {
+		return err
+	}
+
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	zap.L().Info("Purge auto de la table issue_detection_feedback_v3 ", zap.Int64("Nombre de lignes supprimées", affectedRows))
+	return nil
 }
 
 // DeleteOldIssueResolutions deletes issue resolutions based on the provided timestamp
 func (r *PostgresRepository) DeleteOldIssueResolutions(ts time.Time) error {
 	query := `DELETE FROM issue_resolution_v1 WHERE issue_id IN (SELECT id FROM issues_v1 WHERE situation_history_id IN (SELECT id FROM situation_history_v5 WHERE ts < $1))`
-	_, err := r.conn.Exec(query, ts)
-	return err
+	result, err := r.conn.Exec(query, ts)
+	if err != nil {
+		return err
+	}
+
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+    
+	zap.L().Info("Purge auto de la table issue_resolution_v1 ", zap.Int64("Nombre de lignes supprimées", affectedRows))
+
+	return nil
 }
 
