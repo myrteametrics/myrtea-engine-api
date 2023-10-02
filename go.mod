@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	github.com/Masterminds/squirrel v1.5.3
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
 	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/crewjam/saml v0.4.6
@@ -25,7 +24,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/lestrrat-go/jwx v1.2.6
 	github.com/lib/pq v1.0.0
-	github.com/myrteametrics/myrtea-sdk/v4 v4.3.8
+	github.com/myrteametrics/myrtea-sdk/v4 v4.4.0
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/prataprc/goparsec v0.0.0-20180806094145-2600a2a4a410
 	github.com/prometheus/client_golang v1.14.0

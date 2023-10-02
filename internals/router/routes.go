@@ -161,6 +161,8 @@ func engineRouter() http.Handler {
 	r.Get("/search/last/byinterval", handlers.SearchLastByInterval)
 	r.Get("/search/last/bycustominterval", handlers.SearchLastByCustomInterval)
 
+	r.Post("/history/facts/today/result", handlers.GetFactResultForTodayByCriteria)
+
 	r.Get("/calendars", handlers.GetCalendars)
 	r.Get("/calendars/{id}", handlers.GetCalendar)
 	r.Get("/calendars/{id}/contains", handlers.IsInCalendarPeriod) // ?time=2019-05-10T12:00:00.000
