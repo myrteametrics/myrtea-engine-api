@@ -1,5 +1,7 @@
 package router
 
+import "go.uber.org/zap"
+
 func sliceDeduplicate(stringSlice []string) []string {
 	keys := make(map[string]bool)
 	list := []string{}
@@ -10,4 +12,10 @@ func sliceDeduplicate(stringSlice []string) []string {
 		}
 	}
 	return list
+}
+
+func errorInfo(message string, err error){
+	if err != nil {
+		zap.L().Info( message, zap.Error(err))
+	}
 }

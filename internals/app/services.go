@@ -31,6 +31,7 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/router/authmanagement"
 )
 
 // InitializeRepositories initialize all myrtea Postgresql repositories
@@ -56,6 +57,7 @@ func initRepositories() {
 	externalconfig.ReplaceGlobals(externalconfig.NewPostgresRepository(dbClient))
 	connectorconfig.ReplaceGlobals(connectorconfig.NewPostgresRepository(dbClient))
 	history.ReplaceGlobals(history.New(dbClient))
+	authmanagement.ReplaceGlobals(authmanagement.New(dbClient))
 }
 
 func initServices() {
@@ -149,7 +151,12 @@ func initOidcAuthentication() {
 			return
 		}
 
-		oidcAuth.InitOidc(oidcIssuerUrl, oidcClientID, oidcClientSecret, oidcRedirectURL, oidcScopes)
+		err := oidcAuth.InitOidc(oidcIssuerUrl, oidcClientID, oidcClientSecret, oidcRedirectURL, oidcScopes)
+
+		if err != nil {
+			zap.L().Info("L'initialisation OIDC a échoué, basculement automatique vers l'authentification Basic.", zap.Error(err))
+			viper.Set("AUTHENTICATION_MODE", "BASIC")
+		}
 	}
 
 }

@@ -33,6 +33,7 @@ func InitOidc(oidcIssuerURL string, oidcClientID string, oidcClientSecret string
 	provider, err := oidc.NewProvider(ctx, oidcIssuerURL)
 	if err != nil {
 		zap.L().Error("create instance  oidc provider failled ", zap.Error(err))
+		return err
 	}
 
 	//Scopes
