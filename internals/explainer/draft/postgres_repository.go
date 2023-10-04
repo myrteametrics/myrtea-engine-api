@@ -178,7 +178,7 @@ func (r *PostgresRepository) DeleteOldIssueResolutionsDrafts(ts time.Time) error
 		return err
 	}
 	
-	zap.L().Info("Purge auto de la table issue_resolution_draft_v ", zap.Int64("Nombre de lignes supprimées", affectedRows))
+	zap.L().Info("Auto purge of the table issue_resolution_draft_v1 ", zap.Int64("Number of rows deleted", affectedRows))
 
 	return nil
 }

@@ -719,7 +719,7 @@ func (r *PostgresRepository) DeleteOldIssues(ts time.Time) error {
 	if err != nil {
 		return err
 	}
-	zap.L().Info("Purge auto de la table issues_v1", zap.Int64("Nombre de lignes supprimées", affectedRows))
+	zap.L().Info("Auto purge of the table issues_v1", zap.Int64("Number of rows deleted", affectedRows))
 	return nil
 }
 
@@ -736,7 +736,7 @@ func (r *PostgresRepository) DeleteOldIssueDetections(ts time.Time) error {
 		return err
 	}
 
-	zap.L().Info("Purge auto de la table issue_detection_feedback_v3 ", zap.Int64("Nombre de lignes supprimées", affectedRows))
+	zap.L().Info("Auto purge of the table issue_detection_feedback_v3 ", zap.Int64("Number of rows deleted", affectedRows))
 	return nil
 }
 
@@ -753,7 +753,7 @@ func (r *PostgresRepository) DeleteOldIssueResolutions(ts time.Time) error {
 		return err
 	}
     
-	zap.L().Info("Purge auto de la table issue_resolution_v1 ", zap.Int64("Nombre de lignes supprimées", affectedRows))
+	zap.L().Info("Auto purge of the table issue_resolution_v1 ", zap.Int64("Number of rows deleted", affectedRows))
 
 	return nil
 }

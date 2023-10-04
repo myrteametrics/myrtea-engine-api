@@ -46,7 +46,7 @@ func (querier HistorySituationFactsQuerier) ExecDelete(builder sq.DeleteBuilder)
 		return err
 	}
 
-	zap.L().Info("Purge auto de la table situation_fact_history_v5", zap.Int64("Nombre de lignes supprimées", affectedRows))
+	zap.L().Info("Auto purge of the table situation_fact_history_v5", zap.Int64("Number of rows deleted", affectedRows))
 
 	return nil
 }
