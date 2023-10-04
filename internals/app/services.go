@@ -57,7 +57,6 @@ func initRepositories() {
 	externalconfig.ReplaceGlobals(externalconfig.NewPostgresRepository(dbClient))
 	connectorconfig.ReplaceGlobals(connectorconfig.NewPostgresRepository(dbClient))
 	history.ReplaceGlobals(history.New(dbClient))
-	authmanagement.ReplaceGlobals(authmanagement.New(dbClient))
 }
 
 func initServices() {
@@ -68,6 +67,7 @@ func initServices() {
 	initCalendars()
 	initEmailSender()
 	initOidcAuthentication()
+	initAuthMode()
 }
 
 func stopServices() {
@@ -159,5 +159,9 @@ func initOidcAuthentication() {
 		}
 	}
 
+}
+
+func initAuthMode(){
+	authmanagement.ReplaceGlobals(authmanagement.New())
 }
 
