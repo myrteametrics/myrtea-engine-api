@@ -6,6 +6,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 )
 
 type HistorySituationFactsV4 struct {
@@ -35,10 +36,17 @@ func (querier HistorySituationFactsQuerier) Execute(builder sq.InsertBuilder) er
 }
 
 func (querier HistorySituationFactsQuerier) ExecDelete(builder sq.DeleteBuilder) error {
-	_, err := builder.RunWith(querier.conn.DB).Exec()
+	result, err := builder.RunWith(querier.conn.DB).Exec()
 	if err != nil {
 		return err
 	}
+
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	zap.L().Info("Auto purge of the table situation_fact_history_v5", zap.Int64("Number of rows deleted", affectedRows))
 
 	return nil
 }

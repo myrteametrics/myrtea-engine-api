@@ -2,6 +2,7 @@ package draft
 
 import (
 	"sync"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
@@ -17,6 +18,7 @@ type Repository interface {
 	// Delete(tx *sqlx.Tx, id int64) error)
 	CheckExists(tx *sqlx.Tx, issueID int64) (bool, error)
 	CheckExistsWithUUID(tx *sqlx.Tx, issueID int64, uuid string) (bool, error)
+	DeleteOldIssueResolutionsDrafts(ts time.Time) error
 }
 
 var (
