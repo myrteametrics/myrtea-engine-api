@@ -1,44 +1,16 @@
-package baseline
+package standalone
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
-	"sync"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-plugin"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
 	"go.uber.org/zap"
 )
-
-var (
-	_globalPluginMu sync.RWMutex
-	_globalPlugin   *BaselinePlugin
-)
-
-// P is used to access the global plugin singleton
-func P() (*BaselinePlugin, error) {
-	_globalPluginMu.RLock()
-	defer _globalPluginMu.RUnlock()
-
-	plugin := _globalPlugin
-	if plugin == nil {
-		return nil, errors.New("no Baseline plugin found, feature is not available")
-	}
-	return plugin, nil
-}
-
-func Register(plugin *BaselinePlugin) func() {
-	_globalPluginMu.Lock()
-	defer _globalPluginMu.Unlock()
-
-	prev := _globalPlugin
-	_globalPlugin = plugin
-	return func() { Register(prev) }
-}
 
 // Handshake is a common handshake that is shared by plugin and host.
 var Handshake = plugin.HandshakeConfig{
@@ -48,19 +20,18 @@ var Handshake = plugin.HandshakeConfig{
 	MagicCookieValue: "hello",
 }
 
-type BaselinePlugin struct {
-	Config          pluginutils.PluginConfig
-	ClientConfig    *plugin.ClientConfig
-	Client          *plugin.Client
-	BaselineService BaselineService
+type Plugin struct {
+	Config       pluginutils.PluginConfig
+	ClientConfig *plugin.ClientConfig
+	Client       *plugin.Client
 }
 
-func NewBaselinePlugin(config pluginutils.PluginConfig) *BaselinePlugin {
+func NewPlugin(config pluginutils.PluginConfig) *Plugin {
 	pluginPath := fmt.Sprintf("plugin/myrtea-%s.plugin", config.Name)
 
 	stat, err := os.Stat(pluginPath)
 	if os.IsNotExist(err) || stat.IsDir() {
-		zap.L().Warn("Couldn't find plugin binaries", zap.String("pluginName", "baseline"),
+		zap.L().Warn("Couldn't find plugin binaries", zap.String("pluginName", config.Name),
 			zap.String("pluginPath", pluginPath))
 		return nil
 	}
@@ -70,10 +41,10 @@ func NewBaselinePlugin(config pluginutils.PluginConfig) *BaselinePlugin {
 	// cmd.Env = append(cmd.Env, "MYRTEA_component_DEBUG_MODE=true")
 
 	pluginMap := map[string]plugin.Plugin{
-		config.Name: &BaselineGRPCPlugin{},
+		config.Name: &GRPCPlugin{},
 	}
 
-	return &BaselinePlugin{
+	return &Plugin{
 		Config: config,
 		ClientConfig: &plugin.ClientConfig{
 			Logger:           pluginutils.ZapWrap(zap.L()),
@@ -85,20 +56,20 @@ func NewBaselinePlugin(config pluginutils.PluginConfig) *BaselinePlugin {
 	}
 }
 
-func (p *BaselinePlugin) ServicePort() int {
+func (p *Plugin) ServicePort() int {
 	return p.Config.Port
 }
 
-func (p *BaselinePlugin) HandlerPrefix() string {
+func (p *Plugin) HandlerPrefix() string {
 	return fmt.Sprintf("/%s", p.Config.Name)
 }
 
-func (p *BaselinePlugin) Stop() error {
+func (p *Plugin) Stop() error {
 	p.Client.Kill()
 	return nil
 }
 
-func (p *BaselinePlugin) Start() error {
+func (p *Plugin) Start() error {
 
 	client := plugin.NewClient(p.ClientConfig)
 
@@ -114,23 +85,15 @@ func (p *BaselinePlugin) Start() error {
 		return err
 	}
 
-	p.BaselineService = raw.(BaselineService)
-	p.Client = client
+	_ = raw
 
-	Register(p)
+	// p.BaselineService = raw.(BaselineService)
+	p.Client = client
 
 	return nil
 }
 
-// func (p *BaselinePlugin) Test() {
-// 	result, err := p.BaselineService.GetBaselineValues(-1, 19, 4, 111, time.Now())
-// 	if err != nil {
-// 		fmt.Println(err.Error())
-// 	}
-// 	fmt.Println(result)
-// }
-
-func (p *BaselinePlugin) Handler() http.Handler {
+func (p *Plugin) Handler() http.Handler {
 	r := chi.NewRouter()
 
 	// Add HTTP routes for every method exposed in the plugin interface GetBaselineValues
