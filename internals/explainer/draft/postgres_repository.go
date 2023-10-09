@@ -9,6 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	uuid "github.com/satori/go.uuid"
+	"go.uber.org/zap"
 )
 
 // PostgresRepository is a repository containing the FrontDraft definition based on a PSQL database and
@@ -163,3 +164,22 @@ func (r *PostgresRepository) CheckExistsWithUUID(tx *sqlx.Tx, issueID int64, uui
 	}
 	return exists, nil
 }
+
+// DeleteOldIssueResolutionsDrafts deletes issue resolution drafts based on the provided timestamp
+func (r *PostgresRepository) DeleteOldIssueResolutionsDrafts(ts time.Time) error {
+	query := `DELETE FROM issue_resolution_draft_v1 WHERE issue_id IN (SELECT id FROM issues_v1 WHERE situation_history_id IN (SELECT id FROM situation_history_v5 WHERE ts < $1))`
+	result, err := r.conn.Exec(query, ts)
+	if err != nil {
+		return err
+	}
+
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	
+	zap.L().Info("Auto purge of the table issue_resolution_draft_v1 ", zap.Int64("Number of rows deleted", affectedRows))
+
+	return nil
+}
+

@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"errors"
+	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -21,6 +24,8 @@ type CSVParameters struct {
 	columnsLabel      []string
 	formatColumnsData map[string]string
 	separator         rune
+	limit             int64
+	chunkSize         int64
 }
 
 // ExportFact godoc
@@ -61,20 +66,22 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fullHits, err := export.ExportFactHitsFull(f)
-
-	if err != nil {
-		zap.L().Error("Error getting fact hits", zap.Error(err))
-		render.Error(w, r, render.ErrAPIProcessError, err)
-		return
+	var filename = r.URL.Query().Get("fileName")
+	if filename == "" {
+		filename = f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
 	}
+
+	// suppose that type is csv
+	params := GetCSVParameters(r)
+
+	var combineFacts []engine.Fact
+	combineFacts = append(combineFacts, f)
 
 	// export multiple facts into one file
 	combineFactIds, err := QueryParamToOptionalInt64Array(r, "combineFactIds", ",", false, []int64{})
 	if err != nil {
 		zap.L().Warn("Could not parse parameter combineFactIds", zap.Error(err))
 	} else {
-
 		for _, factId := range combineFactIds {
 			// no duplicates
 			if factId == idFact {
@@ -90,39 +97,27 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 				zap.L().Warn("Export combineFact fact does not exist", zap.Int64("factID", factId))
 				continue
 			}
-
-			combineFullHits, err := export.ExportFactHitsFull(combineFact)
-
-			if err != nil {
-				zap.L().Error("Export combineFact getting fact hits", zap.Int64("factID", factId), zap.Error(err))
-			} else {
-				fullHits = append(fullHits, combineFullHits...)
-			}
-
+			combineFacts = append(combineFacts, combineFact)
 		}
-
 	}
 
-	var file []byte
-	var filename = r.URL.Query().Get("fileName")
-
-	// type checker, to handle other files types like xml or json (defaults to csv)
-	switch r.URL.Query().Get("type") {
-	default:
-		// Process needed parameters
-		params := GetCSVParameters(r)
-		file, err = export.ConvertHitsToCSV(fullHits, params.columns, params.columnsLabel, params.formatColumnsData, params.separator)
-		if filename == "" {
-			filename = f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
-		}
-		break
+	err = HandleStreamedExport(r.Context(), w, combineFacts, filename, params)
+	if err != nil {
+		render.Error(w, r, render.ErrAPIProcessError, err)
 	}
+	return
 
-	render.File(w, filename, file)
 }
 
 func GetCSVParameters(r *http.Request) CSVParameters {
 	result := CSVParameters{separator: ','}
+
+	limit, err := QueryParamToOptionalInt64(r, "limit", -1)
+	if err != nil {
+		result.limit = -1
+	} else {
+		result.limit = limit
+	}
 
 	result.columns = QueryParamToOptionalStringArray(r, "columns", ",", []string{})
 	result.columnsLabel = QueryParamToOptionalStringArray(r, "columnsLabel", ",", []string{})
@@ -148,4 +143,105 @@ func GetCSVParameters(r *http.Request) CSVParameters {
 	}
 
 	return result
+}
+
+// HandleStreamedExport actually only handles CSV
+func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter, facts []engine.Fact, fileName string, params CSVParameters) error {
+	w.Header().Set("Connection", "Keep-Alive")
+	w.Header().Set("Transfer-Encoding", "chunked")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(fileName))
+	w.Header().Set("Content-Type", "application/octet-stream")
+	streamedExport := export.NewStreamedExport()
+	var wg sync.WaitGroup
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		return errors.New("expected http.ResponseWriter to be an http.Flusher")
+	}
+
+	// Increment the WaitGroup counter
+	wg.Add(2) // 2 goroutines
+
+	var err error = nil
+	var writerErr error = nil
+	ctx, cancel := context.WithCancel(context.Background())
+
+	/**
+	 * How streamed export works:
+	 * 1. Browser opens connection
+	 * 2. Two goroutines are started:
+	 *    - Export goroutine: each fact is processed one by one
+	 *      Each bulk of data is sent through a channel to the receiver goroutine
+	 *    - The receiver handles the incoming channel data and converts them to the CSV format
+	 *      After the conversion, the data is written and sent to the browser
+	 */
+
+	go func() {
+		defer wg.Done()
+		defer close(streamedExport.Data)
+
+		for _, f := range facts {
+			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, params.limit)
+			if writerErr != nil {
+				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
+				break // break here when error occurs?
+			}
+		}
+
+	}()
+
+	// Chunk handler goroutine
+	go func() {
+		defer wg.Done()
+		first := true
+		labels := params.columnsLabel
+
+		for {
+			select {
+			case hits, ok := <-streamedExport.Data:
+				if !ok { // channel closed
+					return
+				}
+
+				data, err := export.ConvertHitsToCSV(hits, params.columns, labels, params.formatColumnsData, params.separator)
+
+				if err != nil {
+					zap.L().Error("ConvertHitsToCSV error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
+					cancel()
+					return
+				}
+
+				// Write data
+				_, err = w.Write(data)
+				if err != nil {
+					zap.L().Error("Write error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
+					cancel()
+					return
+				}
+				// Flush data to be sent directly to browser
+				flusher.Flush()
+
+				if first {
+					first = false
+					labels = []string{}
+				}
+
+			case <-requestContext.Done():
+				// Browser unexpectedly closed connection
+				writerErr = errors.New("browser unexpectedly closed connection")
+				cancel()
+				return
+			}
+		}
+	}()
+
+	wg.Wait()
+
+	// Writer could have some errors
+	if writerErr != nil {
+		return writerErr
+	}
+
+	return err
 }
