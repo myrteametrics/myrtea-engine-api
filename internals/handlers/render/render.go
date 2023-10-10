@@ -166,8 +166,4 @@ func File(w http.ResponseWriter, filename string, data []byte) {
 //	}
 func Redirect(w http.ResponseWriter, r *http.Request, location string, code int) {
 	http.Redirect(w, r, location, code)
-	zap.L().Info("Redirect instruction sent",
-		zap.String("from", r.RequestURI),
-		zap.String("to", location),
-	)
 }
