@@ -12,7 +12,7 @@ func TestSetModeIntegration(t *testing.T) {
 	querier := New()
 
 	viper.Set("AUTHENTICATION_MODE", "BASIC")
-	
+
 	mode, err := querier.GetMode()
 	if err != nil {
 		t.Errorf("error was not expected while selecting mode: %s", err)

@@ -14,8 +14,8 @@ func sliceDeduplicate(stringSlice []string) []string {
 	return list
 }
 
-func errorInfo(message string, err error){
+func errorInfo(message string, err error) {
 	if err != nil {
-		zap.L().Info( message, zap.Error(err))
+		zap.L().Info(message, zap.Error(err))
 	}
 }

@@ -251,4 +251,3 @@ func (m *SamlSPMiddleware) Deconnexion(handler http.Handler) http.Handler {
 		handler.ServeHTTP(w, r)
 	})
 }
-

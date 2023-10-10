@@ -11,11 +11,11 @@ type AuthenticationMode struct {
 	Mode string `json:"mode"`
 }
 
-type AuthenticationModeQuerier struct {}
+type AuthenticationModeQuerier struct{}
 
 var (
-	_globalQuerierMu    sync.RWMutex
-	_globalQuerier      *AuthenticationModeQuerier
+	_globalQuerierMu sync.RWMutex
+	_globalQuerier   *AuthenticationModeQuerier
 )
 
 func New() *AuthenticationModeQuerier {
@@ -43,11 +43,10 @@ func ReplaceGlobals(querier *AuthenticationModeQuerier) func() {
 }
 
 func (querier AuthenticationModeQuerier) GetMode() (AuthenticationMode, error) {
-	
+
 	mode := viper.GetString("AUTHENTICATION_MODE")
 	if mode == "" {
 		return AuthenticationMode{}, errors.New("failed to retrieve AUTHENTICATION_MODE from configuration")
 	}
 	return AuthenticationMode{Mode: mode}, nil
 }
-

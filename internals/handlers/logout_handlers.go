@@ -18,7 +18,7 @@ func LogoutHandler(deleteSessionMiddleware func(http.Handler) http.Handler) http
 		})
 
 		handler := deleteSessionMiddleware(successHandler)
-		
+
 		handler.ServeHTTP(w, r)
 	})
 }
@@ -43,4 +43,3 @@ func GetAuthenticationMode(w http.ResponseWriter, r *http.Request) {
 
 	render.JSON(w, r, mode)
 }
-

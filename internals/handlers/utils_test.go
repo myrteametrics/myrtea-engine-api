@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"errors"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
-	"errors"
-	"net/http"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
@@ -242,4 +242,3 @@ func TestVerifyEncryptedState(t *testing.T) {
 		t.Error("must be empty")
 	}
 }
-

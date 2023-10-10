@@ -21,7 +21,7 @@ import (
 
 func OIDCMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		
+
 		authHeader := r.Header.Get("Authorization")
 
 		var tokenStr string
@@ -32,12 +32,12 @@ func OIDCMiddleware(next http.Handler) http.Handler {
 			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("missing token"))
 			return
 		}
-		
+
 		// Check the token with the OIDC server
 		instanceOidc, err := GetOidcInstance()
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
-			render.Error(w, r, render.ErrAPIProcessError ,err)
+			render.Error(w, r, render.ErrAPIProcessError, err)
 			return
 		}
 		idToken, err := instanceOidc.Provider.Verifier(&oidc.Config{ClientID: instanceOidc.OidcConfig.ClientID}).Verify(r.Context(), tokenStr)

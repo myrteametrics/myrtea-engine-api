@@ -41,14 +41,14 @@ func HandleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, "", err, render.ErrAPIProcessError)
 		return
 	}
-	
+
 	oauth2Token, err := instanceOidc.OidcConfig.Exchange(r.Context(), r.URL.Query().Get("code"))
 	if err != nil {
 		handleError(w, r, TokenExchangeErr, err, render.ErrAPIExchangeOIDCTokenFailed)
 		return
 	}
 
-	// Generate the token 
+	// Generate the token
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
 		handleError(w, r, NoIDTokenErr, err, render.ErrAPINoIDOIDCToken)

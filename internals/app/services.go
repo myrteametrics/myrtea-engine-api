@@ -1,7 +1,6 @@
 package app
 
 import (
-	"strings"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connector"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connectorconfig"
@@ -14,14 +13,16 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/externalconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/history"
+	"strings"
 
 	// "github.com/myrteametrics/myrtea-engine-api/v5/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/modeler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/router/authmanagement"
+	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internals/router/oidc"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/scheduler"
-	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internals/router/oidc"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/search"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/roles"
@@ -31,7 +32,6 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/router/authmanagement"
 )
 
 // InitializeRepositories initialize all myrtea Postgresql repositories
@@ -130,10 +130,9 @@ func initEmailSender() {
 	password := viper.GetString("SMTP_PASSWORD")
 	host := viper.GetString("SMTP_HOST")
 	port := viper.GetString("SMTP_PORT")
-	email.InitSender(username,password,host,port)
+	email.InitSender(username, password, host, port)
 
 }
-
 
 func initOidcAuthentication() {
 	authenticationMode := viper.GetString("AUTHENTICATION_MODE")
@@ -161,7 +160,6 @@ func initOidcAuthentication() {
 
 }
 
-func initAuthMode(){
+func initAuthMode() {
 	authmanagement.ReplaceGlobals(authmanagement.New())
 }
-
