@@ -42,7 +42,7 @@ func OIDCMiddleware(next http.Handler) http.Handler {
 		}
 		idToken, err := instanceOidc.Provider.Verifier(&oidc.Config{ClientID: instanceOidc.OidcConfig.ClientID}).Verify(r.Context(), tokenStr)
 		if err != nil {
-			zap.L().Error("Invalide OIDC auth Token", zap.Error(err))
+			zap.L().Error("Invalid OIDC auth Token", zap.Error(err))
 			render.Error(w, r, render.ErrAPIInvalidAuthToken, err)
 			return
 		}
@@ -85,10 +85,10 @@ func ContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// inject the user information (Permissuin role etc) Connect into the context.
+		// inject the user information (Permission role etc) Connect into the context.
 		// and for now assuming all are admin
 		userGroups := []string{"admin"}
-		userGroups = sliceDeduplicate(userGroups)
+		userGroups = removeDuplicates(userGroups)
 		userRoles := make([]roles.Role, 0)
 		for _, userGroupName := range userGroups {
 			role, found, err := roles.R().GetByName(userGroupName)

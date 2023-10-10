@@ -1,6 +1,9 @@
 package app
 
 import (
+	"errors"
+	"strings"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connector"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connectorconfig"
@@ -13,7 +16,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/externalconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/history"
-	"strings"
 
 	// "github.com/myrteametrics/myrtea-engine-api/v5/internals/groups"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/modeler"
@@ -146,14 +148,15 @@ func initOidcAuthentication() {
 		oidcScopes := strings.Split(scopesString, ",")
 
 		if oidcIssuerUrl == "" || oidcClientID == "" || oidcClientSecret == "" || oidcRedirectURL == "" || scopesString == "" {
-			zap.L().Error("Missing OIDC configuration")
+			zap.L().Info("OIDC initialization failed, automatically falling back to Basic authentication.", zap.Error(errors.New("Missing OIDC configuration")))
+			viper.Set("AUTHENTICATION_MODE", "BASIC")
 			return
 		}
 
 		err := oidcAuth.InitOidc(oidcIssuerUrl, oidcClientID, oidcClientSecret, oidcRedirectURL, oidcScopes)
 
 		if err != nil {
-			zap.L().Info("L'initialisation OIDC a échoué, basculement automatique vers l'authentification Basic.", zap.Error(err))
+			zap.L().Info("OIDC initialization failed, automatically falling back to Basic authentication.", zap.Error(err))
 			viper.Set("AUTHENTICATION_MODE", "BASIC")
 		}
 	}
