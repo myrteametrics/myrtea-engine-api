@@ -1,6 +1,9 @@
 package app
 
 import (
+	"errors"
+	"strings"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connector"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connectorconfig"
@@ -18,6 +21,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/modeler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
+	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internals/router/oidc"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/scheduler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/search"
@@ -63,6 +67,7 @@ func initServices() {
 	initTasker()
 	initCalendars()
 	initEmailSender()
+	initOidcAuthentication()
 }
 
 func stopServices() {
@@ -125,6 +130,33 @@ func initEmailSender() {
 	password := viper.GetString("SMTP_PASSWORD")
 	host := viper.GetString("SMTP_HOST")
 	port := viper.GetString("SMTP_PORT")
-	email.InitSender(username,password,host,port)
+	email.InitSender(username, password, host, port)
+
+}
+
+func initOidcAuthentication() {
+	authenticationMode := viper.GetString("AUTHENTICATION_MODE")
+
+	if authenticationMode == "OIDC" {
+		oidcIssuerUrl := viper.GetString("AUTHENTICATION_OIDC_ISSUER_URL")
+		oidcClientID := viper.GetString("AUTHENTICATION_OIDC_CLIENT_ID")
+		oidcClientSecret := viper.GetString("AUTHENTICATION_OIDC_CLIENT_SECRET")
+		oidcRedirectURL := viper.GetString("AUTHENTICATION_OIDC_REDIRECT_URL")
+		scopesString := viper.GetString("AUTHENTICATION_OIDC_SCOPES")
+		oidcScopes := strings.Split(scopesString, ",")
+
+		if oidcIssuerUrl == "" || oidcClientID == "" || oidcClientSecret == "" || oidcRedirectURL == "" || scopesString == "" {
+			zap.L().Info("OIDC initialization failed, automatically falling back to Basic authentication.", zap.Error(errors.New("Missing OIDC configuration")))
+			viper.Set("AUTHENTICATION_MODE", "BASIC")
+			return
+		}
+
+		err := oidcAuth.InitOidc(oidcIssuerUrl, oidcClientID, oidcClientSecret, oidcRedirectURL, oidcScopes)
+
+		if err != nil {
+			zap.L().Info("OIDC initialization failed, automatically falling back to Basic authentication.", zap.Error(err))
+			viper.Set("AUTHENTICATION_MODE", "BASIC")
+		}
+	}
 
 }
