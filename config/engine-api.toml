@@ -121,7 +121,7 @@ ENABLE_CRONS_ON_START = "true"
 AGGREGATEINGESTER_QUEUE_BUFFER_SIZE = "100"
 
 # Specify the authentication mode
-# Can either be "BASIC" or "SAML"
+# Can either be "BASIC" or "SAML"  or "OIDC"
 # In case of SAML, some more parameters are required to ensure proper functionning
 # Default value: "BASIC"
 AUTHENTICATION_MODE = "BASIC"
@@ -195,3 +195,41 @@ SMTP_HOST =  "smtp.example.com"
 # Specify the SMTP Port
 # Default value : "465"
 SMTP_PORT = "465"
+
+
+# OIDC Client Id: A unique identifier representing the client application seeking access to the server's resources. (Only if AUTHENTICATION_MODE="OIDC")
+# Default value: ""
+AUTHENTICATION_OIDC_CLIENT_ID = ""
+
+# OIDC Client Secret: A shared secret between the client application and the authentication server to prove the client's identity. (Only if AUTHENTICATION_MODE="OIDC")
+# Note: This secret should be securely stored and never shared.
+# Default value: ""
+AUTHENTICATION_OIDC_CLIENT_SECRET = ""
+
+# OIDC Redirect Url: The redirection URL to which the user will be redirected after successful authentication. (Only if AUTHENTICATION_MODE="OIDC")
+# This URL should be configured as a valid redirection URL in the OIDC client application settings.
+# Default value: "https://127.0.0.1:5556/auth/oidc/callback"
+AUTHENTICATION_OIDC_REDIRECT_URL = "http://127.0.0.1:9000/api/v5/auth/oidc/callback"
+
+# OIDC URL: The URL of the OIDC (OpenID Connect) server providing the authentication service. (Only if AUTHENTICATION_MODE="OIDC")
+# Default value: "https://accounts.google.com"
+AUTHENTICATION_OIDC_ISSUER_URL = "https://accounts.google.com"
+
+# OIDC Scopes: The scopes of access requested when authenticating with the OIDC server. (Only if AUTHENTICATION_MODE="OIDC")
+# These should be a list of scopes separated by commas.
+# Default value: "profile,email"
+AUTHENTICATION_OIDC_SCOPES = "profile,email"
+
+# AUTHENTICATION_OIDC_FRONT_END_URL: The URL of the front-end application to which the user will be redirected after successful OIDC authentication. 
+# Default value: "http://127.0.0.1:4200"
+AUTHENTICATION_OIDC_FRONT_END_URL = "http://127.0.0.1:4200" 
+
+# AUTHENTICATION_OIDC_ENCRYPTION_KEY: The secret key used for state encryption/decryption in the OpenID Connect authentication process.
+# This should be a secure, randomly generated string of exactly 16, 24 or 32 characters that is kept secret.
+# This secret key is used to sign and verify the state parameter in the OIDC authentication process.
+# This is necessary when the application is running in a context where the session cannot be used to store the state,
+# such as when the front-end and back-end are running on different domains.
+# Note: The key length is critical for the AES encryption algorithm used for state encryption/decryption. 
+# It must be exactly 16, 24 or 32 characters long.
+# Default value: "thisis24characterslongs." (24 characters)
+AUTHENTICATION_OIDC_ENCRYPTION_KEY = "thisis24characterslongs."

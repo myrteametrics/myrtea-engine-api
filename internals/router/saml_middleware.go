@@ -20,6 +20,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/roles"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/utils"
 	"go.uber.org/zap"
 )
 
@@ -171,7 +172,7 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 		userDisplayName := samlsp.AttributeFromContext(r.Context(), m.Config.AttributeUserDisplayName)
 
 		userGroups := session.GetAttributes()[m.Config.AttributeUserMemberOf] // .Get(<name>) doesn't work with slice
-		userGroups = sliceDeduplicate(userGroups)
+		userGroups = utils.RemoveDuplicates(userGroups)
 		userRoles := make([]roles.Role, 0)
 		for _, userGroupName := range userGroups {
 			role, found, err := roles.R().GetByName(userGroupName)
@@ -251,4 +252,3 @@ func (m *SamlSPMiddleware) Deconnexion(handler http.Handler) http.Handler {
 		handler.ServeHTTP(w, r)
 	})
 }
-
