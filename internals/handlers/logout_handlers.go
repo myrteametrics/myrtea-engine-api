@@ -34,7 +34,7 @@ func LogoutHandler(deleteSessionMiddleware func(http.Handler) http.Handler) http
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /engine/authmode [get]
 func GetAuthenticationMode(w http.ResponseWriter, r *http.Request) {
-	mode, err := authmanagement.S().GetMode()
+	mode, err := authmanagement.GetMode()
 	if err != nil {
 		zap.L().Error("Error querying authentication mode", zap.Error(err))
 		render.Error(w, r, render.ErrAPIProcessError, err)

@@ -21,7 +21,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/modeler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/router/authmanagement"
 	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internals/router/oidc"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/scheduler"
@@ -69,7 +68,6 @@ func initServices() {
 	initCalendars()
 	initEmailSender()
 	initOidcAuthentication()
-	initAuthMode()
 }
 
 func stopServices() {
@@ -161,8 +159,4 @@ func initOidcAuthentication() {
 		}
 	}
 
-}
-
-func initAuthMode() {
-	authmanagement.ReplaceGlobals(authmanagement.New())
 }
