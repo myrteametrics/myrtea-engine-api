@@ -13,6 +13,7 @@ import (
 	gorillacontext "github.com/gorilla/context"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/utils"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/roles"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
@@ -88,7 +89,7 @@ func ContextMiddleware(next http.Handler) http.Handler {
 		// inject the user information (Permission role etc) Connect into the context.
 		// and for now assuming all are admin
 		userGroups := []string{"admin"}
-		userGroups = removeDuplicates(userGroups)
+		userGroups = utils.RemoveDuplicates(userGroups)
 		userRoles := make([]roles.Role, 0)
 		for _, userGroupName := range userGroups {
 			role, found, err := roles.R().GetByName(userGroupName)

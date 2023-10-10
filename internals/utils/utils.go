@@ -1,6 +1,6 @@
-package oidcAuth
+package utils
 
-func removeDuplicates(stringSlice []string) []string {
+func RemoveDuplicates(stringSlice []string) []string {
 	keys := make(map[string]bool)
 	list := []string{}
 	for _, entry := range stringSlice {
