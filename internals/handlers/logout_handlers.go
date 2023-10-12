@@ -29,7 +29,7 @@ func LogoutHandler(deleteSessionMiddleware func(http.Handler) http.Handler) http
 // @Tags Admin
 // @Produce json
 // @Security Bearer
-// @Success 200 {object} AuthenticationMode
+// @Success 200 {object} authmanagement.AuthenticationMode
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /engine/authmode [get]
