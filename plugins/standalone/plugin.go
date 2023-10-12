@@ -3,6 +3,7 @@ package standalone
 import (
 	"fmt"
 	"net/http"
+	"net/rpc"
 	"os"
 	"os/exec"
 
@@ -23,7 +24,8 @@ var Handshake = plugin.HandshakeConfig{
 type Plugin struct {
 	Config       pluginutils.PluginConfig
 	ClientConfig *plugin.ClientConfig
-	Client       *plugin.Client
+	client       *plugin.Client
+	Service      StandaloneService
 }
 
 func NewPlugin(config pluginutils.PluginConfig) *Plugin {
@@ -41,7 +43,7 @@ func NewPlugin(config pluginutils.PluginConfig) *Plugin {
 	// cmd.Env = append(cmd.Env, "MYRTEA_component_DEBUG_MODE=true")
 
 	pluginMap := map[string]plugin.Plugin{
-		config.Name: &GRPCPlugin{},
+		config.Name: &Plugin{},
 	}
 
 	return &Plugin{
@@ -65,7 +67,8 @@ func (p *Plugin) HandlerPrefix() string {
 }
 
 func (p *Plugin) Stop() error {
-	p.Client.Kill()
+	p.client.Kill()
+
 	return nil
 }
 
@@ -85,10 +88,21 @@ func (p *Plugin) Start() error {
 		return err
 	}
 
-	_ = raw
+	p.client = client
 
-	// p.BaselineService = raw.(BaselineService)
-	p.Client = client
+	service, ok := raw.(StandaloneService)
+	if !ok {
+		zap.L().Error("Cast dispense plugin", zap.String("module", p.Config.Name))
+		return fmt.Errorf("could'nt cast dispense to StandaloneService")
+	}
+
+	p.Service = service
+
+	// Run service on given port
+	err = p.Service.Run(p.Config.Port)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -99,4 +113,14 @@ func (p *Plugin) Handler() http.Handler {
 	// Add HTTP routes for every method exposed in the plugin interface GetBaselineValues
 
 	return r
+}
+
+// RPC server & client implementation for Plugin interface
+
+func (p *Plugin) Server(*plugin.MuxBroker) (interface{}, error) {
+	return &RPCServer{Impl: p.Service}, nil
+}
+
+func (Plugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interface{}, error) {
+	return &RPCPlugin{client: c}, nil
 }
