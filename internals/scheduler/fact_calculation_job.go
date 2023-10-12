@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
@@ -245,6 +244,8 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 						Ts:                  t,
 						Parameters:          sh.Parameters,
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
+						EnableDependsOn:     sh.EnableDependsOn,
+						DependsOnParameters: sh.DependsOnParameters,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -285,6 +286,8 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 						Ts:                  t,
 						Parameters:          sh.Parameters,
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
+						EnableDependsOn:     sh.EnableDependsOn,
+						DependsOnParameters: sh.DependsOnParameters,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -417,6 +420,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 
 func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situationsToUpdate map[string]history.HistoryRecordV4) ([]tasker.TaskBatch, error) {
 	taskBatchs := make([]tasker.TaskBatch, 0)
+	taskBatchsMap := make(map[string]tasker.TaskBatch)
 	situationHistoryMetadata := make(map[models.Key]map[string]interface{})
 	for _, situationToUpdate := range situationsToUpdate {
 
@@ -512,7 +516,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		}
 
 		if agenda != nil {
-			taskBatchs = append(taskBatchs, tasker.TaskBatch{
+			newTaskBatch := tasker.TaskBatch{
 				Context: map[string]interface{}{
 					"situationID":                 situationToUpdate.SituationID,
 					"templateInstanceID":          situationToUpdate.SituationInstanceID,
@@ -521,111 +525,137 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 					"situationHistoryID":          historySituationNew.ID,
 				},
 				Agenda: agenda,
-			})
+			}
+			taskBatchs = append(taskBatchs, newTaskBatch)
+			key := fmt.Sprintf("%v-%v", situationToUpdate.SituationID, situationToUpdate.SituationInstanceID)
+			taskBatchsMap[key] = newTaskBatch
 		}
 	}
 
-	filteredTaskBatch := filterTaskBatch(situationsToUpdate, taskBatchs, situationHistoryMetadata)
+	filteredTaskBatch := filterTaskBatch(situationsToUpdate, situationHistoryMetadata, taskBatchsMap)
 
 	return filteredTaskBatch, nil
 }
 
 // filtration
-func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, TaskBatch []tasker.TaskBatch, situationHistoryMetadata map[models.Key]map[string]interface{}) []tasker.TaskBatch {
-	filteredTaskBatch := append([]tasker.TaskBatch(nil), TaskBatch...)
-
+func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, situationHistoryMetadata map[models.Key]map[string]interface{}, taskBatchsMap map[string]tasker.TaskBatch) []tasker.TaskBatch {
+	filteredTaskBatch := make(map[string]tasker.TaskBatch, len(taskBatchsMap))
+	for key, taskBatch := range taskBatchsMap {
+		filteredTaskBatch[key] = taskBatch
+	}
+	
 	for _, situation := range situationsToUpdate {
 		if situation.EnableDependsOn {
 
-			DependsOnMetadata := situation.DependsOnParameters["depends_on_metadata"]
-			DependsOnMetadataValue := situation.DependsOnParameters["depends_on_metadata_value"]
+			DependsOnMetadata := situation.DependsOnParameters[KeyMetadataDependsOn]
+			DependsOnMetadataValue := situation.DependsOnParameters[ValueMetadataDependsOn]
+			keychild := fmt.Sprintf("%v-%v", situation.SituationID, situation.SituationInstanceID)
 
+			keyParent, idSituationDependsOn , idInstanceDependsOn , err := generateKeyAndValues(situation.DependsOnParameters)
+			if err != nil {
+				zap.L().Error("Error to generating key", zap.Error(err))
+				continue
+			} 
+			
 			IsChildCritical := false
-			var IdChildCritical int
 
-			// check if child is also critical
-			for i := 0; i < len(filteredTaskBatch); i++ {
-				childSituationID, err1 := filteredTaskBatch[i].Context["situationID"].(int64)
-				childtemplateInstanceID, err2 := filteredTaskBatch[i].Context["templateInstanceID"].(int64)
-				if err1 && err2 && childSituationID == situation.SituationID &&
-					childtemplateInstanceID == situation.SituationInstanceID {
-					for _, agenda := range filteredTaskBatch[i].Agenda {
-						if agenda.GetName() == "set" &&
-							agenda.GetEnableDependsForALLAction() &&
-							agenda.GetEnabledDependsAction() {
-							metadataInterface, err5 := agenda.GetParameters()[DependsOnMetadata]
-							if err5 {
-								metadata, err6 := metadataInterface.(string)
-								if err6 && metadata == DependsOnMetadataValue {
-									IsChildCritical = true
-									IdChildCritical = i
+			// check if an child is critical
+			if childFilterdTaskBatch, exists := filteredTaskBatch[keychild]; exists {
+				for _, agenda := range childFilterdTaskBatch.Agenda {
+					if agenda.GetName() == ActionSetValue &&
+						agenda.GetEnableDependsForALLAction() &&
+						agenda.GetEnabledDependsAction() {
+						metadataInterface, err := agenda.GetParameters()[DependsOnMetadata]
+						if err {
+							metadata, err := metadataInterface.(string)
+							if err && metadata == DependsOnMetadataValue {
+								IsChildCritical = true
+								break
+							}
+						}
+					}
+				}
+			}
+			// check if there an parent who is critical
+			if IsChildCritical {
+				if ParentFilterdTaskBatch, exists := taskBatchsMap[keyParent]; exists{
+					for _, agenda := range ParentFilterdTaskBatch.Agenda {
+						if agenda.GetName() == ActionSetValue {
+							metadataInterface, err := agenda.GetParameters()[DependsOnMetadata]
+							if err {
+								metadata, err := metadataInterface.(string)
+								if err && metadata == DependsOnMetadataValue {
+									// Filter the actions to execute, retaining only those actions that do not adhere to the dependency management.
+									// Also, set the situation's action to pending.
+									err := filterAgendaAndUpdateHistory(keychild, DependsOnMetadata, filteredTaskBatch, situationHistoryMetadata, situation)
+									if err != nil {
+										zap.L().Error("Failed to filter agenda and update history", zap.Error(err))
+									}
+
 									break
 								}
 
 							}
 						}
 					}
-				}
-			}
-
-			if IsChildCritical {
-				// check if there an parent who is critical
-				for _, task := range TaskBatch {
-					situationID, err3 := task.Context["situationID"].(int64)
-					templateInstanceID, err4 := task.Context["templateInstanceID"].(int64)
-					situationIDStr := strconv.FormatInt(situationID, 10)
-					templateInstanceIDStr := strconv.FormatInt(templateInstanceID, 10)
-
-					if err3 && err4 && situationIDStr == situation.DependsOnParameters["id_situation_depends_on"] &&
-						templateInstanceIDStr == situation.DependsOnParameters["id_instance_depends_on"] {
-						for _, agenda := range task.Agenda {
-							if agenda.GetName() == "set" &&
-								agenda.GetEnableDependsForALLAction() &&
-								agenda.GetEnabledDependsAction() {
-								metadataInterface, err5 := agenda.GetParameters()[DependsOnMetadata]
-								if err5 {
-									metadata, err6 := metadataInterface.(string)
-									if err6 && metadata == DependsOnMetadataValue {
-										// filtre l'agenda pour supprimer les action qui ne  repsect la gestion dependance
-										filteredAgenda := make([]ruleeng.Action, 0)
-										for _, action := range filteredTaskBatch[IdChildCritical].Agenda {
-											if (action.GetEnableDependsForALLAction() == false) || (action.GetEnableDependsForALLAction() == true && action.GetEnabledDependsAction() == false) {
-												filteredAgenda = append(filteredAgenda, action)
-											}
-										}
-										filteredTaskBatch[IdChildCritical].Agenda = filteredAgenda
-
-										// Modifie la table SituationHistory pour change le status critical en pending
-										valuesituationHistoryMetadata := situationHistoryMetadata[models.Key{SituationID: situation.SituationID,
-											SituationInstanceID: situation.SituationInstanceID}]
-										historySituation := valuesituationHistoryMetadata["HistorySituation"].(history.HistorySituationsV4)
-
-										for i, metadata := range historySituation.Metadatas {
-											if metadata.Key == "statut_lag" {
-												historySituation.Metadatas[i].Value = "pending"
-												break
-											}
-										}
-
-										err10 := history.S().HistorySituationsQuerier.Update(historySituation)
-										if err10 != nil {
-											zap.L().Error("", zap.Error(err10))
-										}
-
-										break
-									}
-
-								}
-							}
+				} else {
+					// rechercher parent in database 
+					Parent, err := history.S().HistorySituationsQuerier.GetLatestHistory(int64(idSituationDependsOn),int64(idInstanceDependsOn))
+					if err != nil {
+						logDataRetrieval(false, idSituationDependsOn, idInstanceDependsOn, situation.SituationID, situation.SituationInstanceID, err, "")					
+					}else {
+						if Parent.Metadatas[0].Key == DependsOnMetadata && Parent.Metadatas[0].Value == DependsOnMetadataValue {
+                           // Filter the actions to execute, retaining only those actions that do not adhere to the dependency management.
+						   // Also, set the situation's action to pending.
+						  logDataRetrieval(true, idSituationDependsOn, idInstanceDependsOn, situation.SituationID, situation.SituationInstanceID, err, Parent.Ts.String())					
+						  err := filterAgendaAndUpdateHistory(keychild, DependsOnMetadata, filteredTaskBatch, situationHistoryMetadata, situation)
+						  if err != nil {
+							  zap.L().Error("Failed to filter agenda and update history", zap.Error(err))
+						  }						  
+						  
 						}
 					}
+					
 				}
 			}
 
 		}
 	}
-	return filteredTaskBatch
+
+
+	taskBatchSlice := make([]tasker.TaskBatch, 0, len(filteredTaskBatch))
+	for _, taskBatch := range filteredTaskBatch {
+		taskBatchSlice = append(taskBatchSlice, taskBatch)
+	}
+	
+	return taskBatchSlice
 }
+
+func filterAgendaAndUpdateHistory(keychild string, DependsOnMetadata string, filteredTaskBatch map[string]tasker.TaskBatch, situationHistoryMetadata map[models.Key]map[string]interface{}, situation history.HistoryRecordV4) error {
+	// Filter agenda...
+	filteredAgenda := make([]ruleeng.Action, 0)
+	for _, action := range filteredTaskBatch[keychild].Agenda {
+		if (action.GetEnableDependsForALLAction() == false) || (action.GetEnableDependsForALLAction() == true && action.GetEnabledDependsAction() == false) {
+			filteredAgenda = append(filteredAgenda, action)
+		}
+	}
+	taskBatch := filteredTaskBatch[keychild]
+	taskBatch.Agenda = filteredAgenda
+	filteredTaskBatch[keychild] = taskBatch
+	
+	// Update history situation...
+	valuesituationHistoryMetadata := situationHistoryMetadata[models.Key{SituationID: situation.SituationID, SituationInstanceID: situation.SituationInstanceID}]
+	historySituation := valuesituationHistoryMetadata["HistorySituation"].(history.HistorySituationsV4)
+	for i, metadata := range historySituation.Metadatas {
+		if metadata.Key == DependsOnMetadata {
+			historySituation.Metadatas[i].Value = ActionPendingValue
+			break
+		}
+	}
+	
+	return history.S().HistorySituationsQuerier.Update(historySituation)
+}
+
 
 // GetLinkedSituations returns all situation linked to a fact
 func GetLinkedSituations(fact engine.Fact) ([]history.HistoryRecordV4, error) {

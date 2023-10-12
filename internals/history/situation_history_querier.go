@@ -1,9 +1,11 @@
 package history
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -260,6 +262,53 @@ func (querier HistorySituationsQuerier) scanAll(rows *sql.Rows) ([]HistorySituat
 	}
 
 	return users, nil
+}
+
+func (querier *HistorySituationsQuerier) QueryGetFieldsTsMetadatas(ctx context.Context, builder sq.SelectBuilder) (HistorySituationsV4, error) {
+    rows, err := builder.RunWith(querier.conn).QueryContext(ctx)
+    if err != nil {
+        return HistorySituationsV4{}, fmt.Errorf("query execution failed: %w", err)
+    }
+    defer rows.Close()
+
+    var result HistorySituationsV4
+    for rows.Next() {
+        var metadatas []models.MetaData
+        var ts time.Time
+		var metadataBytes []byte
+        err = rows.Scan(&ts, &metadataBytes)
+
+        if err != nil {
+            return HistorySituationsV4{}, fmt.Errorf("row scanning failed: %w", err)
+        }else {
+            err = json.Unmarshal(metadataBytes, &metadatas)
+			if err != nil {
+			   return HistorySituationsV4{}, fmt.Errorf("Warning: unable to unmarshal metadatas JSON: %v\n", err)
+			}
+		}
+        result = HistorySituationsV4{ Metadatas: metadatas , Ts: ts}
+        break //LIMIT 1
+    }
+    if result.Ts.IsZero() {
+        return HistorySituationsV4{}, errors.New("no results found")
+    }
+    return result, nil
+}
+
+func (querier HistorySituationsQuerier) GetLatestHistory(situationID int64, situationInstanceID int64) (HistorySituationsV4, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
+	builder := HistorySituationsBuilder{}
+	selectBuilder := builder.GetLatestHistorySituation(situationID, situationInstanceID)
+	results, err := querier.QueryGetFieldsTsMetadatas(ctx, selectBuilder)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return HistorySituationsV4{}, errors.New("Timeout Error: The request targeting the 'situation_history_v5' table timed out after 1 minute.")
+		}
+		return HistorySituationsV4{}, err
+	}
+	return results, nil
 }
 
 // func (querier HistorySituationsQuerier) scanFirst(rows *sql.Rows) (HistorySituationsV4, bool, error) {

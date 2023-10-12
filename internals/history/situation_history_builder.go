@@ -113,3 +113,14 @@ func (builder HistorySituationsBuilder) DeleteOrphans() sq.DeleteBuilder {
 				Suffix(")"),
 		)
 }
+
+func (builder HistorySituationsBuilder) GetLatestHistorySituation(situationID int64, situationInstanceID int64) sq.SelectBuilder {
+	return builder.newStatement().
+		Select("ts","metadatas").
+		From("situation_history_v5").
+		Where(sq.Eq{"situation_id": situationID}).
+		Where(sq.Eq{"situation_instance_id": situationInstanceID}).
+		OrderBy("ts DESC").
+		Limit(1)
+}
+
