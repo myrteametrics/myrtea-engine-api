@@ -530,13 +530,13 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 
 	if f.Dimensions != nil {
 		zap.L().Warn("Fact does have dimensions", zap.String("factid", id))
-		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("Service not supported on fact with dimensions"))
+		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("Impl not supported on fact with dimensions"))
 		return
 	}
 
 	if f.IsObject {
 		zap.L().Warn("Fact is an object fact", zap.String("factid", id))
-		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("Service not supported on fact object"))
+		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("Impl not supported on fact object"))
 		return
 	}
 

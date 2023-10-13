@@ -326,12 +326,12 @@ func buildRoutesV3OIDC(config Config) (func(r chi.Router), error) {
 			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
 			rg.Mount("/engine", engineRouter())
 
-			for _, plugin := range config.Plugins {
-				rg.Mount(plugin.HandlerPrefix(), plugin.Handler())
-				rg.HandleFunc(fmt.Sprintf("/plugin%s", plugin.HandlerPrefix()), func(w http.ResponseWriter, r *http.Request) {
+			for _, plugin := range config.PluginCore.Plugins {
+				rg.Mount(plugin.Plugin.HandlerPrefix(), plugin.Plugin.Handler())
+				rg.HandleFunc(fmt.Sprintf("/plugin%s", plugin.Plugin.HandlerPrefix()), func(w http.ResponseWriter, r *http.Request) {
 					render.JSON(w, r, map[string]interface{}{"loaded": true})
 				})
-				rg.HandleFunc(fmt.Sprintf("/plugin%s/*", plugin.HandlerPrefix()), ReverseProxy(plugin))
+				rg.HandleFunc(fmt.Sprintf("/plugin%s/*", plugin.Plugin.HandlerPrefix()), ReverseProxy(plugin.Plugin))
 			}
 		})
 

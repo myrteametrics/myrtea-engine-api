@@ -6,6 +6,7 @@ import (
 	"net/rpc"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-plugin"
@@ -25,7 +26,7 @@ type Plugin struct {
 	Config       pluginutils.PluginConfig
 	ClientConfig *plugin.ClientConfig
 	client       *plugin.Client
-	Service      StandaloneService
+	Impl         StandaloneService
 }
 
 func NewPlugin(config pluginutils.PluginConfig) *Plugin {
@@ -38,7 +39,13 @@ func NewPlugin(config pluginutils.PluginConfig) *Plugin {
 		return nil
 	}
 
-	cmd := exec.Command("sh", "-c", pluginPath)
+	var cmd *exec.Cmd
+
+	if runtime.GOOS != "windows" {
+		cmd = exec.Command("sh", "-c", pluginPath)
+	} else {
+		cmd = exec.Command("cmd.exe", "/C", "start", "/b", pluginPath)
+	}
 	cmd.Env = os.Environ()
 	// cmd.Env = append(cmd.Env, "MYRTEA_component_DEBUG_MODE=true")
 
@@ -53,7 +60,7 @@ func NewPlugin(config pluginutils.PluginConfig) *Plugin {
 			HandshakeConfig:  Handshake,
 			Plugins:          pluginMap,
 			Cmd:              cmd,
-			AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
+			AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
 		},
 	}
 }
@@ -93,13 +100,14 @@ func (p *Plugin) Start() error {
 	service, ok := raw.(StandaloneService)
 	if !ok {
 		zap.L().Error("Cast dispense plugin", zap.String("module", p.Config.Name))
+		client.Kill()
 		return fmt.Errorf("could'nt cast dispense to StandaloneService")
 	}
 
-	p.Service = service
+	p.Impl = service
 
 	// Run service on given port
-	err = p.Service.Run(p.Config.Port)
+	err = p.Impl.Run(p.Config.Port)
 	if err != nil {
 		return err
 	}
@@ -118,7 +126,7 @@ func (p *Plugin) Handler() http.Handler {
 // RPC server & client implementation for Plugin interface
 
 func (p *Plugin) Server(*plugin.MuxBroker) (interface{}, error) {
-	return &RPCServer{Impl: p.Service}, nil
+	return &RPCServer{Impl: p.Impl}, nil
 }
 
 func (Plugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interface{}, error) {
