@@ -33,7 +33,7 @@ func NewProcessorHandler() *ProcessorHandler {
 // PostObjects godoc
 // @Summary Receive objects to be evaluated
 // @Description Receive objects to be evaluated
-// @Tags Impl
+// @Tags Service
 // @Produce json
 // @Param fact query string true "Fact object name"
 // @Security Bearer
@@ -71,7 +71,7 @@ func PostObjects(w http.ResponseWriter, r *http.Request) {
 // PostAggregates godoc
 // @Summary Receive ingester to be evaluated
 // @Description Receive ingester to be evaluated
-// @Tags Impl
+// @Tags Service
 // @Consume json
 // @Produce json
 // @Param query body []scheduler.ExternalAggregate true "query (json)"

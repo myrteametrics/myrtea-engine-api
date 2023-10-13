@@ -30,7 +30,7 @@ type SamlSPMiddleware struct {
 	Config SamlSPMiddlewareConfig
 }
 
-// NewSamlSP build a new SAML Impl Provider middleware
+// NewSamlSP build a new SAML Service Provider middleware
 func NewSamlSP(spRootURLStr string, entityID string, keyFile string, crtFile string, config SamlSPMiddlewareConfig) (*SamlSPMiddleware, error) {
 	spRootURL, err := url.Parse(spRootURLStr)
 	if err != nil {
