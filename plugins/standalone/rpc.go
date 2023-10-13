@@ -2,7 +2,6 @@ package standalone
 
 import (
 	"errors"
-	"go.uber.org/zap"
 	"net/rpc"
 )
 
@@ -13,7 +12,13 @@ type RPCServer struct {
 }
 
 func (s *RPCServer) Run(args interface{}, resp *string) error {
-	port, ok := args.(int)
+	argsMap, ok := args.(map[string]interface{})
+
+	if !ok {
+		return errors.New("couldn't cast args to map[string]interface{}")
+	}
+
+	port, ok := argsMap["port"].(int)
 
 	if !ok {
 		return errors.New("couldn't cast port to int")
@@ -27,9 +32,8 @@ type RPCPlugin struct {
 	client *rpc.Client
 }
 
-func (g *RPCPlugin) Run(port int) {
-	err := g.client.Call("Plugin.Run", port, nil)
-	if err != nil {
-		zap.L().Error("Error executing RCPPlugin.Run", zap.Error(err))
-	}
+func (g *RPCPlugin) Run(port int) error {
+	return g.client.Call("Plugin.Run", map[string]interface{}{
+		"port": port,
+	}, nil)
 }

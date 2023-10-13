@@ -44,7 +44,7 @@ func NewPlugin(config pluginutils.PluginConfig) *Plugin {
 	if runtime.GOOS != "windows" {
 		cmd = exec.Command("sh", "-c", pluginPath)
 	} else {
-		cmd = exec.Command("cmd.exe", "/C", "start", "/b", pluginPath)
+		cmd = exec.Command(pluginPath)
 	}
 	cmd.Env = os.Environ()
 	// cmd.Env = append(cmd.Env, "MYRTEA_component_DEBUG_MODE=true")
@@ -109,6 +109,8 @@ func (p *Plugin) Start() error {
 	// Run service on given port
 	err = p.Impl.Run(p.Config.Port)
 	if err != nil {
+		zap.L().Error("Error executing RCPPlugin.Run", zap.Error(err))
+		client.Kill()
 		return err
 	}
 
