@@ -1,7 +1,6 @@
 package standalone
 
 import (
-	"errors"
 	"net/rpc"
 )
 
@@ -11,19 +10,7 @@ type RPCServer struct {
 	Impl StandaloneService
 }
 
-func (s *RPCServer) Run(args interface{}, resp *string) error {
-	argsMap, ok := args.(map[string]interface{})
-
-	if !ok {
-		return errors.New("couldn't cast args to map[string]interface{}")
-	}
-
-	port, ok := argsMap["port"].(int)
-
-	if !ok {
-		return errors.New("couldn't cast port to int")
-	}
-
+func (s *RPCServer) Run(port int, resp *string) error {
 	return s.Impl.Run(port)
 }
 
@@ -33,7 +20,5 @@ type RPCPlugin struct {
 }
 
 func (g *RPCPlugin) Run(port int) error {
-	return g.client.Call("Plugin.Run", map[string]interface{}{
-		"port": port,
-	}, nil)
+	return g.client.Call("Plugin.Run", port, nil)
 }
