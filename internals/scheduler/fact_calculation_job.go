@@ -543,7 +543,7 @@ func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, situ
 	for key, taskBatch := range taskBatchsMap {
 		filteredTaskBatch[key] = taskBatch
 	}
-	
+
 	for _, situation := range situationsToUpdate {
 		if situation.EnableDependsOn {
 
@@ -551,12 +551,12 @@ func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, situ
 			DependsOnMetadataValue := situation.DependsOnParameters[ValueMetadataDependsOn]
 			keychild := fmt.Sprintf("%v-%v", situation.SituationID, situation.SituationInstanceID)
 
-			keyParent, idSituationDependsOn , idInstanceDependsOn , err := generateKeyAndValues(situation.DependsOnParameters)
+			keyParent, idSituationDependsOn, idInstanceDependsOn, err := generateKeyAndValues(situation.DependsOnParameters)
 			if err != nil {
 				zap.L().Error("Error to generating key", zap.Error(err))
 				continue
-			} 
-			
+			}
+
 			IsChildCritical := false
 
 			// check if an child is critical
@@ -578,7 +578,7 @@ func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, situ
 			}
 			// check if there an parent who is critical
 			if IsChildCritical {
-				if ParentFilterdTaskBatch, exists := taskBatchsMap[keyParent]; exists{
+				if ParentFilterdTaskBatch, exists := taskBatchsMap[keyParent]; exists {
 					for _, agenda := range ParentFilterdTaskBatch.Agenda {
 						if agenda.GetName() == ActionSetValue {
 							metadataInterface, err := agenda.GetParameters()[DependsOnMetadata]
@@ -599,35 +599,34 @@ func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, situ
 						}
 					}
 				} else {
-					// rechercher parent in database 
-					Parent, err := history.S().HistorySituationsQuerier.GetLatestHistory(int64(idSituationDependsOn),int64(idInstanceDependsOn))
+					// rechercher parent in database
+					Parent, err := history.S().HistorySituationsQuerier.GetLatestHistory(int64(idSituationDependsOn), int64(idInstanceDependsOn))
 					if err != nil {
-						logDataRetrieval(false, idSituationDependsOn, idInstanceDependsOn, situation.SituationID, situation.SituationInstanceID, err, "")					
-					}else {
+						logDataRetrieval(false, idSituationDependsOn, idInstanceDependsOn, situation.SituationID, situation.SituationInstanceID, err, "")
+					} else {
 						if Parent.Metadatas[0].Key == DependsOnMetadata && Parent.Metadatas[0].Value == DependsOnMetadataValue {
-                           // Filter the actions to execute, retaining only those actions that do not adhere to the dependency management.
-						   // Also, set the situation's action to pending.
-						  logDataRetrieval(true, idSituationDependsOn, idInstanceDependsOn, situation.SituationID, situation.SituationInstanceID, err, Parent.Ts.String())					
-						  err := filterAgendaAndUpdateHistory(keychild, DependsOnMetadata, filteredTaskBatch, situationHistoryMetadata, situation)
-						  if err != nil {
-							  zap.L().Error("Failed to filter agenda and update history", zap.Error(err))
-						  }						  
-						  
+							// Filter the actions to execute, retaining only those actions that do not adhere to the dependency management.
+							// Also, set the situation's action to pending.
+							logDataRetrieval(true, idSituationDependsOn, idInstanceDependsOn, situation.SituationID, situation.SituationInstanceID, err, Parent.Ts.String())
+							err := filterAgendaAndUpdateHistory(keychild, DependsOnMetadata, filteredTaskBatch, situationHistoryMetadata, situation)
+							if err != nil {
+								zap.L().Error("Failed to filter agenda and update history", zap.Error(err))
+							}
+
 						}
 					}
-					
+
 				}
 			}
 
 		}
 	}
 
-
 	taskBatchSlice := make([]tasker.TaskBatch, 0, len(filteredTaskBatch))
 	for _, taskBatch := range filteredTaskBatch {
 		taskBatchSlice = append(taskBatchSlice, taskBatch)
 	}
-	
+
 	return taskBatchSlice
 }
 
@@ -642,7 +641,7 @@ func filterAgendaAndUpdateHistory(keychild string, DependsOnMetadata string, fil
 	taskBatch := filteredTaskBatch[keychild]
 	taskBatch.Agenda = filteredAgenda
 	filteredTaskBatch[keychild] = taskBatch
-	
+
 	// Update history situation...
 	valuesituationHistoryMetadata := situationHistoryMetadata[models.Key{SituationID: situation.SituationID, SituationInstanceID: situation.SituationInstanceID}]
 	historySituation := valuesituationHistoryMetadata["HistorySituation"].(history.HistorySituationsV4)
@@ -652,10 +651,9 @@ func filterAgendaAndUpdateHistory(keychild string, DependsOnMetadata string, fil
 			break
 		}
 	}
-	
+
 	return history.S().HistorySituationsQuerier.Update(historySituation)
 }
-
 
 // GetLinkedSituations returns all situation linked to a fact
 func GetLinkedSituations(fact engine.Fact) ([]history.HistoryRecordV4, error) {

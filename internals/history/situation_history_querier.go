@@ -36,7 +36,7 @@ type HistoryRecordV4 struct {
 	HistoryFacts        []HistoryFactsV4
 	Parameters          map[string]string
 	ExpressionFacts     map[string]interface{}
-	EnableDependsOn     bool              
+	EnableDependsOn     bool
 	DependsOnParameters map[string]string
 }
 
@@ -127,7 +127,6 @@ func (querier HistorySituationsQuerier) ExecDelete(builder sq.DeleteBuilder) err
 	}
 
 	zap.L().Info("Auto purge of the table Situation_history_v5", zap.Int64("Number of rows deleted", affectedRows))
-
 
 	return nil
 }
@@ -265,34 +264,34 @@ func (querier HistorySituationsQuerier) scanAll(rows *sql.Rows) ([]HistorySituat
 }
 
 func (querier *HistorySituationsQuerier) QueryGetFieldsTsMetadatas(ctx context.Context, builder sq.SelectBuilder) (HistorySituationsV4, error) {
-    rows, err := builder.RunWith(querier.conn).QueryContext(ctx)
-    if err != nil {
-        return HistorySituationsV4{}, fmt.Errorf("query execution failed: %w", err)
-    }
-    defer rows.Close()
+	rows, err := builder.RunWith(querier.conn).QueryContext(ctx)
+	if err != nil {
+		return HistorySituationsV4{}, fmt.Errorf("query execution failed: %w", err)
+	}
+	defer rows.Close()
 
-    var result HistorySituationsV4
-    for rows.Next() {
-        var metadatas []models.MetaData
-        var ts time.Time
+	var result HistorySituationsV4
+	for rows.Next() {
+		var metadatas []models.MetaData
+		var ts time.Time
 		var metadataBytes []byte
-        err = rows.Scan(&ts, &metadataBytes)
+		err = rows.Scan(&ts, &metadataBytes)
 
-        if err != nil {
-            return HistorySituationsV4{}, fmt.Errorf("row scanning failed: %w", err)
-        }else {
-            err = json.Unmarshal(metadataBytes, &metadatas)
+		if err != nil {
+			return HistorySituationsV4{}, fmt.Errorf("row scanning failed: %w", err)
+		} else {
+			err = json.Unmarshal(metadataBytes, &metadatas)
 			if err != nil {
-			   return HistorySituationsV4{}, fmt.Errorf("Warning: unable to unmarshal metadatas JSON: %v\n", err)
+				return HistorySituationsV4{}, fmt.Errorf("Warning: unable to unmarshal metadatas JSON: %v\n", err)
 			}
 		}
-        result = HistorySituationsV4{ Metadatas: metadatas , Ts: ts}
-        break //LIMIT 1
-    }
-    if result.Ts.IsZero() {
-        return HistorySituationsV4{}, errors.New("no results found")
-    }
-    return result, nil
+		result = HistorySituationsV4{Metadatas: metadatas, Ts: ts}
+		break //LIMIT 1
+	}
+	if result.Ts.IsZero() {
+		return HistorySituationsV4{}, errors.New("no results found")
+	}
+	return result, nil
 }
 
 func (querier HistorySituationsQuerier) GetLatestHistory(situationID int64, situationInstanceID int64) (HistorySituationsV4, error) {
