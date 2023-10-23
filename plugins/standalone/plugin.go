@@ -119,9 +119,6 @@ func (p *Plugin) Start() error {
 
 func (p *Plugin) Handler() http.Handler {
 	r := chi.NewRouter()
-
-	// Add HTTP routes for every method exposed in the plugin interface GetBaselineValues
-
 	return r
 }
 

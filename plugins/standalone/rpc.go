@@ -10,7 +10,7 @@ type RPCServer struct {
 	Impl StandaloneService
 }
 
-func (s *RPCServer) Run(port int, resp *string) error {
+func (s *RPCServer) Run(port int, resp *interface{}) error {
 	return s.Impl.Run(port)
 }
 
