@@ -181,3 +181,9 @@ func EvaluateExpressionFacts(expressionFacts []situation.ExpressionFact, data ma
 
 	return expressionFactsEvaluated
 }
+
+func getStartDate30DaysAgo() string {
+	now := time.Now().UTC()
+	thirtyDaysAgo := now.AddDate(0, 0, -30)
+	return thirtyDaysAgo.Format("2006-01-02 15:04:05")
+}

@@ -115,11 +115,14 @@ func (builder HistorySituationsBuilder) DeleteOrphans() sq.DeleteBuilder {
 }
 
 func (builder HistorySituationsBuilder) GetLatestHistorySituation(situationID int64, situationInstanceID int64) sq.SelectBuilder {
+	startOfLastMonth := getStartDate30DaysAgo()
+
 	return builder.newStatement().
 		Select("ts", "metadatas").
 		From("situation_history_v5").
 		Where(sq.Eq{"situation_id": situationID}).
 		Where(sq.Eq{"situation_instance_id": situationInstanceID}).
+		Where(sq.Expr("ts >= ?::timestamptz", startOfLastMonth)).
 		OrderBy("ts DESC").
 		Limit(1)
 }
