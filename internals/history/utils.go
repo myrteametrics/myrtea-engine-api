@@ -181,3 +181,10 @@ func EvaluateExpressionFacts(expressionFacts []situation.ExpressionFact, data ma
 
 	return expressionFactsEvaluated
 }
+
+func getTodayTimeRange() (string, string) {
+	todayStartDate := time.Now().UTC().Truncate(24 * time.Hour)
+	todayStart := todayStartDate.Format("2006-01-02 15:04:05")
+	tomorrowStart := todayStartDate.Add(24 * time.Hour).Format("2006-01-02 15:04:05")
+	return todayStart, tomorrowStart
+}
