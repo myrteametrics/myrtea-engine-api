@@ -139,7 +139,7 @@ func TestGetTodaysFactResultByParameters(t *testing.T) {
 	}
 
 	if expectedSQL != sql {
-		t.Errorf("Expected SQL to be \n%s\n but got \n%s", expectedSQL, sql)
+		t.Errorf("Expected SQL to be %s but got %s", expectedSQL, sql)
 	}
 
 	if !reflect.DeepEqual(expectedArgs, args) {
