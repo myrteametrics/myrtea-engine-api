@@ -275,16 +275,21 @@ func (querier *HistorySituationsQuerier) QueryGetFieldsTsMetadatas(ctx context.C
 		var metadatas []models.MetaData
 		var ts time.Time
 		var metadataBytes []byte
-		err = rows.Scan(&ts, &metadataBytes)
 
+		err = rows.Scan(&ts, &metadataBytes)
 		if err != nil {
 			return HistorySituationsV4{}, fmt.Errorf("row scanning failed: %w", err)
-		} else {
-			err = json.Unmarshal(metadataBytes, &metadatas)
-			if err != nil {
-				return HistorySituationsV4{}, fmt.Errorf("Warning: unable to unmarshal metadatas JSON: %v\n", err)
-			}
 		}
+
+		err = json.Unmarshal(metadataBytes, &metadatas)
+		if err != nil {
+			return HistorySituationsV4{}, fmt.Errorf("Warning: unable to unmarshal metadatas JSON: %v", err)
+		}
+
+		if len(metadatas) == 0 {
+			return HistorySituationsV4{}, fmt.Errorf("The latest evaluation of the situation is unknown.")
+		}
+
 		result = HistorySituationsV4{Metadatas: metadatas, Ts: ts}
 		break //LIMIT 1
 	}
@@ -303,7 +308,7 @@ func (querier HistorySituationsQuerier) GetLatestHistory(situationID int64, situ
 	results, err := querier.QueryGetFieldsTsMetadatas(ctx, selectBuilder)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return HistorySituationsV4{}, errors.New("Timeout Error: The request targeting the 'situation_history_v5' table timed out after 1 minute.")
+			return HistorySituationsV4{}, errors.New("Timeout Error: The request targeting the 'situation_history_v5' table timed out after 10 seconds.")
 		}
 		return HistorySituationsV4{}, err
 	}

@@ -599,7 +599,7 @@ func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, situ
 						}
 					}
 				} else {
-					// rechercher parent in database
+					// search for the parent in the database
 					Parent, err := history.S().HistorySituationsQuerier.GetLatestHistory(int64(idSituationDependsOn), int64(idInstanceDependsOn))
 					if err != nil {
 						logDataRetrieval(false, idSituationDependsOn, idInstanceDependsOn, situation.SituationID, situation.SituationInstanceID, err, "")
