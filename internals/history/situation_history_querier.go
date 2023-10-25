@@ -283,7 +283,7 @@ func (querier *HistorySituationsQuerier) QueryGetFieldsTsMetadatas(ctx context.C
 
 		err = json.Unmarshal(metadataBytes, &metadatas)
 		if err != nil {
-			return HistorySituationsV4{}, fmt.Errorf("Warning: unable to unmarshal metadatas JSON: %v\n", err)
+			return HistorySituationsV4{}, fmt.Errorf("Warning: unable to unmarshal metadatas JSON: %v", err)
 		}
 
 		if len(metadatas) == 0 {
