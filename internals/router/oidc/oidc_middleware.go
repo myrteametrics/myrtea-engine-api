@@ -13,10 +13,10 @@ import (
 	gorillacontext "github.com/gorilla/context"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/utils"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/roles"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/utils"
 	"go.uber.org/zap"
 )
 
@@ -73,11 +73,12 @@ func ContextMiddleware(next http.Handler) http.Handler {
 
 		// Get the user's claims
 		var claims struct {
-			Email         string `json:"email"`
-			VerifiedEmail bool   `json:"email_verified"`
-			Name          string `json:"name"`
-			GivenName     string `json:"given_name"`
-			FamilyName    string `json:"family_name"`
+			Email         string   `json:"email"`
+			VerifiedEmail bool     `json:"email_verified"`
+			Name          string   `json:"name"`
+			GivenName     string   `json:"given_name"`
+			FamilyName    string   `json:"family_name"`
+			Roles         []string `json:"roles"`
 		}
 
 		if err := idToken.Claims(&claims); err != nil {
@@ -88,7 +89,7 @@ func ContextMiddleware(next http.Handler) http.Handler {
 
 		// inject the user information (Permission role etc) Connect into the context.
 		// and for now assuming all are admin
-		userGroups := []string{"admin"}
+		userGroups := claims.Roles
 		userGroups = utils.RemoveDuplicates(userGroups)
 		userRoles := make([]roles.Role, 0)
 		for _, userGroupName := range userGroups {

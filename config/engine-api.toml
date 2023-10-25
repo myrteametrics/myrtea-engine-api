@@ -218,7 +218,7 @@ AUTHENTICATION_OIDC_ISSUER_URL = "https://accounts.google.com"
 # OIDC Scopes: The scopes of access requested when authenticating with the OIDC server. (Only if AUTHENTICATION_MODE="OIDC")
 # These should be a list of scopes separated by commas.
 # Default value: "profile,email"
-AUTHENTICATION_OIDC_SCOPES = "profile,email"
+AUTHENTICATION_OIDC_SCOPES = "profile,email,roles"
 
 # AUTHENTICATION_OIDC_FRONT_END_URL: The URL of the front-end application to which the user will be redirected after successful OIDC authentication. 
 # Default value: "http://127.0.0.1:4200"
