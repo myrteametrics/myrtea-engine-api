@@ -67,8 +67,7 @@ func (builder HistoryFactsBuilder) Delete(ID int64) sq.DeleteBuilder {
 }
 
 func (builder HistoryFactsBuilder) GetTodaysFactResultByParameters(param ParamGetFactHistory) sq.SelectBuilder {
-	todayStart := time.Now().UTC().Truncate(24 * time.Hour)
-	tomorrowStart := todayStart.Add(24 * time.Hour)
+	todayStart, tomorrowStart := getTodayTimeRange()
 
 	return builder.newStatement().
 		Select("result, ts").
@@ -76,7 +75,7 @@ func (builder HistoryFactsBuilder) GetTodaysFactResultByParameters(param ParamGe
 		Where(sq.Eq{"fact_id": param.FactID}).
 		Where(sq.Eq{"situation_id": param.SituationID}).
 		Where(sq.Eq{"situation_instance_id": param.SituationInstanceID}).
-		Where(sq.GtOrEq{"ts": todayStart}).
-		Where(sq.Lt{"ts": tomorrowStart})
+		Where(sq.Expr("ts >= ?::timestamptz", todayStart)).
+		Where(sq.Expr("ts < ?::timestamptz", tomorrowStart))
 }
 
