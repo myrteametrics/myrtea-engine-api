@@ -287,7 +287,7 @@ func (querier *HistorySituationsQuerier) QueryGetFieldsTsMetadatas(ctx context.C
 		}
 
 		if len(metadatas) == 0 {
-			return HistorySituationsV4{}, fmt.Errorf(" The latest evaluation of the situation is unknown. \n")
+			return HistorySituationsV4{}, fmt.Errorf("The latest evaluation of the situation is unknown.")
 		}
 
 		result = HistorySituationsV4{Metadatas: metadatas, Ts: ts}
