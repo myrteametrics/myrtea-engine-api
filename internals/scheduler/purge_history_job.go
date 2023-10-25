@@ -45,7 +45,6 @@ func (job PurgeHistoryJob) Run() {
 		return
 	}
 
-
 	options := history.GetHistorySituationsOptions{
 		SituationID:         -1,
 		SituationInstanceID: -1,
