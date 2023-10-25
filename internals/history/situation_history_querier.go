@@ -275,16 +275,21 @@ func (querier *HistorySituationsQuerier) QueryGetFieldsTsMetadatas(ctx context.C
 		var metadatas []models.MetaData
 		var ts time.Time
 		var metadataBytes []byte
-		err = rows.Scan(&ts, &metadataBytes)
 
+		err = rows.Scan(&ts, &metadataBytes)
 		if err != nil {
 			return HistorySituationsV4{}, fmt.Errorf("row scanning failed: %w", err)
-		} else {
-			err = json.Unmarshal(metadataBytes, &metadatas)
-			if err != nil {
-				return HistorySituationsV4{}, fmt.Errorf("Warning: unable to unmarshal metadatas JSON: %v\n", err)
-			}
 		}
+
+		err = json.Unmarshal(metadataBytes, &metadatas)
+		if err != nil {
+			return HistorySituationsV4{}, fmt.Errorf("Warning: unable to unmarshal metadatas JSON: %v\n", err)
+		}
+
+		if len(metadatas) == 0 {
+			return HistorySituationsV4{}, fmt.Errorf(" The latest evaluation of the situation is unknown. \n")
+		}
+
 		result = HistorySituationsV4{Metadatas: metadatas, Ts: ts}
 		break //LIMIT 1
 	}
