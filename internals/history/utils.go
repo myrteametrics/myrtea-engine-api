@@ -187,6 +187,7 @@ func getTodayTimeRange() (string, string) {
 	todayStart := todayStartDate.Format("2006-01-02 15:04:05")
 	tomorrowStart := todayStartDate.Add(24 * time.Hour).Format("2006-01-02 15:04:05")
 	return todayStart, tomorrowStart
+}
 
 func getStartDate30DaysAgo() string {
 	now := time.Now().UTC()

@@ -303,7 +303,7 @@ func (querier HistorySituationsQuerier) GetLatestHistory(situationID int64, situ
 	results, err := querier.QueryGetFieldsTsMetadatas(ctx, selectBuilder)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return HistorySituationsV4{}, errors.New("Timeout Error: The request targeting the 'situation_history_v5' table timed out after 1 minute.")
+			return HistorySituationsV4{}, errors.New("Timeout Error: The request targeting the 'situation_history_v5' table timed out after 10 seconds.")
 		}
 		return HistorySituationsV4{}, err
 	}

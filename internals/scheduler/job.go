@@ -45,7 +45,7 @@ func (schedule *InternalSchedule) IsValid() (bool, error) {
 	if schedule.JobType == "" {
 		return false, errors.New("missing JobType")
 	}
-	if _, ok := jobTypes[schedule.JobType]; !ok{
+	if _, ok := jobTypes[schedule.JobType]; !ok {
 		return false, errors.New("invalid JobType")
 	}
 	if schedule.Job == nil {

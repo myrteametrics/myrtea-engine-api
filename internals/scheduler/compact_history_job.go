@@ -67,14 +67,14 @@ func (job CompactHistoryJob) Run() {
 		S().RemoveRunningJob(job.ScheduleID)
 		return
 	}
-	
+
 	toOffsetDuration, err := parseDuration(job.ToOffset)
 	if err != nil {
 		zap.L().Info("Error parsing the Compact's FromOffset ", zap.Error(err), zap.Int64("idSchedule", job.ScheduleID))
 		S().RemoveRunningJob(job.ScheduleID)
 		return
 	}
-	
+
 	if toOffsetDuration < fromOffsetDuration {
 		zap.L().Info("the Compact's FromOffset Duration must be less than ToOffset duration ", zap.Error(err), zap.Int64("idSchedule", job.ScheduleID))
 		S().RemoveRunningJob(job.ScheduleID)
