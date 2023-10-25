@@ -13,7 +13,7 @@ type GetHistorySituationsOptions struct {
 	SituationID         int64
 	SituationInstanceID int64
 	ParameterFilters    map[string]string
-	DeleteBeforeTs		time.Time
+	DeleteBeforeTs      time.Time
 	FromTS              time.Time
 	ToTS                time.Time
 }
@@ -112,4 +112,17 @@ func (builder HistorySituationsBuilder) DeleteOrphans() sq.DeleteBuilder {
 				Prefix("NOT EXISTS (").
 				Suffix(")"),
 		)
+}
+
+func (builder HistorySituationsBuilder) GetLatestHistorySituation(situationID int64, situationInstanceID int64) sq.SelectBuilder {
+	startOfLastMonth := getStartDate30DaysAgo()
+
+	return builder.newStatement().
+		Select("ts", "metadatas").
+		From("situation_history_v5").
+		Where(sq.Eq{"situation_id": situationID}).
+		Where(sq.Eq{"situation_instance_id": situationInstanceID}).
+		Where(sq.Expr("ts >= ?::timestamptz", startOfLastMonth)).
+		OrderBy("ts DESC").
+		Limit(1)
 }
