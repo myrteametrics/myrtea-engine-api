@@ -34,7 +34,7 @@ func GetRuleSituations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	situationsMap, err := situation.R().GetAllByRuleID(idRule)
+	situationsMap, err := situation.R().GetAllByRuleID(idRule, decodeUniqueKey)
 	if err != nil {
 		zap.L().Error("Error on getting rule situations", zap.String("situationID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -82,7 +82,7 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	situationsMap, err := situation.R().GetAllByRuleID(idRule)
+	situationsMap, err := situation.R().GetAllByRuleID(idRule, decodeUniqueKey)
 	if err != nil {
 		zap.L().Warn("Error getting situations by rulesID", zap.Int64("ruleID", idRule), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)

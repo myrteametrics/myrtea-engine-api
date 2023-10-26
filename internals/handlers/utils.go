@@ -28,6 +28,7 @@ const (
 	IDTokenVerifyErr  = "OIDC authentication Failed to verify ID token"
 	TokenName         = "token"
 	AllowedCookiePath = "/"
+	decodeUniqueKey   = false
 )
 
 func QueryParamToOptionalInt(r *http.Request, name string, orDefault int) (int, error) {

@@ -10,27 +10,27 @@ import (
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows standard CRUD operation on situations
 type Repository interface {
-	Get(id int64) (Situation, bool, error)
-	GetByName(name string) (Situation, bool, error)
+	Get(id int64, decodeUniqueKey ...bool) (Situation, bool, error)
+	GetByName(name string, decodeUniqueKey ...bool) (Situation, bool, error)
 	Create(situation Situation) (int64, error)
 	Update(id int64, situation Situation) error
 	Delete(id int64) error
-	GetAll() (map[int64]Situation, error)
-	GetAllByIDs(ids []int64) (map[int64]Situation, error)
-	GetAllByRuleID(ruleID int64) (map[int64]Situation, error)
+	GetAll(decodeUniqueKey ...bool) (map[int64]Situation, error)
+	GetAllByIDs(ids []int64, decodeUniqueKey ...bool) (map[int64]Situation, error)
+	GetAllByRuleID(ruleID int64, decodeUniqueKey ...bool) (map[int64]Situation, error)
 
 	GetRules(id int64) ([]int64, error)
 	SetRules(id int64, rules []int64) error
 	AddRule(tx *sqlx.Tx, id int64, ruleID int64) error
 	RemoveRule(tx *sqlx.Tx, id int64, ruleID int64) error
-	GetSituationsByFactID(factID int64, ignoreIsObject bool) ([]Situation, error)
+	GetSituationsByFactID(factID int64, ignoreIsObject bool, decodeUniqueKey ...bool) ([]Situation, error)
 	GetFacts(id int64) ([]int64, error)
 
 	CreateTemplateInstance(situationID int64, instance TemplateInstance) (int64, error)
 	UpdateTemplateInstance(instanceID int64, instance TemplateInstance) error
 	DeleteTemplateInstance(instanceID int64) error
-	GetTemplateInstance(instanceID int64) (TemplateInstance, bool, error)
-	GetAllTemplateInstances(situationID int64) (map[int64]TemplateInstance, error)
+	GetTemplateInstance(instanceID int64, decodeUniqueKey ...bool) (TemplateInstance, bool, error)
+	GetAllTemplateInstances(situationID int64, decodeUniqueKey ...bool) (map[int64]TemplateInstance, error)
 }
 
 var (

@@ -147,7 +147,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 
 // GetAll method used to get all Variables Config
 func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
-	
+
 	var variablesConfig []models.VariablesConfig
 
 	rows, err := r.newStatement().
@@ -178,4 +178,31 @@ func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
 		variablesConfig = append(variablesConfig, variable)
 	}
 	return variablesConfig, nil
+}
+
+func (r *PostgresRepository) GetAllAsMap() (map[string]string, error) {
+
+	variableConfigMap := make(map[string]string)
+
+	rows, err := r.newStatement().
+		Select("key", "value").
+		From(table).
+		Query()
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var key, value string
+
+		err := rows.Scan(&key, &value)
+		if err != nil {
+			return nil, err
+		}
+
+		variableConfigMap[key] = value
+	}
+	return variableConfigMap, nil
 }

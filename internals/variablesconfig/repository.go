@@ -16,6 +16,7 @@ type Repository interface {
 	Update(id int64, variable models.VariablesConfig) error
 	Delete(id int64) error
 	GetAll() ([]models.VariablesConfig, error)
+	GetAllAsMap() (map[string]string, error)
 }
 
 var (
