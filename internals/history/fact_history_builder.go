@@ -1,8 +1,6 @@
 package history
 
 import (
-	"time"
-
 	sq "github.com/Masterminds/squirrel"
 )
 
@@ -78,4 +76,3 @@ func (builder HistoryFactsBuilder) GetTodaysFactResultByParameters(param ParamGe
 		Where(sq.Expr("ts >= ?::timestamptz", todayStart)).
 		Where(sq.Expr("ts < ?::timestamptz", tomorrowStart))
 }
-

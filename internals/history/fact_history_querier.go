@@ -33,8 +33,8 @@ type GetFactHistory struct {
 }
 
 type FactResult struct {
-	Value int64  `json:"value"`
-	Time  time.Duration  `json:"time"`
+	Value int64         `json:"value"`
+	Time  time.Duration `json:"time"`
 }
 
 type ParamGetFactHistory struct {
@@ -116,7 +116,6 @@ func (querier HistoryFactsQuerier) ExecDelete(builder sq.DeleteBuilder) error {
 
 	return nil
 }
-
 
 func (querier HistoryFactsQuerier) QueryReturning(builder sq.InsertBuilder) (int64, error) {
 	rows, err := builder.RunWith(querier.conn.DB).Query()
@@ -201,30 +200,30 @@ func (querier HistoryFactsQuerier) scanFirst(rows *sql.Rows) (HistoryFactsV4, er
 }
 
 func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuilder) (GetFactHistory, error) {
-    rows, err := builder.RunWith(querier.conn).Query()
-    if err != nil {
-        return GetFactHistory{}, err
-    }
-    defer rows.Close()
+	rows, err := builder.RunWith(querier.conn).Query()
+	if err != nil {
+		return GetFactHistory{}, err
+	}
+	defer rows.Close()
 
-    var results []FactResult
+	var results []FactResult
 
-    for rows.Next() {
-        var resultBytes []byte
-        var ts time.Time
-        err = rows.Scan(&resultBytes, &ts)
-        if err != nil {
-            return GetFactHistory{}, err
-        }
+	for rows.Next() {
+		var resultBytes []byte
+		var ts time.Time
+		err = rows.Scan(&resultBytes, &ts)
+		if err != nil {
+			return GetFactHistory{}, err
+		}
 
-        var parsedResult map[string]map[string]map[string]int64
-        err = json.Unmarshal(resultBytes, &parsedResult)
-        if err != nil {
-            return GetFactHistory{}, err
-        }
+		var parsedResult map[string]map[string]map[string]int64
+		err = json.Unmarshal(resultBytes, &parsedResult)
+		if err != nil {
+			return GetFactHistory{}, err
+		}
 
-        duration := time.Duration(ts.Hour())*time.Hour + time.Duration(ts.Minute())*time.Minute + time.Duration(ts.Second())*time.Second
-        factRes := FactResult{Time: duration}
+		duration := time.Duration(ts.Hour())*time.Hour + time.Duration(ts.Minute())*time.Minute + time.Duration(ts.Second())*time.Second
+		factRes := FactResult{Time: duration}
 
 		if aggs, ok := parsedResult["aggs"]; ok {
 			for key := range aggs {
@@ -239,11 +238,10 @@ func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuil
 			}
 		}
 		results = append(results, factRes)
-    }
+	}
 
-    return GetFactHistory{Results: results}, nil
+	return GetFactHistory{Results: results}, nil
 }
-
 
 func (querier HistoryFactsQuerier) GetTodaysFactResultByParameters(param ParamGetFactHistory) (GetFactHistory, error) {
 	builder := querier.Builder.GetTodaysFactResultByParameters(param)

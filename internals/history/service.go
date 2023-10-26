@@ -6,8 +6,8 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/draft"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
 )
 
 var (
@@ -123,7 +123,7 @@ func (service HistoryService) GetHistoryFactsFromSituationIds(historySituationsI
 
 func (service HistoryService) PurgeHistory(options GetHistorySituationsOptions) error {
 	return service.deleteHistoryPurge(
-		service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsBase(options), options ,
+		service.HistorySituationsQuerier.Builder.GetHistorySituationsIdsBase(options), options,
 	)
 }
 
