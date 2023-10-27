@@ -36,3 +36,5 @@ Gopkg.toml
 version
 
 /certs
+
+golangci-lint.exe

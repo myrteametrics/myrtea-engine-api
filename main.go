@@ -13,8 +13,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/app"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/router"
 	plugin "github.com/myrteametrics/myrtea-engine-api/v5/plugins"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/assistant"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
 	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v4/server"
 	"github.com/spf13/viper"
@@ -52,25 +50,11 @@ func main() {
 	defer app.Stop()
 	zap.L().Info("Starting Engine-API", zap.String("version", Version), zap.String("build_date", BuildDate))
 
-	plugins := make([]plugin.MyrteaPlugin, 0)
-
-	if baselinePlugin := baseline.NewBaselinePlugin(); baselinePlugin != nil {
-		defer baselinePlugin.Stop()
-		if err := baselinePlugin.Start(); err != nil {
-			zap.L().Error("Start baselinePlugin", zap.Error(err))
-		} else {
-			plugins = append(plugins, baselinePlugin)
-		}
-	}
-
-	if assistantPlugin := assistant.NewAssistantPlugin(); assistantPlugin != nil {
-		defer assistantPlugin.Stop()
-		if err := assistantPlugin.Start(); err == nil {
-			zap.L().Error("Start assistantPlugin", zap.Error(err))
-		} else {
-			plugins = append(plugins, assistantPlugin)
-		}
-	}
+	// Starting plugin core
+	core := &plugin.Core{}
+	core.RegisterPlugins()
+	core.Start()
+	defer core.Stop()
 
 	serverPort := viper.GetInt("HTTP_SERVER_PORT")
 	serverEnableTLS := viper.GetBool("HTTP_SERVER_ENABLE_TLS")
@@ -84,7 +68,7 @@ func main() {
 		GatewayMode:        viper.GetBool("HTTP_SERVER_API_ENABLE_GATEWAY_MODE"),
 		AuthenticationMode: viper.GetString("AUTHENTICATION_MODE"),
 		LogLevel:           zapConfig.Level,
-		Plugins:            plugins,
+		PluginCore:         core,
 	}
 
 	router := router.New(routerConfig)
