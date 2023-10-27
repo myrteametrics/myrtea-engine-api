@@ -196,7 +196,6 @@ SMTP_HOST =  "smtp.example.com"
 # Default value : "465"
 SMTP_PORT = "465"
 
-
 # OIDC Client Id: A unique identifier representing the client application seeking access to the server's resources. (Only if AUTHENTICATION_MODE="OIDC")
 # Default value: ""
 AUTHENTICATION_OIDC_CLIENT_ID = ""
@@ -220,16 +219,35 @@ AUTHENTICATION_OIDC_ISSUER_URL = "https://accounts.google.com"
 # Default value: "profile,email"
 AUTHENTICATION_OIDC_SCOPES = "profile,email,roles"
 
-# AUTHENTICATION_OIDC_FRONT_END_URL: The URL of the front-end application to which the user will be redirected after successful OIDC authentication. 
+# AUTHENTICATION_OIDC_FRONT_END_URL: The URL of the front-end application to which the user will be redirected after successful OIDC authentication.
 # Default value: "http://127.0.0.1:4200"
-AUTHENTICATION_OIDC_FRONT_END_URL = "http://127.0.0.1:4200" 
+AUTHENTICATION_OIDC_FRONT_END_URL = "http://127.0.0.1:4200"
 
 # AUTHENTICATION_OIDC_ENCRYPTION_KEY: The secret key used for state encryption/decryption in the OpenID Connect authentication process.
 # This should be a secure, randomly generated string of exactly 16, 24 or 32 characters that is kept secret.
 # This secret key is used to sign and verify the state parameter in the OIDC authentication process.
 # This is necessary when the application is running in a context where the session cannot be used to store the state,
 # such as when the front-end and back-end are running on different domains.
-# Note: The key length is critical for the AES encryption algorithm used for state encryption/decryption. 
+# Note: The key length is critical for the AES encryption algorithm used for state encryption/decryption.
 # It must be exactly 16, 24 or 32 characters long.
 # Default value: "thisis24characterslongs." (24 characters)
 AUTHENTICATION_OIDC_ENCRYPTION_KEY = "thisis24characterslongs."
+
+# Add your plugins here
+#
+# Default plugin structure is:
+# [[plugin]]
+# name = "assistant"
+# port = 9081
+#
+# Please note that the name will be used to find the plugin binaries "myrtea-NAME.plugin"
+# Actually there are 3 types of plugins: assistant, baseline and standalone
+# The assistant and baseline plugins are bidirectional and therefore cannot be used as name for standalone plugins.
+
+#[[plugin]]
+#name = "assistant"
+#port = 9081
+
+#[[plugin]]
+#name = "baseline"
+#port = 9082
