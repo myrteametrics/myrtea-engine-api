@@ -8,7 +8,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/utils"
 	"go.uber.org/zap"
 )
 
@@ -66,7 +65,7 @@ func (r *PostgresRepository) Get(id int64, decodeUniqueKey ...bool) (Situation, 
 	situation.ID = id
 
 	if convertUniqueKey {
-		utils.UpdateParametersWithConfig(&situation.Parameters)
+		UpdateParametersWithConfig(&situation.Parameters)
 	}
 	//Need to delete at any get of situation the universal token group
 	// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
@@ -113,7 +112,7 @@ func (r *PostgresRepository) GetByName(name string, decodeUniqueKey ...bool) (Si
 	situation.ID = id
 
 	if convertUniqueKey {
-		utils.UpdateParametersWithConfig(&situation.Parameters)
+		UpdateParametersWithConfig(&situation.Parameters)
 	}
 
 	//Need to delete at any get of situation the universal token group
@@ -374,7 +373,7 @@ func (r *PostgresRepository) GetSituationsByFactID(factID int64, ignoreIsObject 
 		situation.ID = situationID
 
 		if convertUniqueKey {
-			utils.UpdateParametersWithConfig(&situation.Parameters)
+			UpdateParametersWithConfig(&situation.Parameters)
 		}
 
 		//Need to delete at any get of situation the universal token group
@@ -488,7 +487,7 @@ func parseAllRows(rows *sqlx.Rows, convertUniqueKey bool) (map[int64]Situation, 
 		situation.ID = situationID
 
 		if convertUniqueKey {
-			utils.UpdateParametersWithConfig(&situation.Parameters)
+			UpdateParametersWithConfig(&situation.Parameters)
 		}
 
 		//Need to delete at any get of situation the universal token group
@@ -798,7 +797,7 @@ func (r *PostgresRepository) GetTemplateInstance(instanceID int64, decodeUniqueK
 		}
 
 		if convertUniqueKey {
-			utils.UpdateParametersWithConfig(&templateInstance.Parameters)
+			UpdateParametersWithConfig(&templateInstance.Parameters)
 		}
 
 		err = json.Unmarshal([]byte(dependsOnParamsData), &templateInstance.DependsOnParameters)
@@ -852,7 +851,7 @@ func (r *PostgresRepository) GetAllTemplateInstances(situationID int64, decodeUn
 		}
 
 		if convertUniqueKey {
-			utils.UpdateParametersWithConfig(&templateInstance.Parameters)
+			UpdateParametersWithConfig(&templateInstance.Parameters)
 		}
 
 		err = json.Unmarshal([]byte(dependsOnParamsData), &templateInstance.DependsOnParameters)

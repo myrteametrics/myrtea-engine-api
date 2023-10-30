@@ -180,9 +180,9 @@ func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
 	return variablesConfig, nil
 }
 
-func (r *PostgresRepository) GetAllAsMap() (map[string]string, error) {
+func (r *PostgresRepository) GetAllAsMap() (map[string]interface{}, error) {
 
-	variableConfigMap := make(map[string]string)
+	variableConfigMap := make(map[string]interface{})
 
 	rows, err := r.newStatement().
 		Select("key", "value").
