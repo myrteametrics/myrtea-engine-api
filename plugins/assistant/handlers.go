@@ -16,10 +16,10 @@ import (
 	"go.uber.org/zap"
 )
 
-func (m *AssistantPlugin) Handler() http.Handler {
+func (p *AssistantPlugin) Handler() http.Handler {
 	r := chi.NewRouter()
 
-	r.Post("/message", m.SendMessage) // ?time=2019-05-10T12:00:00.000
+	r.Post("/message", p.SendMessage) // ?time=2019-05-10T12:00:00.000
 
 	return r
 }
@@ -44,7 +44,7 @@ type Message struct {
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status Internal Server Error"
 // @Router /assistant/message [post]
-func (m *AssistantPlugin) SendMessage(w http.ResponseWriter, r *http.Request) {
+func (p *AssistantPlugin) SendMessage(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Refactoring for cleaner code separation
 	receiveTs := time.Now().Truncate(1 * time.Millisecond).UTC()
@@ -79,7 +79,7 @@ func (m *AssistantPlugin) SendMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// f, nlp, err := assistant.C().ProcessMessage(t, message)
-	bFact, nlpTokens, err := m.Assistant.SentenceProcess(t.Format("2006-01-02T15:04:05.000Z07:00"), message.Sentence, nil)
+	bFact, nlpTokens, err := p.Assistant.SentenceProcess(t.Format("2006-01-02T15:04:05.000Z07:00"), message.Sentence, nil)
 	if err != nil {
 		zap.L().Warn("NL Process sentence", zap.Error(err))
 		render.Error(w, r, render.ErrAPIProcessError, err)
