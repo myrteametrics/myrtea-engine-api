@@ -74,8 +74,10 @@ func (p *Plugin) HandlerPrefix() string {
 }
 
 func (p *Plugin) Stop() error {
+	if p.client == nil || p.client.Exited() {
+		return nil
+	}
 	p.client.Kill()
-
 	return nil
 }
 
