@@ -180,6 +180,7 @@ func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
 	return variablesConfig, nil
 }
 
+// GetAllAsMap method used to get all Variables Config as map[string]interface{}
 func (r *PostgresRepository) GetAllAsMap() (map[string]interface{}, error) {
 
 	variableConfigMap := make(map[string]interface{})
