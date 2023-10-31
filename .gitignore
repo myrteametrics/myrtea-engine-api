@@ -37,4 +37,6 @@ version
 
 /certs
 
+plugin/*.plugin
+
 golangci-lint.exe
