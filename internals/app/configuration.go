@@ -61,11 +61,17 @@ func InitConfiguration() {
 	helpers.InitializeConfig(AllowedConfigKey, ConfigName, ConfigPath, EnvPrefix)
 
 	// Custom plugins config
-	viper.SetConfigName("plugins")
-	viper.AddConfigPath("config")
-	err := viper.MergeInConfig()
+	v := viper.New()
+	v.SetConfigName("plugins")
+	v.AddConfigPath("config")
+	err := v.ReadInConfig()
 	if err != nil {
-		zap.L().Warn("No plugins configuration found")
+		zap.L().Warn("No plugins configuration found", zap.Error(err))
+		return
+	}
+	err = viper.MergeConfigMap(v.AllSettings())
+	if err != nil {
+		zap.L().Warn("No plugins configuration found", zap.Error(err))
 	}
 
 }
