@@ -27,7 +27,10 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Get retrieve the specified situation definition
-func (r *PostgresRepository) Get(id int64) (Situation, bool, error) {
+func (r *PostgresRepository) Get(id int64, parseGlobalVariables ...bool) (Situation, bool, error) {
+
+	convertUniqueKey := shouldParseGlobalVariables(parseGlobalVariables...)
+
 	query := `SELECT definition,
 				ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = :id) as fact_ids
 				FROM situation_definition_v1 WHERE id = :id`
@@ -61,6 +64,9 @@ func (r *PostgresRepository) Get(id int64) (Situation, bool, error) {
 	//This is necessary because within the definition we don't have the id
 	situation.ID = id
 
+	if convertUniqueKey {
+		UpdateParametersWithConfig(situation.Parameters)
+	}
 	//Need to delete at any get of situation the universal token group
 	// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
 
@@ -68,7 +74,10 @@ func (r *PostgresRepository) Get(id int64) (Situation, bool, error) {
 }
 
 // GetByName retrieve the specified situation definition by it's name
-func (r *PostgresRepository) GetByName(name string) (Situation, bool, error) {
+func (r *PostgresRepository) GetByName(name string, parseGlobalVariables ...bool) (Situation, bool, error) {
+
+	convertUniqueKey := shouldParseGlobalVariables(parseGlobalVariables...)
+
 	query := `SELECT id, definition,
 				ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = id) as fact_ids
 				FROM situation_definition_v1 WHERE name = :name`
@@ -101,6 +110,10 @@ func (r *PostgresRepository) GetByName(name string) (Situation, bool, error) {
 
 	//This is necessary because within the definition we don't have the id
 	situation.ID = id
+
+	if convertUniqueKey {
+		UpdateParametersWithConfig(situation.Parameters)
+	}
 
 	//Need to delete at any get of situation the universal token group
 	// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
@@ -322,7 +335,10 @@ func (r *PostgresRepository) deleteSituationFacts(id int64) error {
 }
 
 // GetSituationsByFactID returns the situations in which the fact is required
-func (r *PostgresRepository) GetSituationsByFactID(factID int64, ignoreIsObject bool) ([]Situation, error) {
+func (r *PostgresRepository) GetSituationsByFactID(factID int64, ignoreIsObject bool, parseGlobalVariables ...bool) ([]Situation, error) {
+
+	convertUniqueKey := shouldParseGlobalVariables(parseGlobalVariables...)
+
 	query := `SELECT situation_definition_v1.id, situation_definition_v1.definition,
 	ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = situation_definition_v1.id) as fact_ids
 	FROM situation_facts_v1 INNER JOIN situation_definition_v1
@@ -355,6 +371,10 @@ func (r *PostgresRepository) GetSituationsByFactID(factID int64, ignoreIsObject 
 		situation.Facts = factIDs
 		//This is necessary because within the definition we don't have the id
 		situation.ID = situationID
+
+		if convertUniqueKey {
+			UpdateParametersWithConfig(situation.Parameters)
+		}
 
 		//Need to delete at any get of situation the universal token group
 		// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
@@ -390,7 +410,10 @@ func (r *PostgresRepository) GetFacts(id int64) ([]int64, error) {
 }
 
 // GetAll returns all entities in the repository
-func (r *PostgresRepository) GetAll() (map[int64]Situation, error) {
+func (r *PostgresRepository) GetAll(parseGlobalVariables ...bool) (map[int64]Situation, error) {
+
+	convertUniqueKey := shouldParseGlobalVariables(parseGlobalVariables...)
+
 	query := `SELECT id, definition,
 			ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = situation_definition_v1.id) as fact_ids
 			FROM situation_definition_v1`
@@ -401,11 +424,14 @@ func (r *PostgresRepository) GetAll() (map[int64]Situation, error) {
 	}
 	defer rows.Close()
 
-	return parseAllRows(rows)
+	return parseAllRows(rows, convertUniqueKey)
 }
 
 // GetAllByIDs returns all entities filtered by IDs in the repository
-func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]Situation, error) {
+func (r *PostgresRepository) GetAllByIDs(ids []int64, parseGlobalVariables ...bool) (map[int64]Situation, error) {
+
+	convertUniqueKey := shouldParseGlobalVariables(parseGlobalVariables...)
+
 	query := `SELECT id, definition,
 			ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = situation_definition_v1.id) as fact_ids
 			FROM situation_definition_v1 WHERE id = ANY(:ids)`
@@ -418,11 +444,13 @@ func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]Situation, erro
 	}
 	defer rows.Close()
 
-	return parseAllRows(rows)
+	return parseAllRows(rows, convertUniqueKey)
 }
 
 // GetAllByRuleID returns all entities in the repository based on a rule ID
-func (r *PostgresRepository) GetAllByRuleID(ruleID int64) (map[int64]Situation, error) {
+func (r *PostgresRepository) GetAllByRuleID(ruleID int64, parseGlobalVariables ...bool) (map[int64]Situation, error) {
+
+	convertUniqueKey := shouldParseGlobalVariables(parseGlobalVariables...)
 
 	query := `SELECT id, definition, ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = situation_definition_v1.id) as fact_ids
 		FROM situation_definition_v1 INNER JOIN situation_rules_v1 ON situation_definition_v1.id = situation_rules_v1.situation_id
@@ -436,10 +464,10 @@ func (r *PostgresRepository) GetAllByRuleID(ruleID int64) (map[int64]Situation, 
 	}
 	defer rows.Close()
 
-	return parseAllRows(rows)
+	return parseAllRows(rows, convertUniqueKey)
 }
 
-func parseAllRows(rows *sqlx.Rows) (map[int64]Situation, error) {
+func parseAllRows(rows *sqlx.Rows, convertUniqueKey bool) (map[int64]Situation, error) {
 	situations := make(map[int64]Situation, 0)
 	for rows.Next() {
 		var data string
@@ -457,6 +485,10 @@ func parseAllRows(rows *sqlx.Rows) (map[int64]Situation, error) {
 		situation.Facts = factIDs
 		//This is necessary because within the definition we don't have the id
 		situation.ID = situationID
+
+		if convertUniqueKey {
+			UpdateParametersWithConfig(situation.Parameters)
+		}
 
 		//Need to delete at any get of situation the universal token group
 		// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
@@ -727,7 +759,10 @@ func (r *PostgresRepository) DeleteTemplateInstance(instanceID int64) error {
 }
 
 // GetTemplateInstance returns the situation template instance
-func (r *PostgresRepository) GetTemplateInstance(instanceID int64) (TemplateInstance, bool, error) {
+func (r *PostgresRepository) GetTemplateInstance(instanceID int64, parseGlobalVariables ...bool) (TemplateInstance, bool, error) {
+
+	convertUniqueKey := shouldParseGlobalVariables(parseGlobalVariables...)
+
 	query := `SELECT name, situation_id, parameters, calendar_id, enable_depends_on, depends_on_parameters
 				 FROM situation_template_instances_v1 WHERE id = :id`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
@@ -760,6 +795,11 @@ func (r *PostgresRepository) GetTemplateInstance(instanceID int64) (TemplateInst
 		if err != nil {
 			return TemplateInstance{}, false, err
 		}
+
+		if convertUniqueKey {
+			UpdateParametersWithConfig(templateInstance.Parameters)
+		}
+
 		err = json.Unmarshal([]byte(dependsOnParamsData), &templateInstance.DependsOnParameters)
 		if err != nil {
 			return TemplateInstance{}, false, err
@@ -772,7 +812,10 @@ func (r *PostgresRepository) GetTemplateInstance(instanceID int64) (TemplateInst
 }
 
 // GetAllTemplateInstances returns the list of template instances of the situation
-func (r *PostgresRepository) GetAllTemplateInstances(situationID int64) (map[int64]TemplateInstance, error) {
+func (r *PostgresRepository) GetAllTemplateInstances(situationID int64, parseGlobalVariables ...bool) (map[int64]TemplateInstance, error) {
+
+	convertUniqueKey := shouldParseGlobalVariables(parseGlobalVariables...)
+
 	query := `SELECT id, name, parameters, calendar_id, enable_depends_on, depends_on_parameters 
 						FROM situation_template_instances_v1 WHERE situation_id = :situation_id`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
@@ -806,6 +849,11 @@ func (r *PostgresRepository) GetAllTemplateInstances(situationID int64) (map[int
 		if err != nil {
 			return nil, err
 		}
+
+		if convertUniqueKey {
+			UpdateParametersWithConfig(templateInstance.Parameters)
+		}
+
 		err = json.Unmarshal([]byte(dependsOnParamsData), &templateInstance.DependsOnParameters)
 		if err != nil {
 			return nil, err
