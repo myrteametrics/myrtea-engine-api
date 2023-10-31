@@ -1,0 +1,18 @@
+# Add your plugins here
+#
+# Default plugin structure is:
+# [[plugin]]
+# name = "assistant"
+# port = 9081
+#
+# Please note that the name will be used to find the plugin binaries "myrtea-NAME.plugin"
+# Actually there are 3 types of plugins: assistant, baseline and standalone
+# The assistant and baseline plugins are bidirectional and therefore cannot be used as name for standalone plugins.
+
+#[[plugin]]
+#name = "assistant"
+#port = 9081
+
+#[[plugin]]
+#name = "baseline"
+#port = 9082

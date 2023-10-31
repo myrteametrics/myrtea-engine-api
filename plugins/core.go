@@ -63,6 +63,10 @@ func (c *Core) RegisterPlugins() {
 			break
 		}
 
+		if plugin.Plugin == nil {
+			continue
+		}
+
 		c.Plugins = append(c.Plugins, plugin)
 	}
 
