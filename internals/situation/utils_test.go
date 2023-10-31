@@ -7,19 +7,19 @@ import (
 
 func TestGetTranslateValue(t *testing.T) {
 
-	if getTranslateValue() != true {
+	if shouldParseGlobalVariables() != true {
 		t.Error("Expected true for empty input, got true")
 	}
 
-	if getTranslateValue(false) != false {
+	if shouldParseGlobalVariables(false) != false {
 		t.Error("Expected false for input of false, got true")
 	}
 
-	if getTranslateValue(true) != true {
+	if shouldParseGlobalVariables(true) != true {
 		t.Error("Expected true for input of true, got false")
 	}
 
-	if getTranslateValue(true, false) != true {
+	if shouldParseGlobalVariables(true, false) != true {
 		t.Error("Expected true for multiple input values, but function should only consider the first")
 	}
 }
@@ -153,7 +153,7 @@ func TestReplaceKeysWithValues(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ReplaceKeysWithValues(&tt.input, tt.vars)
+			ReplaceKeysWithValues(tt.input, tt.vars)
 			if !reflect.DeepEqual(tt.input, tt.expected) {
 				t.Errorf("replaceKeysWithValues() = %v, want %v", tt.input, tt)
 			}

@@ -9,14 +9,14 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v4/expression"
 )
 
-func getTranslateValue(translateOpt ...bool) bool {
+func shouldParseGlobalVariables(translateOpt ...bool) bool {
 	if len(translateOpt) > 0 {
 		return translateOpt[0]
 	}
 	return true
 }
 
-func UpdateParametersWithConfig(params *map[string]string) {
+func UpdateParametersWithConfig(params map[string]string) {
 	listKeyValue, err := variablesconfig.R().GetAllAsMap()
 
 	if err != nil {
@@ -27,9 +27,9 @@ func UpdateParametersWithConfig(params *map[string]string) {
 	ReplaceKeysWithValues(params, listKeyValue)
 }
 
-func ReplaceKeysWithValues(m *map[string]string, variables map[string]interface{}) {
+func ReplaceKeysWithValues(m map[string]string, variables map[string]interface{}) {
 
-	for key, value := range *m {
+	for key, value := range m {
 
 		translate, err := expression.Process(expression.LangEval, value, variables)
 
@@ -37,7 +37,7 @@ func ReplaceKeysWithValues(m *map[string]string, variables map[string]interface{
 			zap.L().Error("Error: Unrecognized variable Global in this Parameter", zap.Any("key", key), zap.Any("value", value), zap.Error(err))
 		} else {
 
-			(*m)[key] = fmt.Sprint(translate)
+			m[key] = fmt.Sprint(translate)
 		}
 	}
 

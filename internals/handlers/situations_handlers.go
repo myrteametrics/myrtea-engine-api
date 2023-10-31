@@ -34,10 +34,10 @@ func GetSituations(w http.ResponseWriter, r *http.Request) {
 	var situations map[int64]situation.Situation
 	var err error
 	if userCtx.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionGet)) {
-		situations, err = situation.R().GetAll(decodeUniqueKey)
+		situations, err = situation.R().GetAll(parseGlobalVariables)
 	} else {
 		resourceIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionGet))
-		situations, err = situation.R().GetAllByIDs(resourceIDs, decodeUniqueKey)
+		situations, err = situation.R().GetAllByIDs(resourceIDs, parseGlobalVariables)
 	}
 	if err != nil {
 		zap.L().Warn("Cannot retrieve situations", zap.Error(err))
@@ -81,7 +81,7 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	situation, found, err := situation.R().Get(idSituation, decodeUniqueKey)
+	situation, found, err := situation.R().Get(idSituation, parseGlobalVariables)
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -218,7 +218,7 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	situation, found, err := situation.R().Get(idSituation, decodeUniqueKey)
+	situation, found, err := situation.R().Get(idSituation, parseGlobalVariables)
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -283,7 +283,7 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	situation, found, err := situation.R().Get(idSituation, decodeUniqueKey)
+	situation, found, err := situation.R().Get(idSituation, parseGlobalVariables)
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
