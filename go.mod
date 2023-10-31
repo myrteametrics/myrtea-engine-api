@@ -24,7 +24,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/lestrrat-go/jwx v1.2.6
 	github.com/lib/pq v1.0.0
-	github.com/myrteametrics/myrtea-sdk/v4 v4.4.3
+	github.com/myrteametrics/myrtea-sdk/v4 v4.4.5
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/prataprc/goparsec v0.0.0-20180806094145-2600a2a4a410
 	github.com/prometheus/client_golang v1.14.0
@@ -43,7 +43,7 @@ require (
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/PaesslerAG/gval v1.0.1 // indirect
+	github.com/PaesslerAG/gval v1.2.2 // indirect
 	github.com/beevik/etree v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
