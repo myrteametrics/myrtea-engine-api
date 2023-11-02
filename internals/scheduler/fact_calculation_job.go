@@ -218,6 +218,13 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 			// zap.L().Sugar().Info("fact is not a template")
 			// calculate
 			// already done !
+
+			widgetData := &reader.WidgetData{
+				Aggregates: &agg.Value,
+			}
+
+			fact.GetBaselineValues(widgetData, agg.FactID, agg.SituationID, agg.SituationInstanceID, agg.Time)
+
 			historyFactNew := history.HistoryFactsV4{
 				// ID:                  -1,
 				FactID:              f.ID,
@@ -225,7 +232,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 				SituationID:         0,
 				SituationInstanceID: 0,
 				Ts:                  t,
-				Result:              agg.Value,
+				Result:              *widgetData.Aggregates,
 			}
 			historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 			if err != nil {
@@ -263,6 +270,13 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 
 				// calculate
 				// already done !
+
+				widgetData := &reader.WidgetData{
+					Aggregates: &agg.Value,
+				}
+
+				fact.GetBaselineValues(widgetData, agg.FactID, agg.SituationID, agg.SituationInstanceID, agg.Time)
+
 				historyFactNew := history.HistoryFactsV4{
 					// ID:                  -1,
 					FactID:              f.ID,
@@ -270,7 +284,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 					SituationID:         sh.SituationID,
 					SituationInstanceID: sh.SituationInstanceID,
 					Ts:                  t,
-					Result:              agg.Value,
+					Result:              *widgetData.Aggregates,
 				}
 				historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 				if err != nil {
