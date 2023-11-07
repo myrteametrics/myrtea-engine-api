@@ -19,15 +19,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type CSVParameters struct {
-	columns           []string
-	columnsLabel      []string
-	formatColumnsData map[string]string
-	separator         rune
-	limit             int64
-	chunkSize         int64
-}
-
 // ExportFact godoc
 // @Summary Export facts
 // @Description Get all action definitions
@@ -109,36 +100,36 @@ func ExportFact(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func GetCSVParameters(r *http.Request) CSVParameters {
-	result := CSVParameters{separator: ','}
+func GetCSVParameters(r *http.Request) export.CSVParameters {
+	result := export.CSVParameters{Separator: ','}
 
 	limit, err := QueryParamToOptionalInt64(r, "limit", -1)
 	if err != nil {
-		result.limit = -1
+		result.Limit = -1
 	} else {
-		result.limit = limit
+		result.Limit = limit
 	}
 
-	result.columns = QueryParamToOptionalStringArray(r, "columns", ",", []string{})
-	result.columnsLabel = QueryParamToOptionalStringArray(r, "columnsLabel", ",", []string{})
+	result.Columns = QueryParamToOptionalStringArray(r, "columns", ",", []string{})
+	result.ColumnsLabel = QueryParamToOptionalStringArray(r, "columnsLabel", ",", []string{})
 
 	formatColumnsData := QueryParamToOptionalStringArray(r, "formateColumns", ",", []string{})
-	result.formatColumnsData = make(map[string]string)
+	result.FormatColumnsData = make(map[string]string)
 	for _, formatData := range formatColumnsData {
 		parts := strings.Split(formatData, ";")
 		if len(parts) != 2 {
 			continue
 		}
 		key := strings.TrimSpace(parts[0])
-		result.formatColumnsData[key] = parts[1]
+		result.FormatColumnsData[key] = parts[1]
 	}
 	separator := r.URL.Query().Get("separator")
 	if separator != "" {
 		sep, size := utf8.DecodeRuneInString(separator)
 		if size != 1 {
-			result.separator = ','
+			result.Separator = ','
 		} else {
-			result.separator = sep
+			result.Separator = sep
 		}
 	}
 
@@ -146,7 +137,7 @@ func GetCSVParameters(r *http.Request) CSVParameters {
 }
 
 // HandleStreamedExport actually only handles CSV
-func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter, facts []engine.Fact, fileName string, params CSVParameters) error {
+func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter, facts []engine.Fact, fileName string, params export.CSVParameters) error {
 	w.Header().Set("Connection", "Keep-Alive")
 	w.Header().Set("Transfer-Encoding", "chunked")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -182,7 +173,7 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 		defer close(streamedExport.Data)
 
 		for _, f := range facts {
-			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, params.limit)
+			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, params.Limit)
 			if writerErr != nil {
 				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
 				break // break here when error occurs?
@@ -195,7 +186,7 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 	go func() {
 		defer wg.Done()
 		first := true
-		labels := params.columnsLabel
+		labels := params.ColumnsLabel
 
 		for {
 			select {
@@ -204,7 +195,7 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 					return
 				}
 
-				data, err := export.ConvertHitsToCSV(hits, params.columns, labels, params.formatColumnsData, params.separator)
+				data, err := export.ConvertHitsToCSV(hits, params.Columns, labels, params.FormatColumnsData, params.Separator)
 
 				if err != nil {
 					zap.L().Error("ConvertHitsToCSV error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
