@@ -23,7 +23,7 @@ jobs:
 
     - name: Initialize Swag
       run: |
-        go install github.com/swaggo/swag/cmd/swag
+        go install github.com/swaggo/swag/cmd/swag@latest
         swag init --parseDependency --generalInfo main.go
 
     - name: Build
