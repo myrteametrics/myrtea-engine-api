@@ -11,9 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string, formatColumnsData map[string]string, separator rune) ([]byte, error) {
-	b := new(bytes.Buffer)
-	w := csv.NewWriter(b)
+func WriteConvertHitsToCSV(w *csv.Writer, hits []reader.Hit, columns []string, columnsLabel []string, formatColumnsData map[string]string, separator rune) error {
 	w.Comma = separator
 
 	// avoid to print header when labels are empty
@@ -45,9 +43,18 @@ func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string
 	}
 
 	w.Flush()
-	if err := w.Error(); err != nil {
+	return w.Error()
+}
+
+func ConvertHitsToCSV(hits []reader.Hit, columns []string, columnsLabel []string, formatColumnsData map[string]string, separator rune) ([]byte, error) {
+	b := new(bytes.Buffer)
+	w := csv.NewWriter(b)
+	err := WriteConvertHitsToCSV(w, hits, columns, columnsLabel, formatColumnsData, separator)
+
+	if err != nil {
 		return nil, err
 	}
+
 	return b.Bytes(), nil
 }
 

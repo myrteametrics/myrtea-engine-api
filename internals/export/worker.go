@@ -14,59 +14,57 @@ import (
 type ExportWorker struct {
 	Mutex     sync.Mutex
 	Available bool
-	QueueItem *ExportWrapperItem
-	Context   context.Context
-	BasePath  string
+	//
+	QueueItemId string
+	Context     context.Context
+	BasePath    string
 }
 
 func NewExportWorker(basePath string) *ExportWorker {
 	return &ExportWorker{
-		Available: true,
-		QueueItem: nil,
-		BasePath:  basePath,
+		Available:   true,
+		QueueItemId: "",
+		BasePath:    basePath,
 	}
 }
 
 // SetAvailable sets the worker availability to true and clears the queueItem
-func (e *ExportWorker) SetAvailable() {
+func (e *ExportWorker) SetAvailable(item *ExportWrapperItem) {
 	e.Mutex.Lock()
 	defer e.Mutex.Unlock()
 	e.Available = true
 
 	// set queueItem status to done
-	e.QueueItem.Mutex.Lock()
-	if e.QueueItem.Error == nil {
-		e.QueueItem.Status = StatusDone
+	item.Mutex.Lock()
+	if item.Error == nil {
+		item.Status = StatusDone
 	}
-	e.QueueItem.Mutex.Unlock()
+	item.Mutex.Unlock()
 
-	e.QueueItem = nil
+	e.QueueItemId = ""
 }
 
 // Start starts the export task
 // It handles one queueItem at a time and when finished it stops the goroutine
 func (e *ExportWorker) Start(item *ExportWrapperItem) {
-	defer e.SetAvailable()
+	defer e.SetAvailable(item)
 	e.Mutex.Lock()
-	e.QueueItem = item
-	e.QueueItem.SetStatus(StatusRunning)
+	e.QueueItemId = item.Id
 	e.Mutex.Unlock()
+
+	item.SetStatus(StatusRunning)
 
 	// create file
 	path := filepath.Join(e.BasePath, item.Params.FileName)
 	// check if file exists
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		e.Mutex.Lock()
-		e.QueueItem.SetError(err)
-		e.Mutex.Unlock()
+		item.SetError(err)
 		return
 	}
 
-	file, err := os.Create("data.csv.gz")
+	file, err := os.Create(path)
 	if err != nil {
-		e.Mutex.Lock()
-		e.QueueItem.SetError(err)
-		e.Mutex.Unlock()
+		item.SetError(err)
 		return
 	}
 	defer file.Close()
@@ -80,18 +78,21 @@ func (e *ExportWorker) Start(item *ExportWrapperItem) {
 	// start streamed export
 	streamedExport := NewStreamedExport()
 	var wg sync.WaitGroup
+	var writerErr error
+
+	// local context handling
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// Increment the WaitGroup counter
-	wg.Add(2) // 2 goroutines
-
-	var writerErr error = nil
+	wg.Add(1)
 
 	/**
 	 * How streamed export works:
 	 * 1. Browser opens connection
-	 * 2. Two goroutines are started:
+	 * 2. One goroutine is started:
 	 *    - Export goroutine: each fact is processed one by one
-	 *      Each bulk of data is sent through a channel to the receiver goroutine
+	 *      Each bulk of data is sent through a channel to the receiver
 	 *    - The receiver handles the incoming channel data and converts them to the CSV format
 	 *      After the conversion, the data is written and gzipped to a local file
 	 */
@@ -101,60 +102,76 @@ func (e *ExportWorker) Start(item *ExportWrapperItem) {
 		defer close(streamedExport.Data)
 
 		for _, f := range item.Facts {
-			writerErr = streamedExport.StreamedExportFactHitsFull(e.Context, f, item.Params.Limit)
+			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit)
 			if writerErr != nil {
-				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
 				break // break here when error occurs?
 			}
 		}
-
 	}()
 
-	// Chunk handler goroutine
-	go func() {
-		defer wg.Done()
-		first := true
-		labels := item.Params.ColumnsLabel
+	// Chunk handler
+	first := true
+	labels := item.Params.ColumnsLabel
+	loop := true
 
-		for {
-			select {
-			case hits, ok := <-streamedExport.Data:
-				if !ok { // channel closed
-					return
-				}
-
-				data, err := ConvertHitsToCSV(hits, item.Params.Columns, labels, item.Params.FormatColumnsData, item.Params.Separator)
-
-				if err != nil {
-					zap.L().Error("ConvertHitsToCSV error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
-					cancel()
-					return
-				}
-
-				// Write data
-				_, err = csvWriter.Write(data)
-				if err != nil {
-					zap.L().Error("Write error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
-					cancel()
-					return
-				}
-				// Flush data to be sent directly to browser
-				flusher.Flush()
-
-				if first {
-					first = false
-					labels = []string{}
-				}
-
-			case <-requestContext.Done():
-				// Browser unexpectedly closed connection
-				writerErr = errors.New("browser unexpectedly closed connection")
-				cancel()
-				return
+	for loop {
+		select {
+		case hits, ok := <-streamedExport.Data:
+			if !ok { // channel closed
+				loop = false
+				break
 			}
+
+			err := WriteConvertHitsToCSV(csvWriter, hits, item.Params.Columns, labels, item.Params.FormatColumnsData, item.Params.Separator)
+
+			if err != nil {
+				zap.L().Error("WriteConvertHitsToCSV error during export", zap.Error(err))
+				cancel()
+				loop = false
+				break
+			}
+
+			// Flush data
+			csvWriter.Flush()
+
+			if first {
+				first = false
+				labels = []string{}
+			}
+
+		case <-e.Context.Done():
+			zap.L().Warn("export was canceled")
+			cancel()
+			loop = false
+			break
 		}
-	}()
+	}
 
 	wg.Wait()
+
+	// error occurred, close file and delete
+	if writerErr != nil || err != nil {
+		if ctx.Err() != nil {
+			item.SetStatus(StatusCanceled)
+			zap.L().Warn("Export worker: canceled, deleting file...", zap.String("filePath", path))
+		} else {
+			if err != nil {
+				item.SetError(err)
+			} else {
+				item.SetError(writerErr)
+			}
+			zap.L().Error("Export worker: error, deleting file...", zap.String("filePath", path),
+				zap.NamedError("err", err), zap.NamedError("writerErr", writerErr))
+		}
+
+		// close writer and file access before trying to delete file
+		_ = gzipWriter.Close()
+		_ = file.Close()
+
+		err = os.Remove(path)
+		if err != nil {
+			zap.L().Error("Export worker: couldn't delete file", zap.String("filePath", path), zap.Error(err))
+		}
+	}
 
 }

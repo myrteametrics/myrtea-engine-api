@@ -2,6 +2,7 @@ package export
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
@@ -18,10 +19,11 @@ const (
 	CodeQueueFull  = -2
 
 	// ExportWrapperItem statuses
-	StatusPending = 0
-	StatusRunning = 1
-	StatusDone    = 2
-	StatusError   = 3
+	StatusPending  = 0
+	StatusRunning  = 1
+	StatusDone     = 2
+	StatusError    = 3
+	StatusCanceled = 4
 )
 
 type ExportWrapper struct {
@@ -41,6 +43,7 @@ type ExportWrapperItem struct {
 	Status int
 	Users  []users.User // handles export ownership
 	// non mutexed fields
+	Id     string // unique id that represents an export demand
 	FactID int64
 	Params CSVParameters
 	Date   time.Time
@@ -49,11 +52,12 @@ type ExportWrapperItem struct {
 
 func NewExportWrapperItem(factID int64, params CSVParameters, user users.User) *ExportWrapperItem {
 	return &ExportWrapperItem{
+		Id:     uuid.New().String(),
 		FactID: factID,
 		Params: params,
 		Users:  append([]users.User{}, user),
 		Date:   time.Now(),
-		Status: 0,
+		Status: StatusPending,
 		Error:  nil,
 	}
 }
