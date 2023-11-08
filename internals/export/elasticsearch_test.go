@@ -64,6 +64,10 @@ var AllowedConfigKey = [][]helpers.ConfigKey{
 }
 
 func TestExportFactHits(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping elasticsearch test in short mode")
+	}
+
 	helpers.InitializeConfig(AllowedConfigKey, ConfigName, "../../config", EnvPrefix)
 	helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
 	urls := viper.GetStringSlice("ELASTICSEARCH_URLS")

@@ -112,6 +112,9 @@ var (
 // }
 
 func TestGetIndices(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping elasticsearch test in short mode")
+	}
 	helpers.InitializeConfig(AllowedConfigKey, ConfigName, ConfigPath, EnvPrefix)
 	helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
 
@@ -137,7 +140,9 @@ func TestGetIndices(t *testing.T) {
 }
 
 func TestCoordinator(t *testing.T) {
-
+	if testing.Short() {
+		t.Skip("Skipping elasticsearch test in short mode")
+	}
 	helpers.InitializeConfig(AllowedConfigKey, ConfigName, ConfigPath, EnvPrefix)
 	helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
 
@@ -167,7 +172,9 @@ func TestCoordinator(t *testing.T) {
 }
 
 func TestPurge(t *testing.T) {
-
+	if testing.Short() {
+		t.Skip("Skipping elasticsearch test in short mode")
+	}
 	helpers.InitializeConfig(AllowedConfigKey, ConfigName, ConfigPath, EnvPrefix)
 	helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
 
@@ -188,6 +195,9 @@ func TestPurge(t *testing.T) {
 }
 
 func TestFindIndices(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping elasticsearch test in short mode")
+	}
 	helpers.InitializeConfig(AllowedConfigKey, ConfigName, ConfigPath, EnvPrefix)
 	helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
 

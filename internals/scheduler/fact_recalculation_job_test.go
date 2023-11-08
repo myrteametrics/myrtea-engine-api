@@ -70,7 +70,9 @@ func testInsertFactHistory(t *testing.T, situationID int64, instanceID int64, fa
 }
 
 func TestFactRecalculationJobRun(t *testing.T) {
-
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	zapCfg := zap.NewDevelopmentConfig()
 	zapCfg.Level.SetLevel(zap.InfoLevel)
 	logger, err := zapCfg.Build(zap.AddStacktrace(zap.ErrorLevel))
