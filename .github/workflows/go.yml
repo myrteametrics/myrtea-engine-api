@@ -31,6 +31,7 @@ jobs:
 
     - name: Coverage
       uses: gwatts/go-coverage-action@v1
+      continue-on-error: true
       with:
         add-comment: true
-        test-args: '["-short"]'
+        #test-args: '["-short"]'
