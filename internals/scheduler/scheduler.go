@@ -46,8 +46,8 @@ func NewScheduler() *InternalScheduler {
 	c := cron.New()
 	scheduler := &InternalScheduler{
 		C:           c,
-		Jobs:        make(map[int64]cron.EntryID, 0),
-		runningJobs: make(map[int64]bool, 0),
+		Jobs:        make(map[int64]cron.EntryID),
+		runningJobs: make(map[int64]bool),
 	}
 	return scheduler
 }

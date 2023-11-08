@@ -1,5 +1,5 @@
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/myrteametrics/myrtea-engine-api)
-[![Build Status](https://travis-ci.com/myrteametrics/myrtea-engine-api.svg)](https://travis-ci.com/myrteametrics/myrtea-engine-api)
+[![Build Status](https://github.com/myrteametrics/myrtea-engine-api/actions/workflows/go.yml/badge.svg)](https://github.com/myrteametrics/myrtea-engine-api/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/myrteametrics/myrtea-engine-api)](https://goreportcard.com/report/github.com/myrteametrics/myrtea-engine-api)
 [![codecov](https://codecov.io/gh/myrteametrics/myrtea-engine-api/branch/master/graph/badge.svg)](https://codecov.io/gh/myrteametrics/myrtea-engine-api)
 [![GitHub license](https://img.shields.io/github/license/myrteametrics/myrtea-engine-api)](https://github.com/myrteametrics/myrtea-engine-api/blob/master/LICENSE)
