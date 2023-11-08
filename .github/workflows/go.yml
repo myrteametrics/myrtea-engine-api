@@ -31,3 +31,6 @@ jobs:
 
     - name: Coverage
       uses: gwatts/go-coverage-action@v1
+      with:
+        add-comment: true
+        test-args: ['-short']
