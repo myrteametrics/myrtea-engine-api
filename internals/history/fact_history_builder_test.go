@@ -47,6 +47,9 @@ func initialiseDB() (*sqlx.DB, error) {
 	return db, nil
 }
 func TestGetByCriteria(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 
 	// Initiate DB connection
 	db, err := initialiseDB()
@@ -113,6 +116,9 @@ func TestGetByCriteria(t *testing.T) {
 }
 
 func TestGetTodaysFactResultByParameters(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	builder := HistoryFactsBuilder{}
 
 	param := ParamGetFactHistory{

@@ -29,6 +29,7 @@ func TestAddJobSchedule(t *testing.T) {
 		Name:     "test",
 		CronExpr: "*/15 * * * *",
 		JobType:  "fact",
+		Enabled:  true,
 		Job: FactCalculationJob{
 			FactIds: []int64{1, 2},
 		},
@@ -48,6 +49,7 @@ func TestAddJobScheduleInvalidCron(t *testing.T) {
 		Name:     "test",
 		CronExpr: "*/15 * a a aa",
 		JobType:  "fact",
+		Enabled:  true,
 		Job: FactCalculationJob{
 			FactIds: []int64{1, 2},
 		},
