@@ -4,7 +4,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/csv"
-	"errors"
+	"fmt"
 	"go.uber.org/zap"
 	"os"
 	"path/filepath"
@@ -14,10 +14,10 @@ import (
 type ExportWorker struct {
 	Mutex     sync.Mutex
 	Available bool
+	Cancel    chan bool // channel to cancel the worker
 	//
-	QueueItemId string
-	Context     context.Context
-	BasePath    string
+	QueueItemId string // id of the queueItem currently handled by the worker
+	BasePath    string // base path where the file will be saved
 }
 
 func NewExportWorker(basePath string) *ExportWorker {
@@ -25,6 +25,7 @@ func NewExportWorker(basePath string) *ExportWorker {
 		Available:   true,
 		QueueItemId: "",
 		BasePath:    basePath,
+		Cancel:      make(chan bool),
 	}
 }
 
@@ -36,7 +37,12 @@ func (e *ExportWorker) SetAvailable(item *ExportWrapperItem) {
 
 	// set queueItem status to done
 	item.Mutex.Lock()
-	if item.Error == nil {
+	// set status to error if error occurred
+	if item.Error != nil {
+		item.Status = StatusError
+	}
+	// set status to done if no error occurred
+	if item.Status != StatusError {
 		item.Status = StatusDone
 	}
 	item.Mutex.Unlock()
@@ -56,9 +62,9 @@ func (e *ExportWorker) Start(item *ExportWrapperItem) {
 
 	// create file
 	path := filepath.Join(e.BasePath, item.Params.FileName)
-	// check if file exists
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		item.SetError(err)
+	// check if file not already exists
+	if _, err := os.Stat(path); err == nil {
+		item.SetError(fmt.Errorf("file with same name already exists"))
 		return
 	}
 
@@ -69,13 +75,11 @@ func (e *ExportWorker) Start(item *ExportWrapperItem) {
 	}
 	defer file.Close()
 
-	// Create a gzip writer
+	// opens a gzip writer
 	gzipWriter := gzip.NewWriter(file)
 	defer gzipWriter.Close()
 
 	csvWriter := csv.NewWriter(gzipWriter)
-
-	// start streamed export
 	streamedExport := NewStreamedExport()
 	var wg sync.WaitGroup
 	var writerErr error
@@ -89,8 +93,6 @@ func (e *ExportWorker) Start(item *ExportWrapperItem) {
 
 	/**
 	 * How streamed export works:
-	 * 1. Browser opens connection
-	 * 2. One goroutine is started:
 	 *    - Export goroutine: each fact is processed one by one
 	 *      Each bulk of data is sent through a channel to the receiver
 	 *    - The receiver handles the incoming channel data and converts them to the CSV format
@@ -139,11 +141,9 @@ func (e *ExportWorker) Start(item *ExportWrapperItem) {
 				labels = []string{}
 			}
 
-		case <-e.Context.Done():
-			zap.L().Warn("export was canceled")
+		case <-e.Cancel:
 			cancel()
 			loop = false
-			break
 		}
 	}
 
@@ -155,7 +155,7 @@ func (e *ExportWorker) Start(item *ExportWrapperItem) {
 			item.SetStatus(StatusCanceled)
 			zap.L().Warn("Export worker: canceled, deleting file...", zap.String("filePath", path))
 		} else {
-			if err != nil {
+			if err != nil { // priority to err
 				item.SetError(err)
 			} else {
 				item.SetError(writerErr)

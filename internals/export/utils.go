@@ -21,6 +21,9 @@ func (p CSVParameters) Equals(Params CSVParameters) bool {
 	if p.Limit != Params.Limit {
 		return false
 	}
+	if p.ChunkSize != Params.ChunkSize {
+		return false
+	}
 	if len(p.Columns) != len(Params.Columns) {
 		return false
 	}

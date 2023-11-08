@@ -26,23 +26,12 @@ const (
 	StatusCanceled = 4
 )
 
-type ExportWrapper struct {
-	QueueMutex        sync.Mutex
-	DoneMutex         sync.Mutex
-	Workers           []*ExportWorker
-	Queue             []*ExportWrapperItem
-	Done              []*ExportWrapperItem
-	DiskRetentionDays int
-	BasePath          string
-	QueueMaxSize      int
-}
-
 type ExportWrapperItem struct {
 	Mutex  sync.Mutex
 	Error  error
 	Status int
 	Users  []users.User // handles export ownership
-	// non mutexed fields
+	// non-critical fields
 	Id     string // unique id that represents an export demand
 	FactID int64
 	Params CSVParameters
@@ -50,6 +39,19 @@ type ExportWrapperItem struct {
 	Facts  []engine.Fact
 }
 
+type ExportWrapper struct {
+	QueueMutex sync.Mutex
+	DoneMutex  sync.Mutex
+	Workers    []*ExportWorker
+	Queue      []*ExportWrapperItem
+	// Done contains all tasks that have been taken out of the queue, including the ones that are still running
+	Done              []*ExportWrapperItem
+	DiskRetentionDays int
+	BasePath          string
+	QueueMaxSize      int
+}
+
+// NewExportWrapperItem creates a new export wrapper item
 func NewExportWrapperItem(factID int64, params CSVParameters, user users.User) *ExportWrapperItem {
 	return &ExportWrapperItem{
 		Id:     uuid.New().String(),
@@ -62,18 +64,41 @@ func NewExportWrapperItem(factID int64, params CSVParameters, user users.User) *
 	}
 }
 
+// NewExportWrapper creates a new export wrapper
+func NewExportWrapper(basePath string, diskRetentionDays, queueMaxSize int) *ExportWrapper {
+	return &ExportWrapper{
+		Workers:           make([]*ExportWorker, 0),
+		Queue:             make([]*ExportWrapperItem, 0),
+		Done:              make([]*ExportWrapperItem, 0),
+		QueueMaxSize:      queueMaxSize,
+		BasePath:          basePath,
+		DiskRetentionDays: diskRetentionDays,
+	}
+}
+
+// SetStatus sets the status of the export wrapper item
 func (ew *ExportWrapperItem) SetStatus(status int) {
 	ew.Mutex.Lock()
 	defer ew.Mutex.Unlock()
 	ew.Status = status
 }
 
+// SetError sets the error and status of the export wrapper item
 func (ew *ExportWrapperItem) SetError(err error) {
 	ew.Mutex.Lock()
 	defer ew.Mutex.Unlock()
 	ew.Error = err
 	ew.Status = StatusError
 	zap.L().Error("Error happened during export worker execution", zap.Error(err))
+}
+
+// Init initializes the export wrapper
+func (ew *ExportWrapper) Init(workers int) {
+	// instantiate workers
+	for i := 0; i < workers; i++ {
+		ew.Workers = append(ew.Workers, NewExportWorker(ew.BasePath))
+	}
+	go ew.StartDispatcher(context.Background())
 }
 
 // AddToQueue Adds a new export to the export worker queue
@@ -104,22 +129,8 @@ func (ew *ExportWrapper) AddToQueue(factID int64, params CSVParameters, user use
 	return CodeAdded
 }
 
-func NewExportWrapper(basePath string, diskRetentionDays, queueMaxSize int) *ExportWrapper {
-	return &ExportWrapper{
-		Workers:           make([]*ExportWorker, 0),
-		Queue:             make([]*ExportWrapperItem, 0),
-		Done:              make([]*ExportWrapperItem, 0),
-		QueueMaxSize:      queueMaxSize,
-		BasePath:          basePath,
-		DiskRetentionDays: diskRetentionDays,
-	}
-}
-
 // FindAvailableWorker finds an available worker and sets it to unavailable
 func (ew *ExportWrapper) FindAvailableWorker() *ExportWorker {
-	ew.QueueMutex.Lock()
-	defer ew.QueueMutex.Unlock()
-
 	for _, worker := range ew.Workers {
 		worker.Mutex.Lock()
 		if worker.Available {
@@ -131,15 +142,6 @@ func (ew *ExportWrapper) FindAvailableWorker() *ExportWorker {
 	}
 
 	return nil
-}
-
-// Init initializes the export wrapper
-func (ew *ExportWrapper) Init(basePath string, workers int) {
-	// instantiate workers
-	for i := 0; i < workers; i++ {
-		ew.Workers = append(ew.Workers, NewExportWorker(basePath))
-	}
-	go ew.StartDispatcher(context.Background())
 }
 
 // StartDispatcher starts the export tasks dispatcher & the expired files checker
@@ -192,6 +194,8 @@ func (ew *ExportWrapper) StartDispatcher(context context.Context) {
 	}
 }
 
+// CheckForExpiredFiles checks for expired files in the export directory and deletes them
+// it also deletes the done tasks that are older than diskRetentionDays
 func (ew *ExportWrapper) CheckForExpiredFiles() error {
 	// Get all files in directory and check the last edit date
 	// if last edit date is older than diskRetentionDays, delete the file
@@ -220,21 +224,23 @@ func (ew *ExportWrapper) CheckForExpiredFiles() error {
 			continue
 		}
 
-		fi, err := os.Stat(file.Name())
+		filePath := filepath.Join(ew.BasePath, file.Name())
+
+		fi, err := os.Stat(filePath)
 		if err != nil {
-			zap.L().Error("Cannot get file info", zap.String("file", file.Name()), zap.Error(err))
+			zap.L().Error("Cannot get file info", zap.String("file", filePath), zap.Error(err))
 			continue
 		}
 
 		// skip if file is not a zip
-		if filepath.Ext(file.Name()) != ".zip" {
-			continue
-		}
+		//if filepath.Ext(file.Name()) != ".zip" {
+		//	continue
+		//}
 
 		if time.Since(fi.ModTime()).Hours() > float64(ew.DiskRetentionDays*24) {
-			err = os.Remove(file.Name())
+			err = os.Remove(filePath)
 			if err != nil {
-				zap.L().Error("Cannot delete file", zap.String("file", file.Name()), zap.Error(err))
+				zap.L().Error("Cannot delete file", zap.String("file", filePath), zap.Error(err))
 				continue
 			}
 			count++
