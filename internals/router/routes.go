@@ -173,7 +173,7 @@ func engineRouter() http.Handler {
 
 	r.Get("/connector/{id}/executions/last", handlers.GetlastConnectorExecutionDateTime)
 
-	r.Get("/facts/{id}/export", handlers.ExportFact)
+	r.Get("/facts/{id}/streamedexport", handlers.ExportFactStreamed)
 
 	r.Get("/variablesconfig", handlers.GetVariablesConfig)
 	r.Get("/variablesconfig/{id}", handlers.GetVariableConfig)
@@ -185,16 +185,21 @@ func engineRouter() http.Handler {
 	return r
 }
 
-func serviceRouter() http.Handler {
+func serviceRouter(services Services) http.Handler {
 	r := chi.NewRouter()
 
-	processorHandler := handlers.NewProcessorHandler()
 	r.Post("/objects", handlers.PostObjects)
-	r.Post("/aggregates", processorHandler.PostAggregates)
+	r.Post("/aggregates", services.ProcessorHandler.PostAggregates)
 
 	r.Get("/externalconfigs", handlers.GetExternalConfigs)
 	r.Get("/externalconfigs/{id}", handlers.GetExternalConfig)
 	r.Get("/externalconfigs/name/{name}", handlers.GetExternalConfigByName)
+
+	// exports
+	r.Get("/exports", services.ExportHandler.GetExports)
+	r.Get("/exports/{id}", services.ExportHandler.GetExport)
+	r.Delete("/exports/{id}", services.ExportHandler.DeleteExport)
+	r.Post("/exports/fact/{id}", services.ExportHandler.ExportFact)
 
 	return r
 }

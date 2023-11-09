@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/metrics"
 	"net/http"
 	"os"
@@ -68,10 +70,24 @@ func main() {
 		GatewayMode:        viper.GetBool("HTTP_SERVER_API_ENABLE_GATEWAY_MODE"),
 		AuthenticationMode: viper.GetString("AUTHENTICATION_MODE"),
 		LogLevel:           zapConfig.Level,
-		PluginCore:         core,
 	}
 
-	router := router.New(routerConfig)
+	// basePath string, diskRetentionDays int, queueMaxSize int
+	basePath := viper.GetString("EXPORT_BASE_PATH")
+	diskRetentionDays := viper.GetInt("EXPORT_DISK_RETENTION_DAYS")
+	queueMaxSize := viper.GetInt("EXPORT_QUEUE_MAX_SIZE")
+	exportWorkersCount := viper.GetInt("EXPORT_WORKERS_COUNT")
+
+	exportWrapper := export.NewExportWrapper(basePath, diskRetentionDays, queueMaxSize)
+	exportWrapper.Init(exportWorkersCount)
+
+	routerServices := router.Services{
+		PluginCore:       core,
+		ProcessorHandler: handlers.NewProcessorHandler(),
+		ExportHandler:    handlers.NewExportHandler(exportWrapper),
+	}
+
+	router := router.New(routerConfig, routerServices)
 	var srv *http.Server
 	if serverEnableTLS {
 		srv = server.NewSecuredServer(serverPort, serverTLSCert, serverTLSKey, router)

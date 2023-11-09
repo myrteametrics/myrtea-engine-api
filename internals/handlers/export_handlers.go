@@ -19,16 +19,26 @@ import (
 	"go.uber.org/zap"
 )
 
-// ExportFact godoc
-// @Summary Export facts
-// @Description Get all action definitions
-// @Tags ExportFact
+type ExportHandler struct {
+	exportWrapper *export.ExportWrapper
+}
+
+func NewExportHandler(exportWrapper *export.ExportWrapper) *ExportHandler {
+	return &ExportHandler{
+		exportWrapper: exportWrapper,
+	}
+}
+
+// ExportFactStreamed godoc
+// @Summary CSV streamed export facts in chunks
+// @Description CSV Streamed export for facts in chunks
+// @Tags ExportFactStreamed
 // @Produce octet-stream
 // @Security Bearer
 // @Success 200 {file} Returns data to be saved into a file
 // @Failure 500 "internal server error"
 // @Router /engine/export/facts/{id} [get]
-func ExportFact(w http.ResponseWriter, r *http.Request) {
+func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	idFact, err := strconv.ParseInt(id, 10, 64)
@@ -235,4 +245,56 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 	}
 
 	return err
+}
+
+// GetFacts godoc
+// @Summary Get all user exports
+// @Description Get all user exports
+// @Tags Exports
+// @Produce json
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 500 "internal server error"
+// @Router /service/exports [post]
+func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// GetFacts godoc
+// @Summary Get all user exports
+// @Description Get all user exports
+// @Tags Exports
+// @Produce json
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 500 "internal server error"
+// @Router /service/exports/{id} [post]
+func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// GetFacts godoc
+// @Summary Get all user exports
+// @Description Get all user exports
+// @Tags Exports
+// @Produce json
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 500 "internal server error"
+// @Router /service/exports/{id} [post]
+func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// GetFacts godoc
+// @Summary Get all user exports
+// @Description Get all user exports
+// @Tags Exports
+// @Produce json
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 500 "internal server error"
+// @Router /service/exports/fact/{id} [post]
+func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
+
 }

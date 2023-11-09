@@ -79,7 +79,7 @@ func PostObjects(w http.ResponseWriter, r *http.Request) {
 // @Success 200 "Status OK"
 // @Failure 429 "Processing queue is full please retry later"
 // @Failure 500 "internal server error"
-// @Router /service/ingester [post]
+// @Router /service/aggregates [post]
 func (handler *ProcessorHandler) PostAggregates(w http.ResponseWriter, r *http.Request) {
 	var aggregates []scheduler.ExternalAggregate
 	err := json.NewDecoder(r.Body).Decode(&aggregates)
