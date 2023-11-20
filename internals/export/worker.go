@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
 	"os"
 	"path/filepath"
@@ -12,65 +13,77 @@ import (
 )
 
 type ExportWorker struct {
+	Id        int
 	Mutex     sync.Mutex
-	Available bool
+	Available bool // do not touch this variable inside of worker it is used thread-safely by wrapper
+	Success   chan<- int
 	Cancel    chan bool // channel to cancel the worker
 	//
-	QueueItemId string // id of the queueItem currently handled by the worker
-	BasePath    string // base path where the file will be saved
+	QueueItem WrapperItem
+	BasePath  string // base path where the file will be saved
 }
 
-func NewExportWorker(basePath string) *ExportWorker {
+func NewExportWorker(id int, basePath string, success chan<- int) *ExportWorker {
 	return &ExportWorker{
-		Available:   true,
-		QueueItemId: "",
-		BasePath:    basePath,
-		Cancel:      make(chan bool),
+		Id:        id,
+		Available: true,
+		BasePath:  basePath,
+		Cancel:    make(chan bool),
+		Success:   success,
 	}
+}
+
+func (e *ExportWorker) SetError(error error) {
+	e.Mutex.Lock()
+	defer e.Mutex.Unlock()
+	e.QueueItem.Status = StatusError
+	e.QueueItem.Error = error
+}
+
+func (e *ExportWorker) SetStatus(status int) {
+	e.Mutex.Lock()
+	defer e.Mutex.Unlock()
+	e.QueueItem.Status = status
 }
 
 // SetAvailable sets the worker availability to true and clears the queueItem
-func (e *ExportWorker) SetAvailable(item *ExportWrapperItem) {
+func (e *ExportWorker) SetAvailable() {
 	e.Mutex.Lock()
-	defer e.Mutex.Unlock()
-	e.Available = true
 
-	// set queueItem status to done
-	item.Mutex.Lock()
 	// set status to error if error occurred
-	if item.Error != nil {
-		item.Status = StatusError
+	if e.QueueItem.Error != nil {
+		e.QueueItem.Status = StatusError
 	}
 	// set status to done if no error occurred
-	if item.Status != StatusError {
-		item.Status = StatusDone
+	if e.QueueItem.Status != StatusError {
+		e.QueueItem.Status = StatusDone
 	}
-	item.Mutex.Unlock()
 
-	e.QueueItemId = ""
+	e.Mutex.Unlock()
+
+	// notify to the dispatcher that this worker is now available
+	e.Success <- e.Id
 }
 
 // Start starts the export task
 // It handles one queueItem at a time and when finished it stops the goroutine
-func (e *ExportWorker) Start(item *ExportWrapperItem) {
-	defer e.SetAvailable(item)
+func (e *ExportWorker) Start(item WrapperItem) {
+	defer e.SetAvailable()
 	e.Mutex.Lock()
-	e.QueueItemId = item.Id
+	e.QueueItem = item
 	e.Mutex.Unlock()
 
-	item.SetStatus(StatusRunning)
-
 	// create file
-	path := filepath.Join(e.BasePath, item.Params.FileName)
+	path := filepath.Join(e.BasePath, item.FileName)
 	// check if file not already exists
 	if _, err := os.Stat(path); err == nil {
-		item.SetError(fmt.Errorf("file with same name already exists"))
+		e.SetError(fmt.Errorf("file with same name already exists"))
 		return
 	}
 
 	file, err := os.Create(path)
 	if err != nil {
-		item.SetError(err)
+		e.SetError(err)
 		return
 	}
 	defer file.Close()
@@ -103,8 +116,9 @@ func (e *ExportWorker) Start(item *ExportWrapperItem) {
 		defer wg.Done()
 		defer close(streamedExport.Data)
 
-		for _, f := range item.Facts {
-			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit)
+		for _, f := range item.FactIDs {
+			_ = f // TODO:
+			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, engine.Fact{}, item.Params.Limit)
 			if writerErr != nil {
 				break // break here when error occurs?
 			}
@@ -152,13 +166,13 @@ func (e *ExportWorker) Start(item *ExportWrapperItem) {
 	// error occurred, close file and delete
 	if writerErr != nil || err != nil {
 		if ctx.Err() != nil {
-			item.SetStatus(StatusCanceled)
+			e.SetStatus(StatusCanceled)
 			zap.L().Warn("Export worker: canceled, deleting file...", zap.String("filePath", path))
 		} else {
 			if err != nil { // priority to err
-				item.SetError(err)
+				e.SetError(err)
 			} else {
-				item.SetError(writerErr)
+				e.SetError(writerErr)
 			}
 			zap.L().Error("Export worker: error, deleting file...", zap.String("filePath", path),
 				zap.NamedError("err", err), zap.NamedError("writerErr", writerErr))

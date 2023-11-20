@@ -7,14 +7,10 @@ type CSVParameters struct {
 	Separator         rune
 	Limit             int64
 	ChunkSize         int64
-	FileName          string
 }
 
 // Equals compares two CSVParameters
 func (p CSVParameters) Equals(Params CSVParameters) bool {
-	if p.FileName != Params.FileName {
-		return false
-	}
 	if p.Separator != Params.Separator {
 		return false
 	}
@@ -45,6 +41,19 @@ func (p CSVParameters) Equals(Params CSVParameters) bool {
 	}
 	for key, value := range p.FormatColumnsData {
 		if value != Params.FormatColumnsData[key] {
+			return false
+		}
+	}
+	return true
+}
+
+// Int64Equals compares two int64 slices
+func Int64Equals(a, b []int64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
 			return false
 		}
 	}

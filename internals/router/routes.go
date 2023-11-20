@@ -42,7 +42,7 @@ func adminRouter() http.Handler {
 	return r
 }
 
-func engineRouter() http.Handler {
+func engineRouter(services Services) http.Handler {
 	r := chi.NewRouter()
 
 	r.Get("/security/myself", handlers.GetUserSelf)
@@ -175,6 +175,12 @@ func engineRouter() http.Handler {
 
 	r.Get("/facts/{id}/streamedexport", handlers.ExportFactStreamed)
 
+	// exports
+	r.Get("/exports", services.ExportHandler.GetExports)
+	r.Get("/exports/{id}", services.ExportHandler.GetExport)
+	r.Delete("/exports/{id}", services.ExportHandler.DeleteExport)
+	r.Post("/exports/fact/{id}", services.ExportHandler.ExportFact)
+
 	r.Get("/variablesconfig", handlers.GetVariablesConfig)
 	r.Get("/variablesconfig/{id}", handlers.GetVariableConfig)
 	r.Get("/variablesconfig/key/{key}", handlers.GetVariableConfigByKey)
@@ -194,12 +200,6 @@ func serviceRouter(services Services) http.Handler {
 	r.Get("/externalconfigs", handlers.GetExternalConfigs)
 	r.Get("/externalconfigs/{id}", handlers.GetExternalConfig)
 	r.Get("/externalconfigs/name/{name}", handlers.GetExternalConfigByName)
-
-	// exports
-	r.Get("/exports", services.ExportHandler.GetExports)
-	r.Get("/exports/{id}", services.ExportHandler.GetExport)
-	r.Delete("/exports/{id}", services.ExportHandler.DeleteExport)
-	r.Post("/exports/fact/{id}", services.ExportHandler.ExportFact)
 
 	return r
 }

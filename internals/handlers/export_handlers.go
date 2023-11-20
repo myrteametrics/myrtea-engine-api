@@ -20,10 +20,10 @@ import (
 )
 
 type ExportHandler struct {
-	exportWrapper *export.ExportWrapper
+	exportWrapper *export.Wrapper
 }
 
-func NewExportHandler(exportWrapper *export.ExportWrapper) *ExportHandler {
+func NewExportHandler(exportWrapper *export.Wrapper) *ExportHandler {
 	return &ExportHandler{
 		exportWrapper: exportWrapper,
 	}
@@ -247,15 +247,14 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 	return err
 }
 
-// GetFacts godoc
-// @Summary Get all user exports
-// @Description Get all user exports
-// @Tags Exports
+// GetExports godoc
+// @Summary Get user exports
+// @Description Get in memory user exports
 // @Produce json
 // @Security Bearer
-// @Success 200 "Status OK"
+// @Success 200 {json} Returns data to be saved into a file
 // @Failure 500 "internal server error"
-// @Router /service/exports [post]
+// @Router /engine/exports [get]
 func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
 
 }

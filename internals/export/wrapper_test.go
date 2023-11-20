@@ -20,25 +20,25 @@ func TestNewExportWrapper(t *testing.T) {
 
 func TestNewExportWrapperItem(t *testing.T) {
 	item := NewExportWrapperItem(1, CSVParameters{}, users.User{ID: uuid.New()})
-	expression.AssertNotEqual(t, item.Id, "")
-	expression.AssertEqual(t, item.FactID, int64(1))
-	expression.AssertEqual(t, item.Params.Equals(CSVParameters{}), true)
-	expression.AssertEqual(t, item.Status, StatusPending)
+	expression.AssertNotEqual(t, item.Data.Id, "")
+	expression.AssertEqual(t, item.Data.FactID, int64(1))
+	expression.AssertEqual(t, item.Data.Params.Equals(CSVParameters{}), true)
+	expression.AssertEqual(t, item.Data.Status, StatusPending)
 }
 
 func TestExportWrapperItem_SetError(t *testing.T) {
 	item := NewExportWrapperItem(1, CSVParameters{}, users.User{ID: uuid.New()})
-	expression.AssertEqual(t, item.Status, StatusPending)
+	expression.AssertEqual(t, item.Data.Status, StatusPending)
 	item.SetError(fmt.Errorf("error"))
-	expression.AssertEqual(t, item.Status, StatusError)
-	expression.AssertNotEqual(t, item.Error, nil)
+	expression.AssertEqual(t, item.Data.Status, StatusError)
+	expression.AssertNotEqual(t, item.Data.Error, nil)
 }
 
 func TestExportWrapperItem_SetStatus(t *testing.T) {
 	item := NewExportWrapperItem(1, CSVParameters{}, users.User{ID: uuid.New()})
-	expression.AssertEqual(t, item.Status, StatusPending)
+	expression.AssertEqual(t, item.Data.Status, StatusPending)
 	item.SetStatus(StatusRunning)
-	expression.AssertEqual(t, item.Status, StatusRunning)
+	expression.AssertEqual(t, item.Data.Status, StatusRunning)
 }
 
 func TestAddToQueue(t *testing.T) {
@@ -119,14 +119,14 @@ func TestStartDispatcher(t *testing.T) {
 	foundItem := wrapper.Done[0]
 	wrapper.DoneMutex.Unlock()
 
-	expression.AssertEqual(t, item.Id, foundItem.Id)
+	expression.AssertEqual(t, item.Data.Id, foundItem.Data.Id)
 
 	fmt.Println("Sleeping 1 second to wait for status")
 	time.Sleep(2 * time.Second)
 
 	// could not create file
 	foundItem.Mutex.Lock()
-	expression.AssertEqual(t, foundItem.Status, StatusError)
+	expression.AssertEqual(t, foundItem.Data.Status, StatusError)
 	foundItem.Mutex.Unlock()
 }
 
@@ -184,8 +184,8 @@ func TestCheckForExpiredFiles(t *testing.T) {
 
 	// second test : check if expired exports are deleted
 	goodDate := time.Now()
-	wrapper.Done = append(wrapper.Done, &ExportWrapperItem{Date: time.Now().AddDate(0, 0, -2)})
-	wrapper.Done = append(wrapper.Done, &ExportWrapperItem{Date: goodDate})
+	wrapper.Done = append(wrapper.Done, &WrapperItem{Data: ExportWrapperItemData{Date: time.Now().AddDate(0, 0, -2)}})
+	wrapper.Done = append(wrapper.Done, &WrapperItem{Data: ExportWrapperItemData{Date: goodDate}})
 	expression.AssertEqual(t, len(wrapper.Done), 2)
 	err = wrapper.CheckForExpiredFiles()
 	if err != nil {
@@ -193,5 +193,5 @@ func TestCheckForExpiredFiles(t *testing.T) {
 		t.FailNow()
 	}
 	expression.AssertEqual(t, len(wrapper.Done), 1)
-	expression.AssertEqual(t, wrapper.Done[0].Date, goodDate)
+	expression.AssertEqual(t, wrapper.Done[0].Data.Date, goodDate)
 }

@@ -35,6 +35,7 @@ type Config struct {
 	LogLevel           zap.AtomicLevel
 }
 
+// Services is a wrapper for services instances, it is passed through router functions
 type Services struct {
 	PluginCore       *plugin.Core
 	ProcessorHandler *handlers.ProcessorHandler
@@ -166,7 +167,7 @@ func buildRoutesV3Basic(config Config, services Services) (func(r chi.Router), e
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
 			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
-			rg.Mount("/engine", engineRouter())
+			rg.Mount("/engine", engineRouter(services))
 
 			for _, plugin := range services.PluginCore.Plugins {
 				rg.Mount(plugin.Plugin.HandlerPrefix(), plugin.Plugin.Handler())
@@ -257,7 +258,7 @@ func buildRoutesV3SAML(config Config, services Services) (func(r chi.Router), er
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
 			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
-			rg.Mount("/engine", engineRouter())
+			rg.Mount("/engine", engineRouter(services))
 
 			for _, plugin := range services.PluginCore.Plugins {
 				rg.Mount(plugin.Plugin.HandlerPrefix(), plugin.Plugin.Handler())
@@ -321,7 +322,7 @@ func buildRoutesV3OIDC(config Config, services Services) (func(r chi.Router), er
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
 			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
-			rg.Mount("/engine", engineRouter())
+			rg.Mount("/engine", engineRouter(services))
 
 			for _, plugin := range services.PluginCore.Plugins {
 				rg.Mount(plugin.Plugin.HandlerPrefix(), plugin.Plugin.Handler())
