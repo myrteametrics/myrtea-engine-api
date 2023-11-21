@@ -46,16 +46,3 @@ func (p CSVParameters) Equals(Params CSVParameters) bool {
 	}
 	return true
 }
-
-// Int64Equals compares two int64 slices
-func Int64Equals(a, b []int64) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-	return true
-}

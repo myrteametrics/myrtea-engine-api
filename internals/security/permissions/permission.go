@@ -26,6 +26,7 @@ const (
 	TypeCalendar          = "calendar"
 	TypeModel             = "model"
 	TypeFrontend          = "frontend"
+	TypeExport            = "export"
 )
 
 type Permission struct {
@@ -35,6 +36,7 @@ type Permission struct {
 	Action       string    `json:"action"`
 }
 
+// New returns a new Permission
 func New(resourceType string, resourceID string, action string) Permission {
 	return Permission{
 		ResourceType: resourceType,
@@ -43,6 +45,7 @@ func New(resourceType string, resourceID string, action string) Permission {
 	}
 }
 
+// ListMatchingPermissions returns a list of permissions matching the given permission
 func ListMatchingPermissions(permissions []Permission, match Permission) []Permission {
 	lst := make([]Permission, 0)
 	for _, permission := range permissions {
@@ -60,7 +63,8 @@ func ListMatchingPermissions(permissions []Permission, match Permission) []Permi
 	return lst
 }
 
-func GetRessourceIDs(permissions []Permission) []string {
+// GetResourceIDs returns a list of resource IDs from a list of permissions
+func GetResourceIDs(permissions []Permission) []string {
 	resourceIDs := make([]string, 0)
 	for _, permission := range permissions {
 		resourceIDs = append(resourceIDs, permission.ResourceID)
@@ -68,6 +72,7 @@ func GetRessourceIDs(permissions []Permission) []string {
 	return resourceIDs
 }
 
+// HasPermission checks if the user has the required permission
 func matchPermission(permission string, required string) bool {
 	if permission == All {
 		return true
@@ -81,6 +86,7 @@ func matchPermission(permission string, required string) bool {
 	return false
 }
 
+// HasPermission checks strictly if the user has the required permission
 func matchPermissionStrict(permission string, required string) bool {
 	if permission == All {
 		return true
@@ -91,6 +97,7 @@ func matchPermissionStrict(permission string, required string) bool {
 	return false
 }
 
+// HasPermission checks if the user has the required permission
 func HasPermission(permissions []Permission, required Permission) bool {
 	for _, permission := range permissions {
 		if !matchPermissionStrict(permission.ResourceType, required.ResourceType) {
@@ -107,6 +114,7 @@ func HasPermission(permissions []Permission, required Permission) bool {
 	return false
 }
 
+// HasPermissionAtLeastOne checks if the user has at least one of the required permissions
 func HasPermissionAtLeastOne(permissions []Permission, requiredAtLeastOne []Permission) bool {
 	for _, required := range requiredAtLeastOne {
 		if HasPermission(permissions, required) {
@@ -116,6 +124,7 @@ func HasPermissionAtLeastOne(permissions []Permission, requiredAtLeastOne []Perm
 	return false
 }
 
+// HasPermissionAll checks if the user has all the required permissions
 func HasPermissionAll(permissions []Permission, requiredAll []Permission) bool {
 	for _, required := range requiredAll {
 		if !HasPermission(permissions, required) {

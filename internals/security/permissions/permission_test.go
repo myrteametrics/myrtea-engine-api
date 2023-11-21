@@ -117,7 +117,7 @@ func TestGetResourceIDs(t *testing.T) {
 		New("fact", "5", "*"),
 	}
 
-	resourceIDs := GetRessourceIDs(ListMatchingPermissions(permissions, New("situation", "*", "create")))
+	resourceIDs := GetResourceIDs(ListMatchingPermissions(permissions, New("situation", "*", "create")))
 	if len(resourceIDs) != 3 {
 		t.Error("invalid resourceIDs")
 	}

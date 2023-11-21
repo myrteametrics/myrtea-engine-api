@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"net/http"
 	"strconv"
@@ -55,21 +56,38 @@ func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	filename, params, combineFacts, done := handleExportArgs(w, r, err, idFact)
+	if done {
+		return
+	}
+
+	err = HandleStreamedExport(r.Context(), w, combineFacts, filename, params)
+	if err != nil {
+		render.Error(w, r, render.ErrAPIProcessError, err)
+	}
+	return
+
+}
+
+// handleExportArgs handles the export arguments and returns the filename, the parameters and the facts to export
+func handleExportArgs(w http.ResponseWriter, r *http.Request, err error, idFact int64) (string, export.CSVParameters, []engine.Fact, bool) {
 	f, found, err := fact.R().Get(idFact)
 	if err != nil {
 		zap.L().Error("Cannot retrieve fact", zap.Int64("factID", idFact), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return
+		return "", export.CSVParameters{}, nil, true
 	}
 	if !found {
 		zap.L().Warn("fact does not exist", zap.Int64("factID", idFact))
 		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
-		return
+		return "", export.CSVParameters{}, nil, true
 	}
 
 	var filename = r.URL.Query().Get("fileName")
 	if filename == "" {
-		filename = f.Name + "_export_" + time.Now().Format("02_01_2006_15-04") + ".csv"
+		filename = fmt.Sprintf("%s_export_%s.csv", f.Name, time.Now().Format("02_01_2006"))
+	} else {
+		filename = fmt.Sprintf("%s_%s.csv", time.Now().Format("02_01_2006"), filename)
 	}
 
 	// suppose that type is csv
@@ -101,15 +119,10 @@ func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 			combineFacts = append(combineFacts, combineFact)
 		}
 	}
-
-	err = HandleStreamedExport(r.Context(), w, combineFacts, filename, params)
-	if err != nil {
-		render.Error(w, r, render.ErrAPIProcessError, err)
-	}
-	return
-
+	return filename, params, combineFacts, false
 }
 
+// GetCSVParameters returns the parameters for the CSV export
 func GetCSVParameters(r *http.Request) export.CSVParameters {
 	result := export.CSVParameters{Separator: ','}
 
@@ -252,42 +265,84 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 // @Description Get in memory user exports
 // @Produce json
 // @Security Bearer
-// @Success 200 {json} Returns data to be saved into a file
+// @Success 200 {json} Returns a list of exports
 // @Failure 500 "internal server error"
 // @Router /engine/exports [get]
 func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
-
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+	exports := e.exportWrapper.GetUserExports(userCtx.User)
+	render.JSON(w, r, exports)
 }
 
-// GetFacts godoc
-// @Summary Get all user exports
-// @Description Get all user exports
+// GetExport godoc
+// @Summary Get single export from user
+// @Description Get single export from user
 // @Tags Exports
 // @Produce json
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 500 "internal server error"
-// @Router /service/exports/{id} [post]
+// @Router /service/exports/{id} [get]
 func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing id"))
+		return
+	}
 
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	item, ok := e.exportWrapper.GetUserExport(id, userCtx.User)
+	if !ok {
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("export not found"))
+		return
+	}
+
+	render.JSON(w, r, item)
 }
 
-// GetFacts godoc
-// @Summary Get all user exports
-// @Description Get all user exports
+// DeleteExport godoc
+// @Summary Deletes a single export
+// @Description Deletes a single export, when running it is canceled
 // @Tags Exports
 // @Produce json
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 500 "internal server error"
-// @Router /service/exports/{id} [post]
+// @Router /service/exports/{id} [delete]
 func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing id"))
+		return
+	}
 
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionDelete)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	item, ok := e.exportWrapper.GetUserExport(id, userCtx.User)
+	if !ok {
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("export not found"))
+		return
+	}
+
+	render.JSON(w, r, item)
 }
 
-// GetFacts godoc
-// @Summary Get all user exports
-// @Description Get all user exports
+// ExportFact godoc
+// @Summary Creates a new export request for a fact (or multiple facts)
+// @Description Creates a new export request for a fact (or multiple facts)
 // @Tags Exports
 // @Produce json
 // @Security Bearer
@@ -295,5 +350,34 @@ func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "internal server error"
 // @Router /service/exports/fact/{id} [post]
 func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	idFact, err := strconv.ParseInt(id, 10, 64)
 
+	if err != nil {
+		zap.L().Warn("Error on parsing fact id", zap.String("idFact", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	filename, params, combineFacts, done := handleExportArgs(w, r, err, idFact)
+	if done {
+		return
+	}
+
+	item, status := e.exportWrapper.AddToQueue(combineFacts, filename, params, userCtx.User)
+
+	switch status {
+	case export.CodeAdded:
+	case export.CodeUserAdded:
+	case export.CodeUserExists:
+	case export.CodeQueueFull:
+	}
+
+	render.JSON(w, r, item)
 }

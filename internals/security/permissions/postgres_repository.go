@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	sq "github.com/Masterminds/squirrel"
-	uuid "github.com/google/uuid"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -29,7 +29,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	return ifm
 }
 
-//Get search and returns an User Permission from the repository by its id
+// Get search and returns an User Permission from the repository by its id
 func (r *PostgresRepository) Get(permissionUUID uuid.UUID) (Permission, bool, error) {
 	rows, err := r.newStatement().
 		Select(fields...).

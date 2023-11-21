@@ -64,8 +64,8 @@ func (e *ExportWorker) IsAvailable() bool {
 	return e.Available
 }
 
-// Finalise sets the worker availability to true and clears the queueItem
-func (e *ExportWorker) Finalise() {
+// finalise sets the worker availability to true and clears the queueItem
+func (e *ExportWorker) finalise() {
 	e.Mutex.Lock()
 
 	// set status to error if error occurred
@@ -86,7 +86,7 @@ func (e *ExportWorker) Finalise() {
 // Start starts the export task
 // It handles one queueItem at a time and when finished it stops the goroutine
 func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
-	defer e.Finalise()
+	defer e.finalise()
 	e.Mutex.Lock()
 	e.QueueItem = item
 	e.Mutex.Unlock()

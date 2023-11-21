@@ -14,10 +14,10 @@ import (
 
 func TestNewWrapper(t *testing.T) {
 	wrapper := NewWrapper("/tmp", 1, 1, 1)
-	expression.AssertEqual(t, wrapper.BasePath, "/tmp")
-	expression.AssertEqual(t, wrapper.QueueMaxSize, 1)
-	expression.AssertEqual(t, wrapper.DiskRetentionDays, 1)
-	expression.AssertEqual(t, wrapper.QueueMaxSize, 1)
+	expression.AssertEqual(t, wrapper.basePath, "/tmp")
+	expression.AssertEqual(t, wrapper.queueMaxSize, 1)
+	expression.AssertEqual(t, wrapper.diskRetentionDays, 1)
+	expression.AssertEqual(t, wrapper.queueMaxSize, 1)
 }
 
 func TestNewWrapperItem(t *testing.T) {
@@ -44,8 +44,8 @@ func TestWrapper_Init(t *testing.T) {
 	defer cancel()
 	wrapper.Init(ctx)
 	time.Sleep(500 * time.Millisecond)
-	expression.AssertEqual(t, len(wrapper.Workers), 1)
-	worker := wrapper.Workers[0]
+	expression.AssertEqual(t, len(wrapper.workers), 1)
+	worker := wrapper.workers[0]
 	expression.AssertEqual(t, worker.Id, 0)
 	worker.Mutex.Lock()
 	defer worker.Mutex.Unlock()
@@ -91,12 +91,12 @@ func TestStartDispatcher(t *testing.T) {
 
 	wrapper := NewWrapper(dname, 1, 1, 1)
 	wrapper.Init(ctx)
-	expression.AssertEqual(t, len(wrapper.Workers), 1)
+	expression.AssertEqual(t, len(wrapper.workers), 1)
 	// sleep one second to let the goroutine start
 	fmt.Println("Sleeping 1 second to let the goroutine start")
 	time.Sleep(1 * time.Second)
 
-	worker := wrapper.Workers[0]
+	worker := wrapper.workers[0]
 
 	// check if the worker is available
 	worker.Mutex.Lock()
@@ -107,18 +107,18 @@ func TestStartDispatcher(t *testing.T) {
 	user := users.User{Login: "test"}
 	_, result := wrapper.AddToQueue([]int64{1}, fileName, CSVParameters{}, user)
 	expression.AssertEqual(t, result, CodeAdded, "AddToQueue should return CodeAdded")
-	wrapper.QueueItemsMutex.Lock()
-	expression.AssertEqual(t, len(wrapper.QueueItems), 1)
-	itemId := wrapper.QueueItems[0].Id
-	wrapper.QueueItemsMutex.Unlock()
+	wrapper.queueMutex.Lock()
+	expression.AssertEqual(t, len(wrapper.queue), 1)
+	itemId := wrapper.queue[0].Id
+	wrapper.queueMutex.Unlock()
 
 	// sleep another 5 seconds to let the goroutine handle the task
 	fmt.Println("Sleeping 5 seconds to let the goroutine handle the task")
 	time.Sleep(5 * time.Second)
 
-	wrapper.QueueItemsMutex.Lock()
-	expression.AssertEqual(t, len(wrapper.QueueItems), 0)
-	wrapper.QueueItemsMutex.Unlock()
+	wrapper.queueMutex.Lock()
+	expression.AssertEqual(t, len(wrapper.queue), 0)
+	wrapper.queueMutex.Unlock()
 
 	worker.Mutex.Lock()
 	expression.AssertEqual(t, worker.Available, true)
@@ -164,7 +164,7 @@ func TestCheckForExpiredFiles(t *testing.T) {
 	_ = file2.Close()
 
 	wrapper := NewWrapper(dname, 1, 1, 1)
-	err = wrapper.CheckForExpiredFiles()
+	err = wrapper.checkForExpiredFiles()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -187,23 +187,23 @@ func TestCheckForExpiredFiles(t *testing.T) {
 	goodDate := time.Now()
 	id1 := uuid.New()
 	id2 := uuid.New()
-	wrapper.Archive.Store(id1, WrapperItem{Date: time.Now().AddDate(0, 0, -2)})
-	wrapper.Archive.Store(id2, WrapperItem{Date: goodDate})
+	wrapper.archive.Store(id1, WrapperItem{Date: time.Now().AddDate(0, 0, -2)})
+	wrapper.archive.Store(id2, WrapperItem{Date: goodDate})
 
-	_, found := wrapper.Archive.Load(id1)
+	_, found := wrapper.archive.Load(id1)
 	expression.AssertEqual(t, found, true)
-	_, found = wrapper.Archive.Load(id2)
+	_, found = wrapper.archive.Load(id2)
 	expression.AssertEqual(t, found, true)
 
-	err = wrapper.CheckForExpiredFiles()
+	err = wrapper.checkForExpiredFiles()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	_, found = wrapper.Archive.Load(id1)
+	_, found = wrapper.archive.Load(id1)
 	expression.AssertEqual(t, found, false)
-	_, found = wrapper.Archive.Load(id2)
+	_, found = wrapper.archive.Load(id2)
 	expression.AssertEqual(t, found, true)
 }
 
@@ -215,10 +215,10 @@ func TestWrapper_GetUserExports(t *testing.T) {
 	item2 := NewWrapperItem([]int64{2}, "test.txt", CSVParameters{}, user1)
 	item3 := NewWrapperItem([]int64{3}, "test.txt", CSVParameters{}, user1)
 	item4 := NewWrapperItem([]int64{4}, "test.txt", CSVParameters{}, user2)
-	wrapper.Archive.Store(item1.Id, *item1)
-	wrapper.Archive.Store(item2.Id, *item2)
-	wrapper.Archive.Store(item3.Id, *item3)
-	wrapper.Archive.Store(item4.Id, *item4)
+	wrapper.archive.Store(item1.Id, *item1)
+	wrapper.archive.Store(item2.Id, *item2)
+	wrapper.archive.Store(item3.Id, *item3)
+	wrapper.archive.Store(item4.Id, *item4)
 	wrapper.AddToQueue([]int64{5}, "test.txt", CSVParameters{}, user1)
 	wrapper.AddToQueue([]int64{6}, "test.txt", CSVParameters{}, user2)
 	exports := wrapper.GetUserExports(user1)
@@ -229,21 +229,21 @@ func TestWrapper_GetUserExports(t *testing.T) {
 
 func TestWrapper_DequeueWrapperItem(t *testing.T) {
 	wrapper := NewWrapper("/tmp", 1, 1, 2)
-	i, ok := wrapper.DequeueWrapperItem(&WrapperItem{})
+	i, ok := wrapper.dequeueWrapperItem(&WrapperItem{})
 	expression.AssertEqual(t, ok, false)
 	expression.AssertEqual(t, i, 0)
 	wrapper.AddToQueue([]int64{5}, "test.txt", CSVParameters{}, users.User{Login: "bla"})
 	wrapper.AddToQueue([]int64{6}, "test.txt", CSVParameters{}, users.User{Login: "blabla"})
 
-	expression.AssertEqual(t, len(wrapper.QueueItems), 2)
-	item1 := wrapper.QueueItems[0]
-	item2 := wrapper.QueueItems[1]
+	expression.AssertEqual(t, len(wrapper.queue), 2)
+	item1 := wrapper.queue[0]
+	item2 := wrapper.queue[1]
 
-	i, ok = wrapper.DequeueWrapperItem(item1)
+	i, ok = wrapper.dequeueWrapperItem(item1)
 	expression.AssertEqual(t, ok, true)
 	expression.AssertEqual(t, i, 1)
 
-	i, ok = wrapper.DequeueWrapperItem(item2)
+	i, ok = wrapper.dequeueWrapperItem(item2)
 	expression.AssertEqual(t, ok, true)
 	expression.AssertEqual(t, i, 0)
 }
@@ -275,8 +275,8 @@ func TestWrapper_dispatchExportQueue(t *testing.T) {
 	// wait until dispatcher stops
 	time.Sleep(50 * time.Millisecond)
 
-	expression.AssertEqual(t, len(wrapper.Workers), 1)
-	worker := wrapper.Workers[0]
+	expression.AssertEqual(t, len(wrapper.workers), 1)
+	worker := wrapper.workers[0]
 
 	// no items in queue -> nothing should happen
 	expression.AssertEqual(t, worker.IsAvailable(), true)
@@ -292,9 +292,9 @@ func TestWrapper_dispatchExportQueue(t *testing.T) {
 	wrapper.dispatchExportQueue(context.Background())
 
 	// the item should still be in the queue
-	wrapper.QueueItemsMutex.Lock()
-	expression.AssertEqual(t, len(wrapper.QueueItems), 1, "item should still be in the queue, since no worker is available")
-	wrapper.QueueItemsMutex.Unlock()
+	wrapper.queueMutex.Lock()
+	expression.AssertEqual(t, len(wrapper.queue), 1, "item should still be in the queue, since no worker is available")
+	wrapper.queueMutex.Unlock()
 
 	// we test if dispatchExportQueue will dispatch the item, worker is now set to available
 	expression.AssertEqual(t, worker.SwapAvailable(true), false)
@@ -302,7 +302,7 @@ func TestWrapper_dispatchExportQueue(t *testing.T) {
 	wrapper.dispatchExportQueue(context.Background())
 
 	expression.AssertEqual(t, worker.IsAvailable(), false, "worker should not be available, because it is working on an item")
-	expression.AssertEqual(t, len(wrapper.QueueItems), 0)
+	expression.AssertEqual(t, len(wrapper.queue), 0)
 
 	// wait until worker has finished
 	time.Sleep(1 * time.Second)
@@ -316,7 +316,7 @@ func TestWrapper_dispatchExportQueue(t *testing.T) {
 func TestWrapper_FindArchive(t *testing.T) {
 	wrapper := NewWrapper("/tmp", 1, 1, 2)
 	item := NewWrapperItem([]int64{1}, "test.txt", CSVParameters{}, users.User{Login: "bla"})
-	wrapper.Archive.Store(item.Id, *item)
+	wrapper.archive.Store(item.Id, *item)
 
 	// testing with non-existing item in archive
 	_, ok := wrapper.FindArchive("test", users.User{Login: "bla"})
