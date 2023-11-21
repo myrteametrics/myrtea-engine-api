@@ -78,8 +78,8 @@ func main() {
 	queueMaxSize := viper.GetInt("EXPORT_QUEUE_MAX_SIZE")
 	exportWorkersCount := viper.GetInt("EXPORT_WORKERS_COUNT")
 
-	exportWrapper := export.NewExportWrapper(basePath, diskRetentionDays, queueMaxSize)
-	exportWrapper.Init(exportWorkersCount)
+	exportWrapper := export.NewWrapper(basePath, exportWorkersCount, diskRetentionDays, queueMaxSize)
+	exportWrapper.Init(context.Background())
 
 	routerServices := router.Services{
 		PluginCore:       core,

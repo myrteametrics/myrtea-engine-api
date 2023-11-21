@@ -2,7 +2,6 @@ package export
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"go.uber.org/zap"
@@ -42,7 +41,7 @@ type Wrapper struct {
 	// Queue handling
 	QueueItemsMutex sync.RWMutex
 	QueueItems      []*WrapperItem // stores queue to handle duplicates, state
-	Queue           chan *WrapperItem
+	//Queue           chan *WrapperItem
 
 	// contains also current handled items
 	// Workers is final, its only instanced once and thus does not change size (ExportWorker have there indexes in this slice stored)
@@ -62,8 +61,8 @@ type Wrapper struct {
 	WorkerCount       int
 }
 
-// NewExportWrapperItem creates a new export wrapper item
-func NewExportWrapperItem(factIDs []int64, fileName string, params CSVParameters, user users.User) *WrapperItem {
+// NewWrapperItem creates a new export wrapper item
+func NewWrapperItem(factIDs []int64, fileName string, params CSVParameters, user users.User) *WrapperItem {
 	// sort slices (for easy comparison)
 	sort.Slice(factIDs, func(i, j int) bool { return factIDs[i] < factIDs[j] })
 	return &WrapperItem{
@@ -78,11 +77,11 @@ func NewExportWrapperItem(factIDs []int64, fileName string, params CSVParameters
 	}
 }
 
-// NewExportWrapper creates a new export wrapper
-func NewExportWrapper(basePath string, workersCount, diskRetentionDays, queueMaxSize int) *Wrapper {
+// NewWrapper creates a new export wrapper
+func NewWrapper(basePath string, workersCount, diskRetentionDays, queueMaxSize int) *Wrapper {
 	return &Wrapper{
-		Workers:           make([]*ExportWorker, workersCount),
-		Queue:             make(chan *WrapperItem, queueMaxSize),
+		Workers:           make([]*ExportWorker, 0),
+		QueueItems:        make([]*WrapperItem, 0),
 		Success:           make(chan int),
 		Archive:           sync.Map{},
 		QueueMaxSize:      queueMaxSize,
@@ -103,51 +102,42 @@ func (it *WrapperItem) ContainsFact(factID int64) bool {
 }
 
 // Init initializes the export wrapper
-func (ew *Wrapper) Init() {
+func (ew *Wrapper) Init(ctx context.Context) {
 	// instantiate workers
 	for i := 0; i < ew.WorkerCount; i++ {
-		ew.Workers[i] = NewExportWorker(i, ew.BasePath, ew.Success)
+		ew.Workers = append(ew.Workers, NewExportWorker(i, ew.BasePath, ew.Success))
 	}
-	go ew.StartDispatcher(context.Background())
+	go ew.StartDispatcher(ctx)
 }
 
 // AddToQueue Adds a new export to the export worker queue
 func (ew *Wrapper) AddToQueue(factIDs []int64, fileName string, params CSVParameters, user users.User) (*WrapperItem, int) {
-	// implement anti-spam method?
-	/*
-			continue
-		}
-	*/
-	item := NewExportWrapperItem(factIDs, fileName, params, user)
-
 	ew.QueueItemsMutex.Lock()
 	defer ew.QueueItemsMutex.Unlock()
 
 	for _, queueItem := range ew.QueueItems {
 		if !Int64Equals(queueItem.FactIDs, factIDs) || !queueItem.Params.Equals(params) {
-
-			// check if user not already in queue.users
-			for _, u := range queueItem.Users {
-				if u == user.Login {
-					return nil, CodeUserExists
-				}
-			}
-
-			//queueItem.Users = append(queueItem.Users, user)
-			return nil, CodeUserAdded
+			continue
 		}
+
+		// check if user not already in queue.users
+		for _, u := range queueItem.Users {
+			if u == user.Login {
+				return nil, CodeUserExists
+			}
+		}
+
+		queueItem.Users = append(queueItem.Users, user.Login)
+		return nil, CodeUserAdded
 	}
 
-	// TODO: check ongoing exports ??
-
-	select {
-	case ew.Queue <- item:
-		ew.QueueItems = append(ew.QueueItems, item)
-		return item, CodeAdded
-	default:
+	if len(ew.QueueItems) >= ew.QueueMaxSize {
 		return nil, CodeQueueFull
 	}
 
+	item := NewWrapperItem(factIDs, fileName, params, user)
+	ew.QueueItems = append(ew.QueueItems, item)
+	return item, CodeAdded
 }
 
 // StartDispatcher starts the export tasks dispatcher & the expired files checker
@@ -176,18 +166,14 @@ func (ew *Wrapper) StartDispatcher(context context.Context) {
 			// archive item
 			ew.Archive.Store(item.Id, item)
 		case <-ticker.C:
-			ew.DispatchExportQueue()
+			ew.dispatchExportQueue(context)
 		case <-expiredFileTicker.C:
 			err := ew.CheckForExpiredFiles()
 
 			if err != nil {
 				zap.L().Error("Error during expired files check", zap.Error(err))
 			}
-
 		case <-context.Done():
-			for i := 0; i < ew.WorkerCount; i++ {
-				ew.Workers[i].Cancel <- true
-			}
 			return
 		}
 	}
@@ -275,59 +261,72 @@ func (ew *Wrapper) GetUserExports(user users.User) []WrapperItem {
 		return true
 	})
 
+	// finally, gather all exports that are in the queue
+	ew.QueueItemsMutex.Lock()
+	defer ew.QueueItemsMutex.Unlock()
+
+	for _, item := range ew.QueueItems {
+		if item.ContainsUser(user) {
+			result = append(result, *item)
+		}
+	}
+
 	return result
 }
 
-func (ew *Wrapper) DequeueWrapperItem(item *WrapperItem) bool {
+// DequeueWrapperItem Dequeues an item, returns size of queue and true if item was found and dequeued
+func (ew *Wrapper) DequeueWrapperItem(item *WrapperItem) (int, bool) {
 	ew.QueueItemsMutex.Lock()
 	defer ew.QueueItemsMutex.Unlock()
 
 	for i, queueItem := range ew.QueueItems {
-
 		// comparing pointer should work
 		if queueItem != item {
 			continue
 		}
 
 		ew.QueueItems = append(ew.QueueItems[:i], ew.QueueItems[i+1:]...)
-		return true
+		return len(ew.QueueItems), true
 	}
 
-	return false
+	return len(ew.QueueItems), false
 }
 
-func (ew *Wrapper) DispatchExportQueue() {
-	if len(ew.Queue) == 0 {
-		return
-	}
-
-out:
+// dispatchExportQueue dispatches the export queue to the available workers
+func (ew *Wrapper) dispatchExportQueue(ctx context.Context) {
 	for _, worker := range ew.Workers {
+		worker.Mutex.Lock()
 		if worker.Available {
+			// check if there is an item in the queue
+			ew.QueueItemsMutex.Lock()
 
-			// Non blocking reading
-			select {
-			case item := <-ew.Queue:
-				worker.Available = false
-				ew.DequeueWrapperItem(item)
-				go worker.Start(*item)
-			default:
-				break out // Nothing in queue
+			if len(ew.QueueItems) == 0 {
+				ew.QueueItemsMutex.Unlock()
+				worker.Mutex.Unlock()
+				return // Nothing in queue
 			}
 
+			item := *ew.QueueItems[0]
+			ew.QueueItems = append(ew.QueueItems[:0], ew.QueueItems[1:]...)
+			ew.QueueItemsMutex.Unlock()
+
+			worker.Available = false
+			worker.Mutex.Unlock()
+			go worker.Start(item, ctx)
+		} else {
+			worker.Mutex.Unlock()
 		}
 	}
-
 }
 
-func (ew *Wrapper) FindArchive(id string, user users.User) (WrapperItem, error) {
+func (ew *Wrapper) FindArchive(id string, user users.User) (WrapperItem, bool) {
 	item, found := ew.Archive.Load(id)
 	if found {
 		if data, ok := item.(WrapperItem); ok && data.ContainsUser(user) {
-			return data, nil
+			return data, true
 		}
 	}
-	return WrapperItem{}, fmt.Errorf("archive not found")
+	return WrapperItem{}, false
 }
 
 // ContainsUser checks if user is in item

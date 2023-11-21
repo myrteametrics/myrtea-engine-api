@@ -6,8 +6,8 @@ import (
 )
 
 func TestEquals(t *testing.T) {
-	p1 := CSVParameters{FileName: "bla"}
-	p2 := CSVParameters{FileName: "bla2"}
+	p1 := CSVParameters{}
+	p2 := CSVParameters{}
 	expression.AssertEqual(t, p1.Equals(p2), false)
 	expression.AssertEqual(t, p1.Equals(p1), true)
 
@@ -19,7 +19,6 @@ func TestEquals(t *testing.T) {
 		Separator:         ';',
 		Limit:             10,
 		ChunkSize:         100,
-		FileName:          "bla",
 	}
 	expression.AssertEqual(t, params3.Equals(p2), false)
 	expression.AssertEqual(t, params3.Equals(params3), true)

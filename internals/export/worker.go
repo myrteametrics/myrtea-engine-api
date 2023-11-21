@@ -13,14 +13,14 @@ import (
 )
 
 type ExportWorker struct {
-	Id        int
-	Mutex     sync.Mutex
-	Available bool // do not touch this variable inside of worker it is used thread-safely by wrapper
-	Success   chan<- int
-	Cancel    chan bool // channel to cancel the worker
-	//
+	Mutex    sync.Mutex
+	Id       int
+	Success  chan<- int
+	Cancel   chan bool // channel to cancel the worker
+	BasePath string    // base path where the file will be saved
+	// critical fields
+	Available bool
 	QueueItem WrapperItem
-	BasePath  string // base path where the file will be saved
 }
 
 func NewExportWorker(id int, basePath string, success chan<- int) *ExportWorker {
@@ -33,6 +33,7 @@ func NewExportWorker(id int, basePath string, success chan<- int) *ExportWorker 
 	}
 }
 
+// SetError sets the error and the status of the worker
 func (e *ExportWorker) SetError(error error) {
 	e.Mutex.Lock()
 	defer e.Mutex.Unlock()
@@ -40,14 +41,31 @@ func (e *ExportWorker) SetError(error error) {
 	e.QueueItem.Error = error
 }
 
+// SetStatus sets the status of the worker
 func (e *ExportWorker) SetStatus(status int) {
 	e.Mutex.Lock()
 	defer e.Mutex.Unlock()
 	e.QueueItem.Status = status
 }
 
-// SetAvailable sets the worker availability to true and clears the queueItem
-func (e *ExportWorker) SetAvailable() {
+// SwapAvailable swaps the availability of the worker
+func (e *ExportWorker) SwapAvailable(available bool) (old bool) {
+	e.Mutex.Lock()
+	defer e.Mutex.Unlock()
+	old = e.Available
+	e.Available = available
+	return old
+}
+
+// IsAvailable returns the availability of the worker
+func (e *ExportWorker) IsAvailable() bool {
+	e.Mutex.Lock()
+	defer e.Mutex.Unlock()
+	return e.Available
+}
+
+// Finalise sets the worker availability to true and clears the queueItem
+func (e *ExportWorker) Finalise() {
 	e.Mutex.Lock()
 
 	// set status to error if error occurred
@@ -67,8 +85,8 @@ func (e *ExportWorker) SetAvailable() {
 
 // Start starts the export task
 // It handles one queueItem at a time and when finished it stops the goroutine
-func (e *ExportWorker) Start(item WrapperItem) {
-	defer e.SetAvailable()
+func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
+	defer e.Finalise()
 	e.Mutex.Lock()
 	e.QueueItem = item
 	e.Mutex.Unlock()
@@ -98,7 +116,7 @@ func (e *ExportWorker) Start(item WrapperItem) {
 	var writerErr error
 
 	// local context handling
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	// Increment the WaitGroup counter
@@ -117,7 +135,7 @@ func (e *ExportWorker) Start(item WrapperItem) {
 		defer close(streamedExport.Data)
 
 		for _, f := range item.FactIDs {
-			_ = f // TODO:
+			_ = f // TODO: facts
 			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, engine.Fact{}, item.Params.Limit)
 			if writerErr != nil {
 				break // break here when error occurs?
@@ -128,23 +146,21 @@ func (e *ExportWorker) Start(item WrapperItem) {
 	// Chunk handler
 	first := true
 	labels := item.Params.ColumnsLabel
-	loop := true
 
-	for loop {
+loop:
+	for {
 		select {
 		case hits, ok := <-streamedExport.Data:
 			if !ok { // channel closed
-				loop = false
-				break
+				break loop
 			}
 
-			err := WriteConvertHitsToCSV(csvWriter, hits, item.Params.Columns, labels, item.Params.FormatColumnsData, item.Params.Separator)
+			err = WriteConvertHitsToCSV(csvWriter, hits, item.Params.Columns, labels, item.Params.FormatColumnsData, item.Params.Separator)
 
 			if err != nil {
 				zap.L().Error("WriteConvertHitsToCSV error during export", zap.Error(err))
 				cancel()
-				loop = false
-				break
+				break loop
 			}
 
 			// Flush data
@@ -154,10 +170,11 @@ func (e *ExportWorker) Start(item WrapperItem) {
 				first = false
 				labels = []string{}
 			}
-
+		case <-ctx.Done():
+			break loop
 		case <-e.Cancel:
 			cancel()
-			loop = false
+			break loop
 		}
 	}
 
