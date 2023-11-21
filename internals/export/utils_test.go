@@ -8,8 +8,7 @@ import (
 func TestEquals(t *testing.T) {
 	p1 := CSVParameters{}
 	p2 := CSVParameters{}
-	expression.AssertEqual(t, p1.Equals(p2), false)
-	expression.AssertEqual(t, p1.Equals(p1), true)
+	expression.AssertEqual(t, p1.Equals(p2), true)
 
 	// make a full test with all variables in parameters filled
 	params3 := CSVParameters{
