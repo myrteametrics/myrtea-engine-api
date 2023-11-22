@@ -64,10 +64,15 @@ type Wrapper struct {
 
 // NewWrapperItem creates a new export wrapper item
 func NewWrapperItem(facts []engine.Fact, fileName string, params CSVParameters, user users.User) *WrapperItem {
+	var factIDs []int64
+	for _, fact := range facts {
+		factIDs = append(factIDs, fact.ID)
+	}
 	return &WrapperItem{
 		Users:    append([]string{}, user.Login),
 		Id:       uuid.New().String(),
 		Facts:    facts,
+		FactIDs:  factIDs,
 		Date:     time.Now(),
 		Status:   StatusPending,
 		Error:    nil,
