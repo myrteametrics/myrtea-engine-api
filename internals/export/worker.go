@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
 	"os"
 	"path/filepath"
@@ -28,7 +27,7 @@ func NewExportWorker(id int, basePath string, success chan<- int) *ExportWorker 
 		Id:        id,
 		Available: true,
 		BasePath:  basePath,
-		Cancel:    make(chan bool),
+		Cancel:    make(chan bool, 3), // buffered channel to avoid blocking
 		Success:   success,
 	}
 }
@@ -64,6 +63,17 @@ func (e *ExportWorker) IsAvailable() bool {
 	return e.Available
 }
 
+// DrainCancelChannel drains the cancel channel
+func (e *ExportWorker) DrainCancelChannel() {
+	for {
+		select {
+		case <-e.Cancel:
+		default:
+			return
+		}
+	}
+}
+
 // finalise sets the worker availability to true and clears the queueItem
 func (e *ExportWorker) finalise() {
 	e.Mutex.Lock()
@@ -76,8 +86,10 @@ func (e *ExportWorker) finalise() {
 	if e.QueueItem.Status != StatusError {
 		e.QueueItem.Status = StatusDone
 	}
-
 	e.Mutex.Unlock()
+
+	// clear Cancel channel, to avoid blocking
+	e.DrainCancelChannel()
 
 	// notify to the dispatcher that this worker is now available
 	e.Success <- e.Id
@@ -89,6 +101,7 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 	defer e.finalise()
 	e.Mutex.Lock()
 	e.QueueItem = item
+	e.QueueItem.Status = StatusRunning
 	e.Mutex.Unlock()
 
 	// create file
@@ -134,9 +147,8 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 		defer wg.Done()
 		defer close(streamedExport.Data)
 
-		for _, f := range item.FactIDs {
-			_ = f // TODO: facts
-			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, engine.Fact{}, item.Params.Limit)
+		for _, f := range item.Facts {
+			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit)
 			if writerErr != nil {
 				break // break here when error occurs?
 			}

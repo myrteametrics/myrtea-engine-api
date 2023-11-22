@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// APIError wraps all informations required to investiguate a backend error
+// APIError wraps all information required to investigate a backend error
 // It is mainly used to returns information to the API caller when the status is not 2xx.
 type APIError struct {
 	RequestID string `json:"requestID"`
@@ -43,6 +43,9 @@ var (
 	ErrAPIResourceInvalid = APIError{Status: http.StatusBadRequest, ErrType: "RessourceError", Code: 2001, Message: `Provided resource definition can be parsed, but is invalid`}
 	// ErrAPIResourceDuplicate must be used in case a duplicate resource has been identified
 	ErrAPIResourceDuplicate = APIError{Status: http.StatusBadRequest, ErrType: "RessourceError", Code: 2002, Message: `Provided resource definition can be parsed, but is already exists`}
+
+	// ErrAPIQueueFull must be used in case an internal processing queue is full
+	ErrAPIQueueFull = APIError{Status: http.StatusServiceUnavailable, ErrType: "RessourceError", Code: 2003, Message: `The queue is full, please retry later`}
 
 	// ErrAPIDBResourceNotFound must be used in case a resource is not found in the backend storage system
 	ErrAPIDBResourceNotFound = APIError{Status: http.StatusNotFound, ErrType: "RessourceError", Code: 3000, Message: `Ressource not found`}

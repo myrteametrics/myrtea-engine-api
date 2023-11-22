@@ -39,3 +39,10 @@ func TestExportWorker_IsAvailable(t *testing.T) {
 	worker.SwapAvailable(false)
 	expression.AssertEqual(t, worker.IsAvailable(), false)
 }
+
+func TestExportWorker_DrainCancelChannel(t *testing.T) {
+	worker := NewExportWorker(0, "/tmp", make(chan<- int))
+	worker.Cancel <- true
+	worker.DrainCancelChannel()
+	expression.AssertEqual(t, len(worker.Cancel), 0)
+}

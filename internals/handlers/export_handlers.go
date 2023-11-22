@@ -50,8 +50,8 @@ func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userCtx, _ := GetUserFromContext(r) // TODO: set the right permission
-	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(idFact, 10), permissions.ActionGet)) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, strconv.FormatInt(idFact, 10), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
@@ -70,7 +70,8 @@ func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleExportArgs handles the export arguments and returns the filename, the parameters and the facts to export
-func handleExportArgs(w http.ResponseWriter, r *http.Request, err error, idFact int64) (string, export.CSVParameters, []engine.Fact, bool) {
+// done is true if an error occurred and the response has already been written
+func handleExportArgs(w http.ResponseWriter, r *http.Request, err error, idFact int64) (filename string, params export.CSVParameters, combineFacts []engine.Fact, done bool) {
 	f, found, err := fact.R().Get(idFact)
 	if err != nil {
 		zap.L().Error("Cannot retrieve fact", zap.Int64("factID", idFact), zap.Error(err))
@@ -83,7 +84,7 @@ func handleExportArgs(w http.ResponseWriter, r *http.Request, err error, idFact 
 		return "", export.CSVParameters{}, nil, true
 	}
 
-	var filename = r.URL.Query().Get("fileName")
+	filename = r.URL.Query().Get("fileName")
 	if filename == "" {
 		filename = fmt.Sprintf("%s_export_%s.csv", f.Name, time.Now().Format("02_01_2006"))
 	} else {
@@ -91,9 +92,8 @@ func handleExportArgs(w http.ResponseWriter, r *http.Request, err error, idFact 
 	}
 
 	// suppose that type is csv
-	params := GetCSVParameters(r)
+	params = GetCSVParameters(r)
 
-	var combineFacts []engine.Fact
 	combineFacts = append(combineFacts, f)
 
 	// export multiple facts into one file
@@ -265,7 +265,8 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 // @Description Get in memory user exports
 // @Produce json
 // @Security Bearer
-// @Success 200 {json} Returns a list of exports
+// @Success 200 {array} export.WrapperItem Returns a list of exports
+// @Failure 403 "Status Forbidden: missing permission"
 // @Failure 500 "internal server error"
 // @Router /engine/exports [get]
 func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
@@ -274,8 +275,7 @@ func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
-	exports := e.exportWrapper.GetUserExports(userCtx.User)
-	render.JSON(w, r, exports)
+	render.JSON(w, r, e.exportWrapper.GetUserExports(userCtx.User))
 }
 
 // GetExport godoc
@@ -284,7 +284,10 @@ func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
 // @Tags Exports
 // @Produce json
 // @Security Bearer
-// @Success 200 "Status OK"
+// @Success 200 {object} export.WrapperItem "Status OK"
+// @Failure 400 "Bad Request: missing export id / id is not an integer"
+// @Failure 403 "Status Forbidden: missing permission"
+// @Failure 404 "Status Not Found: export not found"
 // @Failure 500 "internal server error"
 // @Router /service/exports/{id} [get]
 func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
@@ -315,7 +318,10 @@ func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
 // @Tags Exports
 // @Produce json
 // @Security Bearer
-// @Success 200 "Status OK"
+// @Success 204 "Status OK"
+// @Failure 400 "Bad Request: missing export id / id is not an integer"
+// @Failure 403 "Status Forbidden: missing permission"
+// @Failure 404 "Status Not Found: export not found"
 // @Failure 500 "internal server error"
 // @Router /service/exports/{id} [delete]
 func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
@@ -331,13 +337,13 @@ func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, ok := e.exportWrapper.GetUserExport(id, userCtx.User)
+	ok := e.exportWrapper.DeleteExport(id, userCtx.User)
 	if !ok {
 		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("export not found"))
 		return
 	}
 
-	render.JSON(w, r, item)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // ExportFact godoc
@@ -346,7 +352,19 @@ func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 // @Tags Exports
 // @Produce json
 // @Security Bearer
-// @Success 200 "Status OK"
+// @Param id path string true "Fact ID"
+// @Param fileName query string false "File name"
+// @Param limit query int false "Limit"
+// @Param columns query string false "Columns"
+// @Param columnsLabel query string false "Columns label"
+// @Param formateColumns query string false "Formate columns"
+// @Param separator query string false "Separator"
+// @Success 200 {object} export.WrapperItem "Status OK: user was added to existing export in queue"
+// @Success 201 {object} export.WrapperItem "Status Created: new export was added in queue"
+// @Failure 400 "Bad Request: missing fact id / fact id is not an integer"
+// @Failure 403 "Status Forbidden: missing permission"
+// @Failure 409 {object} export.WrapperItem "Status Conflict: user already exists in export queue"
+// @Failure 429 "Status Too Many Requests: export queue is full"
 // @Failure 500 "internal server error"
 // @Router /service/exports/fact/{id} [post]
 func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
@@ -365,18 +383,26 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filename, params, combineFacts, done := handleExportArgs(w, r, err, idFact)
+	filename, params, combinedFacts, done := handleExportArgs(w, r, err, idFact)
 	if done {
 		return
 	}
 
-	item, status := e.exportWrapper.AddToQueue(combineFacts, filename, params, userCtx.User)
+	item, status := e.exportWrapper.AddToQueue(combinedFacts, filename, params, userCtx.User)
 
 	switch status {
 	case export.CodeAdded:
+		w.WriteHeader(http.StatusCreated)
 	case export.CodeUserAdded:
+		w.WriteHeader(http.StatusOK)
 	case export.CodeUserExists:
+		w.WriteHeader(http.StatusConflict)
 	case export.CodeQueueFull:
+		render.Error(w, r, render.ErrAPIQueueFull, fmt.Errorf("export queue is full"))
+		return
+	default:
+		render.Error(w, r, render.ErrAPIProcessError, fmt.Errorf("unknown status code (%d)", status))
+		return
 	}
 
 	render.JSON(w, r, item)

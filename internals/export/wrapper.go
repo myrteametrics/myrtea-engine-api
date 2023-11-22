@@ -27,8 +27,8 @@ const (
 )
 
 type WrapperItem struct {
-	Id       string        `json:"id"` // unique id that represents an export demand
-	FactIDs  []int64       `json:"factIds"`
+	Id       string        `json:"id"`      // unique id that represents an export demand
+	FactIDs  []int64       `json:"factIds"` // list of fact ids that are part of the export (for archive and json)
 	Facts    []engine.Fact `json:"-"`
 	Error    error         `json:"error"`
 	Status   int           `json:"status"`
@@ -110,6 +110,9 @@ func (ew *Wrapper) Init(ctx context.Context) {
 
 // factsEquals checks if two slices of facts are equal
 func factsEquals(a, b []engine.Fact) bool {
+	if len(a) != len(b) {
+		return false
+	}
 	for _, fact := range a {
 		found := false
 		for _, fact2 := range b {
@@ -122,7 +125,7 @@ func factsEquals(a, b []engine.Fact) bool {
 			return false
 		}
 	}
-	return false
+	return true
 }
 
 // AddToQueue Adds a new export to the export worker queue
@@ -179,6 +182,7 @@ func (ew *Wrapper) startDispatcher(context context.Context) {
 			worker.QueueItem = WrapperItem{}
 			worker.Mutex.Unlock()
 			// archive item
+			item.Facts = []engine.Fact{} // empty facts to avoid storing them in the archive
 			ew.archive.Store(item.Id, item)
 		case <-ticker.C:
 			ew.dispatchExportQueue(context)
@@ -346,7 +350,7 @@ func (ew *Wrapper) FindArchive(id string, user users.User) (WrapperItem, bool) {
 }
 
 // GetUserExport returns the export item for the given id and user
-// this function is similar to GetUserExports but it avoids iterating over all exports, thus it is faster
+// this function is similar to GetUserExports, but it avoids iterating over all exports, thus it is faster
 func (ew *Wrapper) GetUserExport(id string, user users.User) (item WrapperItem, ok bool) {
 	// start with archived items
 	if item, ok = ew.FindArchive(id, user); ok {
@@ -381,6 +385,81 @@ func (ew *Wrapper) GetUserExport(id string, user users.User) (item WrapperItem, 
 	return item, ok
 }
 
+// DeleteExport removes an export from the queue / archive, or cancels it if it is running
+// returns true if the export was found and deleted, false otherwise
+// this function is similar to GetUserExport, but it avoids iterating over all exports, thus it is faster
+func (ew *Wrapper) DeleteExport(id string, user users.User) bool {
+	// start with archived items
+	if item, ok := ew.FindArchive(id, user); ok {
+		if len(item.Users) == 1 {
+			ew.archive.Delete(id)
+			return true
+		}
+		// remove user from item
+		for i, u := range item.Users {
+			if u == user.Login {
+				item.Users = append(item.Users[:i], item.Users[i+1:]...)
+				break
+			}
+		}
+		ew.archive.Store(id, item)
+		return true
+	}
+
+	// then check the queue
+	ew.queueMutex.Lock()
+	for i, item := range ew.queue {
+		if item.Id == id && item.ContainsUser(user) {
+			// remove user from item
+			for j, u := range item.Users {
+				if u == user.Login {
+					item.Users = append(item.Users[:j], item.Users[j+1:]...)
+					break
+				}
+			}
+			if len(item.Users) == 0 {
+				ew.queue = append(ew.queue[:i], ew.queue[i+1:]...)
+			}
+			ew.queueMutex.Unlock()
+			return true
+		}
+	}
+	ew.queueMutex.Unlock()
+
+	// finally check the workers
+	for _, worker := range ew.workers {
+		worker.Mutex.Lock()
+		if worker.Available || worker.QueueItem.Id != id || !worker.QueueItem.ContainsUser(user) {
+			worker.Mutex.Unlock()
+			continue
+		}
+
+		// remove user from item
+		if len(worker.QueueItem.Users) == 1 {
+			// cancel worker by sending a message on the cancel channel
+			// the worker will check this channel and stop if it receives a message
+			// it can happen that the worker is already stopped, in this case, the message will be ignored
+			select { // non-blocking send
+			case worker.Cancel <- true:
+			default:
+			}
+			worker.Mutex.Unlock()
+			return true
+		}
+
+		for i, u := range worker.QueueItem.Users {
+			if u == user.Login {
+				worker.QueueItem.Users = append(worker.QueueItem.Users[:i], worker.QueueItem.Users[i+1:]...)
+				break
+			}
+		}
+		worker.Mutex.Unlock()
+		return true
+	}
+
+	return false
+}
+
 // ContainsUser checks if user is in item
 func (it *WrapperItem) ContainsUser(user users.User) bool {
 	for _, u := range it.Users {
@@ -390,42 +469,3 @@ func (it *WrapperItem) ContainsUser(user users.User) bool {
 	}
 	return false
 }
-
-//func (ew *Wrapper) CancelExport(id string, user users.User) error {
-//	// first check if the export is in the queue
-//	// if it is, we check if the user is the only one in the queueItem.users
-//	// if yes, we remove the queueItem from the queue
-//	// if no, we remove the user from the queueItem.users
-//
-//	for i, worker := range ew.workers {
-//
-//		worker.Mutex.Lock()
-//		if worker.QueueItem == nil || worker.QueueItem.Id != id {
-//			worker.Mutex.Unlock()
-//			continue
-//		}
-//		worker.Mutex.Lock()
-//
-//		if userIdx == -1 {
-//			worker.Mutex.Unlock()
-//			ew.QueueMutex.Unlock()
-//			return fmt.Errorf("user not found")
-//		}
-//
-//		if len(worker.Users) == 1 {
-//			ew.Queue = append(ew.Queue[:userIdx], ew.Queue[userIdx+1:]...)
-//			worker.Mutex.Unlock()
-//			ew.QueueMutex.Unlock()
-//			return nil
-//		}
-//
-//		worker.Users = append(worker.Users[:i], worker.Users[i+1:]...)
-//		worker.Mutex.Unlock()
-//		ew.QueueMutex.Unlock()
-//		return nil
-//	}
-//
-//	ew.QueueMutex.Unlock()
-//
-//	return nil
-//}
