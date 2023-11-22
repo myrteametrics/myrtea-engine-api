@@ -26,6 +26,7 @@ const (
 	StatusCanceled = 4
 )
 
+// WrapperItem represents an export demand
 type WrapperItem struct {
 	Id       string        `json:"id"`      // unique id that represents an export demand
 	FactIDs  []int64       `json:"factIds"` // list of fact ids that are part of the export (for archive and json)

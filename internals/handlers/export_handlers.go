@@ -265,7 +265,7 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 // @Description Get in memory user exports
 // @Produce json
 // @Security Bearer
-// @Success 200 {array} export.WrapperItem Returns a list of exports
+// @Success 200 {array} export.WrapperItem "Returns a list of exports"
 // @Failure 403 "Status Forbidden: missing permission"
 // @Failure 500 "internal server error"
 // @Router /engine/exports [get]
