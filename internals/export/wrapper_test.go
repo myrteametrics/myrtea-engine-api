@@ -408,5 +408,23 @@ func TestWrapper_DeleteExport(t *testing.T) {
 	worker.Mutex.Unlock()
 	expression.AssertEqual(t, wrapper.DeleteExport(item.Id, users.User{Login: "bla"}), true, "user should have been deleted from existing export")
 	expression.AssertEqual(t, len(worker.Cancel), 0, "worker cancel channel should not have been filled")
+}
 
+func TestWrapper_GetUserExport(t *testing.T) {
+	wrapper := NewWrapper("/tmp", 1, 1, 2)
+	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"})
+	wrapper.archive.Store(item.Id, *item)
+	export, ok := wrapper.GetUserExport(item.Id, users.User{Login: "bla"})
+	expression.AssertEqual(t, ok, true)
+	expression.AssertEqual(t, export.Id, item.Id)
+	export, ok = wrapper.GetUserExport(item.Id, users.User{Login: "blabla"})
+	expression.AssertEqual(t, ok, false)
+	// test queue
+	queueItem, code := wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"})
+	expression.AssertEqual(t, code, CodeAdded, "item should have been added to queue")
+	export, ok = wrapper.GetUserExport(queueItem.Id, users.User{Login: "bla"})
+	expression.AssertEqual(t, ok, true)
+	expression.AssertEqual(t, export.Id, queueItem.Id)
+	export, ok = wrapper.GetUserExport(queueItem.Id, users.User{Login: "blabla"})
+	expression.AssertEqual(t, ok, false)
 }
