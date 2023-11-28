@@ -21,13 +21,13 @@ import (
 func ExecuteFact(
 	ti time.Time,
 	f engine.Fact, situationID int64, situationInstanceID int64, parameters map[string]string,
-	nhit int, offset int, update bool,
+	nhit int, offset int, update bool, processGval...bool,
 ) (*reader.WidgetData, error) {
 
 	version := viper.GetInt("ELASTICSEARCH_VERSION")
 	switch version {
 	case 6:
-		return ExecuteFactV6(ti, f, situationID, situationInstanceID, parameters, nhit, offset, update)
+		return ExecuteFactV6(ti, f, situationID, situationInstanceID, parameters, nhit, offset, update, processGval...)
 	case 7:
 		fallthrough
 	case 8:
@@ -41,9 +41,9 @@ func ExecuteFact(
 func ExecuteFactV6(
 	ti time.Time,
 	f engine.Fact, situationID int64, situationInstanceID int64, parameters map[string]string,
-	nhit int, offset int, update bool,
+	nhit int, offset int, update bool, processGval...bool,
 ) (*reader.WidgetData, error) {
-	pf, err := PrepareV6(&f, nhit, offset, ti, parameters, update)
+	pf, err := PrepareV6(&f, nhit, offset, ti, parameters, update, processGval...)
 	if err != nil {
 		zap.L().Error("Cannot prepare fact", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
 		return nil, err
@@ -69,7 +69,7 @@ func ExecuteFactV6(
 
 // PrepareV6 enrich a fact by specifying the offset and the number of hits returned
 // It also specify the target index based on the fact model
-func PrepareV6(f *engine.Fact, nhit int, offset int, t time.Time, parameters map[string]string, update bool) (*builder.EsSearch, error) {
+func PrepareV6(f *engine.Fact, nhit int, offset int, t time.Time, parameters map[string]string, update bool, processGval...bool) (*builder.EsSearch, error) {
 	if f.AdvancedSource != "" {
 		var data map[string]interface{}
 		var err error
@@ -101,7 +101,7 @@ func PrepareV6(f *engine.Fact, nhit int, offset int, t time.Time, parameters map
 		f.AdvancedSource = strSource
 	} else {
 		f.ContextualizeDimensions(t, parameters)
-		err := f.ContextualizeCondition(t, parameters)
+		err := f.ContextualizeCondition(t, parameters, processGval...)
 		if err != nil {
 			return nil, err
 		}

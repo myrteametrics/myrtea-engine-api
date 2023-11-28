@@ -30,10 +30,8 @@ func ReceiveObjects(factObjectName string, documents []sdk_models.Document) erro
 			continue
 		}
 
-		source, ok := document.Source.(map[string]interface{})
-		if !ok {
-			return err
-		}
+		source := document.Source
+		
 		source["id"] = document.ID
 
 		// Not working ATM (Field are flatten + array theorically not supported)
@@ -63,19 +61,7 @@ func filterSource(f engine.Fact, source map[string]interface{}) map[string]inter
 }
 
 func objectFilterKeep(f engine.Fact, document sdk_models.Document) bool {
-	// // check model
-	// if f.Model != document.IndexType {
-	// 	zap.L().Debug("DEBUG TMP, filtered by model")
-	// 	return false
-	// }
-
-	// check content
-	source, ok := document.Source.(map[string]interface{})
-	if !ok {
-		zap.L().Debug("DEBUG TMP, not a map")
-		return false
-	}
-	return applyCondition(f.Condition, source)
+	return applyCondition(f.Condition, document.Source)
 }
 
 func applyCondition(c engine.ConditionFragment, source map[string]interface{}) bool {
