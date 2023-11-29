@@ -157,7 +157,6 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 
 	// Chunk handler
 	first := true
-	labels := item.Params.ColumnsLabel
 
 loop:
 	for {
@@ -167,7 +166,7 @@ loop:
 				break loop
 			}
 
-			err = WriteConvertHitsToCSV(csvWriter, hits, item.Params.Columns, labels, item.Params.FormatColumnsData, item.Params.Separator)
+			err = WriteConvertHitsToCSV(csvWriter, hits, item.Params, first)
 
 			if err != nil {
 				zap.L().Error("WriteConvertHitsToCSV error during export", zap.Error(err))
@@ -180,7 +179,6 @@ loop:
 
 			if first {
 				first = false
-				labels = []string{}
 			}
 		case <-ctx.Done():
 			break loop

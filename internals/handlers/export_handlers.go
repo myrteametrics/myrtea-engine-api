@@ -2,32 +2,35 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
-	"net/http"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
-	"unicode/utf8"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"go.uber.org/zap"
+	"net/http"
+	"strconv"
+	"sync"
 )
 
 type ExportHandler struct {
 	exportWrapper *export.Wrapper
 }
 
+// NewExportHandler returns a new ExportHandler
 func NewExportHandler(exportWrapper *export.Wrapper) *ExportHandler {
 	return &ExportHandler{
 		exportWrapper: exportWrapper,
 	}
+}
+
+// ExportRequest represents a request for an export
+type ExportRequest struct {
+	export.CSVParameters
+	FactIDs  []int64 `json:"factIDs"`
+	FileName string  `json:"fileName"`
 }
 
 // ExportFactStreamed godoc
@@ -36,32 +39,32 @@ func NewExportHandler(exportWrapper *export.Wrapper) *ExportHandler {
 // @Tags ExportFactStreamed
 // @Produce octet-stream
 // @Security Bearer
+// @Param request body handlers.ExportRequest true "request (json)"
 // @Success 200 {file} Returns data to be saved into a file
 // @Failure 500 "internal server error"
-// @Router /engine/export/facts/{id} [get]
+// @Router /engine/facts/streamedexport [get]
 func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-
-	idFact, err := strconv.ParseInt(id, 10, 64)
-
-	if err != nil {
-		zap.L().Warn("Error on parsing fact id", zap.String("idFact", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
-		return
-	}
-
 	userCtx, _ := GetUserFromContext(r)
-	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, strconv.FormatInt(idFact, 10), permissions.ActionGet)) {
+	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
-	filename, params, combineFacts, done := handleExportArgs(w, r, err, idFact)
-	if done {
+	var request ExportRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		zap.L().Warn("Decode export request json", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
-	err = HandleStreamedExport(r.Context(), w, combineFacts, filename, params)
+	if len(request.FactIDs) == 0 {
+		zap.L().Warn("Missing factIDs in export request")
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing factIDs"))
+		return
+	}
+
+	err = HandleStreamedExport(r.Context(), w, request)
 	if err != nil {
 		render.Error(w, r, render.ErrAPIProcessError, err)
 	}
@@ -69,103 +72,19 @@ func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// handleExportArgs handles the export arguments and returns the filename, the parameters and the facts to export
-// done is true if an error occurred and the response has already been written
-func handleExportArgs(w http.ResponseWriter, r *http.Request, err error, idFact int64) (filename string, params export.CSVParameters, combineFacts []engine.Fact, done bool) {
-	f, found, err := fact.R().Get(idFact)
-	if err != nil {
-		zap.L().Error("Cannot retrieve fact", zap.Int64("factID", idFact), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
-		return "", export.CSVParameters{}, nil, true
-	}
-	if !found {
-		zap.L().Warn("fact does not exist", zap.Int64("factID", idFact))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
-		return "", export.CSVParameters{}, nil, true
-	}
-
-	filename = r.URL.Query().Get("fileName")
-	if filename == "" {
-		filename = fmt.Sprintf("%s_export_%s.csv", f.Name, time.Now().Format("02_01_2006"))
-	} else {
-		filename = fmt.Sprintf("%s_%s.csv", time.Now().Format("02_01_2006"), filename)
-	}
-
-	// suppose that type is csv
-	params = GetCSVParameters(r)
-
-	combineFacts = append(combineFacts, f)
-
-	// export multiple facts into one file
-	combineFactIds, err := QueryParamToOptionalInt64Array(r, "combineFactIds", ",", false, []int64{})
-	if err != nil {
-		zap.L().Warn("Could not parse parameter combineFactIds", zap.Error(err))
-	} else {
-		for _, factId := range combineFactIds {
-			// no duplicates
-			if factId == idFact {
-				continue
-			}
-
-			combineFact, found, err := fact.R().Get(factId)
-			if err != nil {
-				zap.L().Error("Export combineFact cannot retrieve fact", zap.Int64("factID", factId), zap.Error(err))
-				continue
-			}
-			if !found {
-				zap.L().Warn("Export combineFact fact does not exist", zap.Int64("factID", factId))
-				continue
-			}
-			combineFacts = append(combineFacts, combineFact)
-		}
-	}
-	return filename, params, combineFacts, false
-}
-
-// GetCSVParameters returns the parameters for the CSV export
-func GetCSVParameters(r *http.Request) export.CSVParameters {
-	result := export.CSVParameters{Separator: ','}
-
-	limit, err := QueryParamToOptionalInt64(r, "limit", -1)
-	if err != nil {
-		result.Limit = -1
-	} else {
-		result.Limit = limit
-	}
-
-	result.Columns = QueryParamToOptionalStringArray(r, "columns", ",", []string{})
-	result.ColumnsLabel = QueryParamToOptionalStringArray(r, "columnsLabel", ",", []string{})
-
-	formatColumnsData := QueryParamToOptionalStringArray(r, "formateColumns", ",", []string{})
-	result.FormatColumnsData = make(map[string]string)
-	for _, formatData := range formatColumnsData {
-		parts := strings.Split(formatData, ";")
-		if len(parts) != 2 {
-			continue
-		}
-		key := strings.TrimSpace(parts[0])
-		result.FormatColumnsData[key] = parts[1]
-	}
-	separator := r.URL.Query().Get("separator")
-	if separator != "" {
-		sep, size := utf8.DecodeRuneInString(separator)
-		if size != 1 {
-			result.Separator = ','
-		} else {
-			result.Separator = sep
-		}
-	}
-
-	return result
-}
-
 // HandleStreamedExport actually only handles CSV
-func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter, facts []engine.Fact, fileName string, params export.CSVParameters) error {
+func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter, request ExportRequest) error {
 	w.Header().Set("Connection", "Keep-Alive")
 	w.Header().Set("Transfer-Encoding", "chunked")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(fileName))
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(request.FileName))
 	w.Header().Set("Content-Type", "application/octet-stream")
+
+	facts := findCombineFacts(request.FactIDs)
+	if len(facts) == 0 {
+		return errors.New("no fact found")
+	}
+
 	streamedExport := export.NewStreamedExport()
 	var wg sync.WaitGroup
 
@@ -196,7 +115,7 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 		defer close(streamedExport.Data)
 
 		for _, f := range facts {
-			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, params.Limit)
+			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, request.Limit)
 			if writerErr != nil {
 				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
 				break // break here when error occurs?
@@ -209,7 +128,6 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 	go func() {
 		defer wg.Done()
 		first := true
-		labels := params.ColumnsLabel
 
 		for {
 			select {
@@ -218,7 +136,7 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 					return
 				}
 
-				data, err := export.ConvertHitsToCSV(hits, params.Columns, labels, params.FormatColumnsData, params.Separator)
+				data, err := export.ConvertHitsToCSV(hits, request.CSVParameters, first)
 
 				if err != nil {
 					zap.L().Error("ConvertHitsToCSV error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
@@ -238,7 +156,6 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 
 				if first {
 					first = false
-					labels = []string{}
 				}
 
 			case <-requestContext.Done():
@@ -289,7 +206,7 @@ func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
 // @Failure 403 "Status Forbidden: missing permission"
 // @Failure 404 "Status Not Found: export not found"
 // @Failure 500 "internal server error"
-// @Router /service/exports/{id} [get]
+// @Router /engine/exports/{id} [get]
 func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
@@ -323,7 +240,7 @@ func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
 // @Failure 403 "Status Forbidden: missing permission"
 // @Failure 404 "Status Not Found: export not found"
 // @Failure 500 "internal server error"
-// @Router /service/exports/{id} [delete]
+// @Router /engine/exports/{id} [delete]
 func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
@@ -352,13 +269,7 @@ func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 // @Tags Exports
 // @Produce json
 // @Security Bearer
-// @Param id path string true "Fact ID"
-// @Param fileName query string false "File name"
-// @Param limit query int false "Limit"
-// @Param columns query string false "Columns"
-// @Param columnsLabel query string false "Columns label"
-// @Param formateColumns query string false "Formate columns"
-// @Param separator query string false "Separator"
+// @Param request body handlers.ExportRequest true "request (json)"
 // @Success 200 {object} export.WrapperItem "Status OK: user was added to existing export in queue"
 // @Success 201 {object} export.WrapperItem "Status Created: new export was added in queue"
 // @Failure 400 "Bad Request: missing fact id / fact id is not an integer"
@@ -366,29 +277,36 @@ func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 // @Failure 409 {object} export.WrapperItem "Status Conflict: user already exists in export queue"
 // @Failure 429 "Status Too Many Requests: export queue is full"
 // @Failure 500 "internal server error"
-// @Router /service/exports/fact/{id} [post]
+// @Router /engine/exports/fact [post]
 func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	idFact, err := strconv.ParseInt(id, 10, 64)
-
-	if err != nil {
-		zap.L().Warn("Error on parsing fact id", zap.String("idFact", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
-		return
-	}
-
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionCreate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
-	filename, params, combinedFacts, done := handleExportArgs(w, r, err, idFact)
-	if done {
+	var request ExportRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		zap.L().Warn("Decode export request json", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
-	item, status := e.exportWrapper.AddToQueue(combinedFacts, filename, params, userCtx.User)
+	if len(request.FactIDs) == 0 {
+		zap.L().Warn("Missing factIDs in export request")
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing factIDs"))
+		return
+	}
+
+	facts := findCombineFacts(request.FactIDs)
+	if len(facts) == 0 {
+		zap.L().Warn("No fact was found in export request")
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("No fact was found in export request"))
+		return
+	}
+
+	item, status := e.exportWrapper.AddToQueue(facts, request.FileName, request.CSVParameters, userCtx.User)
 
 	switch status {
 	case export.CodeAdded:
