@@ -17,8 +17,8 @@ func ExportFactHitsFullV6(f engine.Fact) ([]reader.Hit, error) {
 
 	fullHits := make([]reader.Hit, 0)
 
-	// flag to decide wether Gval exp should be process 
-    // when a fact returns more than 10k hits, the Gval exp is processed only 1 time 
+	// flag to decide wether Gval exp should be process
+	// when a fact returns more than 10k hits, the Gval exp is processed only 1 time
 	processGval := true
 
 	for {
@@ -29,11 +29,15 @@ func ExportFactHitsFullV6(f engine.Fact) ([]reader.Hit, error) {
 
 		fullHits = append(fullHits, hits...)
 
-		if len(hits) < 10000 {
-			break
-		}
-		offset += 10000
-		processGval = false
+		// On Elasticsearch v6, this loop does not work. Therefore, we temporarily stop this loop
+		// if size equals 10000 and offset also equals 10000.
+		break
+
+		// if len(hits) < 10000 {
+		// 	break
+		// }
+		// offset += 10000
+		//processGval = false
 	}
 
 	return fullHits, nil
