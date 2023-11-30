@@ -1,12 +1,13 @@
 package utils
 
-func RemoveDuplicates(stringSlice []string) []string {
-	keys := make(map[string]bool)
-	list := []string{}
-	for _, entry := range stringSlice {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
+// RemoveDuplicates remove duplicate values from a slice
+func RemoveDuplicates[T string | int | int64](sliceList []T) []T {
+	allKeys := make(map[T]bool)
+	var list []T
+	for _, item := range sliceList {
+		if _, value := allKeys[item]; !value {
+			allKeys[item] = true
+			list = append(list, item)
 		}
 	}
 	return list

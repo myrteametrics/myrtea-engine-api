@@ -5,70 +5,64 @@ import (
 	"testing"
 )
 
-func TestEquals(t *testing.T) {
-	p1 := CSVParameters{}
-	p2 := CSVParameters{}
-	expression.AssertEqual(t, p1.Equals(p2), true)
+func TestColumnEquals_WithDifferentName(t *testing.T) {
+	column1 := Column{Name: "name1", Label: "label", Format: "format"}
+	column2 := Column{Name: "name2", Label: "label", Format: "format"}
+	expression.AssertEqual(t, column1.Equals(column2), false)
+}
 
-	// make a full test with all variables in parameters filled
-	params3 := CSVParameters{
-		Columns:           []string{"col1", "col2"},
-		ColumnsLabel:      []string{"col1", "col2"},
-		FormatColumnsData: map[string]string{"col1": "format1", "col2": "format2"},
-		Separator:         ';',
-		Limit:             10,
-		ChunkSize:         100,
-	}
-	expression.AssertEqual(t, params3.Equals(p2), false)
-	expression.AssertEqual(t, params3.Equals(params3), true)
+func TestColumnEquals_WithDifferentLabel(t *testing.T) {
+	column1 := Column{Name: "name", Label: "label1", Format: "format"}
+	column2 := Column{Name: "name", Label: "label2", Format: "format"}
+	expression.AssertEqual(t, column1.Equals(column2), false)
+}
 
-	// test separator
-	p1 = CSVParameters{Separator: ';'}
-	p2 = CSVParameters{Separator: ','}
-	expression.AssertEqual(t, p1.Equals(p2), false)
+func TestColumnEquals_WithDifferentFormat(t *testing.T) {
+	column1 := Column{Name: "name", Label: "label", Format: "format1"}
+	column2 := Column{Name: "name", Label: "label", Format: "format2"}
+	expression.AssertEqual(t, column1.Equals(column2), false)
+}
 
-	// test limit
-	p1 = CSVParameters{Limit: 10}
-	p2 = CSVParameters{Limit: 101}
-	expression.AssertEqual(t, p1.Equals(p2), false)
+func TestColumnEquals_WithSameValues(t *testing.T) {
+	column1 := Column{Name: "name", Label: "label", Format: "format"}
+	column2 := Column{Name: "name", Label: "label", Format: "format"}
+	expression.AssertEqual(t, column1.Equals(column2), true)
+}
 
-	// test chunk size
-	p1 = CSVParameters{ChunkSize: 100}
-	p2 = CSVParameters{ChunkSize: 10}
-	expression.AssertEqual(t, p1.Equals(p2), false)
+func TestCSVParametersEquals_WithDifferentSeparator(t *testing.T) {
+	params1 := CSVParameters{Separator: ',', Limit: 10, Columns: []Column{{Name: "name", Label: "label", Format: "format"}}}
+	params2 := CSVParameters{Separator: ';', Limit: 10, Columns: []Column{{Name: "name", Label: "label", Format: "format"}}}
+	expression.AssertEqual(t, params1.Equals(params2), false)
+}
 
-	// test columns size
-	p1 = CSVParameters{Columns: []string{"col1", "col2"}}
-	p2 = CSVParameters{Columns: []string{"col1", "col2", "col3"}}
-	expression.AssertEqual(t, p1.Equals(p2), false)
+func TestCSVParametersEquals_WithDifferentLimit(t *testing.T) {
+	params1 := CSVParameters{Separator: ',', Limit: 10, Columns: []Column{{Name: "name", Label: "label", Format: "format"}}}
+	params2 := CSVParameters{Separator: ',', Limit: 20, Columns: []Column{{Name: "name", Label: "label", Format: "format"}}}
+	expression.AssertEqual(t, params1.Equals(params2), false)
+}
 
-	// test columns values
-	p1 = CSVParameters{Columns: []string{"col1", "col2"}}
-	p2 = CSVParameters{Columns: []string{"col1", "col3"}}
-	expression.AssertEqual(t, p1.Equals(p2), false)
+func TestCSVParametersEquals_WithDifferentColumns(t *testing.T) {
+	params1 := CSVParameters{Separator: ',', Limit: 10, Columns: []Column{{Name: "name1", Label: "label", Format: "format"}}}
+	params2 := CSVParameters{Separator: ',', Limit: 10, Columns: []Column{{Name: "name2", Label: "label", Format: "format"}}}
+	expression.AssertEqual(t, params1.Equals(params2), false)
+}
 
-	// test columnsLabel size
-	p1 = CSVParameters{ColumnsLabel: []string{"col1", "col2"}}
-	p2 = CSVParameters{ColumnsLabel: []string{"col1", "col2", "col3"}}
-	expression.AssertEqual(t, p1.Equals(p2), false)
+func TestCSVParametersEquals_WithSameValues(t *testing.T) {
+	params1 := CSVParameters{Separator: ',', Limit: 10, Columns: []Column{{Name: "name", Label: "label", Format: "format"}}}
+	params2 := CSVParameters{Separator: ',', Limit: 10, Columns: []Column{{Name: "name", Label: "label", Format: "format"}}}
+	expression.AssertEqual(t, params1.Equals(params2), true)
+}
 
-	// test columnsLabel values
-	p1 = CSVParameters{ColumnsLabel: []string{"col1", "col2"}}
-	p2 = CSVParameters{ColumnsLabel: []string{"col1", "col3"}}
-	expression.AssertEqual(t, p1.Equals(p2), false)
+func TestGetColumnsLabel_WithNoColumns(t *testing.T) {
+	params := CSVParameters{Separator: ',', Limit: 10, Columns: []Column{}}
+	labels := params.GetColumnsLabel()
+	expression.AssertEqual(t, len(labels), 0)
+}
 
-	// test formatColumnsData size
-	p1 = CSVParameters{FormatColumnsData: map[string]string{"col1": "format1", "col2": "format2"}}
-	p2 = CSVParameters{FormatColumnsData: map[string]string{"col1": "format1", "col2": "format2", "col3": "format3"}}
-	expression.AssertEqual(t, p1.Equals(p2), false)
-
-	// test formatColumnsData values
-	p1 = CSVParameters{FormatColumnsData: map[string]string{"col1": "format1", "col2": "format2"}}
-	p2 = CSVParameters{FormatColumnsData: map[string]string{"col1": "format1", "col2": "format3"}}
-	expression.AssertEqual(t, p1.Equals(p2), false)
-
-	// test formatColumnsData keys
-	p1 = CSVParameters{FormatColumnsData: map[string]string{"col1": "format1", "col2": "format2"}}
-	p2 = CSVParameters{FormatColumnsData: map[string]string{"col1": "format1", "col3": "format2"}}
-	expression.AssertEqual(t, p1.Equals(p2), false)
+func TestGetColumnsLabel_WithColumns(t *testing.T) {
+	params := CSVParameters{Separator: ',', Limit: 10, Columns: []Column{{Name: "name1", Label: "label1", Format: "format1"}, {Name: "name2", Label: "label2", Format: "format2"}}}
+	labels := params.GetColumnsLabel()
+	expression.AssertEqual(t, len(labels), 2)
+	expression.AssertEqual(t, labels[0], "label1")
+	expression.AssertEqual(t, labels[1], "label2")
 }

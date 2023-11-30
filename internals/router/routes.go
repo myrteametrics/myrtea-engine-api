@@ -71,6 +71,7 @@ func engineRouter(services Services) http.Handler {
 	r.Post("/facts/execute", handlers.ExecuteFactFromSource) // ?time=2019-05-10T12:00:00.000 debug=<boolean>
 	r.Get("/facts/{id}/hits", handlers.GetFactHits)          // ?time=2019-05-10T12:00:00.000 debug=<boolean>
 	r.Get("/facts/{id}/es", handlers.FactToESQuery)
+	r.Get("/facts/streamedexport", handlers.ExportFactStreamed)
 
 	r.Get("/situations", handlers.GetSituations)
 	r.Get("/situations/{id}", handlers.GetSituation)
@@ -173,13 +174,11 @@ func engineRouter(services Services) http.Handler {
 
 	r.Get("/connector/{id}/executions/last", handlers.GetlastConnectorExecutionDateTime)
 
-	r.Get("/facts/{id}/streamedexport", handlers.ExportFactStreamed)
-
 	// exports
 	r.Get("/exports", services.ExportHandler.GetExports)
 	r.Get("/exports/{id}", services.ExportHandler.GetExport)
 	r.Delete("/exports/{id}", services.ExportHandler.DeleteExport)
-	r.Post("/exports/fact/{id}", services.ExportHandler.ExportFact)
+	r.Post("/exports/fact", services.ExportHandler.ExportFact)
 
 	r.Get("/variablesconfig", handlers.GetVariablesConfig)
 	r.Get("/variablesconfig/{id}", handlers.GetVariableConfig)

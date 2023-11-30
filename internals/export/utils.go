@@ -1,48 +1,52 @@
 package export
 
 type CSVParameters struct {
-	Columns           []string
-	ColumnsLabel      []string
-	FormatColumnsData map[string]string
-	Separator         rune
-	Limit             int64
-	ChunkSize         int64
+	Columns   []Column `json:"columns"`
+	Separator rune     `json:"separator" default:","`
+	Limit     int64    `json:"limit"`
+}
+
+type Column struct {
+	Name   string `json:"name"`
+	Label  string `json:"label"`
+	Format string `json:"format" default:""`
+}
+
+// Equals compares two Column
+func (p Column) Equals(column Column) bool {
+	if p.Name != column.Name {
+		return false
+	}
+	if p.Label != column.Label {
+		return false
+	}
+	if p.Format != column.Format {
+		return false
+	}
+	return true
 }
 
 // Equals compares two CSVParameters
-func (p CSVParameters) Equals(Params CSVParameters) bool {
-	if p.Separator != Params.Separator {
+func (p CSVParameters) Equals(params CSVParameters) bool {
+	if p.Separator != params.Separator {
 		return false
 	}
-	if p.Limit != Params.Limit {
-		return false
-	}
-	if p.ChunkSize != Params.ChunkSize {
-		return false
-	}
-	if len(p.Columns) != len(Params.Columns) {
+	if p.Limit != params.Limit {
 		return false
 	}
 	for i, column := range p.Columns {
-		if column != Params.Columns[i] {
-			return false
-		}
-	}
-	if len(p.ColumnsLabel) != len(Params.ColumnsLabel) {
-		return false
-	}
-	for i, columnLabel := range p.ColumnsLabel {
-		if columnLabel != Params.ColumnsLabel[i] {
-			return false
-		}
-	}
-	if len(p.FormatColumnsData) != len(Params.FormatColumnsData) {
-		return false
-	}
-	for key, value := range p.FormatColumnsData {
-		if value != Params.FormatColumnsData[key] {
+		if !column.Equals(params.Columns[i]) {
 			return false
 		}
 	}
 	return true
+}
+
+// GetColumnsLabel returns the label of the columns
+func (p CSVParameters) GetColumnsLabel() []string {
+	columns := make([]string, 0)
+	for _, column := range p.Columns {
+		columns = append(columns, column.Label)
+	}
+	return columns
 }

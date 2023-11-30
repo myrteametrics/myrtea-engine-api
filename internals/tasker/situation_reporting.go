@@ -30,18 +30,16 @@ func verifyCache(key string, timeout time.Duration) bool {
 
 // SituationReportingTask struct for close issues created in the current day from the BRMS
 type SituationReportingTask struct {
-	ID                  string            `json:"id"`
-	IssueID             string            `json:"issueId"`
-	Subject             string            `json:"subject"`
-	BodyTemplate        string            `json:"bodyTemplate"`
-	To                  []string          `json:"to"`
-	AttachmentFileNames []string          `json:"attachmentFileNames"`
-	AttachmentFactIDs   []int64           `json:"attachmentFactIds"`
-	Columns             []string          `json:"columns"`
-	FormatColumnsData   map[string]string `json:"formateColumns"`
-	ColumnsLabel        []string          `json:"columnsLabel"`
-	Separator           rune              `json:"separator"`
-	Timeout             string            `json:"timeout"`
+	ID                  string          `json:"id"`
+	IssueID             string          `json:"issueId"`
+	Subject             string          `json:"subject"`
+	BodyTemplate        string          `json:"bodyTemplate"`
+	To                  []string        `json:"to"`
+	AttachmentFileNames []string        `json:"attachmentFileNames"`
+	AttachmentFactIDs   []int64         `json:"attachmentFactIds"`
+	Columns             []export.Column `json:"columns"`
+	Separator           rune            `json:"separator"`
+	Timeout             string          `json:"timeout"`
 }
 
 func buildSituationReportingTask(parameters map[string]interface{}) (SituationReportingTask, error) {
@@ -100,35 +98,49 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 	}
 
 	if val, ok := parameters["columns"].(string); ok && val != "" {
-		task.Columns = strings.Split(val, ",")
-	}
+		columns := strings.Split(val, ",")
+		var columnsLabel []string
 
-	if val, ok := parameters["formateColumns"].(string); ok && val != "" {
-		formatColumnsData := strings.Split(val, ",")
-		task.FormatColumnsData = make(map[string]string)
-		for _, formatData := range formatColumnsData {
-			parts := strings.Split(formatData, ";")
-			if len(parts) != 2 {
-				continue
-			}
-			key := strings.TrimSpace(parts[0])
-			task.FormatColumnsData[key] = parts[1]
+		if val, ok = parameters["columnsLabel"].(string); ok && val != "" {
+			columnsLabel = strings.Split(val, ",")
 		}
 
-	}
+		if len(columns) != len(columnsLabel) {
+			return task, errors.New("parameters 'columns' and 'columns label' have different length")
+		}
 
-	if val, ok := parameters["columnsLabel"].(string); ok && val != "" {
-		task.ColumnsLabel = strings.Split(val, ",")
+		formatColumnsDataMap := make(map[string]string)
+
+		if val, ok = parameters["formateColumns"].(string); ok && val != "" {
+			formatColumnsData := strings.Split(val, ",")
+			for _, formatData := range formatColumnsData {
+				parts := strings.Split(formatData, ";")
+				if len(parts) != 2 {
+					continue
+				}
+				key := strings.TrimSpace(parts[0])
+				formatColumnsDataMap[key] = parts[1]
+			}
+		}
+
+		for i, column := range columns {
+			exportColumn := export.Column{
+				Name:  column,
+				Label: columnsLabel[i],
+			}
+
+			if format, ok := formatColumnsDataMap[column]; ok {
+				exportColumn.Format = format
+			}
+
+			task.Columns = append(task.Columns, exportColumn)
+		}
 	}
 
 	if val, ok := parameters["separator"].(string); ok && val != "" {
 		task.Separator = []rune(val)[0]
 	} else {
 		task.Separator = ','
-	}
-
-	if len(task.Columns) != len(task.ColumnsLabel) {
-		return task, errors.New("parameters 'columns' and 'columns label' have different length")
 	}
 
 	if val, ok := parameters["timeout"].(string); ok && val != "" {
@@ -202,7 +214,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 			return err
 		}
 
-		csvAttachment, err := export.ConvertHitsToCSV(fullHits, task.Columns, task.ColumnsLabel, task.FormatColumnsData, task.Separator)
+		csvAttachment, err := export.ConvertHitsToCSV(fullHits, export.CSVParameters{Columns: task.Columns, Separator: task.Separator}, true)
 		if err != nil {
 			return err
 		}
