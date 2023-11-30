@@ -11,8 +11,8 @@ import (
 // It allows standard CRUD operation on facts
 type Repository interface {
 	Create(notif Notification) (int64, error)
-	Get(id int64) *FrontNotification
-	GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]FrontNotification, error)
+	Get(id int64) (Notification, error)
+	GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]Notification, error)
 	Delete(id int64) error
 	UpdateRead(id int64, state bool) error
 }

@@ -7,6 +7,7 @@ import (
 
 // MockNotification is an implementation of a notification main type
 type MockNotification struct {
+	BaseNotification
 	ID           int64                  `json:"id"`
 	Type         string                 `json:"type"`
 	CreationDate time.Time              `json:"creationDate"`

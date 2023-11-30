@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	github.com/Masterminds/squirrel v1.5.3
-	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
 	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/crewjam/saml v0.4.6
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible

@@ -1,7 +1,12 @@
 package handlers
 
 import (
+	"encoding/json"
+	"github.com/google/uuid"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
 	"net/http"
+	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
@@ -42,9 +47,37 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 		zap.L().Error("Add new WS Client to manager", zap.Error(err))
 		return
 	}
+	go func(client *notifier.WebsocketClient) {
+		zap.L().Info("starting notifier")
+		ticker := time.NewTicker(1 * time.Second)
+		after := time.After(30 * time.Second)
+		for {
+			select {
+			case <-ticker.C:
+				notifier.C().SendToUsers(ExportNotification{Status: export.StatusPending, Export: export.WrapperItem{Id: uuid.New().String(), FileName: "test.bla"}}, []uuid.UUID{user.ID})
+				zap.L().Info("send notification")
+			case <-after:
+				return
+			}
+		}
+	}(client)
 	go client.Write()
 
 	// go client.Read() // Disabled until proper usage
+}
+
+type ExportNotification struct {
+	notification.Notification
+	Export export.WrapperItem `json:"export"`
+	Status int                `json:"status"`
+}
+
+func (e ExportNotification) ToBytes() ([]byte, error) {
+	b, err := json.Marshal(e)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
 
 // NotificationsSSERegister godoc

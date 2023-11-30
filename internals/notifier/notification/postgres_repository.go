@@ -7,7 +7,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/dbutils"
-	"go.uber.org/zap"
 )
 
 // PostgresRepository is a repository containing the Fact definition based on a PSQL database and
@@ -27,16 +26,16 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 
 // Create creates a new Notification definition in the repository
 func (r *PostgresRepository) Create(notif Notification) (int64, error) {
-
 	data, err := json.Marshal(notif)
 	if err != nil {
 		return -1, err
 	}
 
 	ts := time.Now().Truncate(1 * time.Millisecond).UTC()
-	query := `INSERT INTO notifications_history_v1 (id, data, created_at) VALUES (DEFAULT, :data, :created_at) RETURNING id`
+	query := `INSERT INTO notifications_history_v1 (id, data, type, created_at) VALUES (DEFAULT, :data, :type :created_at) RETURNING id`
 	params := map[string]interface{}{
 		"data":       data,
+		"type":       getType(notif),
 		"created_at": ts,
 	}
 
@@ -55,19 +54,18 @@ func (r *PostgresRepository) Create(notif Notification) (int64, error) {
 	return id, nil
 }
 
-// Get returns a notification by it's ID
-func (r *PostgresRepository) Get(id int64) *FrontNotification {
+// Get returns a notification by its ID
+func (r *PostgresRepository) Get(id int64) (Notification, error) {
 
 	// TODO: "ORDER BY" should be an option in dbutils.DBQueryOptionnal
-	query := `SELECT id, data, isread FROM notifications_history_v1 WHERE id = :id`
+	query := `SELECT id, data, isread, type FROM notifications_history_v1 WHERE id = :id`
 	params := map[string]interface{}{
 		"id": id,
 	}
 
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
-		zap.L().Error("", zap.Error(err))
-		return nil
+		return nil, errors.New("couldn't retrieve any notification with this id. The query is equal to: " + err.Error())
 	}
 	defer rows.Close()
 
@@ -75,35 +73,35 @@ func (r *PostgresRepository) Get(id int64) *FrontNotification {
 		var id int64
 		var data string
 		var isRead bool
+		var notifType string
 
-		err := rows.Scan(&id, &data, &isRead)
+		err := rows.Scan(&id, &data, &isRead, &notifType)
 		if err != nil {
-			zap.L().Error("", zap.Error(err))
-			return nil
+			return nil, errors.New("couldn't retrieve any notification. The query is equal to: " + err.Error())
 		}
 
-		var notif MockNotification
-		err = json.Unmarshal([]byte(data), &notif)
+		t, ok := H().notificationTypes[notifType]
+
+		if !ok {
+			return nil, errors.New("notification type does not exist")
+		}
+
+		instance, err := t.NewInstance(id, []byte(data), isRead)
+
 		if err != nil {
-			zap.L().Error("", zap.Error(err))
-			return nil
+			return nil, errors.New("notification couldn't be instanced")
 		}
 
-		notif.ID = id
-
-		return &FrontNotification{
-			Notification: notif,
-			IsRead:       isRead,
-		}
+		return instance, nil
 	}
-	return nil
+	return nil, errors.New("no notification found with this id")
 }
 
 // GetByRoles returns all notifications related to a certain list of roles
-func (r *PostgresRepository) GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]FrontNotification, error) {
+func (r *PostgresRepository) GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]Notification, error) {
 
 	// TODO: "ORDER BY" should be an option in dbutils.DBQueryOptionnal
-	query := `SELECT id, data, isread FROM notifications_history_v1`
+	query := `SELECT id, data, isread, type FROM notifications_history_v1`
 	params := map[string]interface{}{}
 	if queryOptionnal.MaxAge > 0 {
 		query += ` WHERE created_at > :created_at`
@@ -125,32 +123,32 @@ func (r *PostgresRepository) GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]
 	}
 	defer rows.Close()
 
-	notifications := make([]FrontNotification, 0)
+	notifications := make([]Notification, 0)
 	for rows.Next() {
 
 		var id int64
 		var data string
-		var notif MockNotification
-
 		var isRead bool
+		var notifType string
 
-		err := rows.Scan(&id, &data, &isRead)
+		err := rows.Scan(&id, &data, &isRead, &notifType)
 		if err != nil {
 			return nil, errors.New("couldn't scan the notification data:" + err.Error())
 		}
 
-		// Retrieve data json data
-		err = json.Unmarshal([]byte(data), &notif)
-		if err != nil {
-			return nil, errors.New("couldn't convert data content:" + err.Error())
+		t, ok := H().notificationTypes[notifType]
+
+		if !ok {
+			return nil, errors.New("notification type does not exist")
 		}
 
-		notif.ID = id
+		instance, err := t.NewInstance(id, []byte(data), isRead)
 
-		notifications = append(notifications, FrontNotification{
-			Notification: notif,
-			IsRead:       isRead,
-		})
+		if err != nil {
+			return nil, errors.New("notification couldn't be instanced")
+		}
+
+		notifications = append(notifications, instance)
 	}
 	if err != nil {
 		return nil, errors.New("deformed Data " + err.Error())
@@ -178,7 +176,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 	return nil
 }
 
-//UpdateRead updates a notification status by changing the isRead state to true once it has been read
+// UpdateRead updates a notification status by changing the isRead state to true once it has been read
 func (r *PostgresRepository) UpdateRead(id int64, status bool) error {
 	query := `UPDATE notifications_history_v1 SET isread = :status WHERE id = :id`
 

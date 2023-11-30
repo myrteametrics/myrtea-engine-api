@@ -12,7 +12,7 @@ type ClientManager struct {
 	Clients map[Client]bool
 }
 
-// NewClientManager renders a new manager responsible of every connection
+// NewClientManager renders a new manager responsible for every connection
 func NewClientManager() *ClientManager {
 	return &ClientManager{
 		Clients: make(map[Client]bool),

@@ -78,6 +78,7 @@ func stopServices() {
 }
 
 func initNotifier() {
+	notification.ReplaceHandlerGlobals(notification.NewHandler())
 	notifier.ReplaceGlobals(notifier.NewNotifier())
 }
 
