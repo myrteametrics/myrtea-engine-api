@@ -42,7 +42,7 @@ type ExportRequest struct {
 // @Param request body handlers.ExportRequest true "request (json)"
 // @Success 200 {file} Returns data to be saved into a file
 // @Failure 500 "internal server error"
-// @Router /engine/facts/streamedexport [get]
+// @Router /engine/facts/streamedexport [post]
 func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionGet)) {
@@ -302,7 +302,7 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 	facts := findCombineFacts(request.FactIDs)
 	if len(facts) == 0 {
 		zap.L().Warn("No fact was found in export request")
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("No fact was found in export request"))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("no fact was found in export request"))
 		return
 	}
 

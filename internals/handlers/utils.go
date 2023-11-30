@@ -296,11 +296,9 @@ func findCombineFacts(combineFactIds []int64) (combineFacts []engine.Fact) {
 	for _, factId := range utils.RemoveDuplicates(combineFactIds) {
 		combineFact, found, err := fact.R().Get(factId)
 		if err != nil {
-			zap.L().Error("findCombineFacts cannot retrieve fact", zap.Int64("factID", factId), zap.Error(err))
 			continue
 		}
 		if !found {
-			zap.L().Warn("findCombineFacts fact does not exist", zap.Int64("factID", factId))
 			continue
 		}
 		combineFacts = append(combineFacts, combineFact)
