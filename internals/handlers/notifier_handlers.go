@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
 	"net/http"
 	"time"
 
@@ -64,20 +62,6 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 	go client.Write()
 
 	// go client.Read() // Disabled until proper usage
-}
-
-type ExportNotification struct {
-	notification.Notification
-	Export export.WrapperItem `json:"export"`
-	Status int                `json:"status"`
-}
-
-func (e ExportNotification) ToBytes() ([]byte, error) {
-	b, err := json.Marshal(e)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
 }
 
 // NotificationsSSERegister godoc

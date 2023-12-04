@@ -48,4 +48,5 @@ func (h *Handler) UnregisterNotificationType(notification Notification) {
 
 func (h *Handler) RegisterNotificationTypes() {
 	h.RegisterNotificationType(BaseNotification{})
+	h.RegisterNotificationType(ExportNotification{})
 }

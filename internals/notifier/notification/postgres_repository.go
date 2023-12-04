@@ -1,7 +1,6 @@
 package notification
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -26,7 +25,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 
 // Create creates a new Notification definition in the repository
 func (r *PostgresRepository) Create(notif Notification) (int64, error) {
-	data, err := json.Marshal(notif)
+	data, err := notif.ToBytes()
 	if err != nil {
 		return -1, err
 	}
@@ -81,13 +80,11 @@ func (r *PostgresRepository) Get(id int64) (Notification, error) {
 		}
 
 		t, ok := H().notificationTypes[notifType]
-
 		if !ok {
 			return nil, errors.New("notification type does not exist")
 		}
 
 		instance, err := t.NewInstance(id, []byte(data), isRead)
-
 		if err != nil {
 			return nil, errors.New("notification couldn't be instanced")
 		}
@@ -97,7 +94,7 @@ func (r *PostgresRepository) Get(id int64) (Notification, error) {
 	return nil, errors.New("no notification found with this id")
 }
 
-// GetByRoles returns all notifications related to a certain list of roles
+// GetAll returns all notifications from the repository
 func (r *PostgresRepository) GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]Notification, error) {
 
 	// TODO: "ORDER BY" should be an option in dbutils.DBQueryOptionnal
@@ -137,13 +134,11 @@ func (r *PostgresRepository) GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]
 		}
 
 		t, ok := H().notificationTypes[notifType]
-
 		if !ok {
 			return nil, errors.New("notification type does not exist")
 		}
 
 		instance, err := t.NewInstance(id, []byte(data), isRead)
-
 		if err != nil {
 			return nil, errors.New("notification couldn't be instanced")
 		}

@@ -1,14 +1,8 @@
 package notification
 
-import "encoding/json"
-
-// BaseNotification data structure represents a basic notification and her current state
-type BaseNotification struct {
-	Notification
-	Id     int64
-	Type   string
-	IsRead bool
-}
+import (
+	"encoding/json"
+)
 
 // Notification is a general interface for all notifications types
 type Notification interface {
@@ -16,11 +10,15 @@ type Notification interface {
 	NewInstance(id int64, data []byte, isRead bool) (Notification, error)
 }
 
-func (n BaseNotification) ToBytes() ([]byte, error) {
-	//TODO:
-	return nil, nil
+// BaseNotification data structure represents a basic notification and her current state
+type BaseNotification struct {
+	Notification `json:"-"`
+	Id           int64  `json:"id"`
+	IsRead       bool   `json:"isRead"`
+	Type         string `json:"type"`
 }
 
+// NewInstance returns a new instance of a BaseNotification
 func (n BaseNotification) NewInstance(id int64, data []byte, isRead bool) (Notification, error) {
 	var notification BaseNotification
 	err := json.Unmarshal(data, &notification)
@@ -29,5 +27,14 @@ func (n BaseNotification) NewInstance(id int64, data []byte, isRead bool) (Notif
 	}
 	notification.Id = id
 	notification.IsRead = isRead
+	notification.Notification = notification
 	return &notification, nil
+}
+
+func (n BaseNotification) ToBytes() ([]byte, error) {
+	b, err := json.Marshal(n)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }

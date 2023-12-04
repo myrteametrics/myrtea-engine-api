@@ -45,7 +45,7 @@ func NewNotifier() *Notifier {
 	cm := NewClientManager()
 	return &Notifier{
 		clientManager: cm,
-		cache:         make(map[string]time.Time, 0),
+		cache:         make(map[string]time.Time),
 	}
 }
 
@@ -85,7 +85,7 @@ func (notifier *Notifier) SendToRoles(cacheKey string, timeout time.Duration, no
 		return
 	}
 
-	notifFull := notification.R().Get(id)
+	notifFull, err := notification.R().Get(id)
 	if notifFull == nil {
 		zap.L().Error("Notification not found after creation", zap.Int64("id", id))
 	}
@@ -137,7 +137,7 @@ func (notifier *Notifier) SendToUsers(notif notification.Notification, users []u
 	}
 }
 
-// Send send a byte slices to a specific websocket client
+// Send a byte slices to a specific websocket client
 func (notifier *Notifier) Send(message []byte, client Client) {
 	if client != nil {
 		client.GetSendChannel() <- message
