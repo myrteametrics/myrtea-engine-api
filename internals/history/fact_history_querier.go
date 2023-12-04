@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -41,6 +40,11 @@ type ParamGetFactHistory struct {
 	FactID              int64 `json:"factID"`
 	SituationID         int64 `json:"situationId"`
 	SituationInstanceID int64 `json:"situationInstanceId"`
+}
+type ParamGetFactHistoryByDate struct {
+	ParamGetFactHistory
+	StartDate string `json:"startDate"` // Expected format: "2006-01-02 15:04:05"
+	EndDate   string `json:"endDate"`   // Expected format: "2006-01-02 15:04:05"
 }
 
 func (querier HistoryFactsQuerier) Insert(history HistoryFactsV4) (int64, error) {
@@ -207,7 +211,6 @@ func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuil
 	defer rows.Close()
 
 	var results []FactResult
-
 	for rows.Next() {
 		var resultBytes []byte
 		var ts time.Time
@@ -216,7 +219,7 @@ func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuil
 			return GetFactHistory{}, err
 		}
 
-		var parsedResult map[string]map[string]map[string]int64
+		var parsedResult map[string]interface{}
 		err = json.Unmarshal(resultBytes, &parsedResult)
 		if err != nil {
 			return GetFactHistory{}, err
@@ -225,14 +228,12 @@ func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuil
 		duration := time.Duration(ts.Hour())*time.Hour + time.Duration(ts.Minute())*time.Minute + time.Duration(ts.Second())*time.Second
 		factRes := FactResult{Time: duration}
 
-		if aggs, ok := parsedResult["aggs"]; ok {
-			for key := range aggs {
-				if strings.Contains(key, "count") {
-					if count, ok := aggs[key]; ok {
-						if value, ok := count["value"]; ok {
-							factRes.Value = value
-							break
-						}
+		if aggs, ok := parsedResult["aggs"].(map[string]interface{}); ok {
+			for _, v := range aggs {
+				if count, ok := v.(map[string]interface{}); ok {
+					if value, ok := count["value"].(float64); ok {
+						factRes.Value = int64(value)
+						break
 					}
 				}
 			}
@@ -248,24 +249,47 @@ func (querier HistoryFactsQuerier) GetTodaysFactResultByParameters(param ParamGe
 	return querier.QueryGetSpecificFields(builder)
 }
 
+func (querier HistoryFactsQuerier) GetFactResultByDate(param ParamGetFactHistoryByDate) (GetFactHistory, error) {
+	builder := querier.Builder.GetFactResultByDate(param)
+	return querier.QueryGetSpecificFields(builder)
+}
+
 func (querier HistoryFactsQuerier) Delete(ID int64) error {
 	error := querier.Builder.Delete(ID)
 	return querier.ExecDelete(error)
 }
 
-func (param ParamGetFactHistory) IsValid() (bool, error) {
-	if param.FactID == 0 {
-		return false, errors.New("Missing FactID ")
+func (param ParamGetFactHistory) IsValid() error {
+	if param.FactID <= 0 {
+		return errors.New("Missing or invalide FactID ")
 	}
 
-	if param.SituationID == 0 {
-		return false, errors.New("Missing SituationID")
+	if param.SituationID <= 0 {
+		return errors.New("Missing  or invalide SituationID")
 	}
 
-	if param.SituationInstanceID == 0 {
-		return false, errors.New("Missing SituationInstanceID")
+	if param.SituationInstanceID <= 0 {
+		return errors.New("Missing or invalie  SituationInstanceID")
 	}
-	return true, nil
+	return nil
+}
+
+func (p ParamGetFactHistoryByDate) IsValid() error {
+	if err := p.ParamGetFactHistory.IsValid(); err != nil {
+		return err
+	}
+	if _, err := time.Parse("2006-01-02 15:04:05", p.StartDate); err != nil {
+		return errors.New("invalid StartDate format")
+	}
+	if _, err := time.Parse("2006-01-02 15:04:05", p.EndDate); err != nil {
+		return errors.New("invalid EndDate format")
+	}
+	start, _ := time.Parse("2006-01-02 15:04:05", p.StartDate)
+	end, _ := time.Parse("2006-01-02 15:04:05", p.EndDate)
+	if start.After(end) {
+		return errors.New("StartDate must be before EndDate")
+	}
+	return nil
 }
 
 // func (querier HistoryFactsQuerier) checkRowAffected(result sql.Result, nbRows int64) error {
