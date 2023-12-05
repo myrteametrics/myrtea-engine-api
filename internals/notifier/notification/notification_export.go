@@ -3,6 +3,7 @@ package notification
 import (
 	"encoding/json"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
+	"reflect"
 )
 
 type ExportNotification struct {
@@ -40,5 +41,23 @@ func (e ExportNotification) NewInstance(id int64, data []byte, isRead bool) (Not
 	notification.Id = id
 	notification.IsRead = isRead
 	notification.Notification = notification
-	return &notification, nil
+	return notification, nil
+}
+
+// Equals returns true if the two notifications are equals
+func (e ExportNotification) Equals(notification Notification) bool {
+	notif, ok := notification.(ExportNotification)
+	if !ok {
+		return ok
+	}
+	if !notif.BaseNotification.Equals(e.BaseNotification) {
+		return false
+	}
+	if !reflect.DeepEqual(notif.Export, e.Export) {
+		return false
+	}
+	if notif.Status != e.Status {
+		return false
+	}
+	return true
 }

@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -217,7 +216,7 @@ func (m *SamlSPMiddleware) ContextMiddleware(next http.Handler) http.Handler {
 
 		loggerR := r.Context().Value(models.ContextKeyLoggerR)
 		if loggerR != nil {
-			gorillacontext.Set(loggerR.(*http.Request), models.UserLogin, fmt.Sprintf("%s(%d)", up.User.Login, up.User.ID))
+			gorillacontext.Set(loggerR.(*http.Request), models.UserLogin, up.User.Login)
 		}
 
 		ctx := context.WithValue(r.Context(), models.ContextKeyUser, up)

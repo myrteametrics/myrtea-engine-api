@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
 	"net/http"
 	"time"
 
@@ -45,14 +46,14 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 		zap.L().Error("Add new WS Client to manager", zap.Error(err))
 		return
 	}
-	go func(client *notifier.WebsocketClient) {
+	go func(client *notifier.WebsocketClient) { // temporary for tests
 		zap.L().Info("starting notifier")
 		ticker := time.NewTicker(1 * time.Second)
 		after := time.After(30 * time.Second)
 		for {
 			select {
 			case <-ticker.C:
-				notifier.C().SendToUsers(ExportNotification{Status: export.StatusPending, Export: export.WrapperItem{Id: uuid.New().String(), FileName: "test.bla"}}, []uuid.UUID{user.ID})
+				notifier.C().SendToUsers(notification.ExportNotification{Status: export.StatusPending, Export: export.WrapperItem{Id: uuid.New().String(), FileName: "test.bla"}}, []users.UserWithPermissions{user})
 				zap.L().Info("send notification")
 			case <-after:
 				return

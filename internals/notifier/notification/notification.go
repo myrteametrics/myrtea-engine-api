@@ -8,6 +8,7 @@ import (
 type Notification interface {
 	ToBytes() ([]byte, error)
 	NewInstance(id int64, data []byte, isRead bool) (Notification, error)
+	Equals(notification Notification) bool
 }
 
 // BaseNotification data structure represents a basic notification and her current state
@@ -28,13 +29,32 @@ func (n BaseNotification) NewInstance(id int64, data []byte, isRead bool) (Notif
 	notification.Id = id
 	notification.IsRead = isRead
 	notification.Notification = notification
-	return &notification, nil
+	return notification, nil
 }
 
+// ToBytes convert a notification in a json byte slice to be sent though any required channel
 func (n BaseNotification) ToBytes() ([]byte, error) {
 	b, err := json.Marshal(n)
 	if err != nil {
 		return nil, err
 	}
 	return b, nil
+}
+
+// Equals returns true if the two notifications are equals
+func (n BaseNotification) Equals(notification Notification) bool {
+	notif, ok := notification.(BaseNotification)
+	if !ok {
+		return ok
+	}
+	if n.Id != notif.Id {
+		return false
+	}
+	if n.IsRead != notif.IsRead {
+		return false
+	}
+	if n.Type != notif.Type {
+		return false
+	}
+	return true
 }

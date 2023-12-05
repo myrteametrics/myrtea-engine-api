@@ -1,6 +1,7 @@
 package notifier
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"sync"
 	"time"
 
@@ -126,10 +127,10 @@ func (notifier *Notifier) Broadcast(notif notification.Notification) {
 }
 
 // SendToUsers send a notification to users corresponding the input ids
-func (notifier *Notifier) SendToUsers(notif notification.Notification, users []uuid.UUID) {
+func (notifier *Notifier) SendToUsers(notif notification.Notification, users []users.UserWithPermissions) {
 	if users != nil && len(users) > 0 {
-		for _, userID := range users {
-			clients := notifier.findClientsByUserID(userID)
+		for _, user := range users {
+			clients := notifier.findClientsByUserLogin(user.Login)
 			for _, client := range clients {
 				notifier.sendToClient(notif, client)
 			}
@@ -144,10 +145,10 @@ func (notifier *Notifier) Send(message []byte, client Client) {
 	}
 }
 
-func (notifier *Notifier) findClientsByUserID(id uuid.UUID) []Client {
+func (notifier *Notifier) findClientsByUserLogin(login string) []Client {
 	clients := make([]Client, 0)
 	for _, client := range notifier.clientManager.GetClients() {
-		if client.GetUser() != nil && client.GetUser().ID == id {
+		if client.GetUser() != nil && client.GetUser().Login == login {
 			clients = append(clients, client)
 		}
 	}

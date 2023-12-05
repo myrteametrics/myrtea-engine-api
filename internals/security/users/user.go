@@ -13,7 +13,7 @@ import (
 // User is used as the main user struct
 type User struct {
 	ID        uuid.UUID `json:"id"`
-	Login     string    `json:"login"`
+	Login     string    `json:"login"` // is the unique identifier of the user, through the different connection modes
 	Created   time.Time `json:"created"`
 	LastName  string    `json:"lastName"`
 	FirstName string    `json:"firstName"`
