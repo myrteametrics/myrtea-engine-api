@@ -76,3 +76,14 @@ func (builder HistoryFactsBuilder) GetTodaysFactResultByParameters(param ParamGe
 		Where(sq.Expr("ts >= ?::timestamptz", todayStart)).
 		Where(sq.Expr("ts < ?::timestamptz", tomorrowStart))
 }
+
+func (builder HistoryFactsBuilder) GetFactResultByDate(param ParamGetFactHistoryByDate) sq.SelectBuilder {
+	return builder.newStatement().
+		Select("result, ts").
+		From("fact_history_v5").
+		Where(sq.Eq{"fact_id": param.FactID}).
+		Where(sq.Eq{"situation_id": param.SituationID}).
+		Where(sq.Eq{"situation_instance_id": param.SituationInstanceID}).
+		Where(sq.Expr("ts >= ?::timestamptz", param.StartDate)).
+		Where(sq.Expr("ts < ?::timestamptz", param.EndDate))
+}
