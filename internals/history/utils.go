@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	FormatHeureMinute     = "15:04"            // FormatHeureMinute specifies the format for hour and minutes
-	FormatDateHeureMinute = "2006-01-02 15:04" // FormatDateHeureMinuteSeconde specifies the format for date, hour, minutes, and seconds
+	FormatHourMinute     = "15:04"            // FormatHeureMinute specifies the format for hour and minutes
+	FormatDateHourMinute = "2006-01-02 15:04" // FormatDateHeureMinuteSeconde specifies the format for date, hour, minutes, and seconds
 )
 
 func ExtractHistoryDataSearch(historySituations []HistorySituationsV4, historySituationFacts []HistorySituationFactsV4, historyFacts []HistoryFactsV4) search.QueryResult {

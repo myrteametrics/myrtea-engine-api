@@ -33,7 +33,7 @@ type GetFactHistory struct {
 
 type FactResult struct {
 	Value         int64  `json:"value"`
-	FormattedTime string `json:"formattedTime" example:"2006-01-02 15:04:05"` 
+	FormattedTime string `json:"formattedTime" example:"2006-01-02 15:04:05"`
 }
 
 type ParamGetFactHistory struct {
@@ -245,12 +245,12 @@ func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuil
 
 func (querier HistoryFactsQuerier) GetTodaysFactResultByParameters(param ParamGetFactHistory) (GetFactHistory, error) {
 	builder := querier.Builder.GetTodaysFactResultByParameters(param)
-	return querier.QueryGetSpecificFields(builder, FormatHeureMinute)
+	return querier.QueryGetSpecificFields(builder, FormatHourMinute)
 }
 
 func (querier HistoryFactsQuerier) GetFactResultByDate(param ParamGetFactHistoryByDate) (GetFactHistory, error) {
 	builder := querier.Builder.GetFactResultByDate(param)
-	return querier.QueryGetSpecificFields(builder, FormatDateHeureMinute)
+	return querier.QueryGetSpecificFields(builder, FormatDateHourMinute)
 }
 
 func (querier HistoryFactsQuerier) Delete(ID int64) error {
