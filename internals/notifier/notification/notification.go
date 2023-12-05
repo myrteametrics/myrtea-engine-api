@@ -9,6 +9,7 @@ type Notification interface {
 	ToBytes() ([]byte, error)
 	NewInstance(id int64, data []byte, isRead bool) (Notification, error)
 	Equals(notification Notification) bool
+	SetId(id int64) Notification
 }
 
 // BaseNotification data structure represents a basic notification and her current state
@@ -32,7 +33,7 @@ func (n BaseNotification) NewInstance(id int64, data []byte, isRead bool) (Notif
 	return notification, nil
 }
 
-// ToBytes convert a notification in a json byte slice to be sent though any required channel
+// ToBytes convert a notification in a json byte slice to be sent through any required channel
 func (n BaseNotification) ToBytes() ([]byte, error) {
 	b, err := json.Marshal(n)
 	if err != nil {
@@ -57,4 +58,10 @@ func (n BaseNotification) Equals(notification Notification) bool {
 		return false
 	}
 	return true
+}
+
+// SetId set the notification ID
+func (n BaseNotification) SetId(id int64) Notification {
+	n.Id = id
+	return n
 }

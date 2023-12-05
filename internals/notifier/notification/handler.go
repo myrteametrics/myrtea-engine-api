@@ -1,6 +1,11 @@
 package notification
 
-import "sync"
+import (
+	"context"
+	"go.uber.org/zap"
+	"sync"
+	"time"
+)
 
 var (
 	_globalHandlerMu sync.RWMutex
@@ -25,14 +30,23 @@ func ReplaceHandlerGlobals(handler *Handler) func() {
 }
 
 type Handler struct {
-	notificationTypes map[string]Notification
+	notificationTypes    map[string]Notification
+	notificationLifetime time.Duration
 }
 
-func NewHandler() *Handler {
+// NewHandler returns a pointer to a new instance of Handler
+func NewHandler(notificationLifetime time.Duration) *Handler {
 	handler := &Handler{
-		notificationTypes: make(map[string]Notification),
+		notificationTypes:    make(map[string]Notification),
+		notificationLifetime: notificationLifetime,
 	}
 	handler.RegisterNotificationTypes()
+
+	// useless to start cleaner if lifetime is less than 0
+	if notificationLifetime > 0 {
+		go handler.startCleaner(context.Background())
+	}
+
 	return handler
 }
 
@@ -46,7 +60,27 @@ func (h *Handler) UnregisterNotificationType(notification Notification) {
 	delete(h.notificationTypes, getType(notification))
 }
 
+// RegisterNotificationTypes register all notification types
 func (h *Handler) RegisterNotificationTypes() {
 	h.RegisterNotificationType(BaseNotification{})
 	h.RegisterNotificationType(ExportNotification{})
+}
+
+// startCleaner start a ticker to clean expired notifications in database every 24 hours
+func (h *Handler) startCleaner(context context.Context) {
+	ticker := time.NewTicker(time.Hour * 24)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-context.Done():
+			return
+		case <-ticker.C:
+			affectedRows, err := R().CleanExpired(h.notificationLifetime)
+			if err != nil {
+				zap.L().Error("Error while cleaning expired notifications", zap.Error(err))
+			} else {
+				zap.L().Debug("Cleaned expired notifications", zap.Int64("affectedRows", affectedRows))
+			}
+		}
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/dbutils"
 )
@@ -24,21 +25,21 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Create creates a new Notification definition in the repository
-func (r *PostgresRepository) Create(notif Notification) (int64, error) {
+func (r *PostgresRepository) Create(notif Notification, userLogin string) (int64, error) {
 	data, err := notif.ToBytes()
 	if err != nil {
 		return -1, err
 	}
 
 	ts := time.Now().Truncate(1 * time.Millisecond).UTC()
-	query := `INSERT INTO notifications_history_v1 (id, data, type, created_at) VALUES (DEFAULT, :data, :type :created_at) RETURNING id`
-	params := map[string]interface{}{
-		"data":       data,
-		"type":       getType(notif),
-		"created_at": ts,
-	}
 
-	rows, err := r.conn.NamedQuery(query, params)
+	insertStatement := newStatement().
+		Insert("notifications_history_v1").
+		Columns("id", "data", "type", "user_login", "created_at").
+		Values(sq.Expr("DEFAULT"), data, getType(notif), userLogin, ts).
+		Suffix("RETURNING id")
+
+	rows, err := insertStatement.RunWith(r.conn.DB).Query()
 	if err != nil {
 		return -1, err
 	}
@@ -54,15 +55,13 @@ func (r *PostgresRepository) Create(notif Notification) (int64, error) {
 }
 
 // Get returns a notification by its ID
-func (r *PostgresRepository) Get(id int64) (Notification, error) {
+func (r *PostgresRepository) Get(id int64, userLogin string) (Notification, error) {
+	getStatement := newStatement().
+		Select("id", "data", "isread", "type").
+		Where(sq.And{sq.Eq{"id": id}, sq.Eq{"user_login": userLogin}}).
+		From("notifications_history_v1")
 
-	// TODO: "ORDER BY" should be an option in dbutils.DBQueryOptionnal
-	query := `SELECT id, data, isread, type FROM notifications_history_v1 WHERE id = :id`
-	params := map[string]interface{}{
-		"id": id,
-	}
-
-	rows, err := r.conn.NamedQuery(query, params)
+	rows, err := getStatement.RunWith(r.conn.DB).Query()
 	if err != nil {
 		return nil, errors.New("couldn't retrieve any notification with this id. The query is equal to: " + err.Error())
 	}
@@ -74,7 +73,7 @@ func (r *PostgresRepository) Get(id int64) (Notification, error) {
 		var isRead bool
 		var notifType string
 
-		err := rows.Scan(&id, &data, &isRead, &notifType)
+		err = rows.Scan(&id, &data, &isRead, &notifType)
 		if err != nil {
 			return nil, errors.New("couldn't retrieve any notification. The query is equal to: " + err.Error())
 		}
@@ -95,26 +94,28 @@ func (r *PostgresRepository) Get(id int64) (Notification, error) {
 }
 
 // GetAll returns all notifications from the repository
-func (r *PostgresRepository) GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]Notification, error) {
+func (r *PostgresRepository) GetAll(queryOptionnal dbutils.DBQueryOptionnal, userLogin string) ([]Notification, error) {
+	getStatement := newStatement().
+		Select("id", "data", "isread", "type").
+		Where(sq.Eq{"user_login": userLogin}).
+		From("notifications_history_v1")
+
+	if queryOptionnal.MaxAge > 0 {
+		getStatement = getStatement.Where(sq.Gt{"created_at": time.Now().UTC().Add(-1 * queryOptionnal.MaxAge)})
+	}
+
+	if queryOptionnal.Limit > 0 {
+		getStatement = getStatement.Limit(uint64(queryOptionnal.Limit))
+	}
+
+	if queryOptionnal.Offset > 0 {
+		getStatement = getStatement.Offset(uint64(queryOptionnal.Offset))
+	}
 
 	// TODO: "ORDER BY" should be an option in dbutils.DBQueryOptionnal
-	query := `SELECT id, data, isread, type FROM notifications_history_v1`
-	params := map[string]interface{}{}
-	if queryOptionnal.MaxAge > 0 {
-		query += ` WHERE created_at > :created_at`
-		params["created_at"] = time.Now().UTC().Add(-1 * queryOptionnal.MaxAge)
-	}
-	query += ` ORDER BY created_at DESC`
-	if queryOptionnal.Limit > 0 {
-		query += ` LIMIT :limit`
-		params["limit"] = queryOptionnal.Limit
-	}
-	if queryOptionnal.Offset > 0 {
-		query += ` OFFSET :offset`
-		params["offset"] = queryOptionnal.Offset
-	}
+	getStatement = getStatement.OrderBy("created_at DESC")
 
-	rows, err := r.conn.NamedQuery(query, params)
+	rows, err := getStatement.RunWith(r.conn.DB).Query()
 	if err != nil {
 		return nil, errors.New("couldn't retrieve any notification with these roles. The query is equal to: " + err.Error())
 	}
@@ -128,7 +129,7 @@ func (r *PostgresRepository) GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]
 		var isRead bool
 		var notifType string
 
-		err := rows.Scan(&id, &data, &isRead, &notifType)
+		err = rows.Scan(&id, &data, &isRead, &notifType)
 		if err != nil {
 			return nil, errors.New("couldn't scan the notification data:" + err.Error())
 		}
@@ -152,12 +153,12 @@ func (r *PostgresRepository) GetAll(queryOptionnal dbutils.DBQueryOptionnal) ([]
 }
 
 // Delete deletes a  notification from the repository by its id
-func (r *PostgresRepository) Delete(id int64) error {
-	query := `DELETE FROM notifications_history_v1 WHERE id = :id`
+func (r *PostgresRepository) Delete(id int64, userLogin string) error {
+	deleteStatement := newStatement().
+		Delete("notifications_history_v1").
+		Where(sq.And{sq.Eq{"id": id}, sq.Eq{"user_login": userLogin}})
 
-	res, err := r.conn.NamedExec(query, map[string]interface{}{
-		"id": id,
-	})
+	res, err := deleteStatement.RunWith(r.conn.DB).Exec()
 	if err != nil {
 		return err
 	}
@@ -172,13 +173,13 @@ func (r *PostgresRepository) Delete(id int64) error {
 }
 
 // UpdateRead updates a notification status by changing the isRead state to true once it has been read
-func (r *PostgresRepository) UpdateRead(id int64, status bool) error {
-	query := `UPDATE notifications_history_v1 SET isread = :status WHERE id = :id`
+func (r *PostgresRepository) UpdateRead(id int64, status bool, userLogin string) error {
+	update := newStatement().
+		Update("notifications_history_v1").
+		Set("isread", status).
+		Where(sq.And{sq.Eq{"id": id}, sq.Eq{"user_login": userLogin}})
 
-	res, err := r.conn.NamedExec(query, map[string]interface{}{
-		"status": status,
-		"id":     id,
-	})
+	res, err := update.RunWith(r.conn.DB).Exec()
 	if err != nil {
 		return err
 	}
@@ -190,4 +191,21 @@ func (r *PostgresRepository) UpdateRead(id int64, status bool) error {
 		return errors.New("no row updated (or multiple row updated) instead of 1 row")
 	}
 	return nil
+}
+
+// CleanExpired deletes all notifications older than the given lifetime
+func (r *PostgresRepository) CleanExpired(lifetime time.Duration) (int64, error) {
+	deleteStatement := newStatement().
+		Delete("notifications_history_v1").
+		Where(sq.Lt{"created_at": time.Now().UTC().Add(-1 * lifetime)})
+
+	res, err := deleteStatement.RunWith(r.conn.DB).Exec()
+	if err != nil {
+		return 0, err
+	}
+	i, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return i, nil
 }

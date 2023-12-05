@@ -232,3 +232,6 @@ AUTHENTICATION_OIDC_FRONT_END_URL = "http://127.0.0.1:4200"
 # It must be exactly 16, 24 or 32 characters long.
 # Default value: "thisis24characterslongs." (24 characters)
 AUTHENTICATION_OIDC_ENCRYPTION_KEY = "thisis24characterslongs."
+
+# NOTIFICATION_LIFETIME: The lifetime of a notification in the database.
+NOTIFICATION_LIFETIME = "1w"

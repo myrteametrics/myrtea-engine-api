@@ -61,7 +61,7 @@ func TestBaseNotificationNewInstanceWithInvalidData(t *testing.T) {
 
 func TestExportNotification(t *testing.T) {
 	// init handler
-	ReplaceHandlerGlobals(NewHandler())
+	ReplaceHandlerGlobals(NewHandler(0))
 
 	notification := ExportNotification{
 		Export: export.WrapperItem{
@@ -87,13 +87,11 @@ func TestExportNotification(t *testing.T) {
 	notifType, ok := H().notificationTypes["ExportNotification"]
 	if !ok {
 		t.Errorf("Notification type does not exist")
-		t.FailNow()
 	}
 
 	instance, err := notifType.NewInstance(1, bytes, false)
 	if err != nil {
 		t.Errorf("Notification couldn't be instanced")
-		t.FailNow()
 	}
 	bt, _ := instance.ToBytes()
 	t.Log(string(bt))
@@ -309,4 +307,40 @@ func TestExportNotification_Equals(t *testing.T) {
 		Export: export.WrapperItem{Id: uuid.New().String()},
 	}), false)
 
+}
+
+func TestBaseNotification_SetId(t *testing.T) {
+	notif, err := BaseNotification{}.NewInstance(1, []byte(`{}`), true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	notif = notif.SetId(2)
+	baseNotification, ok := notif.(BaseNotification)
+	expression.AssertEqual(t, ok, true)
+	expression.AssertEqual(t, baseNotification.Id, int64(2))
+}
+
+func TestExportNotification_SetId(t *testing.T) {
+	notif, err := ExportNotification{}.NewInstance(1, []byte(`{}`), true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	notif = notif.SetId(2)
+	exportNotification, ok := notif.(ExportNotification)
+	expression.AssertEqual(t, ok, true)
+	expression.AssertEqual(t, exportNotification.Id, int64(2))
+}
+
+func TestMockNotification_SetId(t *testing.T) {
+	notif, err := MockNotification{}.NewInstance(1, []byte(`{}`), true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	notif = notif.SetId(2)
+	mockNotification, ok := notif.(MockNotification)
+	expression.AssertEqual(t, ok, true)
+	expression.AssertEqual(t, mockNotification.Id, int64(2))
 }

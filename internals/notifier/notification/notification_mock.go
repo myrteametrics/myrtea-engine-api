@@ -104,3 +104,9 @@ func (n MockNotification) Equals(notification Notification) bool {
 	}
 	return true
 }
+
+// SetId set the notification ID
+func (n MockNotification) SetId(id int64) Notification {
+	n.Id = id
+	return n
+}

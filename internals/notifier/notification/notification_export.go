@@ -23,6 +23,7 @@ func NewExportNotification(id int64, export export.WrapperItem, status int) *Exp
 	}
 }
 
+// ToBytes convert a notification in a json byte slice to be sent through any required channel
 func (e ExportNotification) ToBytes() ([]byte, error) {
 	b, err := json.Marshal(e)
 	if err != nil {
@@ -60,4 +61,10 @@ func (e ExportNotification) Equals(notification Notification) bool {
 		return false
 	}
 	return true
+}
+
+// SetId set the notification ID
+func (e ExportNotification) SetId(id int64) Notification {
+	e.Id = id
+	return e
 }

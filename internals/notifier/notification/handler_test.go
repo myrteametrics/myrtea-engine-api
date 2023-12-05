@@ -6,13 +6,13 @@ import (
 )
 
 func TestNewHandler(t *testing.T) {
-	handler := NewHandler()
+	handler := NewHandler(0)
 	expression.AssertNotEqual(t, handler, nil, "NewHandler() should not return nil")
 	expression.AssertNotEqual(t, len(handler.notificationTypes), 0, "NewHandler() should not return an empty notificationTypes")
 }
 
 func TestHandler_RegisterNotificationType_AddsNewType(t *testing.T) {
-	handler := NewHandler()
+	handler := NewHandler(0)
 	notification := BaseNotification{}
 	handler.RegisterNotificationType(notification)
 	_, exists := handler.notificationTypes[getType(notification)]
@@ -20,7 +20,7 @@ func TestHandler_RegisterNotificationType_AddsNewType(t *testing.T) {
 }
 
 func TestHandler_RegisterNotificationType_OverwritesExistingType(t *testing.T) {
-	handler := NewHandler()
+	handler := NewHandler(0)
 	notification := BaseNotification{}
 	handler.RegisterNotificationType(notification)
 	notification2 := BaseNotification{} // Assuming this has the same type as the first one
@@ -29,7 +29,7 @@ func TestHandler_RegisterNotificationType_OverwritesExistingType(t *testing.T) {
 }
 
 func TestHandler_UnregisterNotificationType_RemovesExistingType(t *testing.T) {
-	handler := NewHandler()
+	handler := NewHandler(0)
 	notification := BaseNotification{}
 	handler.RegisterNotificationType(notification)
 	handler.UnregisterNotificationType(notification)
@@ -38,7 +38,7 @@ func TestHandler_UnregisterNotificationType_RemovesExistingType(t *testing.T) {
 }
 
 func TestHandler_UnregisterNotificationType_DoesNothingForNonExistingType(t *testing.T) {
-	handler := NewHandler()
+	handler := NewHandler(0)
 	notification := BaseNotification{}
 	handler.UnregisterNotificationType(notification)
 	_, exists := handler.notificationTypes[getType(notification)]
@@ -46,7 +46,7 @@ func TestHandler_UnregisterNotificationType_DoesNothingForNonExistingType(t *tes
 }
 
 func TestReplaceHandlerGlobals_ReplacesGlobalHandler(t *testing.T) {
-	handler := NewHandler()
+	handler := NewHandler(0)
 	prevHandler := H()
 	undo := ReplaceHandlerGlobals(handler)
 	expression.AssertEqual(t, H(), handler, "ReplaceHandlerGlobals() should replace global handler")

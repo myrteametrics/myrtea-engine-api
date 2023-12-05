@@ -78,7 +78,8 @@ func stopServices() {
 }
 
 func initNotifier() {
-	notification.ReplaceHandlerGlobals(notification.NewHandler())
+	notificationLifetime := viper.GetDuration("NOTIFICATION_LIFETIME")
+	notification.ReplaceHandlerGlobals(notification.NewHandler(notificationLifetime))
 	notifier.ReplaceGlobals(notifier.NewNotifier())
 }
 

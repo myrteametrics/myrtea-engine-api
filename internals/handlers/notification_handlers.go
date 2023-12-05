@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/dbutils"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
@@ -23,7 +22,6 @@ import (
 // @Param nhit query int false "Hit per page"
 // @Param offset query int false "Offset number for pagination"
 // @Security Bearer
-// @Success 200 {array} notification.FrontNotification "list of notifications"
 // @Failure 500 "internal server error"
 // @Router /engine/notifications [get]
 func GetNotifications(w http.ResponseWriter, r *http.Request) {
@@ -57,17 +55,12 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 	}
 	user := _user.(users.UserWithPermissions)
 
-	roleIDs := make([]uuid.UUID, 0)
-	for _, role := range user.Roles {
-		roleIDs = append(roleIDs, role.ID)
-	}
-
-	queryOptionnal := dbutils.DBQueryOptionnal{
+	queryOptional := dbutils.DBQueryOptionnal{
 		Limit:  nhit,
 		Offset: offset,
 		MaxAge: maxAge,
 	}
-	notifications, err := notification.R().GetAll(queryOptionnal)
+	notifications, err := notification.R().GetAll(queryOptional, user.Login)
 	if err != nil {
 		zap.L().Error("Error getting notifications", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -100,11 +93,18 @@ func UpdateRead(w http.ResponseWriter, r *http.Request) {
 	_status := r.URL.Query().Get("status")
 	status := false
 
+	_user := r.Context().Value(models.ContextKeyUser)
+	if _user == nil {
+		zap.L().Warn("No context user provided")
+		return
+	}
+	user := _user.(users.UserWithPermissions)
+
 	if _status == "true" {
 		status = true
 	}
 
-	err = notification.R().UpdateRead(idNotif, status)
+	err = notification.R().UpdateRead(idNotif, status, user.Login)
 	if err != nil {
 		zap.L().Error("Error while updating notifications", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
