@@ -13,6 +13,6 @@
 #name = "assistant"
 #port = 9081
 
-[[plugin]]
-name = "baseline"
-port = 9082
+#[[plugin]]
+#name = "baseline"
+#port = 9082

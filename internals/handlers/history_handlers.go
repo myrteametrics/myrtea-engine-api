@@ -83,8 +83,6 @@ func GetFactResultByDateCriteria(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	zap.L().Error("ParamGetFactHistoryByDate", zap.Any("", param))
-
 	if err := param.IsValid(); err != nil {
 		zap.L().Warn("parameter of Get Fact History By Date json is invalid", zap.Error(err))
 		render.Error(w, r, render.ErrAPIResourceInvalid, err)

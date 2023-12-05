@@ -32,8 +32,8 @@ type GetFactHistory struct {
 }
 
 type FactResult struct {
-	Value int64         `json:"value"`
-	Time  time.Duration `json:"time"`
+	Value         int64  `json:"value"`
+	FormattedTime string `json:"formattedTime"`
 }
 
 type ParamGetFactHistory struct {
@@ -203,7 +203,7 @@ func (querier HistoryFactsQuerier) scanFirst(rows *sql.Rows) (HistoryFactsV4, er
 	return HistoryFactsV4{}, nil
 }
 
-func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuilder) (GetFactHistory, error) {
+func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuilder, formatTime string) (GetFactHistory, error) {
 	rows, err := builder.RunWith(querier.conn).Query()
 	if err != nil {
 		return GetFactHistory{}, err
@@ -225,8 +225,7 @@ func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuil
 			return GetFactHistory{}, err
 		}
 
-		duration := time.Duration(ts.Hour())*time.Hour + time.Duration(ts.Minute())*time.Minute + time.Duration(ts.Second())*time.Second
-		factRes := FactResult{Time: duration}
+		factRes := FactResult{FormattedTime: ts.Format(formatTime)}
 
 		if aggs, ok := parsedResult["aggs"].(map[string]interface{}); ok {
 			for _, v := range aggs {
@@ -246,12 +245,12 @@ func (querier *HistoryFactsQuerier) QueryGetSpecificFields(builder sq.SelectBuil
 
 func (querier HistoryFactsQuerier) GetTodaysFactResultByParameters(param ParamGetFactHistory) (GetFactHistory, error) {
 	builder := querier.Builder.GetTodaysFactResultByParameters(param)
-	return querier.QueryGetSpecificFields(builder)
+	return querier.QueryGetSpecificFields(builder, FormatHeureMinute)
 }
 
 func (querier HistoryFactsQuerier) GetFactResultByDate(param ParamGetFactHistoryByDate) (GetFactHistory, error) {
 	builder := querier.Builder.GetFactResultByDate(param)
-	return querier.QueryGetSpecificFields(builder)
+	return querier.QueryGetSpecificFields(builder, FormatDateHeureMinute)
 }
 
 func (querier HistoryFactsQuerier) Delete(ID int64) error {
