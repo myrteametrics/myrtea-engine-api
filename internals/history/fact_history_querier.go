@@ -33,7 +33,7 @@ type GetFactHistory struct {
 
 type FactResult struct {
 	Value         int64  `json:"value"`
-	FormattedTime string `json:"formattedTime"`
+	FormattedTime string `json:"formattedTime" example:"2006-01-02 15:04:05"` 
 }
 
 type ParamGetFactHistory struct {
