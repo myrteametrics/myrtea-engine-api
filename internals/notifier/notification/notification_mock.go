@@ -14,6 +14,7 @@ type MockNotification struct {
 	Title        string                 `json:"title"`
 	SubTitle     string                 `json:"subtitle"`
 	Description  string                 `json:"description"`
+	Target       string                 `json:"target"`
 	Context      map[string]interface{} `json:"context,omitempty"`
 }
 

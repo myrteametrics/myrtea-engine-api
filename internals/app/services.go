@@ -116,7 +116,7 @@ func initCoordinator() {
 
 	instanceName := viper.GetString("INSTANCE_NAME")
 	if err = coordinator.InitInstance(instanceName, models); err != nil {
-		zap.L().Fatal("Intialisation of coordinator master", zap.Error(err))
+		zap.L().Fatal("Initialization of coordinator master", zap.Error(err))
 	}
 	if viper.GetBool("ENABLE_CRONS_ON_START") {
 		for _, li := range coordinator.GetInstance().LogicalIndices {

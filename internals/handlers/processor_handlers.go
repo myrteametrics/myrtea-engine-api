@@ -3,15 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/ingester"
-	"net/http"
-	"time"
-
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/ingester"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/processor"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/scheduler"
 	"github.com/myrteametrics/myrtea-sdk/v4/models"
 	"go.uber.org/zap"
+	"net/http"
 )
 
 // ProcessorHandler is a basic struct allowing to set up a single aggregateIngester instance for all handlers
@@ -21,12 +19,8 @@ type ProcessorHandler struct {
 
 // NewProcessorHandler returns a pointer to an ProcessorHandler instance
 func NewProcessorHandler() *ProcessorHandler {
-	var aggregateIngester = ingester.NewAggregateIngester()
-	go aggregateIngester.Run()        // Start ingester
-	time.Sleep(10 * time.Millisecond) // goroutine warm-up
-
 	return &ProcessorHandler{
-		aggregateIngester: aggregateIngester,
+		aggregateIngester: ingester.NewAggregateIngester(),
 	}
 }
 

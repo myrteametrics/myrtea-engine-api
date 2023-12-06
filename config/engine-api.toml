@@ -234,4 +234,4 @@ AUTHENTICATION_OIDC_FRONT_END_URL = "http://127.0.0.1:4200"
 AUTHENTICATION_OIDC_ENCRYPTION_KEY = "thisis24characterslongs."
 
 # NOTIFICATION_LIFETIME: The lifetime of a notification in the database.
-NOTIFICATION_LIFETIME = "1w"
+NOTIFICATION_LIFETIME = "168h" # 168h = 7 days, available units are "ns", "us" (or "µs"), "ms", "s", "m", "h"

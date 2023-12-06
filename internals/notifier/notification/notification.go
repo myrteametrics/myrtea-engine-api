@@ -20,6 +20,15 @@ type BaseNotification struct {
 	Type         string `json:"type"`
 }
 
+// NewBaseNotification returns a new instance of a BaseNotification
+func NewBaseNotification(id int64, isRead bool) BaseNotification {
+	return BaseNotification{
+		Id:     id,
+		IsRead: isRead,
+		Type:   "BaseNotification",
+	}
+}
+
 // NewInstance returns a new instance of a BaseNotification
 func (n BaseNotification) NewInstance(id int64, data []byte, isRead bool) (Notification, error) {
 	var notification BaseNotification

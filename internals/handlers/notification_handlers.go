@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/dbutils"
@@ -67,6 +69,9 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	notifications = append(notifications, notification.NewMockNotification(1, "level", "title", "subTitle", "description", time.Now(), []int64{1}, map[string]interface{}{"issueId": 1}))
+	notifications = append(notifications, notification.NewExportNotification(2, export.WrapperItem{Id: "test"}, 1))
+	notifications = append(notifications, notification.NewBaseNotification(3, false))
 	render.JSON(w, r, notifications)
 }
 

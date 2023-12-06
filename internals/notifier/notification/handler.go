@@ -45,6 +45,8 @@ func NewHandler(notificationLifetime time.Duration) *Handler {
 	// useless to start cleaner if lifetime is less than 0
 	if notificationLifetime > 0 {
 		go handler.startCleaner(context.Background())
+	} else {
+		zap.L().Info("Notification cleaner will not be started", zap.Duration("notificationLifetime", notificationLifetime))
 	}
 
 	return handler
@@ -68,7 +70,9 @@ func (h *Handler) RegisterNotificationTypes() {
 
 // startCleaner start a ticker to clean expired notifications in database every 24 hours
 func (h *Handler) startCleaner(context context.Context) {
-	ticker := time.NewTicker(time.Hour * 24)
+	cleanRate := time.Hour * 24
+	zap.L().Info("Starting notification cleaner", zap.Duration("cleanRate", cleanRate), zap.Duration("notificationLifetime", h.notificationLifetime))
+	ticker := time.NewTicker(cleanRate)
 	defer ticker.Stop()
 	for {
 		select {
