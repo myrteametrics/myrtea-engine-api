@@ -263,7 +263,7 @@ func (ew *Wrapper) checkForExpiredFiles() error {
 }
 
 func (ew *Wrapper) GetUserExports(user users.User) []WrapperItem {
-	var result []WrapperItem
+	result := make([]WrapperItem, 0)
 
 	// first, gather all exports that are in the workers if there are any
 	for _, worker := range ew.workers {

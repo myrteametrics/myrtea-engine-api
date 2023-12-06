@@ -69,7 +69,12 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notifications = append(notifications, notification.NewMockNotification(1, "level", "title", "subTitle", "description", time.Now(), []int64{1}, map[string]interface{}{"issueId": 1}))
+	// generate rando mock notifications for testing 1 to 15
+	for i := 2; i < 17; i++ {
+		notifications = append(notifications, notification.NewMockNotification(int64(i), "OK", "MockNotification", "Toodododo", "You must do something lol", time.Now().AddDate(0, 0, -i), []int64{1}, map[string]interface{}{"issueId": 1}))
+	}
+
+	notifications = append(notifications, notification.NewMockNotification(1, "OK", "MockNotification", "Toodododo", "You must do something lol", time.Now(), []int64{1}, map[string]interface{}{"issueId": 1}))
 	notifications = append(notifications, notification.NewExportNotification(2, export.WrapperItem{Id: "test"}, 1))
 	notifications = append(notifications, notification.NewBaseNotification(3, false))
 	render.JSON(w, r, notifications)
