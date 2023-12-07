@@ -31,7 +31,7 @@ type WrapperItem struct {
 	Id       string        `json:"id"`      // unique id that represents an export demand
 	FactIDs  []int64       `json:"factIds"` // list of fact ids that are part of the export (for archive and json)
 	Facts    []engine.Fact `json:"-"`
-	Error    error         `json:"error"`
+	Error    string        `json:"error"`
 	Status   int           `json:"status"`
 	FileName string        `json:"fileName"`
 	Date     time.Time     `json:"date"`
@@ -75,7 +75,7 @@ func NewWrapperItem(facts []engine.Fact, fileName string, params CSVParameters, 
 		FactIDs:  factIDs,
 		Date:     time.Now(),
 		Status:   StatusPending,
-		Error:    nil,
+		Error:    "",
 		FileName: fileName,
 		Params:   params,
 	}
@@ -83,7 +83,7 @@ func NewWrapperItem(facts []engine.Fact, fileName string, params CSVParameters, 
 
 // NewWrapper creates a new export wrapper
 func NewWrapper(basePath string, workersCount, diskRetentionDays, queueMaxSize int) *Wrapper {
-	return &Wrapper{
+	wrapper := &Wrapper{
 		workers:           make([]*ExportWorker, 0),
 		queue:             make([]*WrapperItem, 0),
 		success:           make(chan int),
@@ -93,6 +93,54 @@ func NewWrapper(basePath string, workersCount, diskRetentionDays, queueMaxSize i
 		diskRetentionDays: diskRetentionDays,
 		workerCount:       workersCount,
 	}
+
+	wrapper.archive.Store("c7f0044b-29f7-4c26-ab56-04e109683637", WrapperItem{
+		Users:    []string{"admin"},
+		Date:     time.Now(),
+		Status:   StatusPending,
+		Id:       "c7f0044b-29f7-4c26-ab56-04e109683637",
+		FactIDs:  []int64{1, 2, 3},
+		FileName: "export.csv.tar.gz",
+	})
+
+	wrapper.archive.Store("736ba596-7399-422e-b241-1407581cf454", WrapperItem{
+		Users:    []string{"admin"},
+		Date:     time.Now(),
+		Status:   StatusRunning,
+		Id:       "736ba596-7399-422e-b241-1407581cf454",
+		FactIDs:  []int64{3, 6},
+		FileName: "export-23.csv.tar.gz",
+	})
+
+	wrapper.archive.Store("5ea87155-7ea5-4152-aec5-386871dbfe1c", WrapperItem{
+		Users:    []string{"admin"},
+		Date:     time.Now().AddDate(0, 0, -3),
+		Status:   StatusDone,
+		Id:       "5ea87155-7ea5-4152-aec5-386871dbfe1c",
+		FactIDs:  []int64{2, 3, 6},
+		FileName: "exportee-236.csv.tar.gz",
+	})
+
+	wrapper.archive.Store("9fb91d1f-5b9c-4856-8be4-436831d2596e", WrapperItem{
+		Users:    []string{"admin"},
+		Date:     time.Now().AddDate(0, 0, -1),
+		Status:   StatusError,
+		Id:       "9fb91d1f-5b9c-4856-8be4-436831d2596e",
+		FactIDs:  []int64{22, 23, 6},
+		FileName: "exporteeqsdqsd-236.csv.tar.gz",
+		Error:    "error while exporting",
+	})
+
+	wrapper.archive.Store("d0502ac6-8d99-4532-a278-e3e7bd1c887b", WrapperItem{
+		Users:    []string{"admin"},
+		Date:     time.Now(),
+		Status:   StatusDone,
+		Id:       "d0502ac6-8d99-4532-a278-e3e7bd1c887b",
+		FactIDs:  []int64{1, 23, 26},
+		FileName: "finisedexport-236.csv.tar.gz",
+	})
+
+	return wrapper
 }
 
 // ContainsFact checks if fact is part of the WrapperItem data

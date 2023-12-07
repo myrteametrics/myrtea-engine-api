@@ -16,7 +16,7 @@ func TestExportWorker_SetError(t *testing.T) {
 	worker := NewExportWorker(0, "/tmp", make(chan<- int))
 	worker.SetError(nil)
 	expression.AssertEqual(t, worker.QueueItem.Status, StatusError)
-	expression.AssertEqual(t, worker.QueueItem.Error, nil)
+	expression.AssertEqual(t, worker.QueueItem.Error, "")
 }
 
 func TestExportWorker_SetStatus(t *testing.T) {

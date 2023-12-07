@@ -37,7 +37,7 @@ func (e *ExportWorker) SetError(error error) {
 	e.Mutex.Lock()
 	defer e.Mutex.Unlock()
 	e.QueueItem.Status = StatusError
-	e.QueueItem.Error = error
+	e.QueueItem.Error = error.Error()
 }
 
 // SetStatus sets the status of the worker
@@ -79,7 +79,7 @@ func (e *ExportWorker) finalise() {
 	e.Mutex.Lock()
 
 	// set status to error if error occurred
-	if e.QueueItem.Error != nil {
+	if e.QueueItem.Error != "" {
 		e.QueueItem.Status = StatusError
 	}
 	// set status to done if no error occurred
