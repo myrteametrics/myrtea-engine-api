@@ -40,7 +40,6 @@ func NewHandler(notificationLifetime time.Duration) *Handler {
 		notificationTypes:    make(map[string]Notification),
 		notificationLifetime: notificationLifetime,
 	}
-	handler.RegisterNotificationTypes()
 
 	// useless to start cleaner if lifetime is less than 0
 	if notificationLifetime > 0 {
@@ -62,10 +61,10 @@ func (h *Handler) UnregisterNotificationType(notification Notification) {
 	delete(h.notificationTypes, getType(notification))
 }
 
-// RegisterNotificationTypes register all notification types
-func (h *Handler) RegisterNotificationTypes() {
-	h.RegisterNotificationType(BaseNotification{})
-	h.RegisterNotificationType(ExportNotification{})
+// GetNotificationByType gets notification interface by its type
+func (h *Handler) GetNotificationByType(notificationType string) (notif Notification, ok bool) {
+	notif, ok = h.notificationTypes[notificationType]
+	return notif, ok
 }
 
 // startCleaner start a ticker to clean expired notifications in database every 24 hours

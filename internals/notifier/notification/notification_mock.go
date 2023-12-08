@@ -24,8 +24,9 @@ func NewMockNotification(id int64, level string, title string, subTitle string, 
 
 	return &MockNotification{
 		BaseNotification: BaseNotification{
-			Id:   id,
-			Type: "MockNotification",
+			Id:         id,
+			Type:       "MockNotification",
+			Persistent: true,
 		},
 		CreationDate: creationDate,
 		Groups:       groups,
@@ -110,4 +111,15 @@ func (n MockNotification) Equals(notification Notification) bool {
 func (n MockNotification) SetId(id int64) Notification {
 	n.Id = id
 	return n
+}
+
+// SetPersistent sets whether the notification is persistent (saved to a database)
+func (n MockNotification) SetPersistent(persistent bool) Notification {
+	n.Persistent = persistent
+	return n
+}
+
+// IsPersistent returns whether the notification is persistent (saved to a database)
+func (n MockNotification) IsPersistent() bool {
+	return n.Persistent
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Init initialiaze all the app configuration and components
+// Init initialize all the app configuration and components
 func Init() {
 
 	docs.SwaggerInfo.Host = viper.GetString("SWAGGER_HOST")

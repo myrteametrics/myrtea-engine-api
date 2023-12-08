@@ -3,6 +3,8 @@ package export
 import (
 	"context"
 	"github.com/google/uuid"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
@@ -227,7 +229,6 @@ func (ew *Wrapper) startDispatcher(context context.Context) {
 		select {
 		case w := <-ew.success:
 			worker := ew.workers[w]
-			// TODO: send notifications here
 
 			// archive item when finished
 			worker.Mutex.Lock()
@@ -235,9 +236,17 @@ func (ew *Wrapper) startDispatcher(context context.Context) {
 			item := worker.QueueItem
 			worker.QueueItem = WrapperItem{}
 			worker.Mutex.Unlock()
+
 			// archive item
 			item.Facts = []engine.Fact{} // empty facts to avoid storing them in the archive
 			ew.archive.Store(item.Id, item)
+
+			// send notification to user (non-blocking)
+			go func(wrapperItem WrapperItem) {
+				_ = notifier.C().SendToUserLogins(
+					ew.createExportNotification(ExportNotificationArchived, &wrapperItem),
+					wrapperItem.Users)
+			}(item)
 		case <-ticker.C:
 			ew.dispatchExportQueue(context)
 		case <-expiredFileTicker.C:
@@ -249,6 +258,20 @@ func (ew *Wrapper) startDispatcher(context context.Context) {
 		case <-context.Done():
 			return
 		}
+	}
+}
+
+// createExportNotification creates an export notification using given parameters
+func (ew *Wrapper) createExportNotification(status int, item *WrapperItem) ExportNotification {
+	return ExportNotification{
+		BaseNotification: notification.BaseNotification{
+			Id:         0,
+			IsRead:     false,
+			Type:       "ExportNotification",
+			Persistent: false,
+		},
+		Export: *item,
+		Status: status,
 	}
 }
 
@@ -271,6 +294,14 @@ func (ew *Wrapper) checkForExpiredFiles() error {
 		}
 		if time.Since(data.Date).Hours() > float64(ew.diskRetentionDays*24) {
 			ew.archive.Delete(key)
+
+			// send notification to user (non-blocking)
+			go func(wrapperItem WrapperItem) {
+				_ = notifier.C().SendToUserLogins(
+					ew.createExportNotification(ExportNotificationDeleted, &wrapperItem),
+					wrapperItem.Users)
+			}(data)
+
 		}
 		return true
 	})
@@ -369,26 +400,34 @@ func (ew *Wrapper) dequeueWrapperItem(item *WrapperItem) (int, bool) {
 func (ew *Wrapper) dispatchExportQueue(ctx context.Context) {
 	for _, worker := range ew.workers {
 		worker.Mutex.Lock()
-		if worker.Available {
-			// check if there is an item in the queue
-			ew.queueMutex.Lock()
-
-			if len(ew.queue) == 0 {
-				ew.queueMutex.Unlock()
-				worker.Mutex.Unlock()
-				return // Nothing in queue
-			}
-
-			item := *ew.queue[0]
-			ew.queue = append(ew.queue[:0], ew.queue[1:]...)
-			ew.queueMutex.Unlock()
-
-			worker.Available = false
+		if !worker.Available {
 			worker.Mutex.Unlock()
-			go worker.Start(item, ctx)
-		} else {
-			worker.Mutex.Unlock()
+			continue
 		}
+		// check if there is an item in the queue
+		ew.queueMutex.Lock()
+
+		if len(ew.queue) == 0 {
+			ew.queueMutex.Unlock()
+			worker.Mutex.Unlock()
+			return // Nothing in queue
+		}
+
+		item := *ew.queue[0]
+		ew.queue = append(ew.queue[:0], ew.queue[1:]...)
+		ew.queueMutex.Unlock()
+
+		worker.Available = false
+		worker.Mutex.Unlock()
+		go worker.Start(item, ctx)
+
+		// send notification to user (non-blocking)
+		go func(wrapperItem WrapperItem) {
+			_ = notifier.C().SendToUserLogins(
+				ew.createExportNotification(ExportNotificationStarted, &wrapperItem),
+				wrapperItem.Users)
+		}(item)
+
 	}
 }
 

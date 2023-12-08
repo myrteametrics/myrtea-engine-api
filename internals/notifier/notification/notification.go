@@ -10,6 +10,8 @@ type Notification interface {
 	NewInstance(id int64, data []byte, isRead bool) (Notification, error)
 	Equals(notification Notification) bool
 	SetId(id int64) Notification
+	SetPersistent(persistent bool) Notification
+	IsPersistent() bool
 }
 
 // BaseNotification data structure represents a basic notification and her current state
@@ -18,14 +20,16 @@ type BaseNotification struct {
 	Id           int64  `json:"id"`
 	IsRead       bool   `json:"isRead"`
 	Type         string `json:"type"`
+	Persistent   bool   `json:"persistent"` // is notification saved in db or not ?
 }
 
 // NewBaseNotification returns a new instance of a BaseNotification
-func NewBaseNotification(id int64, isRead bool) BaseNotification {
+func NewBaseNotification(id int64, isRead bool, persistent bool) BaseNotification {
 	return BaseNotification{
-		Id:     id,
-		IsRead: isRead,
-		Type:   "BaseNotification",
+		Id:         id,
+		IsRead:     isRead,
+		Persistent: persistent,
+		Type:       "BaseNotification",
 	}
 }
 
@@ -73,4 +77,15 @@ func (n BaseNotification) Equals(notification Notification) bool {
 func (n BaseNotification) SetId(id int64) Notification {
 	n.Id = id
 	return n
+}
+
+// SetPersistent sets whether the notification is persistent (saved to a database)
+func (n BaseNotification) SetPersistent(persistent bool) Notification {
+	n.Persistent = persistent
+	return n
+}
+
+// IsPersistent returns whether the notification is persistent (saved to a database)
+func (n BaseNotification) IsPersistent() bool {
+	return n.Persistent
 }

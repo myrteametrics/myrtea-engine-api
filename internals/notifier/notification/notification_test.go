@@ -1,8 +1,6 @@
 package notification
 
 import (
-	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
 	"github.com/myrteametrics/myrtea-sdk/v4/expression"
 	"testing"
 	"time"
@@ -57,46 +55,6 @@ func TestBaseNotificationNewInstanceWithInvalidData(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
-}
-
-func TestExportNotification(t *testing.T) {
-	// init handler
-	ReplaceHandlerGlobals(NewHandler(0))
-
-	notification := ExportNotification{
-		Export: export.WrapperItem{
-			Id: uuid.New().String(),
-		},
-		Status: 1,
-	}
-	notification.Id = 1
-	notification.IsRead = false
-
-	bytes, err := notification.ToBytes()
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-
-	if bytes == nil {
-		t.Errorf("Expected bytes, got nil")
-	}
-
-	t.Log(string(bytes))
-
-	// find type and create new instance
-	notifType, ok := H().notificationTypes["ExportNotification"]
-	if !ok {
-		t.Errorf("Notification type does not exist")
-	}
-
-	instance, err := notifType.NewInstance(1, bytes, false)
-	if err != nil {
-		t.Errorf("Notification couldn't be instanced")
-	}
-	bt, _ := instance.ToBytes()
-	t.Log(string(bt))
-
-	expression.AssertEqual(t, string(bytes), string(bt))
 }
 
 func TestBaseNotification_Equals(t *testing.T) {
@@ -253,62 +211,6 @@ func TestMockNotification_Equals(t *testing.T) {
 
 }
 
-func TestExportNotification_Equals(t *testing.T) {
-	id := uuid.New().String()
-	exportNotification := ExportNotification{
-		BaseNotification: BaseNotification{
-			Id:     1,
-			Type:   "Test",
-			IsRead: true,
-		},
-		Export: export.WrapperItem{
-			Id: id,
-		},
-		Status: 1,
-	}
-
-	expression.AssertEqual(t, exportNotification.Equals(ExportNotification{
-		BaseNotification: BaseNotification{
-			Id:     1,
-			Type:   "Test",
-			IsRead: true,
-		},
-		Status: 1,
-		Export: export.WrapperItem{Id: id},
-	}), true)
-
-	expression.AssertEqual(t, exportNotification.Equals(ExportNotification{
-		BaseNotification: BaseNotification{
-			Id:     2,
-			Type:   "Test",
-			IsRead: true,
-		},
-		Status: 1,
-		Export: export.WrapperItem{Id: id},
-	}), false)
-
-	expression.AssertEqual(t, exportNotification.Equals(ExportNotification{
-		BaseNotification: BaseNotification{
-			Id:     1,
-			Type:   "Test",
-			IsRead: true,
-		},
-		Status: 2,
-		Export: export.WrapperItem{Id: id},
-	}), false)
-
-	expression.AssertEqual(t, exportNotification.Equals(ExportNotification{
-		BaseNotification: BaseNotification{
-			Id:     1,
-			Type:   "Test",
-			IsRead: true,
-		},
-		Status: 1,
-		Export: export.WrapperItem{Id: uuid.New().String()},
-	}), false)
-
-}
-
 func TestBaseNotification_SetId(t *testing.T) {
 	notif, err := BaseNotification{}.NewInstance(1, []byte(`{}`), true)
 	if err != nil {
@@ -319,18 +221,6 @@ func TestBaseNotification_SetId(t *testing.T) {
 	baseNotification, ok := notif.(BaseNotification)
 	expression.AssertEqual(t, ok, true)
 	expression.AssertEqual(t, baseNotification.Id, int64(2))
-}
-
-func TestExportNotification_SetId(t *testing.T) {
-	notif, err := ExportNotification{}.NewInstance(1, []byte(`{}`), true)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-
-	notif = notif.SetId(2)
-	exportNotification, ok := notif.(ExportNotification)
-	expression.AssertEqual(t, ok, true)
-	expression.AssertEqual(t, exportNotification.Id, int64(2))
 }
 
 func TestMockNotification_SetId(t *testing.T) {

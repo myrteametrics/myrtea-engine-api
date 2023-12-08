@@ -137,27 +137,48 @@ func (notifier *Notifier) Broadcast(notif notification.Notification) {
 }
 
 // SendToUsers send a notification to users corresponding the input ids
-func (notifier *Notifier) SendToUsers(notif notification.Notification, users []users.UserWithPermissions) {
+func (notifier *Notifier) SendToUsers(notif notification.Notification, users []users.UserWithPermissions) error {
 	if users != nil && len(users) > 0 {
 		for _, user := range users {
-			clients := notifier.findClientsByUserLogin(user.Login)
-			for _, client := range clients {
-				notifier.sendToClient(notif, client)
+			err := notifier.SendToUser(notif, user)
+			if err != nil {
+				return err
 			}
 		}
 	}
+	return nil
+}
+
+// SendToUserLogins send a notification to user logins corresponding the input ids
+func (notifier *Notifier) SendToUserLogins(notif notification.Notification, users []string) error {
+	if users != nil && len(users) > 0 {
+		for _, user := range users {
+			err := notifier.SendToUserLogin(notif, user)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // SendToUser send a notification to a specific user
 func (notifier *Notifier) SendToUser(notif notification.Notification, user users.UserWithPermissions) error {
-	id, err := notification.R().Create(notif, user.Login)
-	if err != nil {
-		zap.L().Error("Add notification to history", zap.Error(err))
-		return err
+	return notifier.SendToUserLogin(notif, user.Login)
+}
+
+// SendToUserLogin send a notification to a specific user using his login
+func (notifier *Notifier) SendToUserLogin(notif notification.Notification, login string) error {
+	if notif.IsPersistent() { // Not all notifications needs notifications to be saved to database
+		id, err := notification.R().Create(notif, login)
+		if err != nil {
+			zap.L().Error("Add notification to history", zap.Error(err))
+			return err
+		}
+		notif = notif.SetId(id)
 	}
 
-	notif = notif.SetId(id)
-	clients := notifier.findClientsByUserLogin(user.Login)
+	clients := notifier.findClientsByUserLogin(login)
 	for _, client := range clients {
 		notifier.sendToClient(notif, client)
 	}
