@@ -584,3 +584,42 @@ func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 
 	render.JSON(w, r, instancesSlice)
 }
+
+// GetSituationTemplateInstancesUnprotected godoc
+// @Summary Get the list of situation template instances
+// @Description Get the list of situation template instances
+// @Tags Situations
+// @Produce json
+// @Param id path string true "Situation ID"
+// @Security Bearer
+// @Success 200 {array} situation.TemplateInstance
+// @Failure 400 "Status Bad Request"
+// @Failure 401 "Status Unauthorized"
+// @Router /engine/situations/{id}/instances/unprotected [get]
+func GetSituationTemplateInstancesUnprotected(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	idSituation, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error on parsing situation id", zap.String("situationID", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	instances, err := situation.R().GetAllTemplateInstances(idSituation)
+	if err != nil {
+		zap.L().Error("Error on getting situation template instances", zap.String("situationID", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	instancesSlice := make([]situation.TemplateInstance, 0)
+	for _, instance := range instances {
+		instancesSlice = append(instancesSlice, instance)
+	}
+
+	sort.SliceStable(instancesSlice, func(i, j int) bool {
+		return instancesSlice[i].ID < instancesSlice[j].ID
+	})
+
+	render.JSON(w, r, instancesSlice)
+}
