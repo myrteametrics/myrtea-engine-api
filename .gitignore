@@ -36,6 +36,6 @@ Gopkg.toml
 version
 
 #plugins
-/plugins/*.plugins
+/plugin/*.plugin
 
 /certs
