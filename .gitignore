@@ -35,4 +35,7 @@ Gopkg.toml
 # Version file (used in CI)
 version
 
+#plugins
+/plugins/*.plugins
+
 /certs
