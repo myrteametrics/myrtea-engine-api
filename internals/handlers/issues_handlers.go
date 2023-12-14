@@ -52,6 +52,79 @@ func GetIssues(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, issueList)
 }
 
+// GetIssuesByStatesByPageUnProtected godoc
+// @Summary Get issues by issues states (paginated)
+// @Description Get issues by issues states (paginated)
+// @Tags Issues
+// @Produce json
+// @Param states query string true "Issue states (comma separated) (Available: open, draft, closedfeedback, closednofeedback, closedtimeout)"
+// @Param limit query string false "Result limit (default: 50)"
+// @Param offset query string false "Result offset (default: 0)"
+// @Param sort_by query string false "Result offset (example: 'sort_by=desc(last_modified),asc(id)')"
+// @Security Bearer
+// @Success 200 "Status OK"
+// @Failure 500 "internal server error"
+// @Router /engine/issues/unprotected [get]
+func GetIssuesByStatesByPageUnProtected(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	var limit int
+	var offset int
+	var sortOptions = make([]models.SortOption, 0)
+
+	states := strings.Split(r.URL.Query().Get("states"), ",")
+
+	if rawSize := r.URL.Query().Get("limit"); rawSize != "" {
+		limit, err = ParseInt(rawSize)
+		if err != nil {
+			zap.L().Warn("Parse input limit", zap.Error(err), zap.String("rawNhit", rawSize))
+			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			return
+		}
+	}
+
+	if rawOffset := r.URL.Query().Get("offset"); rawOffset != "" {
+		offset, err = ParseInt(rawOffset)
+		if err != nil {
+			zap.L().Warn("Parse input offset", zap.Error(err), zap.String("raw offset", rawOffset))
+			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			return
+		}
+	}
+
+	if rawSortBy := r.URL.Query().Get("sort_by"); rawSortBy != "" {
+		sortOptions, err = ParseSortBy(rawSortBy, allowedSortByFields)
+		if err != nil {
+			zap.L().Warn("Parse input sort_by", zap.Error(err), zap.String("raw sort_by", rawSortBy))
+			render.Error(w, r, render.ErrAPIParsingSortBy, err)
+			return
+		}
+	}
+
+	searchOptions := models.SearchOptions{
+		Limit:  limit,
+		Offset: offset,
+		SortBy: sortOptions,
+	}
+
+	var issuesSlice []models.Issue
+	var total int
+	issuesSlice, total, err = issues.R().GetByStateByPage(states, searchOptions)
+
+	if err != nil {
+		zap.L().Error("Error on getting issues", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	paginatedResource := models.PaginatedResource{
+		Total: total,
+		Items: issuesSlice,
+	}
+
+	render.JSON(w, r, paginatedResource)
+}
+
 // GetIssuesByStatesByPage godoc
 // @Summary Get issues by issues states (paginated)
 // @Description Get issues by issues states (paginated)
