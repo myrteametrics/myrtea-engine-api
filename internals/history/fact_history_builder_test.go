@@ -47,6 +47,9 @@ func initialiseDB() (*sqlx.DB, error) {
 	return db, nil
 }
 func TestGetByCriteria(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 
 	// Initiate DB connection
 	db, err := initialiseDB()
@@ -66,6 +69,10 @@ func TestGetByCriteria(t *testing.T) {
 		FactID:              10000000,
 		SituationID:         10000000,
 		SituationInstanceID: 10000000,
+	}
+
+	if err := param.IsValid(); err != nil {
+		t.Fatalf("Invalid parameter")
 	}
 
 	value := 44
@@ -113,6 +120,9 @@ func TestGetByCriteria(t *testing.T) {
 }
 
 func TestGetTodaysFactResultByParameters(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	builder := HistoryFactsBuilder{}
 
 	param := ParamGetFactHistory{
@@ -144,5 +154,91 @@ func TestGetTodaysFactResultByParameters(t *testing.T) {
 
 	if !reflect.DeepEqual(expectedArgs, args) {
 		t.Errorf("Expected args to be %v, but got %v", expectedArgs, args)
+	}
+}
+
+func TestGetByDateCriteria(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
+
+	// Initiate DB connection
+	db, err := initialiseDB()
+
+	if err != nil {
+		t.Fatalf("Error initializing DB: %s", err)
+	}
+
+	defer db.Close()
+
+	querier := HistoryFactsQuerier{
+		Builder: HistoryFactsBuilder{},
+		conn:    db,
+	}
+
+	endDate := time.Now().Add(48 * time.Hour).Format("2006-01-02 15:04:05")
+	param := ParamGetFactHistoryByDate{
+		ParamGetFactHistory: ParamGetFactHistory{
+			FactID:              100000000,
+			SituationID:         100000000,
+			SituationInstanceID: 100000000,
+		},
+		StartDate: "2023-01-01 00:00:00",
+		EndDate:   endDate,
+	}
+
+	if err := param.IsValid(); err != nil {
+		t.Fatalf("Invalid parameter")
+	}
+
+	value := 44
+	historyItem := HistoryFactsV4{
+		FactID:              param.FactID,
+		SituationID:         param.SituationID,
+		SituationInstanceID: param.SituationInstanceID,
+		Ts:                  time.Now(),
+		Result: reader.Item{
+			Aggs: map[string]*reader.ItemAgg{
+				"count": {
+					Value: value,
+				},
+			},
+		},
+	}
+
+	insertedID, err := querier.Insert(historyItem)
+	if err != nil {
+		t.Fatalf("Error inserting: %s", err)
+	}
+	if insertedID <= 0 {
+		t.Fatalf("Invalid ID returned after insert")
+	}
+
+	defer func() {
+		err := querier.Delete(insertedID)
+		if err != nil {
+			t.Fatalf("Error cleaning up: %s", err)
+		}
+	}()
+
+	results, err := querier.GetFactResultByDate(param)
+	if err != nil {
+		t.Fatalf("Error retrieving: %s", err)
+	}
+
+	if len(results.Results) == 0 {
+		t.Fatalf("Expected at least 1 result but got %d and resulat : %v ", len(results.Results), results)
+	}
+
+	find := false
+	for _, result := range results.Results {
+		if result.Value == int64(value) {
+			find = true
+			break
+		}
+	}
+
+	if !find {
+		t.Fatalf("Retrieved ID does not match inserted ID ")
 	}
 }

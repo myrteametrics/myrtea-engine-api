@@ -162,6 +162,7 @@ func engineRouter() http.Handler {
 	r.Get("/search/last/bycustominterval", handlers.SearchLastByCustomInterval)
 
 	r.Post("/history/facts/today/result", handlers.GetFactResultForTodayByCriteria)
+	r.Post("/history/facts/date/result", handlers.GetFactResultByDateCriteria)
 
 	r.Get("/calendars", handlers.GetCalendars)
 	r.Get("/calendars/{id}", handlers.GetCalendar)
@@ -174,6 +175,13 @@ func engineRouter() http.Handler {
 	r.Get("/connector/{id}/executions/last", handlers.GetlastConnectorExecutionDateTime)
 
 	r.Get("/facts/{id}/export", handlers.ExportFact)
+
+	r.Get("/variablesconfig", handlers.GetVariablesConfig)
+	r.Get("/variablesconfig/{id}", handlers.GetVariableConfig)
+	r.Get("/variablesconfig/key/{key}", handlers.GetVariableConfigByKey)
+	r.Post("/variablesconfig", handlers.PostVariableConfig)
+	r.Put("/variablesconfig/{id}", handlers.PutVariableConfig)
+	r.Delete("/variablesconfig/{id}", handlers.DeleteVariableConfig)
 
 	return r
 }

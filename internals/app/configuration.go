@@ -1,6 +1,10 @@
 package app
 
-import "github.com/myrteametrics/myrtea-sdk/v4/helpers"
+import (
+	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
+)
 
 // ConfigPath is the toml configuration file path
 var ConfigPath = "config"
@@ -55,4 +59,19 @@ var AllowedConfigKey = [][]helpers.ConfigKey{
 
 func InitConfiguration() {
 	helpers.InitializeConfig(AllowedConfigKey, ConfigName, ConfigPath, EnvPrefix)
+
+	// Custom plugins config
+	v := viper.New()
+	v.SetConfigName("plugins")
+	v.AddConfigPath("config")
+	err := v.ReadInConfig()
+	if err != nil {
+		zap.L().Warn("No plugins configuration found", zap.Error(err))
+		return
+	}
+	err = viper.MergeConfigMap(v.AllSettings())
+	if err != nil {
+		zap.L().Warn("No plugins configuration found", zap.Error(err))
+	}
+
 }

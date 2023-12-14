@@ -21,13 +21,14 @@ import (
 )
 
 const (
-	ExpectedStateErr  = "Error to generate a random State for OIDC Authentification"
-	InvalidStateErr   = "OIDC authentication invalid state"
-	TokenExchangeErr  = "OIDC authentication Failed to exchange token"
-	NoIDTokenErr      = "OIDC authentication No ID token found"
-	IDTokenVerifyErr  = "OIDC authentication Failed to verify ID token"
-	TokenName         = "token"
-	AllowedCookiePath = "/"
+	ExpectedStateErr     = "Error to generate a random State for OIDC Authentification"
+	InvalidStateErr      = "OIDC authentication invalid state"
+	TokenExchangeErr     = "OIDC authentication Failed to exchange token"
+	NoIDTokenErr         = "OIDC authentication No ID token found"
+	IDTokenVerifyErr     = "OIDC authentication Failed to verify ID token"
+	TokenName            = "token"
+	AllowedCookiePath    = "/"
+	parseGlobalVariables = false
 )
 
 func QueryParamToOptionalInt(r *http.Request, name string, orDefault int) (int, error) {

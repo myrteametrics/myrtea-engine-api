@@ -39,3 +39,7 @@ version
 /plugin/*.plugin
 
 /certs
+
+plugin/*.plugin
+
+golangci-lint.exe

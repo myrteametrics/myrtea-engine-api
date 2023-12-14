@@ -31,6 +31,9 @@ func initGlobalEmptyRepository() {
 }
 
 func TestGetFacts(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	initGlobalRepository()
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "*", permissions.ActionList), permissions.New(permissions.TypeFact, "*", permissions.ActionGet)}}
 	rr := tests.BuildTestHandler(t, "GET", "/facts", ``, "/facts", GetFacts, user)
@@ -41,6 +44,9 @@ func TestGetFacts(t *testing.T) {
 }
 
 func TestGetFactsEmpty(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	initGlobalEmptyRepository()
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "*", permissions.ActionList), permissions.New(permissions.TypeFact, "*", permissions.ActionGet)}}
 	rr := tests.BuildTestHandler(t, "GET", "/facts", ``, "/facts", GetFacts, user)
@@ -48,6 +54,9 @@ func TestGetFactsEmpty(t *testing.T) {
 }
 
 func TestGetFact(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	initGlobalRepository()
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "1", permissions.ActionGet)}}
 	rr := tests.BuildTestHandler(t, "GET", "/facts/1", ``, "/facts/{id}", GetFact, user)
@@ -62,6 +71,9 @@ func TestGetFact(t *testing.T) {
 // }
 
 func TestGetFactInvalidID(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	initGlobalRepository()
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "*", permissions.ActionGet)}}
 	rr := tests.BuildTestHandler(t, "GET", "/fact/not_an_id", ``, "/fact/{id}", GetFact, user)
@@ -69,6 +81,9 @@ func TestGetFactInvalidID(t *testing.T) {
 }
 
 func TestGetFactNotExistingID(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	initGlobalRepository()
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "*", permissions.ActionGet)}}
 	rr := tests.BuildTestHandler(t, "GET", "/fact/999", ``, "/fact/{id}", GetFact, user)
@@ -83,6 +98,9 @@ func TestGetFactNotExistingID(t *testing.T) {
 // }
 
 func TestPostFact(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	initGlobalRepository()
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "*", permissions.ActionCreate)}}
 	rr := tests.BuildTestHandler(t, "POST", "/fact", `{"name":"test3","model":"newmodel","intent":{"operator":"count","term":"myterm"}}`, "/fact", PostFact, user)
@@ -99,6 +117,9 @@ func TestPostFact(t *testing.T) {
 }
 
 func TestPutFact(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	initGlobalRepository()
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "1", permissions.ActionUpdate)}}
 	rr := tests.BuildTestHandler(t, "PUT", "/fact/1", `{"name":"test1","model":"newmodel","intent":{"operator":"count","term":"myterm"}}`, "/fact/{id}", PutFact, user)
@@ -119,6 +140,9 @@ func TestPutFact(t *testing.T) {
 }
 
 func TestPutFactInvalidBody(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	initGlobalRepository()
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "1", permissions.ActionUpdate)}}
 	rr := tests.BuildTestHandler(t, "PUT", "/fact/1", `Not a json string`, "/fact/{id}", PutFact, user)
@@ -140,6 +164,9 @@ func TestPutFactInvalidBody(t *testing.T) {
 }
 
 func TestDeleteFact(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	initGlobalRepository()
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "1", permissions.ActionDelete)}}
 	rr := tests.BuildTestHandler(t, "DELETE", "/fact/1", ``, "/fact/{id}", DeleteFact, user)
@@ -159,6 +186,9 @@ func TestDeleteFact(t *testing.T) {
 }
 
 func TestDeleteFactInvalidID(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping DB test in short mode")
+	}
 	initGlobalRepository()
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "1", permissions.ActionDelete)}}
 	rr := tests.BuildTestHandler(t, "DELETE", "/fact/not_an_id", ``, "/fact/{id}", DeleteFact, user)

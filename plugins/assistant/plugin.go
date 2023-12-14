@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
 	"os"
 	"os/exec"
 	"sync"
@@ -47,21 +48,20 @@ var Handshake = plugin.HandshakeConfig{
 	MagicCookieValue: "hello",
 }
 
-var pluginServicePort = 9081
-var pluginName string = "assistant"
-
 type AssistantPlugin struct {
-	Name         string
+	Config       pluginutils.PluginConfig
 	ClientConfig *plugin.ClientConfig
 	Client       *plugin.Client
 	Assistant    Assistant
 }
 
-func NewAssistantPlugin() *AssistantPlugin {
-	pluginPath := fmt.Sprintf("plugin/myrtea-%s.plugin", pluginName)
+func NewAssistantPlugin(config pluginutils.PluginConfig) *AssistantPlugin {
+	pluginPath := fmt.Sprintf("plugin/myrtea-%s.plugin", config.Name)
 
 	stat, err := os.Stat(pluginPath)
 	if os.IsNotExist(err) || stat.IsDir() {
+		zap.L().Warn("Couldn't find plugin binaries", zap.String("pluginName", "assistant"),
+			zap.String("pluginPath", pluginPath))
 		return nil
 	}
 
@@ -70,11 +70,11 @@ func NewAssistantPlugin() *AssistantPlugin {
 	// cmd.Env = append(cmd.Env, "MYRTEA_ASSISTANT_DEBUG_MODE=true")
 
 	pluginMap := map[string]plugin.Plugin{
-		pluginName: &AssistantGRPCPlugin{},
+		config.Name: &AssistantGRPCPlugin{},
 	}
 
 	return &AssistantPlugin{
-		Name: pluginName,
+		Config: config,
 		ClientConfig: &plugin.ClientConfig{
 			HandshakeConfig:  Handshake,
 			Plugins:          pluginMap,
@@ -85,11 +85,11 @@ func NewAssistantPlugin() *AssistantPlugin {
 }
 
 func (p *AssistantPlugin) HandlerPrefix() string {
-	return fmt.Sprintf("/%s", p.Name)
+	return fmt.Sprintf("/%s", p.Config.Name)
 }
 
 func (p *AssistantPlugin) ServicePort() int {
-	return pluginServicePort
+	return p.Config.Port
 }
 
 func (p *AssistantPlugin) Stop() error {
@@ -103,13 +103,13 @@ func (p *AssistantPlugin) Start() error {
 
 	rpcClient, err := client.Client()
 	if err != nil {
-		zap.L().Error("Initialize rpc client", zap.String("module", pluginName), zap.Error(err))
+		zap.L().Error("Initialize rpc client", zap.String("module", p.Config.Name), zap.Error(err))
 		return err
 	}
 
-	raw, err := rpcClient.Dispense(pluginName)
+	raw, err := rpcClient.Dispense(p.Config.Name)
 	if err != nil {
-		zap.L().Error("Dispense plugin", zap.String("module", pluginName), zap.Error(err))
+		zap.L().Error("Dispense plugin", zap.String("module", p.Config.Name), zap.Error(err))
 		return err
 	}
 

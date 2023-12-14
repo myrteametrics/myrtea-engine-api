@@ -530,13 +530,13 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 
 	if f.Dimensions != nil {
 		zap.L().Warn("Fact does have dimensions", zap.String("factid", id))
-		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("Service not supported on fact with dimensions"))
+		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("service not supported on fact with dimensions"))
 		return
 	}
 
 	if f.IsObject {
 		zap.L().Warn("Fact is an object fact", zap.String("factid", id))
-		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("Service not supported on fact object"))
+		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("service not supported on fact object"))
 		return
 	}
 
@@ -560,7 +560,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		situationn, found, err := situation.R().Get(idSituation)
+		situationn, found, err := situation.R().Get(idSituation, parseGlobalVariables)
 		if err != nil {
 			zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -701,7 +701,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 
 	parameters := make(map[string]string)
 	if situationid != 0 {
-		s, found, err := situation.R().Get(int64(situationid))
+		s, found, err := situation.R().Get(int64(situationid), parseGlobalVariables)
 		if err != nil {
 			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 			return
