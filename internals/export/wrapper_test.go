@@ -9,6 +9,7 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v4/expression"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -36,7 +37,7 @@ func TestNewWrapperItem(t *testing.T) {
 	expression.AssertEqual(t, factsEquals(item.Facts, []engine.Fact{{ID: 1}}), true)
 	expression.AssertEqual(t, item.Params.Equals(CSVParameters{}), true)
 	expression.AssertEqual(t, item.Status, StatusPending)
-	expression.AssertEqual(t, item.FileName, "test.txt")
+	expression.AssertEqual(t, strings.HasSuffix(item.FileName, "test.txt.gz"), true, "test.txt.gz")
 	expression.AssertNotEqual(t, len(item.Users), 0)
 	expression.AssertEqual(t, item.Users[0], "test")
 }

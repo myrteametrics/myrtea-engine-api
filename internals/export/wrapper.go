@@ -5,11 +5,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -26,6 +28,8 @@ const (
 	StatusDone     = 2
 	StatusError    = 3
 	StatusCanceled = 4
+
+	randCharSet = "abcdefghijklmnopqrstuvwxyz0123456789"
 )
 
 // WrapperItem represents an export demand
@@ -70,6 +74,15 @@ func NewWrapperItem(facts []engine.Fact, fileName string, params CSVParameters, 
 	for _, fact := range facts {
 		factIDs = append(factIDs, fact.ID)
 	}
+
+	// file extension should be gz
+	if !strings.HasSuffix(fileName, ".gz") {
+		fileName += ".gz"
+	}
+
+	// add random string to avoid multiple files with same name
+	fileName = security.RandStringWithCharset(5, randCharSet) + "_" + fileName
+
 	return &WrapperItem{
 		Users:    append([]string{}, user.Login),
 		Id:       uuid.New().String(),
@@ -96,51 +109,51 @@ func NewWrapper(basePath string, workersCount, diskRetentionDays, queueMaxSize i
 		workerCount:       workersCount,
 	}
 
-	wrapper.archive.Store("c7f0044b-29f7-4c26-ab56-04e109683637", WrapperItem{
-		Users:    []string{"admin"},
-		Date:     time.Now(),
-		Status:   StatusPending,
-		Id:       "c7f0044b-29f7-4c26-ab56-04e109683637",
-		FactIDs:  []int64{1, 2, 3},
-		FileName: "export.csv.tar.gz",
-	})
-
-	wrapper.archive.Store("736ba596-7399-422e-b241-1407581cf454", WrapperItem{
-		Users:    []string{"admin"},
-		Date:     time.Now(),
-		Status:   StatusRunning,
-		Id:       "736ba596-7399-422e-b241-1407581cf454",
-		FactIDs:  []int64{3, 6},
-		FileName: "export-23.csv.tar.gz",
-	})
-
-	wrapper.archive.Store("5ea87155-7ea5-4152-aec5-386871dbfe1c", WrapperItem{
-		Users:    []string{"admin"},
-		Date:     time.Now().AddDate(0, 0, -3),
-		Status:   StatusDone,
-		Id:       "5ea87155-7ea5-4152-aec5-386871dbfe1c",
-		FactIDs:  []int64{2, 3, 6},
-		FileName: "exportee-236.csv.tar.gz",
-	})
-
-	wrapper.archive.Store("9fb91d1f-5b9c-4856-8be4-436831d2596e", WrapperItem{
-		Users:    []string{"admin"},
-		Date:     time.Now().AddDate(0, 0, -1),
-		Status:   StatusError,
-		Id:       "9fb91d1f-5b9c-4856-8be4-436831d2596e",
-		FactIDs:  []int64{22, 23, 6},
-		FileName: "exporteeqsdqsd-236.csv.tar.gz",
-		Error:    "error while exporting",
-	})
-
-	wrapper.archive.Store("d0502ac6-8d99-4532-a278-e3e7bd1c887b", WrapperItem{
-		Users:    []string{"admin"},
-		Date:     time.Now(),
-		Status:   StatusDone,
-		Id:       "d0502ac6-8d99-4532-a278-e3e7bd1c887b",
-		FactIDs:  []int64{1, 23, 26},
-		FileName: "finisedexport-236.csv.tar.gz",
-	})
+	//wrapper.archive.Store("c7f0044b-29f7-4c26-ab56-04e109683637", WrapperItem{
+	//	Users:    []string{"admin"},
+	//	Date:     time.Now(),
+	//	Status:   StatusPending,
+	//	Id:       "c7f0044b-29f7-4c26-ab56-04e109683637",
+	//	FactIDs:  []int64{1, 2, 3},
+	//	FileName: "export.csv.gz",
+	//})
+	//
+	//wrapper.archive.Store("736ba596-7399-422e-b241-1407581cf454", WrapperItem{
+	//	Users:    []string{"admin"},
+	//	Date:     time.Now(),
+	//	Status:   StatusRunning,
+	//	Id:       "736ba596-7399-422e-b241-1407581cf454",
+	//	FactIDs:  []int64{3, 6},
+	//	FileName: "export-23.csv.gz",
+	//})
+	//
+	//wrapper.archive.Store("5ea87155-7ea5-4152-aec5-386871dbfe1c", WrapperItem{
+	//	Users:    []string{"admin"},
+	//	Date:     time.Now().AddDate(0, 0, -3),
+	//	Status:   StatusDone,
+	//	Id:       "5ea87155-7ea5-4152-aec5-386871dbfe1c",
+	//	FactIDs:  []int64{2, 3, 6},
+	//	FileName: "exportee-236.csv.gz",
+	//})
+	//
+	//wrapper.archive.Store("9fb91d1f-5b9c-4856-8be4-436831d2596e", WrapperItem{
+	//	Users:    []string{"admin"},
+	//	Date:     time.Now().AddDate(0, 0, -1),
+	//	Status:   StatusError,
+	//	Id:       "9fb91d1f-5b9c-4856-8be4-436831d2596e",
+	//	FactIDs:  []int64{22, 23, 6},
+	//	FileName: "exporteeqsdqsd-236.csv.gz",
+	//	Error:    "error while exporting",
+	//})
+	//
+	//wrapper.archive.Store("d0502ac6-8d99-4532-a278-e3e7bd1c887b", WrapperItem{
+	//	Users:    []string{"admin"},
+	//	Date:     time.Now(),
+	//	Status:   StatusDone,
+	//	Id:       "d0502ac6-8d99-4532-a278-e3e7bd1c887b",
+	//	FactIDs:  []int64{1, 23, 26},
+	//	FileName: "finisedexport-236.csv.gz",
+	//})
 
 	return wrapper
 }
@@ -161,6 +174,26 @@ func (ew *Wrapper) Init(ctx context.Context) {
 	for i := 0; i < ew.workerCount; i++ {
 		ew.workers = append(ew.workers, NewExportWorker(i, ew.basePath, ew.success))
 	}
+
+	// check if destination folder exists
+	_, err := os.Stat(ew.basePath)
+	if err != nil {
+
+		if os.IsNotExist(err) {
+			zap.L().Info("The export directory not exists, trying to create...", zap.String("EXPORT_BASE_PATH", ew.basePath))
+
+			if err := os.MkdirAll(ew.basePath, os.ModePerm); err != nil {
+				zap.L().Fatal("Couldn't create export directory", zap.String("EXPORT_BASE_PATH", ew.basePath), zap.Error(err))
+			} else {
+				zap.L().Info("The export directory has been successfully created.")
+			}
+
+		} else {
+			zap.L().Fatal("Couldn't access to export directory", zap.String("EXPORT_BASE_PATH", ew.basePath), zap.Error(err))
+		}
+
+	}
+
 	go ew.startDispatcher(ctx)
 }
 
@@ -419,14 +452,8 @@ func (ew *Wrapper) dispatchExportQueue(ctx context.Context) {
 
 		worker.Available = false
 		worker.Mutex.Unlock()
-		go worker.Start(item, ctx)
 
-		// send notification to user (non-blocking)
-		go func(wrapperItem WrapperItem) {
-			_ = notifier.C().SendToUserLogins(
-				ew.createExportNotification(ExportNotificationStarted, &wrapperItem),
-				wrapperItem.Users)
-		}(item)
+		go worker.Start(item, ctx)
 
 	}
 }

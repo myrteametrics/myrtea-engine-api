@@ -2,7 +2,7 @@ package export
 
 type CSVParameters struct {
 	Columns   []Column `json:"columns"`
-	Separator rune     `json:"separator" default:","`
+	Separator string   `json:"separator"`
 	Limit     int64    `json:"limit"`
 }
 

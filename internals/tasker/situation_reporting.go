@@ -214,7 +214,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 			return err
 		}
 
-		csvAttachment, err := export.ConvertHitsToCSV(fullHits, export.CSVParameters{Columns: task.Columns, Separator: task.Separator}, true)
+		csvAttachment, err := export.ConvertHitsToCSV(fullHits, export.CSVParameters{Columns: task.Columns, Separator: string(task.Separator)}, true)
 		if err != nil {
 			return err
 		}

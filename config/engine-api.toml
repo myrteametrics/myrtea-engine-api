@@ -235,3 +235,19 @@ AUTHENTICATION_OIDC_ENCRYPTION_KEY = "thisis24characterslongs."
 
 # NOTIFICATION_LIFETIME: The lifetime of a notification in the database.
 NOTIFICATION_LIFETIME = "168h" # 168h = 7 days, available units are "ns", "us" (or "µs"), "ms", "s", "m", "h"
+
+# Path to directory where the resulting export files will be stored.
+# Default: exports/
+EXPORT_BASE_PATH = "exports/"
+
+# Number of days before one export file will be auto deleted
+# Default: 4
+EXPORT_DISK_RETENTION_DAYS = 4
+
+# Export queue max size, any export request that is made when queue is full will be refused.
+# Default value: 30
+EXPORT_QUEUE_MAX_SIZE = 30
+
+# Number of concurrent export workers
+# Default value: 4
+EXPORT_WORKERS_COUNT = 4

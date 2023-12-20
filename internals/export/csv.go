@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
 	"go.uber.org/zap"
@@ -13,7 +14,14 @@ import (
 
 // WriteConvertHitsToCSV writes hits to CSV
 func WriteConvertHitsToCSV(w *csv.Writer, hits []reader.Hit, params CSVParameters, writeHeader bool) error {
-	w.Comma = params.Separator
+	if len(params.Separator) == 1 {
+		w.Comma, _ = utf8.DecodeRune([]byte(params.Separator))
+		if w.Comma == utf8.RuneError {
+			w.Comma = ','
+		}
+	} else {
+		w.Comma = ','
+	}
 
 	// avoid to print header when labels are empty
 	if writeHeader && len(params.Columns) > 0 {

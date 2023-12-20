@@ -35,8 +35,11 @@ Gopkg.toml
 # Version file (used in CI)
 version
 
-/certs
-
+# Myrtea Plugins
 plugin/*.plugin
 
+# Exports directory (for local testing)
+exports/
+
+# GoLang Linter executable
 golangci-lint.exe

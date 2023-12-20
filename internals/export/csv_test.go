@@ -23,7 +23,7 @@ func TestConvertHitsToCSV(t *testing.T) {
 			{Name: "d.e", Label: "Label D.E", Format: ""},
 			{Name: "date", Label: "Date", Format: "02/01/2006"},
 		},
-		Separator: ',',
+		Separator: ",",
 	}
 	csv, err := ConvertHitsToCSV(hits, params, true)
 	if err != nil {
@@ -48,7 +48,7 @@ func TestWriteConvertHitsToCSV(t *testing.T) {
 			{Name: "d.e", Label: "Label D.E", Format: ""},
 			{Name: "date", Label: "Date", Format: "02/01/2006"},
 		},
-		Separator: ',',
+		Separator: ",",
 	}
 	b := new(bytes.Buffer)
 	w := csv2.NewWriter(b)

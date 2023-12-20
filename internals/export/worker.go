@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
 	"go.uber.org/zap"
 	"os"
 	"path/filepath"
@@ -99,10 +101,27 @@ func (e *ExportWorker) finalise() {
 // It handles one queueItem at a time and when finished it stops the goroutine
 func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 	defer e.finalise()
+	item.Status = StatusRunning
+
 	e.Mutex.Lock()
 	e.QueueItem = item
-	e.QueueItem.Status = StatusRunning
 	e.Mutex.Unlock()
+
+	// send notification to user (non-blocking)
+	go func(wrapperItem WrapperItem) {
+		_ = notifier.C().SendToUserLogins(
+			ExportNotification{
+				BaseNotification: notification.BaseNotification{
+					Id:         0,
+					IsRead:     false,
+					Type:       "ExportNotification",
+					Persistent: false,
+				},
+				Export: wrapperItem,
+				Status: ExportNotificationStarted,
+			},
+			wrapperItem.Users)
+	}(item)
 
 	// create file
 	path := filepath.Join(e.BasePath, item.FileName)
