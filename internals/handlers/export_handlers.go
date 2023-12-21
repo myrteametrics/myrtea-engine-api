@@ -299,6 +299,12 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(request.Title) == 0 {
+		zap.L().Warn("Missing title (len is 0) in export request")
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing title (len is 0)"))
+		return
+	}
+
 	facts := findCombineFacts(request.FactIDs)
 	if len(facts) == 0 {
 		zap.L().Warn("No fact was found in export request")

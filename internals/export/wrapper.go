@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -21,11 +22,12 @@ const (
 	CodeQueueFull  = -2
 
 	// WrapperItem statuses
-	StatusPending  = 0
-	StatusRunning  = 1
-	StatusDone     = 2
-	StatusError    = 3
-	StatusCanceled = 4
+	StatusPending   = 0
+	StatusRunning   = 1
+	StatusDone      = 2
+	StatusError     = 3
+	StatusCanceled  = 4
+	StatusCanceling = 5
 
 	randCharSet = "abcdefghijklmnopqrstuvwxyz0123456789"
 )
@@ -76,7 +78,8 @@ func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, use
 
 	// file extension should be gz
 	// add random string to avoid multiple files with same name
-	fileName := security.RandStringWithCharset(5, randCharSet) + "_" + title + ".csv.gz"
+	fileName := security.RandStringWithCharset(5, randCharSet) + "_" +
+		strings.ReplaceAll(title, " ", "_") + ".csv.gz"
 
 	return &WrapperItem{
 		Users:    append([]string{}, user.Login),
@@ -219,7 +222,7 @@ func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParam
 	defer ew.queueMutex.Unlock()
 
 	for _, queueItem := range ew.queue {
-		if !factsEquals(queueItem.Facts, facts) || !queueItem.Params.Equals(params) {
+		if !factsEquals(queueItem.Facts, facts) || !queueItem.Params.Equals(params) || queueItem.Title != title {
 			continue
 		}
 
@@ -536,6 +539,12 @@ func (ew *Wrapper) DeleteExport(id string, user users.User) bool {
 			continue
 		}
 
+		// worker found but already canceling
+		if worker.QueueItem.Status == StatusCanceling {
+			worker.Mutex.Unlock()
+			return false
+		}
+
 		// remove user from item
 		if len(worker.QueueItem.Users) == 1 {
 			// cancel worker by sending a message on the cancel channel
@@ -545,6 +554,7 @@ func (ew *Wrapper) DeleteExport(id string, user users.User) bool {
 			case worker.Cancel <- true:
 			default:
 			}
+			worker.QueueItem.Status = StatusCanceling
 			worker.Mutex.Unlock()
 			return true
 		}
@@ -552,6 +562,7 @@ func (ew *Wrapper) DeleteExport(id string, user users.User) bool {
 		for i, u := range worker.QueueItem.Users {
 			if u == user.Login {
 				worker.QueueItem.Users = append(worker.QueueItem.Users[:i], worker.QueueItem.Users[i+1:]...)
+				// TODO: send message? or change return to say that user was deleted.
 				break
 			}
 		}
