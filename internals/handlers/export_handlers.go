@@ -29,8 +29,8 @@ func NewExportHandler(exportWrapper *export.Wrapper) *ExportHandler {
 // ExportRequest represents a request for an export
 type ExportRequest struct {
 	export.CSVParameters
-	FactIDs  []int64 `json:"factIDs"`
-	FileName string  `json:"fileName"`
+	FactIDs []int64 `json:"factIDs"`
+	Title   string  `json:"title"`
 }
 
 // ExportFactStreamed godoc
@@ -77,7 +77,7 @@ func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 	w.Header().Set("Connection", "Keep-Alive")
 	w.Header().Set("Transfer-Encoding", "chunked")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(request.FileName))
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(request.Title+".csv"))
 	w.Header().Set("Content-Type", "application/octet-stream")
 
 	facts := findCombineFacts(request.FactIDs)
@@ -306,7 +306,7 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, status := e.exportWrapper.AddToQueue(facts, request.FileName, request.CSVParameters, userCtx.User)
+	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User)
 
 	switch status {
 	case export.CodeAdded:

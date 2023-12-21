@@ -1,5 +1,7 @@
 package export
 
+import "github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
+
 type CSVParameters struct {
 	Columns   []Column `json:"columns"`
 	Separator string   `json:"separator"`
@@ -49,4 +51,18 @@ func (p CSVParameters) GetColumnsLabel() []string {
 		columns = append(columns, column.Label)
 	}
 	return columns
+}
+
+// createExportNotification creates an export notification using given parameters
+func createExportNotification(status int, item *WrapperItem) ExportNotification {
+	return ExportNotification{
+		BaseNotification: notification.BaseNotification{
+			Id:         0,
+			IsRead:     false,
+			Type:       "ExportNotification",
+			Persistent: false,
+		},
+		Export: *item,
+		Status: status,
+	}
 }

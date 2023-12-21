@@ -4,14 +4,12 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 )
@@ -40,6 +38,7 @@ type WrapperItem struct {
 	Error    string        `json:"error"`
 	Status   int           `json:"status"`
 	FileName string        `json:"fileName"`
+	Title    string        `json:"title"`
 	Date     time.Time     `json:"date"`
 	Users    []string      `json:"-"`
 	Params   CSVParameters `json:"-"`
@@ -69,19 +68,15 @@ type Wrapper struct {
 }
 
 // NewWrapperItem creates a new export wrapper item
-func NewWrapperItem(facts []engine.Fact, fileName string, params CSVParameters, user users.User) *WrapperItem {
+func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, user users.User) *WrapperItem {
 	var factIDs []int64
 	for _, fact := range facts {
 		factIDs = append(factIDs, fact.ID)
 	}
 
 	// file extension should be gz
-	if !strings.HasSuffix(fileName, ".gz") {
-		fileName += ".gz"
-	}
-
 	// add random string to avoid multiple files with same name
-	fileName = security.RandStringWithCharset(5, randCharSet) + "_" + fileName
+	fileName := security.RandStringWithCharset(5, randCharSet) + "_" + title + ".csv.gz"
 
 	return &WrapperItem{
 		Users:    append([]string{}, user.Login),
@@ -92,6 +87,7 @@ func NewWrapperItem(facts []engine.Fact, fileName string, params CSVParameters, 
 		Status:   StatusPending,
 		Error:    "",
 		FileName: fileName,
+		Title:    title,
 		Params:   params,
 	}
 }
@@ -115,7 +111,7 @@ func NewWrapper(basePath string, workersCount, diskRetentionDays, queueMaxSize i
 	//	Status:   StatusPending,
 	//	Id:       "c7f0044b-29f7-4c26-ab56-04e109683637",
 	//	FactIDs:  []int64{1, 2, 3},
-	//	FileName: "export.csv.gz",
+	//	Title: "export.csv.gz",
 	//})
 	//
 	//wrapper.archive.Store("736ba596-7399-422e-b241-1407581cf454", WrapperItem{
@@ -124,7 +120,7 @@ func NewWrapper(basePath string, workersCount, diskRetentionDays, queueMaxSize i
 	//	Status:   StatusRunning,
 	//	Id:       "736ba596-7399-422e-b241-1407581cf454",
 	//	FactIDs:  []int64{3, 6},
-	//	FileName: "export-23.csv.gz",
+	//	Title: "export-23.csv.gz",
 	//})
 	//
 	//wrapper.archive.Store("5ea87155-7ea5-4152-aec5-386871dbfe1c", WrapperItem{
@@ -133,7 +129,7 @@ func NewWrapper(basePath string, workersCount, diskRetentionDays, queueMaxSize i
 	//	Status:   StatusDone,
 	//	Id:       "5ea87155-7ea5-4152-aec5-386871dbfe1c",
 	//	FactIDs:  []int64{2, 3, 6},
-	//	FileName: "exportee-236.csv.gz",
+	//	Title: "exportee-236.csv.gz",
 	//})
 	//
 	//wrapper.archive.Store("9fb91d1f-5b9c-4856-8be4-436831d2596e", WrapperItem{
@@ -142,7 +138,7 @@ func NewWrapper(basePath string, workersCount, diskRetentionDays, queueMaxSize i
 	//	Status:   StatusError,
 	//	Id:       "9fb91d1f-5b9c-4856-8be4-436831d2596e",
 	//	FactIDs:  []int64{22, 23, 6},
-	//	FileName: "exporteeqsdqsd-236.csv.gz",
+	//	Title: "exporteeqsdqsd-236.csv.gz",
 	//	Error:    "error while exporting",
 	//})
 	//
@@ -152,7 +148,7 @@ func NewWrapper(basePath string, workersCount, diskRetentionDays, queueMaxSize i
 	//	Status:   StatusDone,
 	//	Id:       "d0502ac6-8d99-4532-a278-e3e7bd1c887b",
 	//	FactIDs:  []int64{1, 23, 26},
-	//	FileName: "finisedexport-236.csv.gz",
+	//	Title: "finisedexport-236.csv.gz",
 	//})
 
 	return wrapper
@@ -218,7 +214,7 @@ func factsEquals(a, b []engine.Fact) bool {
 }
 
 // AddToQueue Adds a new export to the export worker queue
-func (ew *Wrapper) AddToQueue(facts []engine.Fact, fileName string, params CSVParameters, user users.User) (*WrapperItem, int) {
+func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParameters, user users.User) (*WrapperItem, int) {
 	ew.queueMutex.Lock()
 	defer ew.queueMutex.Unlock()
 
@@ -242,7 +238,7 @@ func (ew *Wrapper) AddToQueue(facts []engine.Fact, fileName string, params CSVPa
 		return nil, CodeQueueFull
 	}
 
-	item := NewWrapperItem(facts, fileName, params, user)
+	item := NewWrapperItem(facts, title, params, user)
 	ew.queue = append(ew.queue, item)
 	return item, CodeAdded
 }
@@ -277,7 +273,7 @@ func (ew *Wrapper) startDispatcher(context context.Context) {
 			// send notification to user (non-blocking)
 			go func(wrapperItem WrapperItem) {
 				_ = notifier.C().SendToUserLogins(
-					ew.createExportNotification(ExportNotificationArchived, &wrapperItem),
+					createExportNotification(ExportNotificationArchived, &wrapperItem),
 					wrapperItem.Users)
 			}(item)
 		case <-ticker.C:
@@ -291,20 +287,6 @@ func (ew *Wrapper) startDispatcher(context context.Context) {
 		case <-context.Done():
 			return
 		}
-	}
-}
-
-// createExportNotification creates an export notification using given parameters
-func (ew *Wrapper) createExportNotification(status int, item *WrapperItem) ExportNotification {
-	return ExportNotification{
-		BaseNotification: notification.BaseNotification{
-			Id:         0,
-			IsRead:     false,
-			Type:       "ExportNotification",
-			Persistent: false,
-		},
-		Export: *item,
-		Status: status,
 	}
 }
 
@@ -331,7 +313,7 @@ func (ew *Wrapper) checkForExpiredFiles() error {
 			// send notification to user (non-blocking)
 			go func(wrapperItem WrapperItem) {
 				_ = notifier.C().SendToUserLogins(
-					ew.createExportNotification(ExportNotificationDeleted, &wrapperItem),
+					createExportNotification(ExportNotificationDeleted, &wrapperItem),
 					wrapperItem.Users)
 			}(data)
 

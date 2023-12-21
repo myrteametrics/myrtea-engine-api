@@ -6,7 +6,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
 	"go.uber.org/zap"
 	"os"
 	"path/filepath"
@@ -85,7 +84,7 @@ func (e *ExportWorker) finalise() {
 		e.QueueItem.Status = StatusError
 	}
 	// set status to done if no error occurred
-	if e.QueueItem.Status != StatusError {
+	if e.QueueItem.Status != StatusError && e.QueueItem.Status != StatusCanceled {
 		e.QueueItem.Status = StatusDone
 	}
 	e.Mutex.Unlock()
@@ -110,16 +109,7 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 	// send notification to user (non-blocking)
 	go func(wrapperItem WrapperItem) {
 		_ = notifier.C().SendToUserLogins(
-			ExportNotification{
-				BaseNotification: notification.BaseNotification{
-					Id:         0,
-					IsRead:     false,
-					Type:       "ExportNotification",
-					Persistent: false,
-				},
-				Export: wrapperItem,
-				Status: ExportNotificationStarted,
-			},
+			createExportNotification(ExportNotificationStarted, &item),
 			wrapperItem.Users)
 	}(item)
 

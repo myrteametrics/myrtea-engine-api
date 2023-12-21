@@ -48,7 +48,7 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 	//	for {
 	//		select {
 	//		case <-ticker.C:
-	//			notifier.C().SendToUsers(notification.ExportNotification{Status: export.StatusPending, Export: export.WrapperItem{Id: uuid.New().String(), FileName: "test.bla"}}, []users.UserWithPermissions{user})
+	//			notifier.C().SendToUsers(notification.ExportNotification{Status: export.StatusPending, Export: export.WrapperItem{Id: uuid.New().String(), Title: "test.bla"}}, []users.UserWithPermissions{user})
 	//			zap.L().Info("send notification")
 	//		case <-after:
 	//			return
