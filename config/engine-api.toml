@@ -73,8 +73,9 @@ SWAGGER_BASEPATH = "/api/v5"
 SWAGGER_TOPBAR_TITLE = ""
 
 # Set the background color of the topbar of the Swagger UI
-# Default value: ""
-SWAGGER_TOPBAR_COLOR = ""
+# Default value: "#000000"
+# Other example values: "#618EF2", "#A6343A"
+SWAGGER_TOPBAR_COLOR = "#000000"
 
 # Specify the elasticsearch URLS
 # Array of URLS might not work using environment variable (should be fixed soon)

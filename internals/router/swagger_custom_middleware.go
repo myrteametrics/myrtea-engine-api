@@ -47,10 +47,14 @@ func modifySwaggerHTML(html string) string {
 		customHeader.style.fontWeight = '700';
 		customHeader.style.fontFamily = 'Titillium Web,sans-serif';
 		customHeader.style.color = '#ffffff';
-		customHeader.style.backgroundColor = color;
-		customHeader.textContent = title;
+		if (color != '') {
+			customHeader.style.backgroundColor = color;
+		}
+		if (title != '') {
+			customHeader.textContent = title;
 
-		document.title = title;
+			document.title = title;
+		}
 		document.head.appendChild(customStyle);
 		const targetElement = document.querySelector('body');
 		if (targetElement) {
