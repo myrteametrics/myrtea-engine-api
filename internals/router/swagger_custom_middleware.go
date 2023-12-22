@@ -9,12 +9,15 @@ import (
 )
 
 func SwaggerUICustomizationMiddleware(next http.Handler) http.Handler {
+	topbarColor := viper.GetString("SWAGGER_TOPBAR_COLOR")
+	topbarTitle := viper.GetString("SWAGGER_TOPBAR_TITLE")
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.RequestURI, "/swagger/") {
 			rec := newResponseRecorder(w)
 			next.ServeHTTP(rec, r)
 
-			if strings.Contains(rec.Header().Get("Content-Type"), "text/html") {
+			if (topbarColor != "" || topbarTitle != "") && strings.Contains(rec.Header().Get("Content-Type"), "text/html") {
 				modifiedHTML := modifySwaggerHTML(rec.body.String())
 				w.Header().Set("Content-Type", "text/html")
 				w.Write([]byte(modifiedHTML))
