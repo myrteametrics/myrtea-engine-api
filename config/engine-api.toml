@@ -68,6 +68,15 @@ SWAGGER_HOST = "localhost:9000"
 # Default value: "/api/v5"
 SWAGGER_BASEPATH = "/api/v5"
 
+# Set the title displayed in the topbar of the Swagger UI
+# Default value: ""
+SWAGGER_TOPBAR_TITLE = ""
+
+# Set the background color of the topbar of the Swagger UI
+# Default value: ""
+# Example values: "#000000", "#618EF2", "#A6343A"
+SWAGGER_TOPBAR_COLOR = ""
+
 # Specify the elasticsearch URLS
 # Array of URLS might not work using environment variable (should be fixed soon)
 # Default value: 7
