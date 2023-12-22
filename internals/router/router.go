@@ -132,6 +132,7 @@ func buildRoutesV3Basic(config Config) (func(r chi.Router), error) {
 
 		// Public routes
 		r.Group(func(rg chi.Router) {
+			rg.Use(SwaggerUICustomizationMiddleware)
 			rg.Get("/isalive", handlers.IsAlive)
 			rg.Get("/swagger/*", httpSwagger.WrapHandler)
 
