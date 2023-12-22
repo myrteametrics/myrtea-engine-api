@@ -235,7 +235,8 @@ func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
 // @Tags Exports
 // @Produce json
 // @Security Bearer
-// @Success 204 "Status OK"
+// @Success 202 "Status Accepted: export found & cancellation request has been taken into account & will be processed"
+// @Success 204 "Status OK: export was found and deleted"
 // @Failure 400 "Bad Request: missing export id / id is not an integer"
 // @Failure 403 "Status Forbidden: missing permission"
 // @Failure 404 "Status Not Found: export not found"
@@ -254,13 +255,19 @@ func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok := e.exportWrapper.DeleteExport(id, userCtx.User)
-	if !ok {
+	status := e.exportWrapper.DeleteExport(id, userCtx.User)
+
+	switch status {
+	case export.DeleteExportDeleted:
+		fallthrough
+	case export.DeleteExportUserDeleted:
+		w.WriteHeader(http.StatusNoContent)
+	case export.DeleteExportCanceled:
+		w.WriteHeader(http.StatusAccepted)
+	default:
 		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("export not found"))
-		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
 }
 
 // ExportFact godoc

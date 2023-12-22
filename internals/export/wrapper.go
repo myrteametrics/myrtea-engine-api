@@ -29,6 +29,12 @@ const (
 	StatusCanceled  = 4
 	StatusCanceling = 5
 
+	// Delete return codes
+	DeleteExportNotFound    = 0
+	DeleteExportDeleted     = 1
+	DeleteExportUserDeleted = 2
+	DeleteExportCanceled    = 3
+
 	randCharSet = "abcdefghijklmnopqrstuvwxyz0123456789"
 )
 
@@ -107,52 +113,6 @@ func NewWrapper(basePath string, workersCount, diskRetentionDays, queueMaxSize i
 		diskRetentionDays: diskRetentionDays,
 		workerCount:       workersCount,
 	}
-
-	//wrapper.archive.Store("c7f0044b-29f7-4c26-ab56-04e109683637", WrapperItem{
-	//	Users:    []string{"admin"},
-	//	Date:     time.Now(),
-	//	Status:   StatusPending,
-	//	Id:       "c7f0044b-29f7-4c26-ab56-04e109683637",
-	//	FactIDs:  []int64{1, 2, 3},
-	//	Title: "export.csv.gz",
-	//})
-	//
-	//wrapper.archive.Store("736ba596-7399-422e-b241-1407581cf454", WrapperItem{
-	//	Users:    []string{"admin"},
-	//	Date:     time.Now(),
-	//	Status:   StatusRunning,
-	//	Id:       "736ba596-7399-422e-b241-1407581cf454",
-	//	FactIDs:  []int64{3, 6},
-	//	Title: "export-23.csv.gz",
-	//})
-	//
-	//wrapper.archive.Store("5ea87155-7ea5-4152-aec5-386871dbfe1c", WrapperItem{
-	//	Users:    []string{"admin"},
-	//	Date:     time.Now().AddDate(0, 0, -3),
-	//	Status:   StatusDone,
-	//	Id:       "5ea87155-7ea5-4152-aec5-386871dbfe1c",
-	//	FactIDs:  []int64{2, 3, 6},
-	//	Title: "exportee-236.csv.gz",
-	//})
-	//
-	//wrapper.archive.Store("9fb91d1f-5b9c-4856-8be4-436831d2596e", WrapperItem{
-	//	Users:    []string{"admin"},
-	//	Date:     time.Now().AddDate(0, 0, -1),
-	//	Status:   StatusError,
-	//	Id:       "9fb91d1f-5b9c-4856-8be4-436831d2596e",
-	//	FactIDs:  []int64{22, 23, 6},
-	//	Title: "exporteeqsdqsd-236.csv.gz",
-	//	Error:    "error while exporting",
-	//})
-	//
-	//wrapper.archive.Store("d0502ac6-8d99-4532-a278-e3e7bd1c887b", WrapperItem{
-	//	Users:    []string{"admin"},
-	//	Date:     time.Now(),
-	//	Status:   StatusDone,
-	//	Id:       "d0502ac6-8d99-4532-a278-e3e7bd1c887b",
-	//	FactIDs:  []int64{1, 23, 26},
-	//	Title: "finisedexport-236.csv.gz",
-	//})
 
 	return wrapper
 }
@@ -491,14 +451,18 @@ func (ew *Wrapper) GetUserExport(id string, user users.User) (item WrapperItem, 
 }
 
 // DeleteExport removes an export from the queue / archive, or cancels it if it is running
-// returns true if the export was found and deleted, false otherwise
+// returns :
+// DeleteExportNotFound (0): if the export was not found
+// DeleteExportDeleted (1): if the export was found and deleted
+// DeleteExportUserDeleted (2): if the export was found and the user was removed
+// DeleteExportCanceled (3): if the export was found and the cancellation request was made
 // this function is similar to GetUserExport, but it avoids iterating over all exports, thus it is faster
-func (ew *Wrapper) DeleteExport(id string, user users.User) bool {
+func (ew *Wrapper) DeleteExport(id string, user users.User) int {
 	// start with archived items
 	if item, ok := ew.FindArchive(id, user); ok {
 		if len(item.Users) == 1 {
 			ew.archive.Delete(id)
-			return true
+			return DeleteExportDeleted
 		}
 		// remove user from item
 		for i, u := range item.Users {
@@ -508,7 +472,7 @@ func (ew *Wrapper) DeleteExport(id string, user users.User) bool {
 			}
 		}
 		ew.archive.Store(id, item)
-		return true
+		return DeleteExportUserDeleted
 	}
 
 	// then check the queue
@@ -524,9 +488,12 @@ func (ew *Wrapper) DeleteExport(id string, user users.User) bool {
 			}
 			if len(item.Users) == 0 {
 				ew.queue = append(ew.queue[:i], ew.queue[i+1:]...)
+				ew.queueMutex.Unlock()
+				return DeleteExportDeleted
 			}
+
 			ew.queueMutex.Unlock()
-			return true
+			return DeleteExportUserDeleted
 		}
 	}
 	ew.queueMutex.Unlock()
@@ -542,7 +509,7 @@ func (ew *Wrapper) DeleteExport(id string, user users.User) bool {
 		// worker found but already canceling
 		if worker.QueueItem.Status == StatusCanceling {
 			worker.Mutex.Unlock()
-			return false
+			return DeleteExportNotFound
 		}
 
 		// remove user from item
@@ -556,21 +523,21 @@ func (ew *Wrapper) DeleteExport(id string, user users.User) bool {
 			}
 			worker.QueueItem.Status = StatusCanceling
 			worker.Mutex.Unlock()
-			return true
+			return DeleteExportCanceled
 		}
 
 		for i, u := range worker.QueueItem.Users {
 			if u == user.Login {
 				worker.QueueItem.Users = append(worker.QueueItem.Users[:i], worker.QueueItem.Users[i+1:]...)
-				// TODO: send message? or change return to say that user was deleted.
-				break
+				worker.Mutex.Unlock()
+				return DeleteExportUserDeleted
 			}
 		}
 		worker.Mutex.Unlock()
-		return true
+		return DeleteExportNotFound
 	}
 
-	return false
+	return DeleteExportNotFound
 }
 
 // ContainsUser checks if user is in item
