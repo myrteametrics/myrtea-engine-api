@@ -138,11 +138,14 @@ func buildRoutesV3Basic(config Config, services Services) (func(r chi.Router), e
 
 		// Public routes
 		r.Group(func(rg chi.Router) {
+			rg.Use(SwaggerUICustomizationMiddleware)
 			rg.Get("/isalive", handlers.IsAlive)
 			rg.Get("/swagger/*", httpSwagger.WrapHandler)
 
 			rg.Post("/login", securityMiddleware.GetToken())
 			r.Get("/authmode", handlers.GetAuthenticationMode)
+			rg.Get("/engine/issues/unprotected", handlers.GetIssuesByStatesByPageUnProtected)
+			rg.Get("/engine/situations/{id}/instances/unprotected", handlers.GetSituationTemplateInstancesUnprotected)
 		})
 
 		// Protected routes
@@ -247,6 +250,8 @@ func buildRoutesV3SAML(config Config, services Services) (func(r chi.Router), er
 			rg.Handle("/saml/*", samlSPMiddleware)
 			rg.Handle("/logout", handlers.LogoutHandler(samlSPMiddleware.Deconnexion))
 			r.Get("/authmode", handlers.GetAuthenticationMode)
+			rg.Get("/engine/issues/unprotected", handlers.GetIssuesByStatesByPageUnProtected)
+			rg.Get("/engine/situations/{id}/instances/unprotected", handlers.GetSituationTemplateInstancesUnprotected)
 		})
 
 		// Protected routes
@@ -309,6 +314,8 @@ func buildRoutesV3OIDC(config Config, services Services) (func(r chi.Router), er
 			rg.Get("/auth/oidc", handlers.HandleOIDCRedirect)
 			rg.Get("/auth/oidc/callback", handlers.HandleOIDCCallback)
 			r.Get("/authmode", handlers.GetAuthenticationMode)
+			rg.Get("/engine/issues/unprotected", handlers.GetIssuesByStatesByPageUnProtected)
+			rg.Get("/engine/situations/{id}/instances/unprotected", handlers.GetSituationTemplateInstancesUnprotected)
 		})
 
 		// Protected routes

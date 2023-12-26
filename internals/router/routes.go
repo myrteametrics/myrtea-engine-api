@@ -163,6 +163,7 @@ func engineRouter(services Services) http.Handler {
 	r.Get("/search/last/bycustominterval", handlers.SearchLastByCustomInterval)
 
 	r.Post("/history/facts/today/result", handlers.GetFactResultForTodayByCriteria)
+	r.Post("/history/facts/date/result", handlers.GetFactResultByDateCriteria)
 
 	r.Get("/calendars", handlers.GetCalendars)
 	r.Get("/calendars/{id}", handlers.GetCalendar)
