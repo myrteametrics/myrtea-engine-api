@@ -16,7 +16,7 @@ import (
 
 func TestNewWrapper(t *testing.T) {
 	wrapper := NewWrapper("/tmp", 1, 1, 1)
-	expression.AssertEqual(t, wrapper.basePath, "/tmp")
+	expression.AssertEqual(t, wrapper.BasePath, "/tmp")
 	expression.AssertEqual(t, wrapper.queueMaxSize, 1)
 	expression.AssertEqual(t, wrapper.diskRetentionDays, 1)
 	expression.AssertEqual(t, wrapper.queueMaxSize, 1)

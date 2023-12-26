@@ -2,7 +2,10 @@ package render
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -162,11 +165,43 @@ func File(w http.ResponseWriter, filename string, data []byte) {
 	}
 }
 
-// Redirect is a helper function to redirect the user to a specified location
-//
-//	func Redirect(w http.ResponseWriter, r *http.Request, location string, code int) {
-//		http.Redirect(w, r, location, code)
-//	}
-func Redirect(w http.ResponseWriter, r *http.Request, location string, code int) {
-	http.Redirect(w, r, location, code)
+// StreamFile handle files streamed response with allows the download of a file in chunks
+func StreamFile(filePath, fileName string, w http.ResponseWriter, r *http.Request) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		Error(w, r, ErrAPIDBResourceNotFound, fmt.Errorf("error opening file: %s", err))
+		return
+	}
+	defer file.Close()
+
+	// Set all necessary headers
+	w.Header().Set("Connection", "Keep-Alive")
+	w.Header().Set("Transfer-Encoding", "chunked")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(fileName))
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	const bufferSize = 4096
+	buffer := make([]byte, bufferSize)
+
+	for {
+		// Read a chunk of the file
+		bytesRead, err := file.Read(buffer)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			Error(w, r, ErrAPIProcessError, fmt.Errorf("error reading file: %s", err))
+			return
+		}
+
+		// Write the chunk to the response writer
+		_, err = w.Write(buffer[:bytesRead])
+		if err != nil {
+			// If writing to the response writer fails, log the error and stop streaming
+			Error(w, r, ErrAPIProcessError, fmt.Errorf("error writing to response writer: %s", err))
+			break
+		}
+
+		w.(http.Flusher).Flush()
+	}
 }

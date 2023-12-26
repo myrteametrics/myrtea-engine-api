@@ -24,7 +24,7 @@ func HandleOIDCRedirect(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, "", err, render.ErrAPIProcessError)
 		return
 	}
-	render.Redirect(w, r, instanceOidc.OidcConfig.AuthCodeURL(expectedState), http.StatusFound)
+	http.Redirect(w, r, instanceOidc.OidcConfig.AuthCodeURL(expectedState), http.StatusFound)
 }
 
 func HandleOIDCCallback(w http.ResponseWriter, r *http.Request) {
@@ -64,5 +64,5 @@ func HandleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 
 	baseURL := viper.GetString("AUTHENTICATION_OIDC_FRONT_END_URL")
 	redirectURL := fmt.Sprintf("%s/auth/oidc/callback?token=%s", baseURL, url.QueryEscape(rawIDToken))
-	render.Redirect(w, r, redirectURL, http.StatusFound)
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }

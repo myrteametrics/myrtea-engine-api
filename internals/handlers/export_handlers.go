@@ -11,18 +11,24 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"go.uber.org/zap"
 	"net/http"
+	"net/url"
+	"path/filepath"
 	"strconv"
 	"sync"
 )
 
 type ExportHandler struct {
-	exportWrapper *export.Wrapper
+	exportWrapper       *export.Wrapper
+	directDownload      bool
+	indirectDownloadUrl string
 }
 
 // NewExportHandler returns a new ExportHandler
-func NewExportHandler(exportWrapper *export.Wrapper) *ExportHandler {
+func NewExportHandler(exportWrapper *export.Wrapper, directDownload bool, indirectDownloadUrl string) *ExportHandler {
 	return &ExportHandler{
-		exportWrapper: exportWrapper,
+		exportWrapper:       exportWrapper,
+		directDownload:      directDownload,
+		indirectDownloadUrl: indirectDownloadUrl,
 	}
 }
 
@@ -64,7 +70,7 @@ func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = HandleStreamedExport(r.Context(), w, request)
+	err = handleStreamedExport(r.Context(), w, request)
 	if err != nil {
 		render.Error(w, r, render.ErrAPIProcessError, err)
 	}
@@ -72,8 +78,8 @@ func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// HandleStreamedExport actually only handles CSV
-func HandleStreamedExport(requestContext context.Context, w http.ResponseWriter, request ExportRequest) error {
+// handleStreamedExport actually only handles CSV
+func handleStreamedExport(requestContext context.Context, w http.ResponseWriter, request ExportRequest) error {
 	w.Header().Set("Connection", "Keep-Alive")
 	w.Header().Set("Transfer-Encoding", "chunked")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -202,7 +208,7 @@ func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Security Bearer
 // @Success 200 {object} export.WrapperItem "Status OK"
-// @Failure 400 "Bad Request: missing export id / id is not an integer"
+// @Failure 400 "Bad Request: missing export id"
 // @Failure 403 "Status Forbidden: missing permission"
 // @Failure 404 "Status Not Found: export not found"
 // @Failure 500 "internal server error"
@@ -237,7 +243,7 @@ func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
 // @Security Bearer
 // @Success 202 "Status Accepted: export found & cancellation request has been taken into account & will be processed"
 // @Success 204 "Status OK: export was found and deleted"
-// @Failure 400 "Bad Request: missing export id / id is not an integer"
+// @Failure 400 "Bad Request: missing export id"
 // @Failure 403 "Status Forbidden: missing permission"
 // @Failure 404 "Status Not Found: export not found"
 // @Failure 500 "internal server error"
@@ -337,4 +343,49 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.JSON(w, r, item)
+}
+
+// DownloadExport godoc
+// @Summary Download export
+// @Description Download export
+// @Tags Exports
+// @Produce json
+// @Security Bearer
+// @Failure 400 "Bad Request: missing export id"
+// @Failure 403 "Status Forbidden: missing permission"
+// @Failure 404 "Status Not Found: export not found"
+// @Failure 500 "internal server error"
+// @Router /engine/exports/{id}/download [get]
+func (e *ExportHandler) DownloadExport(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing id"))
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	item, ok := e.exportWrapper.GetUserExport(id, userCtx.User)
+	if !ok {
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("export not found"))
+		return
+	}
+
+	if e.directDownload {
+		path := filepath.Join(e.exportWrapper.BasePath, item.FileName)
+		render.StreamFile(path, item.FileName, w, r)
+		return
+	}
+
+	path, err := url.JoinPath(e.indirectDownloadUrl, item.FileName)
+	if err != nil {
+		render.Error(w, r, render.ErrAPIProcessError, err)
+		return
+	}
+
+	http.Redirect(w, r, path, http.StatusOK)
 }

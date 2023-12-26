@@ -70,7 +70,7 @@ type Wrapper struct {
 	// Non-critical fields
 	// Read-only parameters
 	diskRetentionDays int
-	basePath          string
+	BasePath          string // public for export_handlers
 	queueMaxSize      int
 	workerCount       int
 }
@@ -109,7 +109,7 @@ func NewWrapper(basePath string, workersCount, diskRetentionDays, queueMaxSize i
 		success:           make(chan int),
 		archive:           sync.Map{},
 		queueMaxSize:      queueMaxSize,
-		basePath:          basePath,
+		BasePath:          basePath,
 		diskRetentionDays: diskRetentionDays,
 		workerCount:       workersCount,
 	}
@@ -131,24 +131,24 @@ func (it *WrapperItem) ContainsFact(factID int64) bool {
 func (ew *Wrapper) Init(ctx context.Context) {
 	// instantiate workers
 	for i := 0; i < ew.workerCount; i++ {
-		ew.workers = append(ew.workers, NewExportWorker(i, ew.basePath, ew.success))
+		ew.workers = append(ew.workers, NewExportWorker(i, ew.BasePath, ew.success))
 	}
 
 	// check if destination folder exists
-	_, err := os.Stat(ew.basePath)
+	_, err := os.Stat(ew.BasePath)
 	if err != nil {
 
 		if os.IsNotExist(err) {
-			zap.L().Info("The export directory not exists, trying to create...", zap.String("EXPORT_BASE_PATH", ew.basePath))
+			zap.L().Info("The export directory not exists, trying to create...", zap.String("EXPORT_BASE_PATH", ew.BasePath))
 
-			if err := os.MkdirAll(ew.basePath, os.ModePerm); err != nil {
-				zap.L().Fatal("Couldn't create export directory", zap.String("EXPORT_BASE_PATH", ew.basePath), zap.Error(err))
+			if err := os.MkdirAll(ew.BasePath, os.ModePerm); err != nil {
+				zap.L().Fatal("Couldn't create export directory", zap.String("EXPORT_BASE_PATH", ew.BasePath), zap.Error(err))
 			} else {
 				zap.L().Info("The export directory has been successfully created.")
 			}
 
 		} else {
-			zap.L().Fatal("Couldn't access to export directory", zap.String("EXPORT_BASE_PATH", ew.basePath), zap.Error(err))
+			zap.L().Fatal("Couldn't access to export directory", zap.String("EXPORT_BASE_PATH", ew.BasePath), zap.Error(err))
 		}
 
 	}
@@ -259,7 +259,7 @@ func (ew *Wrapper) checkForExpiredFiles() error {
 	// Get all files in directory and check the last edit date
 	// if last edit date is older than diskRetentionDays, delete the file
 	zap.L().Info("Checking for expired files")
-	files, err := os.ReadDir(ew.basePath)
+	files, err := os.ReadDir(ew.BasePath)
 	if err != nil {
 		return err
 	}
@@ -292,7 +292,7 @@ func (ew *Wrapper) checkForExpiredFiles() error {
 			continue
 		}
 
-		filePath := filepath.Join(ew.basePath, file.Name())
+		filePath := filepath.Join(ew.BasePath, file.Name())
 
 		fi, err := os.Stat(filePath)
 		if err != nil {

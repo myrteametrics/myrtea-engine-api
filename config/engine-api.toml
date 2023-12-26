@@ -234,14 +234,15 @@ AUTHENTICATION_OIDC_FRONT_END_URL = "http://127.0.0.1:4200"
 AUTHENTICATION_OIDC_ENCRYPTION_KEY = "thisis24characterslongs."
 
 # NOTIFICATION_LIFETIME: The lifetime of a notification in the database.
+# Default value: "168h"
 NOTIFICATION_LIFETIME = "168h" # 168h = 7 days, available units are "ns", "us" (or "µs"), "ms", "s", "m", "h"
 
 # Path to directory where the resulting export files will be stored.
-# Default: exports/
+# Default value: "exports/"
 EXPORT_BASE_PATH = "exports/"
 
 # Number of days before one export file will be auto deleted
-# Default: 4
+# Default value: 4
 EXPORT_DISK_RETENTION_DAYS = 4
 
 # Export queue max size, any export request that is made when queue is full will be refused.
@@ -251,3 +252,12 @@ EXPORT_QUEUE_MAX_SIZE = 30
 # Number of concurrent export workers
 # Default value: 4
 EXPORT_WORKERS_COUNT = 4
+
+# Whether download must be directly streamed through http or handled by an external web server
+# Default value: true
+EXPORT_DIRECT_DOWNLOAD = true
+
+# Reverse proxy like nginx, apache gives direct access to the exports directory at a specific path
+# Full URL to the exports directory
+# Default value: ""
+EXPORT_INDIRECT_DOWNLOAD_URL = ""
