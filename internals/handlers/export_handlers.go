@@ -351,6 +351,8 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 // @Tags Exports
 // @Produce json
 // @Security Bearer
+// @Success 200 {file} Returns data to be saved into a file
+// @Success 308 Redirects to the export file location
 // @Failure 400 "Bad Request: missing export id"
 // @Failure 403 "Status Forbidden: missing permission"
 // @Failure 404 "Status Not Found: export not found"
@@ -387,5 +389,5 @@ func (e *ExportHandler) DownloadExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, path, http.StatusOK)
+	http.Redirect(w, r, path, http.StatusPermanentRedirect)
 }
