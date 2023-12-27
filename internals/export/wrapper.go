@@ -362,8 +362,7 @@ func (ew *Wrapper) dequeueWrapperItem(item *WrapperItem) (int, bool) {
 	defer ew.queueMutex.Unlock()
 
 	for i, queueItem := range ew.queue {
-		// comparing pointer should work
-		if queueItem != item {
+		if queueItem.Id != item.Id {
 			continue
 		}
 
