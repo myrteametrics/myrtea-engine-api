@@ -9,7 +9,10 @@ import (
 
 func TestExportNotification(t *testing.T) {
 	// init handler
-	notification.ReplaceHandlerGlobals(notification.NewHandler(0))
+	handler := notification.NewHandler(0)
+	handler.RegisterNotificationType(notification.MockNotification{})
+	handler.RegisterNotificationType(ExportNotification{})
+	notification.ReplaceHandlerGlobals(handler)
 
 	notif := ExportNotification{
 		Export: WrapperItem{
@@ -22,11 +25,11 @@ func TestExportNotification(t *testing.T) {
 
 	bytes, err := notif.ToBytes()
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Fatalf("Unexpected error: %v", err)
 	}
 
 	if bytes == nil {
-		t.Errorf("Expected bytes, got nil")
+		t.Fatalf("Expected bytes, got nil")
 	}
 
 	t.Log(string(bytes))
@@ -34,12 +37,12 @@ func TestExportNotification(t *testing.T) {
 	// find type and create new instance
 	notifType, ok := notification.H().GetNotificationByType("ExportNotification")
 	if !ok {
-		t.Errorf("ExportNotification type does not exist")
+		t.Fatalf("ExportNotification type does not exist")
 	}
 
 	instance, err := notifType.NewInstance(1, bytes, false)
 	if err != nil {
-		t.Errorf("ExportNotification couldn't be instanced")
+		t.Fatalf("ExportNotification couldn't be instanced")
 	}
 	bt, _ := instance.ToBytes()
 	t.Log(string(bt))
@@ -106,7 +109,7 @@ func TestExportNotification_Equals(t *testing.T) {
 func TestExportNotification_SetId(t *testing.T) {
 	notif, err := ExportNotification{}.NewInstance(1, []byte(`{}`), true)
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		t.Fatalf("Error: %v", err)
 	}
 
 	notif = notif.SetId(2)

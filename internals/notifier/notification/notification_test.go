@@ -15,11 +15,11 @@ func TestBaseNotificationToBytes(t *testing.T) {
 
 	bytes, err := notification.ToBytes()
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Fatalf("Unexpected error: %v", err)
 	}
 
 	if bytes == nil {
-		t.Errorf("Expected bytes, got nil")
+		t.Fatalf("Expected bytes, got nil")
 	}
 }
 
@@ -37,7 +37,7 @@ func TestBaseNotificationNewInstance(t *testing.T) {
 	data := []byte(`{"id":1,"type":"Test","isRead":true}`)
 	notification, err := BaseNotification{}.NewInstance(1, data, true)
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Fatalf("Unexpected error: %v", err)
 	}
 
 	expected := BaseNotification{
@@ -53,7 +53,7 @@ func TestBaseNotificationNewInstanceWithInvalidData(t *testing.T) {
 	data := []byte(`{"id":1,"type":"Test","isRead":"invalid"}`)
 	_, err := BaseNotification{}.NewInstance(1, data, true)
 	if err == nil {
-		t.Errorf("Expected error, got nil")
+		t.Fatalf("Expected error, got nil")
 	}
 }
 
@@ -214,7 +214,7 @@ func TestMockNotification_Equals(t *testing.T) {
 func TestBaseNotification_SetId(t *testing.T) {
 	notif, err := BaseNotification{}.NewInstance(1, []byte(`{}`), true)
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		t.Fatalf("Error: %v", err)
 	}
 
 	notif = notif.SetId(2)
@@ -226,7 +226,7 @@ func TestBaseNotification_SetId(t *testing.T) {
 func TestMockNotification_SetId(t *testing.T) {
 	notif, err := MockNotification{}.NewInstance(1, []byte(`{}`), true)
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		t.Fatalf("Error: %v", err)
 	}
 
 	notif = notif.SetId(2)
