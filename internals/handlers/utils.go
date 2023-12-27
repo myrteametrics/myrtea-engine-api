@@ -6,6 +6,9 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/utils"
+	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"io"
 	"regexp"
 	"strconv"
@@ -31,6 +34,7 @@ const (
 	parseGlobalVariables = false
 )
 
+// QueryParamToOptionalInt parse a string from a string
 func QueryParamToOptionalInt(r *http.Request, name string, orDefault int) (int, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
@@ -39,6 +43,7 @@ func QueryParamToOptionalInt(r *http.Request, name string, orDefault int) (int, 
 	return orDefault, nil
 }
 
+// QueryParamToOptionalInt64 parse an int64 from a string
 func QueryParamToOptionalInt64(r *http.Request, name string, orDefault int64) (int64, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
@@ -47,6 +52,7 @@ func QueryParamToOptionalInt64(r *http.Request, name string, orDefault int64) (i
 	return orDefault, nil
 }
 
+// QueryParamToOptionalInt64Array parse multiple int64 entries separated by a separator from a string
 func QueryParamToOptionalInt64Array(r *http.Request, name, separator string, allowDuplicates bool, orDefault []int64) ([]int64, error) {
 	param := r.URL.Query().Get(name)
 	if param == "" {
@@ -64,7 +70,7 @@ func QueryParamToOptionalInt64Array(r *http.Request, name, separator string, all
 	}
 
 	if !allowDuplicates {
-		return removeDuplicate(result), nil
+		return utils.RemoveDuplicates(result), nil
 	}
 
 	return result, nil
@@ -217,25 +223,13 @@ func GetUserFromContext(r *http.Request) (users.UserWithPermissions, bool) {
 	return user, true
 }
 
-func removeDuplicate[T string | int | int64](sliceList []T) []T {
-	allKeys := make(map[T]bool)
-	var list []T
-	for _, item := range sliceList {
-		if _, value := allKeys[item]; !value {
-			allKeys[item] = true
-			list = append(list, item)
-		}
-	}
-	return list
-}
-
 // handleError is a helper function that logs the error and sends a response.
 func handleError(w http.ResponseWriter, r *http.Request, message string, err error, apiError render.APIError) {
 	zap.L().Error(message, zap.Error(err))
 	render.Error(w, r, apiError, err)
 }
 
-// Generate a State use by OIDC authentification
+// generateRandomState Generate a State used by OIDC authentication
 func generateRandomState() (string, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
@@ -244,6 +238,8 @@ func generateRandomState() (string, error) {
 	}
 	return base64.StdEncoding.EncodeToString(b), nil
 }
+
+// generateEncryptedState Generate a State used by OIDC authentication
 func generateEncryptedState(key []byte) (string, error) {
 	// Generate random state
 	plainState, err := generateRandomState()
@@ -269,6 +265,8 @@ func generateEncryptedState(key []byte) (string, error) {
 	b64State := base64.StdEncoding.EncodeToString(ciphertext)
 	return b64State, nil
 }
+
+// verifyEncryptedState Verify the State used by OIDC authentication
 func verifyEncryptedState(state string, key []byte) (string, error) {
 	// Decode from base64
 	decodedState, err := base64.StdEncoding.DecodeString(state)
@@ -291,4 +289,19 @@ func verifyEncryptedState(state string, key []byte) (string, error) {
 	stream.XORKeyStream(decodedState, decodedState)
 
 	return string(decodedState), nil
+}
+
+// findCombineFacts returns the combine facts
+func findCombineFacts(combineFactIds []int64) (combineFacts []engine.Fact) {
+	for _, factId := range utils.RemoveDuplicates(combineFactIds) {
+		combineFact, found, err := fact.R().Get(factId)
+		if err != nil {
+			continue
+		}
+		if !found {
+			continue
+		}
+		combineFacts = append(combineFacts, combineFact)
+	}
+	return combineFacts
 }

@@ -147,8 +147,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 
 // GetAll method used to get all Variables Config
 func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
-
-	var variablesConfig []models.VariablesConfig
+	variablesConfig := make([]models.VariablesConfig, 0)
 
 	rows, err := r.newStatement().
 		Select("id", "key", "value").

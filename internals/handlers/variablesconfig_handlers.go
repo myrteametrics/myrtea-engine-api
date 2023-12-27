@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// GetVariablesConfigs godoc
+// GetVariablesConfig godoc
 // @Summary Get all Variables Config definitions
 // @Description Get all VariableConfig definitions
 // @Tags VariablesConfig

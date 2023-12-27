@@ -42,7 +42,7 @@ func adminRouter() http.Handler {
 	return r
 }
 
-func engineRouter() http.Handler {
+func engineRouter(services Services) http.Handler {
 	r := chi.NewRouter()
 
 	r.Get("/security/myself", handlers.GetUserSelf)
@@ -71,6 +71,7 @@ func engineRouter() http.Handler {
 	r.Post("/facts/execute", handlers.ExecuteFactFromSource) // ?time=2019-05-10T12:00:00.000 debug=<boolean>
 	r.Get("/facts/{id}/hits", handlers.GetFactHits)          // ?time=2019-05-10T12:00:00.000 debug=<boolean>
 	r.Get("/facts/{id}/es", handlers.FactToESQuery)
+	r.Post("/facts/streamedexport", handlers.ExportFactStreamed)
 
 	r.Get("/situations", handlers.GetSituations)
 	r.Get("/situations/{id}", handlers.GetSituation)
@@ -174,7 +175,12 @@ func engineRouter() http.Handler {
 
 	r.Get("/connector/{id}/executions/last", handlers.GetlastConnectorExecutionDateTime)
 
-	r.Get("/facts/{id}/export", handlers.ExportFact)
+	// exports
+	r.Get("/exports", services.ExportHandler.GetExports)
+	r.Get("/exports/{id}", services.ExportHandler.GetExport)
+	r.Get("/exports/{id}/download", services.ExportHandler.DownloadExport)
+	r.Delete("/exports/{id}", services.ExportHandler.DeleteExport)
+	r.Post("/exports/fact", services.ExportHandler.ExportFact)
 
 	r.Get("/variablesconfig", handlers.GetVariablesConfig)
 	r.Get("/variablesconfig/{id}", handlers.GetVariableConfig)
@@ -186,12 +192,11 @@ func engineRouter() http.Handler {
 	return r
 }
 
-func serviceRouter() http.Handler {
+func serviceRouter(services Services) http.Handler {
 	r := chi.NewRouter()
 
-	processorHandler := handlers.NewProcessorHandler()
 	r.Post("/objects", handlers.PostObjects)
-	r.Post("/aggregates", processorHandler.PostAggregates)
+	r.Post("/aggregates", services.ProcessorHandler.PostAggregates)
 
 	r.Get("/externalconfigs", handlers.GetExternalConfigs)
 	r.Get("/externalconfigs/{id}", handlers.GetExternalConfig)

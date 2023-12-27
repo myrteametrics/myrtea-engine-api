@@ -33,7 +33,13 @@ type Config struct {
 	VerboseError       bool
 	AuthenticationMode string
 	LogLevel           zap.AtomicLevel
-	PluginCore         *plugin.Core
+}
+
+// Services is a wrapper for services instances, it is passed through router functions
+type Services struct {
+	PluginCore       *plugin.Core
+	ProcessorHandler *handlers.ProcessorHandler
+	ExportHandler    *handlers.ExportHandler
 }
 
 // Check clean up the configuration and logs comments if required
@@ -68,7 +74,7 @@ func (config *Config) Check() {
 
 // New returns a new fully configured instance of chi.Mux
 // It instanciates all middlewares including the security ones, all routes and route groups
-func New(config Config) *chi.Mux {
+func New(config Config, services Services) *chi.Mux {
 
 	config.Check()
 
@@ -76,7 +82,7 @@ func New(config Config) *chi.Mux {
 	// Global middleware stack
 	// TODO: Add CORS middleware
 	if config.CORS {
-		cors := cors.New(cors.Options{
+		corsHandler := cors.New(cors.Options{
 			AllowedOrigins:   []string{"*"},
 			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
@@ -84,7 +90,7 @@ func New(config Config) *chi.Mux {
 			AllowCredentials: true,
 			MaxAge:           300, // Maximum value not ignored by any of major browsers
 		})
-		r.Use(cors.Handler)
+		r.Use(corsHandler.Handler)
 	}
 
 	r.Use(chimiddleware.SetHeader("Strict-Transport-Security", "max-age=63072000; includeSubDomains"))
@@ -105,11 +111,11 @@ func New(config Config) *chi.Mux {
 
 	switch config.AuthenticationMode {
 	case "BASIC":
-		routes, err = buildRoutesV3Basic(config)
+		routes, err = buildRoutesV3Basic(config, services)
 	case "SAML":
-		routes, err = buildRoutesV3SAML(config)
+		routes, err = buildRoutesV3SAML(config, services)
 	case "OIDC":
-		routes, err = buildRoutesV3OIDC(config)
+		routes, err = buildRoutesV3OIDC(config, services)
 	default:
 		zap.L().Panic("Authentication mode not supported", zap.String("AuthenticationMode", config.AuthenticationMode))
 		return nil
@@ -124,7 +130,7 @@ func New(config Config) *chi.Mux {
 	return r
 }
 
-func buildRoutesV3Basic(config Config) (func(r chi.Router), error) {
+func buildRoutesV3Basic(config Config, services Services) (func(r chi.Router), error) {
 	signingKey := []byte(security.RandString(128))
 	securityMiddleware := security.NewMiddlewareJWT(signingKey, security.NewDatabaseAuth(postgres.DB()))
 
@@ -164,9 +170,9 @@ func buildRoutesV3Basic(config Config) (func(r chi.Router), error) {
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
 			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
-			rg.Mount("/engine", engineRouter())
+			rg.Mount("/engine", engineRouter(services))
 
-			for _, plugin := range config.PluginCore.Plugins {
+			for _, plugin := range services.PluginCore.Plugins {
 				rg.Mount(plugin.Plugin.HandlerPrefix(), plugin.Plugin.Handler())
 				rg.HandleFunc(fmt.Sprintf("/plugin%s", plugin.Plugin.HandlerPrefix()), func(w http.ResponseWriter, r *http.Request) {
 					render.JSON(w, r, map[string]interface{}{"loaded": true})
@@ -205,12 +211,12 @@ func buildRoutesV3Basic(config Config) (func(r chi.Router), error) {
 			// }
 			// rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
-			rg.Mount("/service", serviceRouter())
+			rg.Mount("/service", serviceRouter(services))
 		})
 	}, nil
 }
 
-func buildRoutesV3SAML(config Config) (func(r chi.Router), error) {
+func buildRoutesV3SAML(config Config, services Services) (func(r chi.Router), error) {
 
 	samlConfig := SamlSPMiddlewareConfig{
 		MetadataMode:             viper.GetString("AUTHENTICATION_SAML_METADATA_MODE"),
@@ -257,9 +263,9 @@ func buildRoutesV3SAML(config Config) (func(r chi.Router), error) {
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
 			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
-			rg.Mount("/engine", engineRouter())
+			rg.Mount("/engine", engineRouter(services))
 
-			for _, plugin := range config.PluginCore.Plugins {
+			for _, plugin := range services.PluginCore.Plugins {
 				rg.Mount(plugin.Plugin.HandlerPrefix(), plugin.Plugin.Handler())
 				rg.HandleFunc(fmt.Sprintf("/plugin%s", plugin.Plugin.HandlerPrefix()), func(w http.ResponseWriter, r *http.Request) {
 					render.JSON(w, r, map[string]interface{}{"loaded": true})
@@ -291,20 +297,12 @@ func buildRoutesV3SAML(config Config) (func(r chi.Router), error) {
 			// }
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
-			rg.Mount("/service", serviceRouter())
+			rg.Mount("/service", serviceRouter(services))
 		})
 	}, nil
 }
 
-// ReverseProxy act as a reverse proxy for any plugin http handlers
-func ReverseProxy(plugin plugin.MyrteaPlugin) http.HandlerFunc {
-	url, _ := url.Parse(fmt.Sprintf("http://localhost:%d", plugin.ServicePort()))
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		httputil.NewSingleHostReverseProxy(url).ServeHTTP(w, r)
-	})
-}
-
-func buildRoutesV3OIDC(config Config) (func(r chi.Router), error) {
+func buildRoutesV3OIDC(config Config, services Services) (func(r chi.Router), error) {
 
 	return func(r chi.Router) {
 		// Public routes
@@ -331,9 +329,9 @@ func buildRoutesV3OIDC(config Config) (func(r chi.Router), error) {
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
 			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
-			rg.Mount("/engine", engineRouter())
+			rg.Mount("/engine", engineRouter(services))
 
-			for _, plugin := range config.PluginCore.Plugins {
+			for _, plugin := range services.PluginCore.Plugins {
 				rg.Mount(plugin.Plugin.HandlerPrefix(), plugin.Plugin.Handler())
 				rg.HandleFunc(fmt.Sprintf("/plugin%s", plugin.Plugin.HandlerPrefix()), func(w http.ResponseWriter, r *http.Request) {
 					render.JSON(w, r, map[string]interface{}{"loaded": true})
@@ -357,7 +355,15 @@ func buildRoutesV3OIDC(config Config) (func(r chi.Router), error) {
 		r.Group(func(rg chi.Router) {
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
-			rg.Mount("/service", serviceRouter())
+			rg.Mount("/service", serviceRouter(services))
 		})
 	}, nil
+}
+
+// ReverseProxy act as a reverse proxy for any plugin http handlers
+func ReverseProxy(plugin plugin.MyrteaPlugin) http.HandlerFunc {
+	pluginUrl, _ := url.Parse(fmt.Sprintf("http://localhost:%d", plugin.ServicePort()))
+	return func(w http.ResponseWriter, r *http.Request) {
+		httputil.NewSingleHostReverseProxy(pluginUrl).ServeHTTP(w, r)
+	}
 }
