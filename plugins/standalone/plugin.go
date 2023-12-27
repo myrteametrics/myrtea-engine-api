@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-plugin"
@@ -60,7 +61,9 @@ func NewPlugin(config pluginutils.PluginConfig) *Plugin {
 			HandshakeConfig:  Handshake,
 			Plugins:          pluginMap,
 			Cmd:              cmd,
+			StartTimeout:     2 * time.Minute,
 			AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+			SkipHostEnv:      false,
 		},
 	}
 }

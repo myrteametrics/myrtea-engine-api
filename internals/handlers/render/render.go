@@ -2,7 +2,10 @@ package render
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -10,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// APIError wraps all informations required to investiguate a backend error
+// APIError wraps all information required to investigate a backend error
 // It is mainly used to returns information to the API caller when the status is not 2xx.
 type APIError struct {
 	RequestID string `json:"requestID"`
@@ -43,6 +46,9 @@ var (
 	ErrAPIResourceInvalid = APIError{Status: http.StatusBadRequest, ErrType: "RessourceError", Code: 2001, Message: `Provided resource definition can be parsed, but is invalid`}
 	// ErrAPIResourceDuplicate must be used in case a duplicate resource has been identified
 	ErrAPIResourceDuplicate = APIError{Status: http.StatusBadRequest, ErrType: "RessourceError", Code: 2002, Message: `Provided resource definition can be parsed, but is already exists`}
+
+	// ErrAPIQueueFull must be used in case an internal processing queue is full
+	ErrAPIQueueFull = APIError{Status: http.StatusServiceUnavailable, ErrType: "RessourceError", Code: 2003, Message: `The queue is full, please retry later`}
 
 	// ErrAPIDBResourceNotFound must be used in case a resource is not found in the backend storage system
 	ErrAPIDBResourceNotFound = APIError{Status: http.StatusNotFound, ErrType: "RessourceError", Code: 3000, Message: `Ressource not found`}
@@ -159,11 +165,43 @@ func File(w http.ResponseWriter, filename string, data []byte) {
 	}
 }
 
-// Redirect is a helper function to redirect the user to a specified location
-//
-//	func Redirect(w http.ResponseWriter, r *http.Request, location string, code int) {
-//		http.Redirect(w, r, location, code)
-//	}
-func Redirect(w http.ResponseWriter, r *http.Request, location string, code int) {
-	http.Redirect(w, r, location, code)
+// StreamFile handle files streamed response with allows the download of a file in chunks
+func StreamFile(filePath, fileName string, w http.ResponseWriter, r *http.Request) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		Error(w, r, ErrAPIDBResourceNotFound, fmt.Errorf("error opening file: %s", err))
+		return
+	}
+	defer file.Close()
+
+	// Set all necessary headers
+	w.Header().Set("Connection", "Keep-Alive")
+	w.Header().Set("Transfer-Encoding", "chunked")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(fileName))
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	const bufferSize = 4096
+	buffer := make([]byte, bufferSize)
+
+	for {
+		// Read a chunk of the file
+		bytesRead, err := file.Read(buffer)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			Error(w, r, ErrAPIProcessError, fmt.Errorf("error reading file: %s", err))
+			return
+		}
+
+		// Write the chunk to the response writer
+		_, err = w.Write(buffer[:bytesRead])
+		if err != nil {
+			// If writing to the response writer fails, log the error and stop streaming
+			Error(w, r, ErrAPIProcessError, fmt.Errorf("error writing to response writer: %s", err))
+			break
+		}
+
+		w.(http.Flusher).Flush()
+	}
 }

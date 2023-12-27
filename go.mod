@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	github.com/Masterminds/squirrel v1.5.3
-	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
 	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/crewjam/saml v0.4.6
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -19,7 +18,7 @@ require (
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/websocket v1.5.0
 	github.com/hashicorp/go-hclog v1.3.1
-	github.com/hashicorp/go-plugin v1.3.0
+	github.com/hashicorp/go-plugin v1.5.2
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/json-iterator/go v1.1.12
 	github.com/lestrrat-go/jwx v1.2.6
@@ -38,7 +37,7 @@ require (
 	golang.org/x/net v0.12.0
 	golang.org/x/oauth2 v0.6.0
 	google.golang.org/grpc v1.40.0
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.28.2-0.20230222093303-bc1253ad3743
 )
 
 require (

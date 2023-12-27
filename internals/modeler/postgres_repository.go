@@ -16,7 +16,7 @@ type PostgresRepository struct {
 	conn *sqlx.DB
 }
 
-//NewPostgresRepository returns a new instance of PostgresRepository
+// NewPostgresRepository returns a new instance of PostgresRepository
 func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	r := PostgresRepository{
 		conn: dbClient,
@@ -174,7 +174,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 // GetAll returns all models in the repository
 func (r *PostgresRepository) GetAll() (map[int64]modeler.Model, error) {
 
-	models := make(map[int64]modeler.Model, 0)
+	models := make(map[int64]modeler.Model)
 
 	query := `SELECT id, definition FROM model_v1`
 	rows, err := r.conn.Query(query)

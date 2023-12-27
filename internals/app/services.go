@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
 	"strings"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
@@ -78,6 +79,11 @@ func stopServices() {
 }
 
 func initNotifier() {
+	notificationLifetime := viper.GetDuration("NOTIFICATION_LIFETIME")
+	handler := notification.NewHandler(notificationLifetime)
+	handler.RegisterNotificationType(notification.MockNotification{})
+	handler.RegisterNotificationType(export.ExportNotification{})
+	notification.ReplaceHandlerGlobals(handler)
 	notifier.ReplaceGlobals(notifier.NewNotifier())
 }
 
@@ -90,7 +96,6 @@ func initScheduler() {
 		if viper.GetBool("ENABLE_CRONS_ON_START") {
 			scheduler.S().C.Start()
 		}
-
 	}
 }
 func initTasker() {
@@ -100,7 +105,6 @@ func initTasker() {
 
 func initCalendars() {
 	calendar.Init()
-
 }
 
 func initCoordinator() {
@@ -114,7 +118,7 @@ func initCoordinator() {
 
 	instanceName := viper.GetString("INSTANCE_NAME")
 	if err = coordinator.InitInstance(instanceName, models); err != nil {
-		zap.L().Fatal("Intialisation of coordinator master", zap.Error(err))
+		zap.L().Fatal("Initialization of coordinator master", zap.Error(err))
 	}
 	if viper.GetBool("ENABLE_CRONS_ON_START") {
 		for _, li := range coordinator.GetInstance().LogicalIndices {
@@ -127,13 +131,11 @@ func initCoordinator() {
 }
 
 func initEmailSender() {
-
 	username := viper.GetString("SMTP_USERNAME")
 	password := viper.GetString("SMTP_PASSWORD")
 	host := viper.GetString("SMTP_HOST")
 	port := viper.GetString("SMTP_PORT")
 	email.InitSender(username, password, host, port)
-
 }
 
 func initOidcAuthentication() {

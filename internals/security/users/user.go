@@ -13,7 +13,7 @@ import (
 // User is used as the main user struct
 type User struct {
 	ID        uuid.UUID `json:"id"`
-	Login     string    `json:"login"`
+	Login     string    `json:"login"` // is the unique identifier of the user, through the different connection modes
 	Created   time.Time `json:"created"`
 	LastName  string    `json:"lastName"`
 	FirstName string    `json:"firstName"`
@@ -102,12 +102,12 @@ func (u UserWithPermissions) ListMatchingPermissions(match permissions.Permissio
 }
 
 func (u UserWithPermissions) GetMatchingResourceIDs(match permissions.Permission) []string {
-	return permissions.GetRessourceIDs(permissions.ListMatchingPermissions(u.Permissions, match))
+	return permissions.GetResourceIDs(permissions.ListMatchingPermissions(u.Permissions, match))
 }
 
 func (u UserWithPermissions) GetMatchingResourceIDsInt64(match permissions.Permission) []int64 {
 	ids := make([]int64, 0)
-	for _, resourceID := range permissions.GetRessourceIDs(permissions.ListMatchingPermissions(u.Permissions, match)) {
+	for _, resourceID := range permissions.GetResourceIDs(permissions.ListMatchingPermissions(u.Permissions, match)) {
 		if resourceID == permissions.All {
 			continue
 		}

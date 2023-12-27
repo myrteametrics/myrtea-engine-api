@@ -1,6 +1,7 @@
 package notifier
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"sync"
 	"time"
 
@@ -45,7 +46,7 @@ func NewNotifier() *Notifier {
 	cm := NewClientManager()
 	return &Notifier{
 		clientManager: cm,
-		cache:         make(map[string]time.Time, 0),
+		cache:         make(map[string]time.Time),
 	}
 }
 
@@ -61,6 +62,7 @@ func (notifier *Notifier) Unregister(client Client) error {
 	return notifier.clientManager.Unregister(client)
 }
 
+// verifyCache check if a notification has already been sent
 func (notifier *Notifier) verifyCache(key string, timeout time.Duration) bool {
 	if val, ok := notifier.cache[key]; ok && time.Now().UTC().Before(val) {
 		return false
@@ -69,42 +71,51 @@ func (notifier *Notifier) verifyCache(key string, timeout time.Duration) bool {
 	return true
 }
 
-// SendToRoles send a notification to every user related to the input list of roles
-func (notifier *Notifier) SendToRoles(cacheKey string, timeout time.Duration, notif notification.Notification, roles []uuid.UUID) {
-
-	zap.L().Debug("notifier.SendToRoles", zap.Any("roles", roles), zap.Any("notification", notif))
-
-	if cacheKey != "" && !notifier.verifyCache(cacheKey, timeout) {
-		zap.L().Debug("Notification send skipped")
-		return
+func (notifier *Notifier) CleanCache() {
+	for key, val := range notifier.cache {
+		if time.Now().UTC().After(val) {
+			delete(notifier.cache, key)
+		}
 	}
-
-	id, err := notification.R().Create(notif)
-	if err != nil {
-		zap.L().Error("Add notification to history", zap.Error(err))
-		return
-	}
-
-	notifFull := notification.R().Get(id)
-	if notifFull == nil {
-		zap.L().Error("Notification not found after creation", zap.Int64("id", id))
-	}
-
-	// FIXME: This should be fully reworking after security refactoring and removal of groups
-
-	// if roles != nil && len(roles) > 0 {
-	// 	clients := make(map[Client]bool, 0)
-	// 	for _, roleID := range roles {
-	// 		roleClients := notifier.findClientsByRoleID(roleID)
-	// 		for _, client := range roleClients {
-	// 			clients[client] = true
-	// 		}
-	// 	}
-	// 	for client := range clients {
-	// 		notifier.sendToClient(notifFull, client)
-	// 	}
-	// }
 }
+
+// TODO: renew this
+//// SendToRoles send a notification to every user related to the input list of roles
+//func (notifier *Notifier) SendToRoles(cacheKey string, timeout time.Duration, notif notification.Notification, roles []uuid.UUID) {
+//
+//	zap.L().Debug("notifier.SendToRoles", zap.Any("roles", roles), zap.Any("notification", notif))
+//
+//	if cacheKey != "" && !notifier.verifyCache(cacheKey, timeout) {
+//		zap.L().Debug("Notification send skipped")
+//		return
+//	}
+//
+//	id, err := notification.R().Create(notif, "")
+//	if err != nil {
+//		zap.L().Error("Add notification to history", zap.Error(err))
+//		return
+//	}
+//
+//	notifFull, err := notification.R().Get(id)
+//	if notifFull == nil {
+//		zap.L().Error("Notification not found after creation", zap.Int64("id", id))
+//	}
+//
+//	// FIXME: This should be fully reworking after security refactoring and removal of groups
+//
+//	// if roles != nil && len(roles) > 0 {
+//	// 	clients := make(map[Client]bool, 0)
+//	// 	for _, roleID := range roles {
+//	// 		roleClients := notifier.findClientsByRoleID(roleID)
+//	// 		for _, client := range roleClients {
+//	// 			clients[client] = true
+//	// 		}
+//	// 	}
+//	// 	for client := range clients {
+//	// 		notifier.sendToClient(notifFull, client)
+//	// 	}
+//	// }
+//}
 
 // sendToClient convert and send a notification to a specific client
 // Every multiplexing function must call this function in the end to send message
@@ -126,34 +137,73 @@ func (notifier *Notifier) Broadcast(notif notification.Notification) {
 }
 
 // SendToUsers send a notification to users corresponding the input ids
-func (notifier *Notifier) SendToUsers(notif notification.Notification, users []uuid.UUID) {
+func (notifier *Notifier) SendToUsers(notif notification.Notification, users []users.UserWithPermissions) error {
 	if users != nil && len(users) > 0 {
-		for _, userID := range users {
-			clients := notifier.findClientsByUserID(userID)
-			for _, client := range clients {
-				notifier.sendToClient(notif, client)
+		for _, user := range users {
+			err := notifier.SendToUser(notif, user)
+			if err != nil {
+				return err
 			}
 		}
 	}
+	return nil
 }
 
-// Send send a byte slices to a specific websocket client
+// SendToUserLogins send a notification to user logins corresponding the input ids
+func (notifier *Notifier) SendToUserLogins(notif notification.Notification, users []string) error {
+	if users != nil && len(users) > 0 {
+		for _, user := range users {
+			err := notifier.SendToUserLogin(notif, user)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// SendToUser send a notification to a specific user
+func (notifier *Notifier) SendToUser(notif notification.Notification, user users.UserWithPermissions) error {
+	return notifier.SendToUserLogin(notif, user.Login)
+}
+
+// SendToUserLogin send a notification to a specific user using his login
+func (notifier *Notifier) SendToUserLogin(notif notification.Notification, login string) error {
+	if notif.IsPersistent() { // Not all notifications needs notifications to be saved to database
+		id, err := notification.R().Create(notif, login)
+		if err != nil {
+			zap.L().Error("Add notification to history", zap.Error(err))
+			return err
+		}
+		notif = notif.SetId(id)
+	}
+
+	clients := notifier.findClientsByUserLogin(login)
+	for _, client := range clients {
+		notifier.sendToClient(notif, client)
+	}
+	return nil
+}
+
+// Send a byte slices to a specific websocket client
 func (notifier *Notifier) Send(message []byte, client Client) {
 	if client != nil {
 		client.GetSendChannel() <- message
 	}
 }
 
-func (notifier *Notifier) findClientsByUserID(id uuid.UUID) []Client {
+// findClientsByUserLogin returns a list of clients corresponding to the input login
+func (notifier *Notifier) findClientsByUserLogin(login string) []Client {
 	clients := make([]Client, 0)
 	for _, client := range notifier.clientManager.GetClients() {
-		if client.GetUser() != nil && client.GetUser().ID == id {
+		if client.GetUser() != nil && client.GetUser().Login == login {
 			clients = append(clients, client)
 		}
 	}
 	return clients
 }
 
+// findClientsByRoleID returns a list of clients corresponding to the input role id
 func (notifier *Notifier) findClientsByRoleID(id uuid.UUID) []Client {
 	clients := make([]Client, 0)
 	for _, client := range notifier.clientManager.GetClients() {

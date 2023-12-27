@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/metrics"
 	"net/http"
 	"os"
@@ -39,7 +42,6 @@ var (
 // @name Authorization
 
 func main() {
-
 	hostname, _ := os.Hostname()
 	metrics.InitMetricLabels(hostname)
 
@@ -68,10 +70,27 @@ func main() {
 		GatewayMode:        viper.GetBool("HTTP_SERVER_API_ENABLE_GATEWAY_MODE"),
 		AuthenticationMode: viper.GetString("AUTHENTICATION_MODE"),
 		LogLevel:           zapConfig.Level,
-		PluginCore:         core,
 	}
 
-	router := router.New(routerConfig)
+	// Exports
+	directDownload := viper.GetBool("EXPORT_DIRECT_DOWNLOAD")
+	indirectDownloadUrl := viper.GetString("EXPORT_INDIRECT_DOWNLOAD_URL")
+
+	exportWrapper := export.NewWrapper(
+		viper.GetString("EXPORT_BASE_PATH"),        // basePath
+		viper.GetInt("EXPORT_WORKERS_COUNT"),       // workersCount
+		viper.GetInt("EXPORT_DISK_RETENTION_DAYS"), // diskRetentionDays
+		viper.GetInt("EXPORT_QUEUE_MAX_SIZE"),      // queueMaxSize
+	)
+	exportWrapper.Init(context.Background())
+
+	routerServices := router.Services{
+		PluginCore:       core,
+		ProcessorHandler: handlers.NewProcessorHandler(),
+		ExportHandler:    handlers.NewExportHandler(exportWrapper, directDownload, indirectDownloadUrl),
+	}
+
+	router := router.New(routerConfig, routerServices)
 	var srv *http.Server
 	if serverEnableTLS {
 		srv = server.NewSecuredServer(serverPort, serverTLSCert, serverTLSKey, router)
@@ -89,7 +108,7 @@ func main() {
 		} else {
 			err = srv.ListenAndServe()
 		}
-		if err != nil && err != http.ErrServerClosed {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			zap.L().Fatal("Server listen", zap.Error(err))
 		}
 	}()

@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -14,7 +16,10 @@ func TestNewWSClient(t *testing.T) {
 
 	// Server-side initialisation
 	var client *WebsocketClient
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer wg.Done()
 		var err error
 		client, err = BuildWebsocketClient(w, r, nil)
 		if err != nil {
@@ -30,6 +35,20 @@ func TestNewWSClient(t *testing.T) {
 	}
 	defer ws.Close()
 
+	c := make(chan struct{})
+
+	// wait for the client to be ready
+	go func() {
+		wg.Wait()
+		c <- struct{}{}
+	}()
+
+	select {
+	case <-c:
+	case <-time.After(time.Second):
+		t.Fatalf("Timed out waiting for wait group\n")
+	}
+
 	// Tests
 	if client == nil {
 		t.Fatal("Client not built")
@@ -41,7 +60,10 @@ func TestWSClientRead(t *testing.T) {
 
 	// Server-side initialisation
 	var client *WebsocketClient
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer wg.Done()
 		var err error
 		client, err = BuildWebsocketClient(w, r, nil)
 		if err != nil {
@@ -57,6 +79,20 @@ func TestWSClientRead(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	defer ws.Close()
+
+	c := make(chan struct{})
+
+	// wait for the client to be ready
+	go func() {
+		wg.Wait()
+		c <- struct{}{}
+	}()
+
+	select {
+	case <-c:
+	case <-time.After(time.Second):
+		t.Fatalf("Timed out waiting for wait group\n")
+	}
 
 	// Tests
 	for i := 0; i < 10; i++ {
@@ -79,8 +115,11 @@ func TestWSClientWrite(t *testing.T) {
 	ReplaceGlobals(NewNotifier())
 
 	// Server-side initialisation
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	var client *WebsocketClient
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer wg.Done()
 		var err error
 		client, err = BuildWebsocketClient(w, r, nil)
 		if err != nil {
@@ -96,6 +135,20 @@ func TestWSClientWrite(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	defer ws.Close()
+
+	c := make(chan struct{})
+
+	// wait for the client to be ready
+	go func() {
+		wg.Wait()
+		c <- struct{}{}
+	}()
+
+	select {
+	case <-c:
+	case <-time.After(time.Second):
+		t.Fatalf("Timed out waiting for wait group\n")
+	}
 
 	// Tests
 	for i := 0; i < 10; i++ {

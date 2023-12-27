@@ -13,8 +13,9 @@ import (
 
 // AggregateIngester is a component which process scheduler.ExternalAggregate
 type AggregateIngester struct {
-	Data             chan []scheduler.ExternalAggregate
+	data             chan []scheduler.ExternalAggregate
 	metricQueueGauge *stdprometheus.Gauge
+	running          bool
 }
 
 var (
@@ -39,16 +40,17 @@ func _newRegisteredGauge() *stdprometheus.Gauge {
 // NewAggregateIngester returns a pointer to a new AggregateIngester instance
 func NewAggregateIngester() *AggregateIngester {
 	return &AggregateIngester{
-		Data:             make(chan []scheduler.ExternalAggregate, viper.GetInt("AGGREGATEINGESTER_QUEUE_BUFFER_SIZE")),
+		data:             make(chan []scheduler.ExternalAggregate, viper.GetInt("AGGREGATEINGESTER_QUEUE_BUFFER_SIZE")),
 		metricQueueGauge: _aggregateIngesterGauge,
+		running:          false,
 	}
 }
 
 // Run is the main routine of a TypeIngester instance
-func (ingester *AggregateIngester) Run() {
+func (ai *AggregateIngester) Run() {
 	zap.L().Info("Starting AggregateIngester")
 
-	for ir := range ingester.Data {
+	for ir := range ai.data {
 		zap.L().Debug("Received ExternalAggregate", zap.Int("ExternalAggregate items count", len(ir)))
 
 		err := HandleAggregates(ir)
@@ -57,25 +59,31 @@ func (ingester *AggregateIngester) Run() {
 		}
 
 		// Update queue gauge
-		(*ingester.metricQueueGauge).Set(float64(len(ingester.Data)))
+		(*ai.metricQueueGauge).Set(float64(len(ai.data)))
 	}
 
 }
 
 // Ingest process an array of scheduler.ExternalAggregate
-func (ingester *AggregateIngester) Ingest(aggregates []scheduler.ExternalAggregate) error {
-	dataLen := len(ingester.Data)
+func (ai *AggregateIngester) Ingest(aggregates []scheduler.ExternalAggregate) error {
+	dataLen := len(ai.data)
+
+	// Start ingester if not running
+	if !ai.running {
+		go ai.Run()
+		ai.running = true
+	}
 
 	zap.L().Debug("Ingesting data", zap.Any("aggregates", aggregates))
 
 	// Check for channel overloading
-	if dataLen+1 >= cap(ingester.Data) {
+	if dataLen+1 >= cap(ai.data) {
 		zap.L().Debug("Buffered channel would be overloaded with incoming bulkIngestRequest")
-		(*ingester.metricQueueGauge).Set(float64(dataLen))
+		(*ai.metricQueueGauge).Set(float64(dataLen))
 		return errors.New("channel overload")
 	}
 
-	ingester.Data <- aggregates
+	ai.data <- aggregates
 
 	return nil
 }

@@ -139,23 +139,6 @@ func TestQueryParamToOptionalInt64Array(t *testing.T) {
 
 }
 
-func TestRemoveDuplicate(t *testing.T) {
-	sample := []int64{1, 1, 1, 2, 2, 3, 4}
-	expectedResult := []int64{1, 2, 3, 4}
-	result := removeDuplicate(sample)
-
-	if len(result) != len(expectedResult) {
-		t.FailNow()
-	}
-
-	for i := 0; i < len(expectedResult); i++ {
-		if expectedResult[i] != result[i] {
-			t.FailNow()
-		}
-	}
-
-}
-
 func TestHandleError(t *testing.T) {
 	// response writer and request
 	w := httptest.NewRecorder()

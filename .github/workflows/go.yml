@@ -34,7 +34,7 @@ jobs:
 
     - name: Coverage
       uses: gwatts/go-coverage-action@v1
-      if: github.ref == 'refs/heads/master'
+    #  if: github.ref == 'refs/heads/master'
     #  continue-on-error: true
       with:
         add-comment: true
