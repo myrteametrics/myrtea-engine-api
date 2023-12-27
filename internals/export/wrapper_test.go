@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"github.com/myrteametrics/myrtea-sdk/v4/expression"
@@ -32,12 +33,12 @@ func TestFactsEquals(t *testing.T) {
 }
 
 func TestNewWrapperItem(t *testing.T) {
-	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "test"})
+	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test", CSVParameters{}, users.User{Login: "test"})
 	expression.AssertNotEqual(t, item.Id, "")
 	expression.AssertEqual(t, factsEquals(item.Facts, []engine.Fact{{ID: 1}}), true)
 	expression.AssertEqual(t, item.Params.Equals(CSVParameters{}), true)
 	expression.AssertEqual(t, item.Status, StatusPending)
-	expression.AssertEqual(t, strings.HasSuffix(item.FileName, "test.txt.gz"), true, "test.txt.gz")
+	expression.AssertEqual(t, strings.HasSuffix(item.FileName, "test.csv.gz"), true, "test.txt.gz")
 	expression.AssertNotEqual(t, len(item.Users), 0)
 	expression.AssertEqual(t, item.Users[0], "test")
 }
@@ -100,6 +101,7 @@ func TestStartDispatcher(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	notifier.ReplaceGlobals(notifier.NewNotifier()) // for notifications
 	wrapper := NewWrapper(dname, 1, 1, 1)
 	wrapper.Init(ctx)
 	expression.AssertEqual(t, len(wrapper.workers), 1)
@@ -278,6 +280,7 @@ func TestWrapper_dispatchExportQueue(t *testing.T) {
 	fileName := filepath.Base(file.Name())
 	_ = file.Close()
 
+	notifier.ReplaceGlobals(notifier.NewNotifier()) // for notifications
 	wrapper := NewWrapper(dname, 1, 1, 2)
 	ctx, cancel := context.WithCancel(context.Background())
 	wrapper.Init(ctx)
@@ -354,14 +357,14 @@ func TestWrapper_DeleteExport(t *testing.T) {
 
 	// test archive
 	wrapper.archive.Store(item.Id, *item)
-	expression.AssertEqual(t, wrapper.DeleteExport(item.Id, users.User{Login: "bla"}), true, "item should have been deleted")
+	expression.AssertEqual(t, wrapper.DeleteExport(item.Id, users.User{Login: "bla"}), DeleteExportDeleted, "item should have been deleted")
 	_, ok := wrapper.archive.Load(item.Id)
 	expression.AssertEqual(t, ok, false, "item should not be in archive anymore")
 
 	// test archive multi-user
 	item.Users = []string{"bla", "blabla"}
 	wrapper.archive.Store(item.Id, *item)
-	expression.AssertEqual(t, wrapper.DeleteExport(item.Id, users.User{Login: "bla"}), true, "user should have been deleted from existing export")
+	expression.AssertEqual(t, wrapper.DeleteExport(item.Id, users.User{Login: "bla"}), DeleteExportUserDeleted, "user should have been deleted from existing export")
 	_, ok = wrapper.archive.Load(item.Id)
 	expression.AssertEqual(t, ok, true, "item should be in archive")
 	item.Users = []string{"bla"}
@@ -372,7 +375,7 @@ func TestWrapper_DeleteExport(t *testing.T) {
 	wrapper.queueMutex.Lock()
 	expression.AssertEqual(t, len(wrapper.queue), 1, "item should be in queue")
 	wrapper.queueMutex.Unlock()
-	expression.AssertEqual(t, wrapper.DeleteExport(queueItem.Id, users.User{Login: "bla"}), true, "item should have been deleted")
+	expression.AssertEqual(t, wrapper.DeleteExport(queueItem.Id, users.User{Login: "bla"}), DeleteExportDeleted, "item should have been deleted")
 	wrapper.queueMutex.Lock()
 	expression.AssertEqual(t, len(wrapper.queue), 0, "item should not be in queue anymore")
 	wrapper.queueMutex.Unlock()
@@ -385,7 +388,7 @@ func TestWrapper_DeleteExport(t *testing.T) {
 	wrapper.queueMutex.Lock()
 	expression.AssertEqual(t, len(wrapper.queue), 1, "item should be in queue")
 	wrapper.queueMutex.Unlock()
-	expression.AssertEqual(t, wrapper.DeleteExport(queueItem.Id, users.User{Login: "bla"}), true, "user should have been deleted from existing export")
+	expression.AssertEqual(t, wrapper.DeleteExport(queueItem.Id, users.User{Login: "bla"}), DeleteExportUserDeleted, "user should have been deleted from existing export")
 	wrapper.queueMutex.Lock()
 	expression.AssertEqual(t, len(wrapper.queue), 1, "item should be in queue")
 	wrapper.queueMutex.Unlock()
@@ -397,9 +400,9 @@ func TestWrapper_DeleteExport(t *testing.T) {
 	worker.QueueItem = *item
 	worker.Available = true
 	worker.Mutex.Unlock()
-	expression.AssertEqual(t, wrapper.DeleteExport(item.Id, users.User{Login: "bla"}), false, "item should have not been deleted")
+	expression.AssertEqual(t, wrapper.DeleteExport(item.Id, users.User{Login: "bla"}), DeleteExportNotFound, "item should have not been deleted")
 	worker.SwapAvailable(false)
-	expression.AssertEqual(t, wrapper.DeleteExport(item.Id, users.User{Login: "bla"}), true, "item should have been deleted")
+	expression.AssertEqual(t, wrapper.DeleteExport(item.Id, users.User{Login: "bla"}), DeleteExportCanceled, "item should have been deleted")
 	expression.AssertEqual(t, len(worker.Cancel), 1, "worker cancel channel should have been filled")
 
 	// clean cancel channel (non-blocking)
@@ -407,7 +410,7 @@ func TestWrapper_DeleteExport(t *testing.T) {
 	worker.Mutex.Lock()
 	worker.QueueItem.Users = []string{"bla", "blabla"}
 	worker.Mutex.Unlock()
-	expression.AssertEqual(t, wrapper.DeleteExport(item.Id, users.User{Login: "bla"}), true, "user should have been deleted from existing export")
+	expression.AssertEqual(t, wrapper.DeleteExport(item.Id, users.User{Login: "bla"}), DeleteExportNotFound, "user should have been deleted from existing export")
 	expression.AssertEqual(t, len(worker.Cancel), 0, "worker cancel channel should not have been filled")
 }
 
