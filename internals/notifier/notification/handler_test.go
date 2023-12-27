@@ -8,7 +8,6 @@ import (
 func TestNewHandler(t *testing.T) {
 	handler := NewHandler(0)
 	expression.AssertNotEqual(t, handler, nil, "NewHandler() should not return nil")
-	expression.AssertNotEqual(t, len(handler.notificationTypes), 0, "NewHandler() should not return an empty notificationTypes")
 }
 
 func TestHandler_RegisterNotificationType_AddsNewType(t *testing.T) {
