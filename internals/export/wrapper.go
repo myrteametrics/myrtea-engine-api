@@ -142,13 +142,13 @@ func (ew *Wrapper) Init(ctx context.Context) {
 			zap.L().Info("The export directory not exists, trying to create...", zap.String("EXPORT_BASE_PATH", ew.BasePath))
 
 			if err := os.MkdirAll(ew.BasePath, os.ModePerm); err != nil {
-				zap.L().Fatal("Couldn't create export directory", zap.String("EXPORT_BASE_PATH", ew.BasePath), zap.Error(err))
+				zap.L().Error("Couldn't create export directory", zap.String("EXPORT_BASE_PATH", ew.BasePath), zap.Error(err))
 			} else {
 				zap.L().Info("The export directory has been successfully created.")
 			}
 
 		} else {
-			zap.L().Fatal("Couldn't access to export directory", zap.String("EXPORT_BASE_PATH", ew.BasePath), zap.Error(err))
+			zap.L().Error("Couldn't access to export directory", zap.String("EXPORT_BASE_PATH", ew.BasePath), zap.Error(err))
 		}
 
 	}
