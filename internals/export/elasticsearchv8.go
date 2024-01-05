@@ -62,7 +62,7 @@ func (export StreamedExport) StreamedExportFactHitsFullV8(ctx context.Context, f
 	indicesStr := strings.Join(indices, ",")
 
 	// handle pit creation
-	pit, err := elasticsearchv8.C().OpenPointInTime(indicesStr).KeepAlive("1m").Do(context.Background())
+	pit, err := elasticsearchv8.C().OpenPointInTime(indicesStr).KeepAlive("5m").Do(context.Background())
 	if err != nil {
 		zap.L().Error("OpenPointInTime failed", zap.Error(err))
 		return err

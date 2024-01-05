@@ -10,8 +10,9 @@ type RPCServer struct {
 	Impl StandaloneService
 }
 
-func (s *RPCServer) Run(port int, resp *interface{}) error {
-	return s.Impl.Run(port)
+func (s *RPCServer) Run(port int, resp *string) error {
+	*resp = s.Impl.Run(port)
+	return nil
 }
 
 // RPCPlugin This section concerns the engine
@@ -19,6 +20,11 @@ type RPCPlugin struct {
 	client *rpc.Client
 }
 
-func (g *RPCPlugin) Run(port int) error {
-	return g.client.Call("Plugin.Run", port, nil)
+func (g *RPCPlugin) Run(port int) string {
+	var result string
+	err := g.client.Call("Plugin.Run", port, &result)
+	if err != nil {
+		result = err.Error()
+	}
+	return result
 }
