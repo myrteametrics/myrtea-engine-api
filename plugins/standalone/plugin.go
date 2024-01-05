@@ -2,17 +2,15 @@ package standalone
 
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
+	"github.com/hashicorp/go-plugin"
+	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
+	"go.uber.org/zap"
 	"net/http"
 	"net/rpc"
 	"os"
 	"os/exec"
 	"runtime"
-	"time"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/hashicorp/go-plugin"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
-	"go.uber.org/zap"
 )
 
 // Handshake is a common handshake that is shared by plugin and host.
@@ -61,9 +59,7 @@ func NewPlugin(config pluginutils.PluginConfig) *Plugin {
 			HandshakeConfig:  Handshake,
 			Plugins:          pluginMap,
 			Cmd:              cmd,
-			StartTimeout:     2 * time.Minute,
 			AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
-			SkipHostEnv:      false,
 		},
 	}
 }
@@ -85,7 +81,6 @@ func (p *Plugin) Stop() error {
 }
 
 func (p *Plugin) Start() error {
-
 	client := plugin.NewClient(p.ClientConfig)
 
 	rpcClient, err := client.Client()
@@ -112,9 +107,9 @@ func (p *Plugin) Start() error {
 	p.Impl = service
 
 	// Run service on given port
-	err = p.Impl.Run(p.Config.Port)
-	if err != nil {
-		zap.L().Error("Error executing RCPPlugin.Run", zap.Error(err))
+	errStr := p.Impl.Run(p.Config.Port)
+	if errStr != "" {
+		zap.L().Error("Error executing RCPPlugin.Run", zap.String("error", errStr))
 		client.Kill()
 		return err
 	}
@@ -128,7 +123,6 @@ func (p *Plugin) Handler() http.Handler {
 }
 
 // RPC server & client implementation for Plugin interface
-
 func (p *Plugin) Server(*plugin.MuxBroker) (interface{}, error) {
 	return &RPCServer{Impl: p.Impl}, nil
 }
