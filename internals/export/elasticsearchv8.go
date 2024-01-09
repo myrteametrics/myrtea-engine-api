@@ -105,7 +105,6 @@ func (export StreamedExport) StreamedExportFactHitsFullV8(ctx context.Context, f
 		response, err := elasticsearchv8.C().Search().
 			Request(searchRequest).
 			Size(size).
-			//Sort("\"_shard_doc\": \"asc\"").
 			Do(context.Background())
 		if err != nil {
 			zap.L().Error("ES Search failed", zap.Error(err))
