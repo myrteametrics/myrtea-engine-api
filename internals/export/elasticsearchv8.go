@@ -81,8 +81,9 @@ func (export StreamedExport) StreamedExportFactHitsFullV8(ctx context.Context, f
 		}
 	}()
 
-	searchRequest.Pit = &types.PointInTimeReference{Id: pit.Id, KeepAlive: "1m"}
+	searchRequest.Pit = &types.PointInTimeReference{Id: pit.Id, KeepAlive: "5m"}
 	searchRequest.SearchAfter = []types.FieldValue{}
+	searchRequest.Sort = append(searchRequest.Sort, "_shard_doc")
 	// searchRequest.TrackTotalHits = false // Speeds up pagination (maybe impl?)
 
 	processed := int64(0)
@@ -104,7 +105,6 @@ func (export StreamedExport) StreamedExportFactHitsFullV8(ctx context.Context, f
 		response, err := elasticsearchv8.C().Search().
 			Request(searchRequest).
 			Size(size).
-			Sort("\"_shard_doc\": \"asc\"").
 			Do(context.Background())
 		if err != nil {
 			zap.L().Error("ES Search failed", zap.Error(err))
