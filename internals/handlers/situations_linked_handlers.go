@@ -566,13 +566,12 @@ func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 
 	// FIXME: security check !
 
-	gvalParsingEnabled := r.URL.Query().Get("parsinggvalenabled")
-	ParsingGvalEnabled, err := strconv.ParseBool(gvalParsingEnabled)
+	gvalParsingEnabled, err := strconv.ParseBool(r.URL.Query().Get("parsinggvalenabled"))
 	if err != nil {
-		ParsingGvalEnabled = false
+		gvalParsingEnabled = false
 	}
 
-	instances, err := situation.R().GetAllTemplateInstances(idSituation, ParsingGvalEnabled)
+	instances, err := situation.R().GetAllTemplateInstances(idSituation, gvalParsingEnabled)
 	if err != nil {
 		zap.L().Error("Error on getting situation template instances", zap.String("situationID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
