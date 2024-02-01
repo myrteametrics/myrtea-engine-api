@@ -317,7 +317,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 }
 
 func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.HistoryRecordV4, error) {
-	situationsToUpdate := make(map[string]history.HistoryRecordV4, 0)
+	situationsToUpdate := make(map[string]history.HistoryRecordV4)
 
 	for _, factID := range factIDs {
 		f, found, err := fact.R().Get(factID)
@@ -330,6 +330,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 			continue
 		}
 
+		// get all enabled situations linked to this fact
 		factSituationsHistory, err := GetEnabledSituations(f, t)
 		if err != nil {
 			zap.L().Debug("Fact has no enabled situations", zap.Int64("factID", f.ID))
@@ -340,6 +341,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 		}
 
 		if !f.IsTemplate {
+			// execute fact, to get results
 			widgetData, err := fact.ExecuteFact(t, f, 0, 0, nil, -1, -1, false)
 			if err != nil {
 				zap.L().Error("Fact calculation Error, skipping fact calculation...", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
@@ -526,7 +528,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 
 		err = history.S().HistorySituationFactsQuerier.Execute(history.S().HistorySituationFactsQuerier.Builder.InsertBulk(historySituationFactNew))
 		if err != nil {
-			zap.L().Error("", zap.Error(err))
+			zap.L().Error(fmt.Sprintf("error inserting historySituationFact: make sure you added all facts of situation (%d) to a scheduler", situationToUpdate.SituationID), zap.Error(err))
 		}
 
 		if agenda != nil {
