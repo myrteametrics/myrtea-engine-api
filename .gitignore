@@ -43,3 +43,6 @@ exports/
 
 # GoLang Linter executable
 golangci-lint.exe
+
+# GoLang Linter cache
+.run
