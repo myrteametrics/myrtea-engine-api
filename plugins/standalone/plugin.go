@@ -2,15 +2,16 @@ package standalone
 
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/hashicorp/go-plugin"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
-	"go.uber.org/zap"
 	"net/http"
 	"net/rpc"
 	"os"
 	"os/exec"
 	"runtime"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/hashicorp/go-plugin"
+	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
+	"go.uber.org/zap"
 )
 
 // Handshake is a common handshake that is shared by plugin and host.
@@ -26,6 +27,7 @@ type Plugin struct {
 	ClientConfig *plugin.ClientConfig
 	client       *plugin.Client
 	Impl         StandaloneService
+	IsReady      bool
 }
 
 func NewPlugin(config pluginutils.PluginConfig) *Plugin {
@@ -81,6 +83,7 @@ func (p *Plugin) Stop() error {
 }
 
 func (p *Plugin) Start() error {
+	zap.L().Info("Starting plugin...", zap.String("plugin", p.Config.Name))
 	client := plugin.NewClient(p.ClientConfig)
 
 	rpcClient, err := client.Client()
@@ -114,11 +117,24 @@ func (p *Plugin) Start() error {
 		return err
 	}
 
+	zap.L().Info("Plugin successfully initialized", zap.String("plugin", p.Config.Name))
+	p.IsReady = true
+	zap.L().Info("Plugin is now ready to accept requests", zap.String("plugin", p.Config.Name))
+
 	return nil
 }
 
 func (p *Plugin) Handler() http.Handler {
 	r := chi.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !p.IsReady {
+				http.Error(w, "Plugin is not ready yet", http.StatusServiceUnavailable)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
 	return r
 }
 
