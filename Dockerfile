@@ -1,5 +1,5 @@
 # Stage 1 - Build binary
-FROM golang:1.14-alpine as builder
+FROM golang:1.20-alpine as builder
 LABEL maintainer="Mind7 Consulting <contact@mind7.com>"
 
 RUN apk --no-cache add curl git make \
