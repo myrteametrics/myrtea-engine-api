@@ -26,15 +26,15 @@ import (
 )
 
 const (
-	ExpectedStateErr                = "Error to generate a random State for OIDC Authentification"
-	InvalidStateErr                 = "OIDC authentication invalid state"
-	TokenExchangeErr                = "OIDC authentication Failed to exchange token"
-	NoIDTokenErr                    = "OIDC authentication No ID token found"
-	IDTokenVerifyErr                = "OIDC authentication Failed to verify ID token"
-	TokenName                       = "token"
-	AllowedCookiePath               = "/"
-	parseGlobalVariables            = false
-	NameParmInQueryForEnableParsing = "parsinggvalenabled"
+	ExpectedStateErr            = "Error to generate a random State for OIDC Authentification"
+	InvalidStateErr             = "OIDC authentication invalid state"
+	TokenExchangeErr            = "OIDC authentication Failed to exchange token"
+	NoIDTokenErr                = "OIDC authentication No ID token found"
+	IDTokenVerifyErr            = "OIDC authentication Failed to verify ID token"
+	TokenName                   = "token"
+	AllowedCookiePath           = "/"
+	parseGlobalVariables        = false
+	EnableParsingQueryParamName = "parsinggvalenabled"
 )
 
 // QueryParamToOptionalInt parse a string from a string
@@ -310,7 +310,7 @@ func findCombineFacts(combineFactIds []int64) (combineFacts []engine.Fact) {
 }
 
 func gvalParsingEnabled(params url.Values) bool {
-	val := params.Get(NameParmInQueryForEnableParsing)
+	val := params.Get(EnableParsingQueryParamName)
 	if val == "" {
 		return false
 	}
