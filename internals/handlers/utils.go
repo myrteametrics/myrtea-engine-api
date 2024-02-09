@@ -33,7 +33,6 @@ const (
 	IDTokenVerifyErr            = "OIDC authentication Failed to verify ID token"
 	TokenName                   = "token"
 	AllowedCookiePath           = "/"
-	parseGlobalVariables        = false
 	EnableParsingQueryParamName = "parsinggvalenabled"
 )
 
