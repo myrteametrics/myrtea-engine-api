@@ -6,16 +6,18 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/utils"
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"io"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/utils"
+	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+
 	"net/http"
+	"net/url"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
@@ -24,14 +26,14 @@ import (
 )
 
 const (
-	ExpectedStateErr     = "Error to generate a random State for OIDC Authentification"
-	InvalidStateErr      = "OIDC authentication invalid state"
-	TokenExchangeErr     = "OIDC authentication Failed to exchange token"
-	NoIDTokenErr         = "OIDC authentication No ID token found"
-	IDTokenVerifyErr     = "OIDC authentication Failed to verify ID token"
-	TokenName            = "token"
-	AllowedCookiePath    = "/"
-	parseGlobalVariables = false
+	ExpectedStateErr            = "Error to generate a random State for OIDC Authentification"
+	InvalidStateErr             = "OIDC authentication invalid state"
+	TokenExchangeErr            = "OIDC authentication Failed to exchange token"
+	NoIDTokenErr                = "OIDC authentication No ID token found"
+	IDTokenVerifyErr            = "OIDC authentication Failed to verify ID token"
+	TokenName                   = "token"
+	AllowedCookiePath           = "/"
+	EnableParsingQueryParamName = "parsinggvalenabled"
 )
 
 // QueryParamToOptionalInt parse a string from a string
@@ -304,4 +306,16 @@ func findCombineFacts(combineFactIds []int64) (combineFacts []engine.Fact) {
 		combineFacts = append(combineFacts, combineFact)
 	}
 	return combineFacts
+}
+
+func gvalParsingEnabled(params url.Values) bool {
+	val := params.Get(EnableParsingQueryParamName)
+	if val == "" {
+		return false
+	}
+	parsedVal, err := strconv.ParseBool(val)
+	if err != nil {
+		return false
+	}
+	return parsedVal
 }

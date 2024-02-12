@@ -159,7 +159,7 @@ func TestPostRulesSituations(t *testing.T) {
 	rr := tests.BuildTestHandler(t, "POST", "/rules/"+fmt.Sprint(r1ID)+"/situations", string(data), "/rules/{id}/situations", PostRuleSituations, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getSituatations, _ := situation.R().GetAllByRuleID(int64(r1ID), parseGlobalVariables)
+	getSituatations, _ := situation.R().GetAllByRuleID(int64(r1ID), false)
 	if _, ok := getSituatations[s1ID]; !ok {
 		t.Errorf("The rule %d was not added to the rule list of the situation %d", r1ID, s1ID)
 	}
@@ -170,7 +170,7 @@ func TestPostRulesSituations(t *testing.T) {
 	rr = tests.BuildTestHandler(t, "POST", "/rules/"+fmt.Sprint(r2ID)+"/situations", string(data), "/rules/{id}/situations", PostRuleSituations, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getSituatations, _ = situation.R().GetAllByRuleID(int64(r2ID), parseGlobalVariables)
+	getSituatations, _ = situation.R().GetAllByRuleID(int64(r2ID), false)
 	if _, ok := getSituatations[s1ID]; !ok {
 		t.Errorf("The rule %d was not added to the rule list of the situation %d", r1ID, s1ID)
 	}
@@ -193,7 +193,7 @@ func TestPostRulesSituations(t *testing.T) {
 	rr = tests.BuildTestHandler(t, "POST", "/rules/"+fmt.Sprint(r1ID)+"/situations", string(data), "/rules/{id}/situations", PostRuleSituations, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getSituatations, _ = situation.R().GetAllByRuleID(int64(r1ID), parseGlobalVariables)
+	getSituatations, _ = situation.R().GetAllByRuleID(int64(r1ID), false)
 	if _, ok := getSituatations[s1ID]; !ok {
 		t.Errorf("The rule %d was not added to the rule list of the situation %d", r1ID, s1ID)
 	}
@@ -211,7 +211,7 @@ func TestPostRulesSituations(t *testing.T) {
 	rr = tests.BuildTestHandler(t, "POST", "/rules/"+fmt.Sprint(r1ID)+"/situations", string(data), "/rules/{id}/situations", PostRuleSituations, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getSituatations, _ = situation.R().GetAllByRuleID(int64(r1ID), parseGlobalVariables)
+	getSituatations, _ = situation.R().GetAllByRuleID(int64(r1ID), false)
 	if _, ok := getSituatations[s1ID]; !ok {
 		t.Errorf("The rule %d was not added to the rule list of the situation %d", r1ID, s1ID)
 	}

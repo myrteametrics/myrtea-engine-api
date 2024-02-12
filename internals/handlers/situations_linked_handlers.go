@@ -289,7 +289,7 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instance, found, err := situation.R().GetTemplateInstance(instanceID, parseGlobalVariables)
+	instance, found, err := situation.R().GetTemplateInstance(instanceID, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation template instance", zap.Int64("situationID", idSituation), zap.Int64("instanceID", instanceID), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -366,7 +366,7 @@ func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instance, found, err := situation.R().GetTemplateInstance(instanceID, parseGlobalVariables)
+	instance, found, err := situation.R().GetTemplateInstance(instanceID, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation template instance", zap.Int64("situationID", idSituation), zap.Int64("instanceID", instanceID), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -432,7 +432,7 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 		resolvedNewInstances = append(resolvedNewInstances, instance)
 	}
 
-	oldInstances, err := situation.R().GetAllTemplateInstances(idSituation, parseGlobalVariables)
+	oldInstances, err := situation.R().GetAllTemplateInstances(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Error while getting existing situation template instances", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -566,12 +566,7 @@ func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 
 	// FIXME: security check !
 
-	gvalParsingEnabled, err := strconv.ParseBool(r.URL.Query().Get("parsinggvalenabled"))
-	if err != nil {
-		gvalParsingEnabled = false
-	}
-
-	instances, err := situation.R().GetAllTemplateInstances(idSituation, gvalParsingEnabled)
+	instances, err := situation.R().GetAllTemplateInstances(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Error on getting situation template instances", zap.String("situationID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
