@@ -34,10 +34,10 @@ func GetSituations(w http.ResponseWriter, r *http.Request) {
 	var situations map[int64]situation.Situation
 	var err error
 	if userCtx.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionGet)) {
-		situations, err = situation.R().GetAll(parseGlobalVariables)
+		situations, err = situation.R().GetAll(gvalParsingEnabled(r.URL.Query()))
 	} else {
 		resourceIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionGet))
-		situations, err = situation.R().GetAllByIDs(resourceIDs, parseGlobalVariables)
+		situations, err = situation.R().GetAllByIDs(resourceIDs, gvalParsingEnabled(r.URL.Query()))
 	}
 	if err != nil {
 		zap.L().Warn("Cannot retrieve situations", zap.Error(err))
@@ -81,7 +81,7 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	situation, found, err := situation.R().Get(idSituation, parseGlobalVariables)
+	situation, found, err := situation.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -218,7 +218,7 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	situation, found, err := situation.R().Get(idSituation, parseGlobalVariables)
+	situation, found, err := situation.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -283,7 +283,7 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	situation, found, err := situation.R().Get(idSituation, parseGlobalVariables)
+	situation, found, err := situation.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
