@@ -35,7 +35,7 @@ type Config struct {
 	LogLevel           zap.AtomicLevel
 }
 
-// Services is a wrapper for services instances, it is passed through router functions
+// Services is a wrapper for service instances, it is passed through router functions
 type Services struct {
 	PluginCore       *plugin.Core
 	ProcessorHandler *handlers.ProcessorHandler
@@ -201,7 +201,7 @@ func buildRoutesV3Basic(config Config, services Services) (func(r chi.Router), e
 			rg.Mount("/admin", adminRouter())
 		})
 
-		// System intra services Protection routes
+		// System intra service Protection routes
 		r.Group(func(rg chi.Router) {
 			//TODO: change to be intra APIs
 			// if config.Security {
@@ -287,7 +287,7 @@ func buildRoutesV3SAML(config Config, services Services) (func(r chi.Router), er
 			rg.Mount("/admin", adminRouter())
 		})
 
-		// System intra services Protection routes
+		// System intra service Protection routes
 		r.Group(func(rg chi.Router) {
 			//TODO: change to be intra APIs
 			// if config.Security {
@@ -351,7 +351,7 @@ func buildRoutesV3OIDC(config Config, services Services) (func(r chi.Router), er
 			rg.Mount("/admin", adminRouter())
 		})
 
-		// System intra services Protection routes
+		// System intra service Protection routes
 		r.Group(func(rg chi.Router) {
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
