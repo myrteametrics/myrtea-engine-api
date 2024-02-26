@@ -40,6 +40,7 @@ type Services struct {
 	PluginCore       *plugin.Core
 	ProcessorHandler *handlers.ProcessorHandler
 	ExportHandler    *handlers.ExportHandler
+	ServiceHandler   *handlers.ServiceHandler
 }
 
 // Check clean up the configuration and logs comments if required

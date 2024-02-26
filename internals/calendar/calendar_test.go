@@ -8,7 +8,7 @@ import (
 
 func initCalendars() {
 	InitUnitTest()
-	// Load calendars in cache
+	// LoadConnectors calendars in cache
 	setCalendar(Calendar{ID: 1, Name: "c1", Periods: []Period{{Included: true, DaysOfMonth: &dayInterval{From: 1, To: 1}}}, UnionCalendarIDs: []int64{}})
 	setCalendar(Calendar{ID: 2, Name: "c2", Periods: []Period{{Included: false, DaysOfMonth: &dayInterval{From: 2, To: 2}}}, UnionCalendarIDs: []int64{}})
 	setCalendar(Calendar{ID: 3, Name: "c3", Periods: []Period{{Included: true, DaysOfMonth: &dayInterval{From: 3, To: 3}}}, UnionCalendarIDs: []int64{}})

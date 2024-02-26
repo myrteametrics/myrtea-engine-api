@@ -3,13 +3,12 @@ package assistant
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
@@ -49,10 +48,10 @@ func (p *AssistantPlugin) SendMessage(w http.ResponseWriter, r *http.Request) {
 	// TODO: Refactoring for cleaner code separation
 	receiveTs := time.Now().Truncate(1 * time.Millisecond).UTC()
 
-	t, err := handlers.ParseTime(r.URL.Query().Get("time"))
+	t, err := p.parseTime(r.URL.Query().Get("time"))
 	if err != nil {
 		zap.L().Warn("Parse input time", zap.Error(err))
-		err := PersistInteractionTrace(receiveTs, t, nil, nil, nil, nil, err)
+		err = PersistInteractionTrace(receiveTs, t, nil, nil, nil, nil, err)
 		if err != nil {
 			zap.L().Warn("Persist interaction trace", zap.Error(err))
 		}
@@ -185,4 +184,13 @@ func PersistInteractionTrace(receiveTs time.Time, askedTs time.Time, message *Me
 		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
+}
+
+// parseTime try to parse a supposed time string as a time.Time or returns time.Now()
+func (p *AssistantPlugin) parseTime(tStr string) (time.Time, error) {
+	t, err := time.Parse("2006-01-02T15:04:05.000Z07:00", tStr)
+	if err != nil {
+		return time.Now().UTC(), err
+	}
+	return t, nil
 }

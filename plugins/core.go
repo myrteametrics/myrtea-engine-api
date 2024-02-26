@@ -98,11 +98,17 @@ func (c *Core) Stop() {
 }
 
 // PluginExists checks if a plugin with the given name exists
-func (c *Core) PluginExists(name string) bool {
+func (c *Core) PluginExists(name string) (exists bool) {
+	_, exists = c.GetPlugin(name)
+	return
+}
+
+// GetPlugin returns a plugin by its name
+func (c *Core) GetPlugin(name string) (MyrteaPlugin, bool) {
 	for _, p := range c.Plugins {
 		if p.Config.Name == name {
-			return true
+			return p.Plugin, true
 		}
 	}
-	return false
+	return nil, false
 }

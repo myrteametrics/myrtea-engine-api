@@ -1,4 +1,4 @@
-package authmanagement
+package routerauth
 
 import (
 	"errors"

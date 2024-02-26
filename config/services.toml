@@ -1,4 +1,6 @@
-# Add your plugins here
+# Add your services here
+#
+# For plugins:
 #
 # Default plugin structure is:
 # [[plugin]]
@@ -16,3 +18,11 @@
 #[[plugin]]
 #name = "baseline"
 #port = 9082
+
+# For connectors:
+#
+# Default connector structure is:
+# [[connector]]
+# name = "connector"
+# hostname = "localhost"
+# port = 9083
