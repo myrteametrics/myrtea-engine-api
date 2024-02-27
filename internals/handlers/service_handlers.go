@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/service"
 	"net/http"
 	"time"
@@ -26,9 +27,16 @@ func NewServiceHandler(manager *service.Manager) *ServiceHandler {
 // @Produce json
 // @Security Bearer
 // @Success 200 {array} models.ServiceDefinition
+// @Failure 401 "missing permission"
 // @Failure 500 "internal server error"
 // @Router /engine/services [get]
 func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeService, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	var services []service.Definition
 
 	for _, s := range sh.Manager.GetAll() {
@@ -45,10 +53,17 @@ func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id query string false "Service to restart"
 // @Success 200 "service was restarted successfully"
+// @Failure 401 "missing permission"
 // @Failure 429 "too recently"
 // @Failure 500 "internal server error"
 // @Router /engine/services/{id}/restart [post]
 func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeService, permissions.All, "restart")) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	s := sh.getComponent(w, r)
 	if s == nil {
 		return
@@ -77,9 +92,16 @@ func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 // @Param id query string false "Service to reload"
 // @Param component query string false "Component to reload"
 // @Success 200 {object} ServiceStatus
+// @Failure 401 "missing permission"
 // @Failure 500 "internal server error"
 // @Router /engine/services/{id}/reload/{component} [post]
 func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeService, permissions.All, "reload")) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	s := sh.getComponent(w, r)
 	if s == nil {
 		return
@@ -113,9 +135,16 @@ func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id query string false "Component to get status from"
 // @Success 200 {object} models.ServiceStatus
+// @Failure 401 "missing permission"
 // @Failure 500 "internal server error"
 // @Router /engine/services/{id}/status [get]
 func (sh *ServiceHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeService, permissions.All, permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	s := sh.getComponent(w, r)
 	if s == nil {
 		return
