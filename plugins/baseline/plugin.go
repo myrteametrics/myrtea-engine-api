@@ -122,6 +122,10 @@ func (p *BaselinePlugin) Start() error {
 	return nil
 }
 
+func (p *BaselinePlugin) Running() bool {
+	return p.Client != nil && !p.Client.Exited()
+}
+
 // func (p *BaselinePlugin) Test() {
 // 	result, err := p.BaselineService.GetBaselineValues(-1, 19, 4, 111, time.Now())
 // 	if err != nil {

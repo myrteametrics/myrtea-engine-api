@@ -121,6 +121,10 @@ func (p *AssistantPlugin) Start() error {
 	return nil
 }
 
+func (p *AssistantPlugin) Running() bool {
+	return p.Client != nil && !p.Client.Exited()
+}
+
 func (p *AssistantPlugin) Test() {
 	bFact, tokens, err := p.Assistant.SentenceProcess(
 		"2020-10-03T12:30:00.000+02:00",
