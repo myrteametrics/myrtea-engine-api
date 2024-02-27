@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/google/uuid"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
-	uuid "github.com/satori/go.uuid"
 	"go.uber.org/zap"
 )
 
@@ -74,7 +74,7 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, issueID int64, draft models.Fro
 		values (:last_modified, :concurrency_uuid, :issue_id, :data)`
 	params := map[string]interface{}{
 		"last_modified":    now,
-		"concurrency_uuid": uuid.NewV4().String(),
+		"concurrency_uuid": uuid.New().String(),
 		"issue_id":         issueID,
 		"data":             data,
 	}
@@ -106,7 +106,7 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, issueID int64, draft models.Fro
 		WHERE issue_id = :issue_id AND concurrency_uuid = :check_concurrency_uuid`
 	params := map[string]interface{}{
 		"last_modified":          time.Now().Truncate(1 * time.Millisecond).UTC(),
-		"concurrency_uuid":       uuid.NewV4().String(),
+		"concurrency_uuid":       uuid.New().String(),
 		"issue_id":               issueID,
 		"check_concurrency_uuid": draft.ConcurrencyUUID,
 		"data":                   data,
@@ -177,9 +177,8 @@ func (r *PostgresRepository) DeleteOldIssueResolutionsDrafts(ts time.Time) error
 	if err != nil {
 		return err
 	}
-	
+
 	zap.L().Info("Auto purge of the table issue_resolution_draft_v1 ", zap.Int64("Number of rows deleted", affectedRows))
 
 	return nil
 }
-

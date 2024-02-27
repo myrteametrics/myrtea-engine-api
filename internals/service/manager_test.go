@@ -135,7 +135,7 @@ func TestManager_LoadConnectors(t *testing.T) {
 	// Create a file in the temporary directory including connector configuration
 	connectorConfig := `[[connector]]
 	name = "test"
-	hostname = "localhost"
+	url = "http://localhost"
 	port = 8080`
 
 	err = os.WriteFile(filepath.Join(tmpDir, "services.toml"), []byte(connectorConfig), 0644)

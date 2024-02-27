@@ -1,8 +1,12 @@
 package service
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 type ConnectorService struct {
@@ -10,7 +14,28 @@ type ConnectorService struct {
 }
 
 func (c *ConnectorService) Restart() error {
-	return c.sendRequest()
+	u, err := url.JoinPath(fmt.Sprintf("%s:%d", c.Url, c.Port), "api/v1", "restart")
+	if err != nil {
+		return err
+	}
+
+	body := map[string]string{"key": c.Key}
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return nil
+	}
+
+	resp, err := http.Post(u, "application/json", bytes.NewReader(jsonBody))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("invalid response status code '%d'", resp.StatusCode)
+	}
+
+	return nil
 }
 
 func (c *ConnectorService) GetStatus() Status {
@@ -26,7 +51,11 @@ func (c *ConnectorService) GetDefinition() *Definition {
 }
 
 func (c *ConnectorService) sendRequest() error {
-	resp, err := http.Post("https://postman-echo.com/post", "application/json", nil)
+	u, err := url.JoinPath(fmt.Sprintf("%s:%d", c.Url, c.Port), "restart")
+	if err != nil {
+		return err
+	}
+	resp, err := http.Post(u, "application/json", nil)
 	if err != nil {
 		log.Fatalf("An Error Occured %v", err)
 	}

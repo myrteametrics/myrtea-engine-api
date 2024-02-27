@@ -8,8 +8,9 @@ import (
 type Definition struct {
 	Id         uuid.UUID `json:"id"`
 	Name       string    `json:"name"`
-	Hostname   string    `json:"-"`
+	Url        string    `json:"-"`
 	Port       int       `json:"-"`
+	Key        string    `json:"-"`
 	Type       string    `json:"type"`
 	LastAction time.Time `json:"last-action"`
 }

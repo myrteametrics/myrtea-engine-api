@@ -2,11 +2,11 @@ package security
 
 import (
 	"encoding/json"
+	"github.com/golang-jwt/jwt/v4"
 	"math/rand"
 	"net/http"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/jwtauth"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 

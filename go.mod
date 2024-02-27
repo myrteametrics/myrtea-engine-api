@@ -3,16 +3,16 @@ module github.com/myrteametrics/myrtea-engine-api/v5
 go 1.20
 
 require (
-	github.com/Masterminds/squirrel v1.5.3
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/coreos/go-oidc/v3 v3.6.0
-	github.com/crewjam/saml v0.4.6
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/crewjam/saml v0.4.14
 	github.com/elastic/go-elasticsearch/v8 v8.7.0
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/cors v1.2.1
 	github.com/go-chi/jwtauth v1.2.0
 	github.com/go-chi/jwtauth/v5 v5.0.2
+	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/golang/protobuf v1.5.3
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/context v1.1.1
@@ -21,20 +21,19 @@ require (
 	github.com/hashicorp/go-plugin v1.5.2
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/json-iterator/go v1.1.12
-	github.com/lestrrat-go/jwx v1.2.6
+	github.com/lestrrat-go/jwx v1.2.28
 	github.com/lib/pq v1.0.0
-	github.com/myrteametrics/myrtea-sdk/v4 v4.4.8
+	github.com/myrteametrics/myrtea-sdk/v4 v4.5.2
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/prataprc/goparsec v0.0.0-20180806094145-2600a2a4a410
 	github.com/prometheus/client_golang v1.14.0
 	github.com/robfig/cron/v3 v3.0.0
-	github.com/russellhaering/goxmldsig v1.1.1
-	github.com/satori/go.uuid v1.2.0
+	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/spf13/viper v1.3.1
 	github.com/swaggo/http-swagger v1.3.3
 	github.com/swaggo/swag v1.16.1
 	go.uber.org/zap v1.21.0
-	golang.org/x/net v0.12.0
+	golang.org/x/net v0.21.0
 	golang.org/x/oauth2 v0.6.0
 	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.28.2-0.20230222093303-bc1253ad3743
@@ -47,7 +46,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/crewjam/httperr v0.2.0 // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.2.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fortytw2/leaktest v1.3.0 // indirect
@@ -57,8 +56,7 @@ require (
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/spec v0.20.9 // indirect
 	github.com/go-openapi/swag v0.22.4 // indirect
-	github.com/goccy/go-json v0.7.6 // indirect
-	github.com/golang-jwt/jwt/v4 v4.4.1 // indirect
+	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/jonboulle/clockwork v0.2.2 // indirect
@@ -66,10 +64,10 @@ require (
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
-	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
-	github.com/lestrrat-go/httpcc v1.0.0 // indirect
-	github.com/lestrrat-go/iter v1.0.1 // indirect
-	github.com/lestrrat-go/option v1.0.0 // indirect
+	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
+	github.com/lestrrat-go/httpcc v1.0.1 // indirect
+	github.com/lestrrat-go/iter v1.0.2 // indirect
+	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/magiconair/properties v1.8.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
@@ -95,9 +93,9 @@ require (
 	github.com/swaggo/files v0.0.0-20220610200504-28940afbdbfe // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.11.0 // indirect
-	golang.org/x/sys v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/crypto v0.19.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.11.1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20210917145530-b395a37504d4 // indirect
