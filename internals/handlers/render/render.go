@@ -141,7 +141,7 @@ func JSON(w http.ResponseWriter, r *http.Request, data interface{}) {
 func Error(w http.ResponseWriter, r *http.Request, apiError APIError, err error) {
 	apiError.RequestID = middleware.GetReqID(r.Context())
 
-	if viper.GetBool("HTTP_SERVER_API_ENABLE_VERBOSE_ERROR") {
+	if viper.GetBool("HTTP_SERVER_API_ENABLE_VERBOSE_ERROR") && err != nil {
 		apiError.Details = err.Error()
 	}
 

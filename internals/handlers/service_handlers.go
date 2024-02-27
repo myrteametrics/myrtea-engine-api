@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
@@ -42,8 +43,9 @@ func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
 // @Description Restart the service
 // @Tags Service
 // @Produce json
-// @Param id query string false "Component to restart"
-// @Success 200 {object} ServiceStatus
+// @Param id query string false "Service to restart"
+// @Success 200 "service was restarted successfully"
+// @Failure 429 "too recently"
 // @Failure 500 "internal server error"
 // @Router /engine/services/{id}/restart [post]
 func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
@@ -52,19 +54,56 @@ func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// compare LastAction with now and if it's less than 2 minutes, return an error
-	if s.GetDefinition().LastAction.Add(2 * time.Minute).After(time.Now()) {
+	// compare LastRestart with now and if it's less than 2 minutes, return an error
+	if time.Now().Sub(s.GetDefinition().LastRestart) > 2*time.Minute {
 		render.Error(w, r, render.ErrAPITooManyRequests, errors.New("service has been restarted too recently"))
 		return
 	}
 
-	err := s.Restart()
-	if err != nil {
+	code, err := s.Restart()
+	if err != nil || code == 0 {
 		render.Error(w, r, render.ErrAPIProcessError, err)
 		return
 	}
 
-	render.OK(w, r)
+	w.WriteHeader(code)
+}
+
+// Reload godoc
+// @Summary Reload the service
+// @Description Reload the service
+// @Tags Service
+// @Produce json
+// @Param id query string false "Service to reload"
+// @Param component query string false "Component to reload"
+// @Success 200 {object} ServiceStatus
+// @Failure 500 "internal server error"
+// @Router /engine/services/{id}/reload/{component} [post]
+func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
+	s := sh.getComponent(w, r)
+	if s == nil {
+		return
+	}
+	component := chi.URLParam(r, "component")
+
+	if !s.GetDefinition().HasComponent(component) {
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, fmt.Errorf("component '%s' not found", component))
+		return
+	}
+
+	// compare LastReload with now and if it's less than 2 minutes, return an error
+	if time.Now().Sub(s.GetDefinition().LastReload) > 2*time.Minute {
+		render.Error(w, r, render.ErrAPITooManyRequests, errors.New("service has been reloaded too recently"))
+		return
+	}
+
+	code, err := s.Reload(component)
+	if err != nil || code == 0 {
+		render.Error(w, r, render.ErrAPIProcessError, err)
+		return
+	}
+
+	w.WriteHeader(code)
 }
 
 // GetStatus godoc
