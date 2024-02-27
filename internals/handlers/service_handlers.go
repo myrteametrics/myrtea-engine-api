@@ -26,7 +26,7 @@ func NewServiceHandler(manager *service.Manager) *ServiceHandler {
 // @Tags Services
 // @Produce json
 // @Security Bearer
-// @Success 200 {array} models.ServiceDefinition
+// @Success 200 {array} service.Definition
 // @Failure 401 "missing permission"
 // @Failure 500 "internal server error"
 // @Router /engine/services [get]
@@ -91,8 +91,9 @@ func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id query string false "Service to reload"
 // @Param component query string false "Component to reload"
-// @Success 200 {object} ServiceStatus
+// @Success 200 "component reloaded"
 // @Failure 401 "missing permission"
+// @Failure 429 "too recently"
 // @Failure 500 "internal server error"
 // @Router /engine/services/{id}/reload/{component} [post]
 func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
@@ -134,7 +135,7 @@ func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 // @Tags Service
 // @Produce json
 // @Param id query string false "Component to get status from"
-// @Success 200 {object} models.ServiceStatus
+// @Success 200 {object} service.Status
 // @Failure 401 "missing permission"
 // @Failure 500 "internal server error"
 // @Router /engine/services/{id}/status [get]
