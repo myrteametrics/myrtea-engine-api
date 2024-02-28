@@ -54,13 +54,7 @@ func (m Manager) LoadConnectors() error {
 
 	for _, c := range connectors {
 		c.Type = "connector"
-		s := &ConnectorService{
-			Definition: c,
-		}
-		if s.Components == nil {
-			s.Components = make([]string, 0)
-		}
-		m.Register(s)
+		m.Register(NewConnectorService(c))
 	}
 
 	return nil
