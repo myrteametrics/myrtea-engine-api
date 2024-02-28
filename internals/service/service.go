@@ -6,21 +6,34 @@ import (
 )
 
 type Definition struct {
-	Id         uuid.UUID `json:"id"`
-	Name       string    `json:"name"`
-	Hostname   string    `json:"-"`
-	Port       int       `json:"-"`
-	Type       string    `json:"type"`
-	LastAction time.Time `json:"last-action"`
+	Id          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Url         string    `json:"-"`
+	Port        int       `json:"-"`
+	Key         string    `json:"-"`
+	Type        string    `json:"type"`
+	Components  []string  `json:"components"`
+	LastRestart time.Time `json:"lastRestart"`
+	LastReload  time.Time `json:"lastReload"`
 }
 
 type Status struct {
-	IsRunning bool `json:"running"`
+	IsAlive bool `json:"alive"`
 }
 
 type Service interface {
 	GetStatus() Status
-	Reload(component string) error
+	Reload(component string) (int, error)
 	GetDefinition() *Definition
-	Restart() error
+	Restart() (int, error)
+}
+
+// HasComponent checks whether definition contains given component
+func (d Definition) HasComponent(component string) bool {
+	for _, c := range d.Components {
+		if c == component {
+			return true
+		}
+	}
+	return false
 }

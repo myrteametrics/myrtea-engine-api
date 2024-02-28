@@ -3,7 +3,7 @@ Package coordinator implements all features necessary to initialize and monitor 
 
 On-start :
 
-* LoadConnectors Configuration :
+* Load Configuration :
   - Instances + Logical Indices + Cron
 
 * Check if any corresponding indices exists

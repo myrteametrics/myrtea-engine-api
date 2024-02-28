@@ -135,8 +135,9 @@ func TestManager_LoadConnectors(t *testing.T) {
 	// Create a file in the temporary directory including connector configuration
 	connectorConfig := `[[connector]]
 	name = "test"
-	hostname = "localhost"
-	port = 8080`
+	url = "http://localhost"
+	port = 8080
+	key = "testkey"`
 
 	err = os.WriteFile(filepath.Join(tmpDir, "services.toml"), []byte(connectorConfig), 0644)
 	expression.AssertEqual(t, err, nil, "No error expected")
@@ -161,6 +162,9 @@ func TestManager_LoadConnectors(t *testing.T) {
 
 	// Check if the connector is registered with the correct type
 	expression.AssertEqual(t, def.Type, "connector", "Connector not registered with the correct type")
+
+	// Check if the connector is registered with the correct key
+	expression.AssertEqual(t, def.Key, "testkey", "Connector not registered with the corret key")
 
 	// Emulate unmarshalling error
 	viper.Set("connector", "test")

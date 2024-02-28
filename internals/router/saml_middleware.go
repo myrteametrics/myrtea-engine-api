@@ -39,7 +39,7 @@ func NewSamlSP(spRootURLStr string, entityID string, keyFile string, crtFile str
 
 	keyPair, err := tls.LoadX509KeyPair(crtFile, keyFile)
 	if err != nil {
-		zap.L().Panic("LoadConnectors X509 Key Pair", zap.Error(err), zap.String("crtFile", crtFile), zap.String("keyFile", keyFile))
+		zap.L().Panic("Load X509 Key Pair", zap.Error(err), zap.String("crtFile", crtFile), zap.String("keyFile", keyFile))
 		return nil, err
 	}
 

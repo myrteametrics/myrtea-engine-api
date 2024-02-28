@@ -27,6 +27,7 @@ const (
 	TypeModel             = "model"
 	TypeFrontend          = "frontend"
 	TypeExport            = "export"
+	TypeService           = "service"
 )
 
 type Permission struct {

@@ -117,6 +117,10 @@ func (p *Plugin) Start() error {
 	return nil
 }
 
+func (p *Plugin) Running() bool {
+	return p.client != nil && !p.client.Exited()
+}
+
 func (p *Plugin) Handler() http.Handler {
 	r := chi.NewRouter()
 	return r

@@ -10,13 +10,13 @@ type PluginService struct {
 }
 
 func (p *PluginService) GetStatus() Status {
-	return Status{IsRunning: true}
+	return Status{IsAlive: p.MyrteaPlugin.Running()}
 }
 
 // Reload reloads the service
-func (p *PluginService) Reload(component string) error {
+func (p *PluginService) Reload(component string) (int, error) {
 	// TODO: implement reload
-	return nil
+	return 0, nil
 }
 
 // GetDefinition returns the definition of the service
@@ -25,15 +25,12 @@ func (p *PluginService) GetDefinition() *Definition {
 }
 
 // Restart restarts the service
-func (p *PluginService) Restart() error {
+func (p *PluginService) Restart() (int, error) {
 	err := p.Stop()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	err = p.Start()
-	if err != nil {
-		return err
-	}
-	return nil
+	return 0, err
 }

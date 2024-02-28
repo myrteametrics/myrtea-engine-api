@@ -73,10 +73,10 @@ func (m Manager) LoadPlugins(core *plugin.Core) error {
 
 		pluginService := &PluginService{
 			Definition: Definition{
-				Name:     p.Name,
-				Hostname: "localhost",
-				Port:     p.Port,
-				Type:     "plugin",
+				Name: p.Name,
+				Url:  "localhost",
+				Port: p.Port,
+				Type: "plugin",
 			},
 		}
 

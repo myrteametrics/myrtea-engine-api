@@ -17,6 +17,7 @@ type MyrteaPlugin interface {
 	Handler() http.Handler
 	Start() error
 	Stop() error
+	Running() bool
 }
 
 type Plugin struct {
