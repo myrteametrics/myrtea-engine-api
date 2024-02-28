@@ -7,23 +7,22 @@ require (
 	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/crewjam/saml v0.4.14
 	github.com/elastic/go-elasticsearch/v8 v8.7.0
-	github.com/go-chi/chi v1.5.4
-	github.com/go-chi/chi/v5 v5.0.8
+	github.com/go-chi/chi/v5 v5.0.12
 	github.com/go-chi/cors v1.2.1
 	github.com/go-chi/jwtauth v1.2.0
-	github.com/go-chi/jwtauth/v5 v5.0.2
-	github.com/golang-jwt/jwt/v4 v4.4.3
+	github.com/go-chi/jwtauth/v5 v5.3.0
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/protobuf v1.5.3
-	github.com/google/uuid v1.3.0
-	github.com/gorilla/context v1.1.1
-	github.com/gorilla/websocket v1.5.0
+	github.com/google/uuid v1.6.0
+	github.com/gorilla/context v1.1.2
+	github.com/gorilla/websocket v1.5.1
 	github.com/hashicorp/go-hclog v1.3.1
 	github.com/hashicorp/go-plugin v1.5.2
-	github.com/jmoiron/sqlx v1.2.0
+	github.com/jmoiron/sqlx v1.3.5
 	github.com/json-iterator/go v1.1.12
 	github.com/lestrrat-go/jwx v1.2.28
-	github.com/lib/pq v1.0.0
-	github.com/myrteametrics/myrtea-sdk/v4 v4.5.2
+	github.com/lib/pq v1.2.0
+	github.com/myrteametrics/myrtea-sdk/v4 v4.5.3
 	github.com/olivere/elastic v6.2.16+incompatible
 	github.com/prataprc/goparsec v0.0.0-20180806094145-2600a2a4a410
 	github.com/prometheus/client_golang v1.14.0
@@ -83,7 +82,9 @@ require (
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
+	github.com/lestrrat-go/httprc v1.0.4 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
+	github.com/lestrrat-go/jwx/v2 v2.0.17 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/linkedin/goavro v2.1.0+incompatible // indirect
 	github.com/magiconair/properties v1.8.0 // indirect
@@ -105,6 +106,7 @@ require (
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/rickar/cal v1.0.2-0.20191101183814-0e8e6fcfe1c2 // indirect
+	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/afero v1.1.2 // indirect
 	github.com/spf13/cast v1.3.0 // indirect

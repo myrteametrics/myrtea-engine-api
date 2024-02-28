@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
