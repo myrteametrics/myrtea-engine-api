@@ -25,9 +25,9 @@
 # components are the reload components that match with the related connector components
 #
 # Default connector structure is:
-# [[connector]]
-# name = "connector"
-# hostname = "localhost"
-# port = 9083
-# key = "securitykey"
-# components = []
+ [[connector]]
+ name = "connector"
+ hostname = "localhost"
+ port = 9083
+ key = "securitykey"
+ components = []

@@ -54,9 +54,13 @@ func (m Manager) LoadConnectors() error {
 
 	for _, c := range connectors {
 		c.Type = "connector"
-		m.Register(&ConnectorService{
+		s := &ConnectorService{
 			Definition: c,
-		})
+		}
+		if s.Components == nil {
+			s.Components = make([]string, 0)
+		}
+		m.Register(s)
 	}
 
 	return nil
@@ -73,10 +77,11 @@ func (m Manager) LoadPlugins(core *plugin.Core) error {
 
 		pluginService := &PluginService{
 			Definition: Definition{
-				Name: p.Name,
-				Url:  "localhost",
-				Port: p.Port,
-				Type: "plugin",
+				Name:       p.Name,
+				Url:        "localhost",
+				Port:       p.Port,
+				Type:       "plugin",
+				Components: make([]string, 0),
 			},
 		}
 

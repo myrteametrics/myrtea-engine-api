@@ -121,10 +121,66 @@ func TestManager_LoadPlugins(t *testing.T) {
 
 func TestManager_LoadConnectors(t *testing.T) {
 	m := NewManager()
+	viper.Reset()
 	err := m.LoadConnectors()
 	if err != nil {
 		t.Error(err)
 	}
+
+	tmpDir, err := os.MkdirTemp("", "engine-api")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create a file in the temporary directory including connector configuration
+	connectorConfig := `[[connector]]
+	name = "test"
+	url = "http://localhost"
+	port = 8080
+	key = "testkey"
+	components = ["test"]`
+
+	err = os.WriteFile(filepath.Join(tmpDir, "services.toml"), []byte(connectorConfig), 0644)
+	expression.AssertEqual(t, err, nil, "No error expected")
+
+	// load config from file
+	viper.SetConfigName("services")
+	viper.AddConfigPath(tmpDir)
+	viper.SetConfigType("toml")
+	err = viper.ReadInConfig()
+	expression.AssertEqual(t, err, nil, "No error expected")
+
+	err = m.LoadConnectors()
+	expression.AssertEqual(t, err, nil, "No error expected")
+
+	// Check if the connector is registered
+	expression.AssertEqual(t, len(m.services), 1, "Connector not registered")
+
+	def := m.GetAll()[0].GetDefinition()
+
+	// Check if the connector is registered with the correct name
+	expression.AssertEqual(t, def.Name, "test", "Connector not registered with the correct name")
+
+	// Check if the connector is registered with the correct type
+	expression.AssertEqual(t, def.Type, "connector", "Connector not registered with the correct type")
+
+	// Check if the connector is registered with the correct key
+	expression.AssertEqual(t, def.Key, "testkey", "Connector not registered with the corret key")
+
+	// Check if the connector is registered with the correct components
+	expression.AssertEqual(t, len(def.Components), 1, "Connector not registered with the correct components")
+
+	// Emulate unmarshalling error
+	viper.Set("connector", "test")
+
+	err = m.LoadConnectors()
+	expression.AssertNotEqual(t, err, nil, "Error expected")
+}
+
+func TestManager_LoadConnectors_ComponentsEmpty(t *testing.T) {
+	m := NewManager()
+	viper.Reset()
 
 	tmpDir, err := os.MkdirTemp("", "engine-api")
 	if err != nil {
@@ -157,19 +213,8 @@ func TestManager_LoadConnectors(t *testing.T) {
 
 	def := m.GetAll()[0].GetDefinition()
 
-	// Check if the connector is registered with the correct name
-	expression.AssertEqual(t, def.Name, "test", "Connector not registered with the correct name")
+	expression.AssertNotEqual(t, def.Components, nil, "Components should not be nil")
 
-	// Check if the connector is registered with the correct type
-	expression.AssertEqual(t, def.Type, "connector", "Connector not registered with the correct type")
-
-	// Check if the connector is registered with the correct key
-	expression.AssertEqual(t, def.Key, "testkey", "Connector not registered with the corret key")
-
-	// Emulate unmarshalling error
-	viper.Set("connector", "test")
-
-	err = m.LoadConnectors()
-	expression.AssertNotEqual(t, err, nil, "Error expected")
-
+	// Check if the connector is registered with the correct components
+	expression.AssertEqual(t, len(def.Components), 0, "Connector not registered with the correct components")
 }

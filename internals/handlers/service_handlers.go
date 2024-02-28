@@ -37,7 +37,7 @@ func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var services []service.Definition
+	services := make([]service.Definition, 0)
 
 	for _, s := range sh.Manager.GetAll() {
 		services = append(services, *s.GetDefinition())
