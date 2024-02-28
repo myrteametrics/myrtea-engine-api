@@ -701,7 +701,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 
 	parameters := make(map[string]string)
 	if situationid != 0 {
-		s, found, err := situation.R().Get(int64(situationid), gvalParsingEnabled(r.URL.Query()))
+		s, found, err := situation.R().Get(int64(situationid))
 		if err != nil {
 			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 			return
@@ -715,7 +715,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if s.IsTemplate && instanceid != 0 {
-			template, found, err := situation.R().GetTemplateInstance(int64(situationid))
+			template, found, err := situation.R().GetTemplateInstance(int64(instanceid))
 			if err != nil {
 				render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 				return
