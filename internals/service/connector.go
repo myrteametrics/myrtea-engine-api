@@ -37,13 +37,13 @@ func NewConnectorService(definition Definition) *ConnectorService {
 
 // Restart restarts the connector
 func (c *ConnectorService) Restart() (int, error) {
-	return c.postRequest(fmt.Sprintf("%s:%d/api/v1/restart", c.Url, c.Port), c.Key)
+	return c.postRequest(fmt.Sprintf("%s/restart", c.getBaseUrl()), c.Key)
 }
 
 // GetStatus returns the status of the connector
 func (c *ConnectorService) GetStatus() Status {
 	status := Status{IsAlive: false}
-	u := fmt.Sprintf("%s:%d/api/v1/alive", c.Url, c.Port)
+	u := fmt.Sprintf("%s/alive", c.getBaseUrl())
 
 	body, err := c.getRequest(u, c.Key)
 	if err != nil {
@@ -64,13 +64,18 @@ func (c *ConnectorService) Reload(component string) (int, error) {
 	if !c.Definition.HasComponent(component) {
 		return http.StatusTooManyRequests, connector.ReloaderComponentNotFoundErr
 	}
-	url := fmt.Sprintf("%s:%d/api/v1/reload", c.Url, c.Port)
+	url := fmt.Sprintf("%s/reload", c.getBaseUrl())
 	return c.postRequest(url, c.Key)
 }
 
 // GetDefinition returns the definition of the connector
 func (c *ConnectorService) GetDefinition() *Definition {
 	return &c.Definition
+}
+
+// getBaseUrl get connector base url
+func (c *ConnectorService) getBaseUrl() string {
+	return fmt.Sprintf("%s/api/v1", c.Url)
 }
 
 // postRequest calls the connector (in this case, an HTTP POST call)

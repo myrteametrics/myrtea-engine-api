@@ -9,7 +9,6 @@ type Definition struct {
 	Id          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`
 	Url         string    `json:"-"`
-	Port        int       `json:"-"`
 	Key         string    `json:"-"`
 	Type        string    `json:"type"`
 	Components  []string  `json:"components"`

@@ -81,6 +81,7 @@ func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	render.JSON(w, r, *s.GetDefinition())
 	w.WriteHeader(code)
 }
 
@@ -126,6 +127,7 @@ func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	render.JSON(w, r, *s.GetDefinition())
 	w.WriteHeader(code)
 }
 

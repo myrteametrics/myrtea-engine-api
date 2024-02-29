@@ -107,8 +107,6 @@ func TestManager_LoadPlugins(t *testing.T) {
 	// Check if the plugin is registered with the correct name
 	expression.AssertEqual(t, def.Name, "test", "Plugin not registered with the correct name")
 
-	expression.AssertEqual(t, def.Port, 8080, "Plugin not registered with the correct port")
-
 	// Check if the plugin is registered with the correct type
 	expression.AssertEqual(t, def.Type, "plugin", "Plugin not registered with the correct type")
 
