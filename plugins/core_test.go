@@ -77,9 +77,7 @@ func TestCore_RegisterPlugins(t *testing.T) {
 	expression.AssertEqual(t, err, nil, "No error expected")
 
 	c.RegisterPlugins()
-	expression.AssertEqual(t, len(c.Plugins), 1, "One plugin should be registered")
-
-	expression.AssertEqual(t, "test", c.Plugins[0].Config.Name, "Plugin name should be 'test'")
+	expression.AssertEqual(t, len(c.Plugins), 0, "No plugins should be registered since plugin does not existus")
 
 	viper.Set("plugin", "test")
 	c = Core{}
