@@ -54,18 +54,26 @@ func (c *Core) RegisterPlugins() {
 
 		switch config.Name {
 		case "assistant":
-			plugin.Plugin = assistant.NewAssistantPlugin(config)
+			if a := assistant.NewAssistantPlugin(config); a != nil {
+				plugin.Plugin = a
+			} else {
+				continue
+			}
 			break
 		case "baseline":
-			plugin.Plugin = baseline.NewBaselinePlugin(config)
+			if b := baseline.NewBaselinePlugin(config); b != nil {
+				plugin.Plugin = b
+			} else {
+				continue
+			}
 			break
 		default: // default is standalone plugins (no bi-directional communications needed)
-			plugin.Plugin = standalone.NewPlugin(config)
+			if s := standalone.NewPlugin(config); s != nil {
+				plugin.Plugin = s
+			} else {
+				continue
+			}
 			break
-		}
-
-		if plugin.Plugin == nil {
-			continue
 		}
 
 		c.Plugins = append(c.Plugins, plugin)
