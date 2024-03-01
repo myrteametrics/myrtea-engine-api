@@ -61,7 +61,7 @@ func TestConnectorService_Reload(t *testing.T) {
 		t.Error("Unexpected error")
 	}
 	expression.AssertEqual(t, code, 0)
-	expression.AssertEqual(t, mock.calls["http://localhost:0909/api/v1/reload"], 1)
+	expression.AssertEqual(t, mock.calls["http://localhost:0909/api/v1/reload/test"], 1)
 }
 
 func TestConnectorService_Restart(t *testing.T) {

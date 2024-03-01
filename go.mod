@@ -20,7 +20,7 @@ require (
 	github.com/hashicorp/go-plugin v1.5.2
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/json-iterator/go v1.1.12
-	github.com/lestrrat-go/jwx v1.2.28
+	github.com/lestrrat-go/jwx/v2 v2.0.20
 	github.com/lib/pq v1.2.0
 	github.com/myrteametrics/myrtea-sdk/v4 v4.5.4
 	github.com/olivere/elastic v6.2.16+incompatible
@@ -84,7 +84,7 @@ require (
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/httprc v1.0.4 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
-	github.com/lestrrat-go/jwx/v2 v2.0.17 // indirect
+	github.com/lestrrat-go/jwx v1.2.28 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/linkedin/goavro v2.1.0+incompatible // indirect
 	github.com/magiconair/properties v1.8.0 // indirect
