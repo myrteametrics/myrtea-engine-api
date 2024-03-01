@@ -1,10 +1,10 @@
 package notifier
 
 import (
+	"github.com/google/uuid"
 	"net/http"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
-	uuid "github.com/satori/go.uuid"
 	"go.uber.org/zap"
 
 	"github.com/gorilla/websocket"
@@ -21,7 +21,7 @@ type WebsocketClient struct {
 func NewWebsocketClient(conn *websocket.Conn, user *users.UserWithPermissions) *WebsocketClient {
 	return &WebsocketClient{
 		GenericClient: GenericClient{
-			ID:   uuid.NewV4().String(),
+			ID:   uuid.New().String(),
 			Send: make(chan []byte, 1),
 			User: user,
 		},

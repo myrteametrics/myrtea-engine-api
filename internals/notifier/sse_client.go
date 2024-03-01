@@ -2,10 +2,10 @@ package notifier
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"net/http"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
-	uuid "github.com/satori/go.uuid"
 )
 
 // SSEClient represents a single specific server-sent event connection
@@ -18,7 +18,7 @@ type SSEClient struct {
 func BuildSSEClient(w http.ResponseWriter, user *users.UserWithPermissions) (*SSEClient, error) {
 	return &SSEClient{
 		GenericClient: GenericClient{
-			ID:   uuid.NewV4().String(),
+			ID:   uuid.New().String(),
 			User: user,
 			Send: make(chan []byte),
 		},

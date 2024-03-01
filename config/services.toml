@@ -1,4 +1,6 @@
-# Add your plugins here
+# Add your services here
+#
+# For plugins:
 #
 # Default plugin structure is:
 # [[plugin]]
@@ -16,3 +18,15 @@
 #[[plugin]]
 #name = "baseline"
 #port = 9082
+
+# For connectors:
+#
+# key should be configured as the same security key in related connectors (ENGINE_API_KEY)
+# components are the reload components that match with the related connector components
+#
+# Default connector structure is:
+# [[connector]]
+# name = "connector"
+# url = "http://localhost:9091"
+# key = "securitykey"
+# components = ["test", "test"]

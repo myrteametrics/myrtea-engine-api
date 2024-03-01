@@ -39,36 +39,41 @@ var (
 	ErrAPIParsingKeyValue = APIError{Status: http.StatusBadRequest, ErrType: "ParsingError", Code: 1005, Message: `Failed to parse a query param of type 'keyvalue'. Valid format is "key1:value1,key2:value2,...". (example: "country:france,category:export")`}
 	// ErrAPIParsingSortBy must be used when a models.SortOption type parsing error occurs (mainly for query parameters parsing)
 	ErrAPIParsingSortBy = APIError{Status: http.StatusBadRequest, ErrType: "ParsingError", Code: 1006, Message: `Failed to parse a query param of type 'sort_by'. Valid format is "desc(field1),asc(field2),...". (example: "asc(date),desc(country),asc(category)`}
+	// ErrAPIParsingUUID must be used when a UUID parsing error occurs (mainly for query parameters parsing)
+	ErrAPIParsingUUID = APIError{Status: http.StatusBadRequest, ErrType: "ParsingError", Code: 1007, Message: `Failed to parse a query param of type 'uuid'. Valid format is "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx". (example: "123e4567-e89b-12d3-a456-426614174000")`}
 
 	// ErrAPIMissingParam must be used when a mandatory query parameter is missing
-	ErrAPIMissingParam = APIError{Status: http.StatusBadRequest, ErrType: "RessourceError", Code: 2000, Message: `Query has missing parameter and cannot be processed`}
+	ErrAPIMissingParam = APIError{Status: http.StatusBadRequest, ErrType: "ResourceError", Code: 2000, Message: `Query has missing parameter and cannot be processed`}
 	// ErrAPIResourceInvalid must be used when the provided resource is invalid from a "business view" (ie. the JSON is valid, but it's content is not)
-	ErrAPIResourceInvalid = APIError{Status: http.StatusBadRequest, ErrType: "RessourceError", Code: 2001, Message: `Provided resource definition can be parsed, but is invalid`}
+	ErrAPIResourceInvalid = APIError{Status: http.StatusBadRequest, ErrType: "ResourceError", Code: 2001, Message: `Provided resource definition can be parsed, but is invalid`}
 	// ErrAPIResourceDuplicate must be used in case a duplicate resource has been identified
-	ErrAPIResourceDuplicate = APIError{Status: http.StatusBadRequest, ErrType: "RessourceError", Code: 2002, Message: `Provided resource definition can be parsed, but is already exists`}
+	ErrAPIResourceDuplicate = APIError{Status: http.StatusBadRequest, ErrType: "ResourceError", Code: 2002, Message: `Provided resource definition can be parsed, but is already exists`}
 
 	// ErrAPIQueueFull must be used in case an internal processing queue is full
-	ErrAPIQueueFull = APIError{Status: http.StatusServiceUnavailable, ErrType: "RessourceError", Code: 2003, Message: `The queue is full, please retry later`}
+	ErrAPIQueueFull = APIError{Status: http.StatusServiceUnavailable, ErrType: "ResourceError", Code: 2003, Message: `The queue is full, please retry later`}
+
+	// ErrAPITooManyRequests must be used in case the client has sent too many requests in a given amount of time
+	ErrAPITooManyRequests = APIError{Status: http.StatusTooManyRequests, ErrType: "ResourceError", Code: 2004, Message: `Too many requests, please try again later`}
 
 	// ErrAPIDBResourceNotFound must be used in case a resource is not found in the backend storage system
-	ErrAPIDBResourceNotFound = APIError{Status: http.StatusNotFound, ErrType: "RessourceError", Code: 3000, Message: `Ressource not found`}
+	ErrAPIDBResourceNotFound = APIError{Status: http.StatusNotFound, ErrType: "ResourceError", Code: 3000, Message: `Ressource not found`}
 	// ErrAPIDBSelectFailed must be used when a select query returns an error from the backend storage system
-	ErrAPIDBSelectFailed = APIError{Status: http.StatusInternalServerError, ErrType: "RessourceError", Code: 3001, Message: `Failed to execute the query`}
+	ErrAPIDBSelectFailed = APIError{Status: http.StatusInternalServerError, ErrType: "ResourceError", Code: 3001, Message: `Failed to execute the query`}
 	// ErrAPIDBInsertFailed must be used when an insert query returns an error from the backend storage system
-	ErrAPIDBInsertFailed = APIError{Status: http.StatusInternalServerError, ErrType: "RessourceError", Code: 3002, Message: `Failed to create the resource`}
+	ErrAPIDBInsertFailed = APIError{Status: http.StatusInternalServerError, ErrType: "ResourceError", Code: 3002, Message: `Failed to create the resource`}
 	// ErrAPIDBUpdateFailed must be used when an update query returns an error from the backend storage system
-	ErrAPIDBUpdateFailed = APIError{Status: http.StatusInternalServerError, ErrType: "RessourceError", Code: 3003, Message: `Failed to update the resource`}
+	ErrAPIDBUpdateFailed = APIError{Status: http.StatusInternalServerError, ErrType: "ResourceError", Code: 3003, Message: `Failed to update the resource`}
 	// ErrAPIDBDeleteFailed must be used when a delete query returns an error from the backend storage system
-	ErrAPIDBDeleteFailed = APIError{Status: http.StatusInternalServerError, ErrType: "RessourceError", Code: 3004, Message: `Failed to delete the resource`}
+	ErrAPIDBDeleteFailed = APIError{Status: http.StatusInternalServerError, ErrType: "ResourceError", Code: 3004, Message: `Failed to delete the resource`}
 	// ErrAPIDBResourceNotFoundAfterInsert must be used when a resource is not found right after an insert/update in the backend storage system
-	ErrAPIDBResourceNotFoundAfterInsert = APIError{Status: http.StatusInternalServerError, ErrType: "RessourceError", Code: 3005, Message: `Ressource not found after creation`}
+	ErrAPIDBResourceNotFoundAfterInsert = APIError{Status: http.StatusInternalServerError, ErrType: "ResourceError", Code: 3005, Message: `Ressource not found after creation`}
 	// ErrAPIDBTransactionBegin must be used when a transaction beging fails
 	ErrAPIDBTransactionBegin = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 3006, Message: `Field to begin the transaction`}
 	// ErrAPIDBTransactionCommit must be used when a transaction commit fails
 	ErrAPIDBTransactionCommit = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 3007, Message: `Field to commit the transaction`}
 
 	// ErrAPIElasticSelectFailed must be used when an Elasticsearch query fails
-	ErrAPIElasticSelectFailed = APIError{Status: http.StatusInternalServerError, ErrType: "RessourceError", Code: 4000, Message: `Failed to execute the query`}
+	ErrAPIElasticSelectFailed = APIError{Status: http.StatusInternalServerError, ErrType: "ResourceError", Code: 4000, Message: `Failed to execute the query`}
 
 	// ErrAPIProcessError must be used when an internal error occurred during the stack call
 	ErrAPIProcessError = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 5000, Message: `Internal error has occurred during the process`}
@@ -136,7 +141,7 @@ func JSON(w http.ResponseWriter, r *http.Request, data interface{}) {
 func Error(w http.ResponseWriter, r *http.Request, apiError APIError, err error) {
 	apiError.RequestID = middleware.GetReqID(r.Context())
 
-	if viper.GetBool("HTTP_SERVER_API_ENABLE_VERBOSE_ERROR") {
+	if viper.GetBool("HTTP_SERVER_API_ENABLE_VERBOSE_ERROR") && err != nil {
 		apiError.Details = err.Error()
 	}
 

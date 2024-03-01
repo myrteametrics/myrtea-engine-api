@@ -6,6 +6,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/metrics"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/service"
 	"net/http"
 	"os"
 	"os/signal"
@@ -84,18 +85,31 @@ func main() {
 	)
 	exportWrapper.Init(context.Background())
 
+	// Init services
+	serviceManager := service.NewManager()
+
+	if err := serviceManager.LoadConnectors(); err != nil {
+		zap.L().Error("Error loading service connectors", zap.Error(err))
+	}
+
+	if err := serviceManager.LoadPlugins(core); err != nil {
+		zap.L().Error("Error loading service plugins", zap.Error(err))
+	}
+
+	// Init router services struct (used to inject services into the router)
 	routerServices := router.Services{
 		PluginCore:       core,
 		ProcessorHandler: handlers.NewProcessorHandler(),
 		ExportHandler:    handlers.NewExportHandler(exportWrapper, directDownload, indirectDownloadUrl),
+		ServiceHandler:   handlers.NewServiceHandler(serviceManager),
 	}
 
-	router := router.New(routerConfig, routerServices)
+	mux := router.New(routerConfig, routerServices)
 	var srv *http.Server
 	if serverEnableTLS {
-		srv = server.NewSecuredServer(serverPort, serverTLSCert, serverTLSKey, router)
+		srv = server.NewSecuredServer(serverPort, serverTLSCert, serverTLSKey, mux)
 	} else {
-		srv = server.NewUnsecuredServer(serverPort, router)
+		srv = server.NewUnsecuredServer(serverPort, mux)
 	}
 
 	done := make(chan os.Signal, 1)

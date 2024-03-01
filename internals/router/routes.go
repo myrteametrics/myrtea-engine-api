@@ -189,6 +189,11 @@ func engineRouter(services Services) http.Handler {
 	r.Put("/variablesconfig/{id}", handlers.PutVariableConfig)
 	r.Delete("/variablesconfig/{id}", handlers.DeleteVariableConfig)
 
+	r.Get("/services", services.ServiceHandler.GetServices)
+	r.Get("/services/{id}/status", services.ServiceHandler.GetStatus)
+	r.Post("/services/{id}/restart", services.ServiceHandler.Restart)
+	r.Post("/services/{id}/reload/{component}", services.ServiceHandler.Reload)
+
 	return r
 }
 

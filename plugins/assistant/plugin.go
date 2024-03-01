@@ -7,6 +7,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
 	"os"
 	"os/exec"
+	"runtime"
 	"sync"
 
 	"github.com/hashicorp/go-plugin"
@@ -65,22 +66,32 @@ func NewAssistantPlugin(config pluginutils.PluginConfig) *AssistantPlugin {
 		return nil
 	}
 
-	cmd := exec.Command("sh", "-c", pluginPath)
+	return &AssistantPlugin{
+		Config: config,
+	}
+}
+
+func (p *AssistantPlugin) init() {
+	pluginPath := fmt.Sprintf("plugin/myrtea-%s.plugin", p.Config.Name)
+
+	var cmd *exec.Cmd
+	if runtime.GOOS != "windows" {
+		cmd = exec.Command("sh", "-c", pluginPath)
+	} else {
+		cmd = exec.Command(pluginPath)
+	}
 	cmd.Env = os.Environ()
 	// cmd.Env = append(cmd.Env, "MYRTEA_ASSISTANT_DEBUG_MODE=true")
 
 	pluginMap := map[string]plugin.Plugin{
-		config.Name: &AssistantGRPCPlugin{},
+		p.Config.Name: &AssistantGRPCPlugin{},
 	}
 
-	return &AssistantPlugin{
-		Config: config,
-		ClientConfig: &plugin.ClientConfig{
-			HandshakeConfig:  Handshake,
-			Plugins:          pluginMap,
-			Cmd:              cmd,
-			AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
-		},
+	p.ClientConfig = &plugin.ClientConfig{
+		HandshakeConfig:  Handshake,
+		Plugins:          pluginMap,
+		Cmd:              cmd,
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
 	}
 }
 
@@ -98,6 +109,11 @@ func (p *AssistantPlugin) Stop() error {
 }
 
 func (p *AssistantPlugin) Start() error {
+	if p.Running() {
+		return errors.New("plugin is already running")
+	}
+
+	p.init()
 
 	client := plugin.NewClient(p.ClientConfig)
 
@@ -119,6 +135,10 @@ func (p *AssistantPlugin) Start() error {
 	Register(p)
 
 	return nil
+}
+
+func (p *AssistantPlugin) Running() bool {
+	return p.Client != nil && !p.Client.Exited()
 }
 
 func (p *AssistantPlugin) Test() {

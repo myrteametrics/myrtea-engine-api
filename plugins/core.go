@@ -17,6 +17,7 @@ type MyrteaPlugin interface {
 	Handler() http.Handler
 	Start() error
 	Stop() error
+	Running() bool
 }
 
 type Plugin struct {
@@ -53,18 +54,26 @@ func (c *Core) RegisterPlugins() {
 
 		switch config.Name {
 		case "assistant":
-			plugin.Plugin = assistant.NewAssistantPlugin(config)
+			if a := assistant.NewAssistantPlugin(config); a != nil {
+				plugin.Plugin = a
+			} else {
+				continue
+			}
 			break
 		case "baseline":
-			plugin.Plugin = baseline.NewBaselinePlugin(config)
+			if b := baseline.NewBaselinePlugin(config); b != nil {
+				plugin.Plugin = b
+			} else {
+				continue
+			}
 			break
 		default: // default is standalone plugins (no bi-directional communications needed)
-			plugin.Plugin = standalone.NewPlugin(config)
+			if s := standalone.NewPlugin(config); s != nil {
+				plugin.Plugin = s
+			} else {
+				continue
+			}
 			break
-		}
-
-		if plugin.Plugin == nil {
-			continue
 		}
 
 		c.Plugins = append(c.Plugins, plugin)
@@ -98,11 +107,17 @@ func (c *Core) Stop() {
 }
 
 // PluginExists checks if a plugin with the given name exists
-func (c *Core) PluginExists(name string) bool {
+func (c *Core) PluginExists(name string) (exists bool) {
+	_, exists = c.GetPlugin(name)
+	return
+}
+
+// GetPlugin returns a plugin by its name
+func (c *Core) GetPlugin(name string) (MyrteaPlugin, bool) {
 	for _, p := range c.Plugins {
 		if p.Config.Name == name {
-			return true
+			return p.Plugin, true
 		}
 	}
-	return false
+	return nil, false
 }

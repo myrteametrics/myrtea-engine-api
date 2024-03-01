@@ -1,4 +1,4 @@
-package oidcAuth
+package routeroidc
 
 const (
 	tokenPrefix = "Bearer "
