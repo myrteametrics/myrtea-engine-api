@@ -79,7 +79,7 @@ func TestPluginService_Restart(t *testing.T) {
 	}
 	status, err := service.Restart()
 	expression.AssertEqual(t, err, nil)
-	expression.AssertEqual(t, status, 0)
+	expression.AssertEqual(t, status, 200)
 	expression.AssertEqual(t, mock.calls["Start"], 1)
 	expression.AssertEqual(t, mock.calls["Stop"], 1)
 }
