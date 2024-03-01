@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
 	"sync"
 
 	"github.com/go-chi/chi/v5"
@@ -65,23 +66,33 @@ func NewBaselinePlugin(config pluginutils.PluginConfig) *BaselinePlugin {
 		return nil
 	}
 
-	cmd := exec.Command("sh", "-c", pluginPath)
+	return &BaselinePlugin{
+		Config: config,
+	}
+}
+
+func (p *BaselinePlugin) init() {
+	pluginPath := fmt.Sprintf("plugin/myrtea-%s.plugin", p.Config.Name)
+
+	var cmd *exec.Cmd
+	if runtime.GOOS != "windows" {
+		cmd = exec.Command("sh", "-c", pluginPath)
+	} else {
+		cmd = exec.Command(pluginPath)
+	}
 	cmd.Env = os.Environ()
 	// cmd.Env = append(cmd.Env, "MYRTEA_component_DEBUG_MODE=true")
 
 	pluginMap := map[string]plugin.Plugin{
-		config.Name: &BaselineGRPCPlugin{},
+		p.Config.Name: &BaselineGRPCPlugin{},
 	}
 
-	return &BaselinePlugin{
-		Config: config,
-		ClientConfig: &plugin.ClientConfig{
-			Logger:           pluginutils.ZapWrap(zap.L()),
-			HandshakeConfig:  Handshake,
-			Plugins:          pluginMap,
-			Cmd:              cmd,
-			AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
-		},
+	p.ClientConfig = &plugin.ClientConfig{
+		Logger:           pluginutils.ZapWrap(zap.L()),
+		HandshakeConfig:  Handshake,
+		Plugins:          pluginMap,
+		Cmd:              cmd,
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
 	}
 }
 
@@ -99,6 +110,11 @@ func (p *BaselinePlugin) Stop() error {
 }
 
 func (p *BaselinePlugin) Start() error {
+	if p.Running() {
+		return errors.New("plugin is already running")
+	}
+
+	p.init()
 
 	client := plugin.NewClient(p.ClientConfig)
 
@@ -120,6 +136,10 @@ func (p *BaselinePlugin) Start() error {
 	Register(p)
 
 	return nil
+}
+
+func (p *BaselinePlugin) Running() bool {
+	return p.Client != nil && !p.Client.Exited()
 }
 
 // func (p *BaselinePlugin) Test() {

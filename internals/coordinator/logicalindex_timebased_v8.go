@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// LogicalIndex abstracts a group a technical elasticsearchv8 indices, which are accessibles with specific aliases
+// LogicalIndexTimeBasedV8 abstracts a group a technical elasticsearchv8 indices, which are accessibles with specific aliases
 type LogicalIndexTimeBasedV8 struct {
 	Initialized bool
 	Name        string

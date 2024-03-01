@@ -62,7 +62,7 @@ func InitConfiguration() {
 
 	// Custom plugins config
 	v := viper.New()
-	v.SetConfigName("plugins")
+	v.SetConfigName("services")
 	v.AddConfigPath("config")
 	err := v.ReadInConfig()
 	if err != nil {

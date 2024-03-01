@@ -12,8 +12,8 @@ import (
 type Repository interface {
 	Get(id int64) (models.ExternalConfig, bool, error)
 	GetByName(name string) (models.ExternalConfig, bool, error)
-	Create(rootCause models.ExternalConfig) (int64, error)
-	Update(id int64, rootCause models.ExternalConfig) error
+	Create(config models.ExternalConfig) (int64, error)
+	Update(id int64, config models.ExternalConfig) error
 	Delete(id int64) error
 	GetAll() (map[int64]models.ExternalConfig, error)
 }

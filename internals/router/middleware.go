@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/google/uuid"
 	gorillacontext "github.com/gorilla/context"
-	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
