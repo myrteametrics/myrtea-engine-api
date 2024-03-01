@@ -1,6 +1,7 @@
 package standalone
 
 import (
+	"errors"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-plugin"
@@ -38,8 +39,14 @@ func NewPlugin(config pluginutils.PluginConfig) *Plugin {
 		return nil
 	}
 
-	var cmd *exec.Cmd
+	return &Plugin{Config: config}
+}
 
+func (p *Plugin) init() {
+	pluginPath := fmt.Sprintf("plugin/myrtea-%s.plugin", p.Config.Name)
+
+	// since plugin can be restarted, implement here the cmd instance creation every other start
+	var cmd *exec.Cmd
 	if runtime.GOOS != "windows" {
 		cmd = exec.Command("sh", "-c", pluginPath)
 	} else {
@@ -48,19 +55,13 @@ func NewPlugin(config pluginutils.PluginConfig) *Plugin {
 	cmd.Env = os.Environ()
 	// cmd.Env = append(cmd.Env, "MYRTEA_component_DEBUG_MODE=true")
 
-	pluginMap := map[string]plugin.Plugin{
-		config.Name: &Plugin{},
-	}
-
-	return &Plugin{
-		Config: config,
-		ClientConfig: &plugin.ClientConfig{
-			Logger:           pluginutils.ZapWrap(zap.L()),
-			HandshakeConfig:  Handshake,
-			Plugins:          pluginMap,
-			Cmd:              cmd,
-			AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+	p.ClientConfig = &plugin.ClientConfig{
+		Logger:          pluginutils.ZapWrap(zap.L()),
+		HandshakeConfig: Handshake,
+		Plugins: map[string]plugin.Plugin{
+			p.Config.Name: &Plugin{},
 		},
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
 	}
 }
 
@@ -81,6 +82,13 @@ func (p *Plugin) Stop() error {
 }
 
 func (p *Plugin) Start() error {
+	if p.Running() {
+		return errors.New("plugin is already running")
+	}
+
+	// first init plugin
+	p.init()
+
 	client := plugin.NewClient(p.ClientConfig)
 
 	rpcClient, err := client.Client()
