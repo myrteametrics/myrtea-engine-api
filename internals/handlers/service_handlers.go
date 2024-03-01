@@ -8,16 +8,19 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/service"
+	"go.uber.org/zap"
 	"net/http"
 	"time"
 )
 
 type ServiceHandler struct {
-	Manager *service.Manager
+	Manager        *service.Manager
+	restartTimeout time.Duration
+	reloadTimeout  time.Duration
 }
 
 func NewServiceHandler(manager *service.Manager) *ServiceHandler {
-	return &ServiceHandler{Manager: manager}
+	return &ServiceHandler{Manager: manager, restartTimeout: 5 * time.Minute, reloadTimeout: 2 * time.Minute}
 }
 
 // GetServices godoc
@@ -69,14 +72,23 @@ func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// compare LastRestart with now and if it's less than 2 minutes, return an error
-	if time.Now().Sub(s.GetDefinition().LastRestart) > 2*time.Minute {
+	def := s.GetDefinition()
+
+	// compare LastRestart with now and if it's less than restartTimeout duration, return an error
+	if !def.LastRestart.IsZero() && time.Now().Sub(def.LastRestart) <= sh.restartTimeout {
+		zap.L().Info("restart too early", zap.String("service", def.Name))
 		render.Error(w, r, render.ErrAPITooManyRequests, errors.New("service has been restarted too recently"))
 		return
 	}
 
+	// set timeout before calling restart to avoid multiple restarts one after each-other
+	def.LastRestart = time.Now()
+
 	code, err := s.Restart()
 	if err != nil || code == 0 {
+		// if an error occurs, set time to 0
+		def.LastRestart = time.Time{}
+		zap.L().Error("error happened during restart", zap.Error(err), zap.String("service", s.GetDefinition().Name))
 		render.Error(w, r, render.ErrAPIProcessError, err)
 		return
 	}
@@ -111,18 +123,26 @@ func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 	component := chi.URLParam(r, "component")
 
 	if !s.GetDefinition().HasComponent(component) {
+		zap.L().Warn("Component not found", zap.String("component", component))
 		render.Error(w, r, render.ErrAPIDBResourceNotFound, fmt.Errorf("component '%s' not found", component))
 		return
 	}
 
-	// compare LastReload with now and if it's less than 2 minutes, return an error
-	if time.Now().Sub(s.GetDefinition().LastReload) > 2*time.Minute {
+	// compare LastReload with now and if it's less than reloadTimeout duration, return an error
+	if time.Now().Sub(s.GetDefinition().LastReload) <= sh.reloadTimeout {
 		render.Error(w, r, render.ErrAPITooManyRequests, errors.New("service has been reloaded too recently"))
 		return
 	}
 
+	// set timeout before calling reload to avoid multiple reloads one after each-other
+	def := s.GetDefinition()
+	def.LastReload = time.Now()
+
 	code, err := s.Reload(component)
 	if err != nil || code == 0 {
+		// if an error occurs, set time to 0
+		def.LastReload = time.Time{}
+		zap.L().Error("error happened during reload", zap.Error(err), zap.String("service", s.GetDefinition().Name))
 		render.Error(w, r, render.ErrAPIProcessError, err)
 		return
 	}

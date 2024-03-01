@@ -43,7 +43,7 @@ func (c *ConnectorService) Restart() (int, error) {
 // GetStatus returns the status of the connector
 func (c *ConnectorService) GetStatus() Status {
 	status := Status{IsAlive: false}
-	u := fmt.Sprintf("%s/alive", c.getBaseUrl())
+	u := fmt.Sprintf("%s/isalive", c.getBaseUrl())
 
 	body, err := c.getRequest(u, c.Key)
 	if err != nil {
@@ -64,7 +64,7 @@ func (c *ConnectorService) Reload(component string) (int, error) {
 	if !c.Definition.HasComponent(component) {
 		return http.StatusTooManyRequests, connector.ReloaderComponentNotFoundErr
 	}
-	url := fmt.Sprintf("%s/reload", c.getBaseUrl())
+	url := fmt.Sprintf("%s/reload/%s", c.getBaseUrl(), component)
 	return c.postRequest(url, c.Key)
 }
 

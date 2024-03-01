@@ -91,7 +91,7 @@ func TestConnectorService_GetStatus(t *testing.T) {
 
 	status := service.GetStatus()
 	expression.AssertEqual(t, status.IsAlive, false)
-	expression.AssertEqual(t, mock.calls["http://localhost:0909/api/v1/alive"], 1)
+	expression.AssertEqual(t, mock.calls["http://localhost:0909/api/v1/isalive"], 1)
 }
 
 func TestConnectorService_GetStatus_WithError(t *testing.T) {
