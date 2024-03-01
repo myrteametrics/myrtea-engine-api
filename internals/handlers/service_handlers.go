@@ -85,7 +85,7 @@ func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 	def.LastRestart = time.Now()
 
 	code, err := s.Restart()
-	if err != nil || code == 0 {
+	if err != nil {
 		// if an error occurs, set time to 0
 		def.LastRestart = time.Time{}
 		zap.L().Error("error happened during restart", zap.Error(err), zap.String("service", s.GetDefinition().Name))

@@ -32,5 +32,8 @@ func (p *PluginService) Restart() (int, error) {
 	}
 
 	err = p.Start()
-	return 0, err
+	if err != nil {
+		return 0, err
+	}
+	return 200, nil
 }
