@@ -61,6 +61,7 @@ func (p *Plugin) init() {
 		Plugins: map[string]plugin.Plugin{
 			p.Config.Name: &Plugin{},
 		},
+		Cmd:              cmd,
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
 	}
 }
