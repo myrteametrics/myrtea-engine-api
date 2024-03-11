@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/jwtauth"
+	"github.com/go-chi/jwtauth/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 
 	"go.uber.org/zap"
@@ -115,8 +115,8 @@ func (middleware *MiddlewareJWT) GetToken() http.HandlerFunc {
 	})
 }
 
-// AdminAuthentificator is a middle which check if the user is administrator (role=1)
-func AdminAuthentificator(next http.Handler) http.Handler {
+// AdminAuthenticator is a middle which check if the user is administrator (role=1)
+func AdminAuthenticator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// get user infos from token
 		_, claims, _ := jwtauth.FromContext(r.Context())
