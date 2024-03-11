@@ -105,7 +105,7 @@ func SearchLast(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, result)
 }
 
-// Search godoc
+// SearchLastByInterval godoc
 // @Summary query situation history data
 // @Description query situation history data
 // @Tags Search
@@ -158,7 +158,7 @@ func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, result)
 }
 
-// Search godoc
+// SearchLastByCustomInterval godoc
 // @Summary query situation history data
 // @Description query situation history data
 // @Tags Search
