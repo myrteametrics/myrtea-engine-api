@@ -115,7 +115,7 @@ func (job FactRecalculationJob) Run() {
 		zap.L().Error("fact GetAllByIDs", zap.Error(err), zap.Int64s("ids", job.FactIds))
 	}
 
-	situations := make(map[int64]situation.Situation, 0)
+	situations := make(map[int64]situation.Situation)
 	for _, factID := range job.FactIds {
 		ss, _ := situation.R().GetSituationsByFactID(factID, true)
 		for _, s := range ss {
@@ -163,6 +163,7 @@ func (job FactRecalculationJob) Run() {
 
 	S().RemoveRunningJob(job.ScheduleID)
 }
+
 func (job FactRecalculationJob) FetchRecalculationData(historySituations []history.HistorySituationsV4) ([]history.HistoryFactsV4, map[int64][]int64, map[int64]int64, error) {
 
 	situationHistoryIDs := make([]int64, 0)
@@ -208,7 +209,7 @@ func (job FactRecalculationJob) RecalculateAndUpdateFacts(factIDs []int64, facts
 	mapFactSituation map[int64]int64, mapSituations map[int64]history.HistorySituationsV4, historyFacts []history.HistoryFactsV4) (map[int64]history.HistoryFactsV4, error) {
 
 	// Fact history recalculation + update in database
-	newFactHistory := make(map[int64]history.HistoryFactsV4, 0)
+	newFactHistory := make(map[int64]history.HistoryFactsV4)
 	for _, fh := range historyFacts {
 		recalculate := false
 		for _, factID := range factIDs {
@@ -236,7 +237,8 @@ func (job FactRecalculationJob) RecalculateAndUpdateFacts(factIDs []int64, facts
 
 			widgetData, err := fact.ExecuteFact(fh.Ts, f, fh.SituationID, fh.SituationInstanceID, parameters, -1, -1, true)
 			if err != nil {
-				zap.L().Error("", zap.Error(err))
+				zap.L().Error("fact.ExecuteFact", zap.Error(err))
+				continue
 			}
 
 			newFH := history.HistoryFactsV4{
@@ -250,7 +252,8 @@ func (job FactRecalculationJob) RecalculateAndUpdateFacts(factIDs []int64, facts
 			}
 			err = history.S().HistoryFactsQuerier.Update(newFH)
 			if err != nil {
-				zap.L().Error("", zap.Error(err))
+				zap.L().Error("HistoryFactsQuerier.Update", zap.Error(err))
+				continue
 			}
 			newFactHistory[newFH.ID] = newFH
 		}
