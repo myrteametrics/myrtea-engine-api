@@ -132,15 +132,16 @@ func (logicalIndex *LogicalIndexCronV8) putAlias(name, indexPattern, modelName s
 		zap.L().Error("IndexExists()", zap.String("aliasName", name), zap.Error(err))
 		return err
 	}
-	if !aliasExists {
-		zap.L().Info("Creating missing alias", zap.String("aliasName", name),
-			zap.String("aliasIndex", indexPattern), zap.String("model", modelName))
-		_, err = elasticsearchv8.C().Indices.PutAlias(indexPattern, name).Do(ctx)
-		if err != nil {
-			zap.L().Error("elasticsearchv8.C().PutAlias()", zap.String("aliasName", name),
-				zap.Error(err))
-			return err
-		}
+	if aliasExists {
+		return nil
+	}
+
+	zap.L().Info("Creating missing alias", zap.String("aliasName", name), zap.String("aliasIndex", indexPattern), zap.String("model", modelName))
+
+	_, err = elasticsearchv8.C().Indices.PutAlias(indexPattern, name).Do(ctx)
+	if err != nil {
+		zap.L().Error("elasticsearchv8.C().PutAlias()", zap.String("aliasName", name), zap.Error(err))
+		return err
 	}
 	return nil
 }
