@@ -2,15 +2,15 @@ package pluginutils
 
 import (
 	"fmt"
+	"github.com/hashicorp/go-hclog"
 	"io"
 	"log"
 
-	"github.com/hashicorp/go-hclog"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-// Wrap simplifies wrapping zap instance to hclog.Logger interfacs.
+// ZapWrap simplifies wrapping zap instance to hclog.Logger interfacs.
 func ZapWrap(zap *zap.Logger) hclog.Logger {
 	return ZapWrapper{Zap: zap}
 }
@@ -21,6 +21,10 @@ type Level = hclog.Level
 type ZapWrapper struct {
 	Zap  *zap.Logger
 	name string
+}
+
+func (w ZapWrapper) GetLevel() hclog.Level {
+	return hclog.NoLevel
 }
 
 func (w ZapWrapper) Warn(msg string, args ...interface{}) {
