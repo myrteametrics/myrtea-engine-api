@@ -47,52 +47,65 @@ func NewLogicalIndexCronV8(instanceName string, model modeler.Model) (*LogicalIn
 		Model:       model,
 	}
 
-	ctx := context.Background()
-	indexPatern := fmt.Sprintf("%s-active-*", logicalIndexName)
-	//exists, err := elasticsearchv8.C().Indices.Exists(indexPatern).Do(ctx)
-	//exists, err := elasticsearchv8.C().Indices.ExistsTemplate()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
+	indexPattern := fmt.Sprintf("%s-active-*", logicalIndexName)
+
+	// First create template if not exists
+
 	templateName := fmt.Sprintf("template-%s", logicalIndexName)
 	templateExists, err := elasticsearchv8.C().Indices.ExistsTemplate(templateName).IsSuccess(ctx)
 	if err != nil {
-		zap.L().Error("IndexTemplateExists()", zap.Error(err))
+		zap.L().Error("IndexTemplateExists()", zap.String("templateName", templateName), zap.Error(err))
+		return nil, err
+	}
+	if !templateExists {
+		zap.L().Info("Creating missing template", zap.String("templateName", templateName),
+			zap.String("indexPattern", indexPattern), zap.String("model", model.Name))
+		logicalIndex.putTemplate(templateName, indexPattern, model)
+	}
+
+	// Then create base index name if not exists
+	baseIndexName := logicalIndexName + "-active-000001"
+	baseIndexExists, err := elasticsearchv8.C().Indices.Exists(baseIndexName).IsSuccess(ctx)
+	if err != nil {
+		zap.L().Error("IndexExists()", zap.String("baseIndexName", baseIndexName), zap.Error(err))
+		return nil, err
+	}
+	if !baseIndexExists {
+		zap.L().Info("Creating missing index", zap.String("baseIndexName", baseIndexName),
+			zap.String("model", model.Name))
+		_, err = elasticsearchv8.C().Indices.Create(baseIndexName).Do(ctx)
+		if err != nil {
+			zap.L().Error("elasticsearchv8.C().PutIndex()", zap.String("baseIndexName", baseIndexName),
+				zap.Error(err))
+			return nil, err
+		}
+	}
+
+	// Create alias "-current" if not already exists
+	err = logicalIndex.putAlias(logicalIndexName+"-current", logicalIndexName+"-active-*", model.Name, ctx)
+	if err != nil {
 		return nil, err
 	}
 
+	// Create alias "-patch" if patchAliasMaxIndices is greater than 0 and alias not already exists
+	if model.ElasticsearchOptions.PatchAliasMaxIndices > 0 {
+		err = logicalIndex.putAlias(logicalIndexName+"-patch", logicalIndexName+"-*", model.Name, ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Create alias "-search" if not already exists (search alias on all active index)
+	err = logicalIndex.putAlias(logicalIndexName+"-search", logicalIndexName+"-*", model.Name, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// We want to persist the index if he has been created
 	if !templateExists {
-
-		//templateName := fmt.Sprintf("template-%s", logicalIndexName)
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancel()
-
-		logicalIndex.putTemplate(templateName, indexPatern, model)
-
-		_, err := elasticsearchv8.C().Indices.Create(logicalIndexName + "-active-000001").Do(ctx)
-		if err != nil {
-			zap.L().Error("elasticsearchv8.C().PutIndex()", zap.Error(err))
-			return nil, err
-		}
-
-		_, err = elasticsearchv8.C().Indices.PutAlias(logicalIndexName+"-active-*", logicalIndexName+"-current").Do(ctx)
-		if err != nil {
-			zap.L().Error("elasticsearchv8.C().PutAlias()", zap.Error(err))
-			return nil, err
-		}
-
-		if model.ElasticsearchOptions.PatchAliasMaxIndices > 0 {
-			_, err = elasticsearchv8.C().Indices.PutAlias(logicalIndexName+"-*", logicalIndexName+"-patch").Do(ctx)
-			if err != nil {
-				zap.L().Error("elasticsearchv8.C().PutAlias()", zap.Error(err))
-				return nil, err
-			}
-		}
-
-		// Adding search alias on all active index
-		_, err = elasticsearchv8.C().Indices.PutAlias(logicalIndexName+"-*", logicalIndexName+"-search").Do(ctx)
-		if err != nil {
-			zap.L().Error("elasticsearchv8.C().PutAlias()", zap.Error(err))
-			return nil, err
-		}
-
 		err = logicalIndex.persistTechnicalIndex(logicalIndexName+"-active-000001", time.Now().UTC())
 		if err != nil {
 			zap.L().Error("Could not persist technical index data", zap.Error(err))
@@ -113,8 +126,28 @@ func NewLogicalIndexCronV8(instanceName string, model modeler.Model) (*LogicalIn
 	return logicalIndex, nil
 }
 
-func (logicalIndex *LogicalIndexCronV8) putTemplate(name string, indexPatern string, model modeler.Model) {
-	req := elasticsearchv8.NewPutTemplateRequestV8([]string{indexPatern}, model)
+func (logicalIndex *LogicalIndexCronV8) putAlias(name, indexPattern, modelName string, ctx context.Context) error {
+	aliasExists, err := elasticsearchv8.C().Indices.ExistsAlias(name).IsSuccess(ctx)
+	if err != nil {
+		zap.L().Error("IndexExists()", zap.String("aliasName", name), zap.Error(err))
+		return err
+	}
+	if aliasExists {
+		return nil
+	}
+
+	zap.L().Info("Creating missing alias", zap.String("aliasName", name), zap.String("aliasIndex", indexPattern), zap.String("model", modelName))
+
+	_, err = elasticsearchv8.C().Indices.PutAlias(indexPattern, name).Do(ctx)
+	if err != nil {
+		zap.L().Error("elasticsearchv8.C().PutAlias()", zap.String("aliasName", name), zap.Error(err))
+		return err
+	}
+	return nil
+}
+
+func (logicalIndex *LogicalIndexCronV8) putTemplate(name string, indexPattern string, model modeler.Model) {
+	req := elasticsearchv8.NewPutTemplateRequestV8([]string{indexPattern}, model)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
@@ -131,7 +164,7 @@ func (logicalIndex *LogicalIndexCronV8) GetCron() *cron.Cron {
 	return logicalIndex.Cron
 }
 
-// FindIndicesWithDynamicDepth search in indices referential every indices between two dates (calculated using current time and depth)
+// FindIndices search in indices referential every indices between two dates (calculated using current time and depth)
 func (logicalIndex *LogicalIndexCronV8) FindIndices(t time.Time, depthDays int64) ([]string, error) {
 	if depthDays == 0 {
 		return []string{fmt.Sprintf("%s-%s", logicalIndex.Name, index.All)}, nil
