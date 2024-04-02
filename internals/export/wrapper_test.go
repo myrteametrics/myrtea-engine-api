@@ -3,16 +3,17 @@ package export
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
-	"github.com/myrteametrics/myrtea-sdk/v4/expression"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
+	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v4/expression"
 )
 
 func TestNewWrapper(t *testing.T) {
@@ -33,7 +34,7 @@ func TestFactsEquals(t *testing.T) {
 }
 
 func TestNewWrapperItem(t *testing.T) {
-	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test", CSVParameters{}, users.User{Login: "test"})
+	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test", CSVParameters{}, users.User{Login: "test"}, make(map[string]string))
 	expression.AssertNotEqual(t, item.Id, "")
 	expression.AssertEqual(t, factsEquals(item.Facts, []engine.Fact{{ID: 1}}), true)
 	expression.AssertEqual(t, item.Params.Equals(CSVParameters{}), true)
@@ -44,7 +45,7 @@ func TestNewWrapperItem(t *testing.T) {
 }
 
 func TestWrapperItem_ContainsFact(t *testing.T) {
-	item := NewWrapperItem([]engine.Fact{{ID: 1}, {ID: 22}, {ID: 33}}, "test.txt", CSVParameters{}, users.User{Login: "test"})
+	item := NewWrapperItem([]engine.Fact{{ID: 1}, {ID: 22}, {ID: 33}}, "test.txt", CSVParameters{}, users.User{Login: "test"}, make(map[string]string))
 	expression.AssertEqual(t, item.ContainsFact(1), true)
 	expression.AssertEqual(t, item.ContainsFact(22), true)
 	expression.AssertEqual(t, item.ContainsFact(3), false)
@@ -69,13 +70,13 @@ func TestAddToQueue(t *testing.T) {
 	user1 := users.User{Login: "bla"}
 	user2 := users.User{Login: "blabla"}
 	csvParams := CSVParameters{}
-	_, result := wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", csvParams, user1)
+	_, result := wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", csvParams, user1, make(map[string]string))
 	expression.AssertEqual(t, result, CodeAdded, "AddToQueue should return CodeAdded")
-	_, result = wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", csvParams, user1)
+	_, result = wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", csvParams, user1, make(map[string]string))
 	expression.AssertEqual(t, result, CodeUserExists, "AddToQueue should return CodeUserExists")
-	_, result = wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", csvParams, user2)
+	_, result = wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", csvParams, user2, make(map[string]string))
 	expression.AssertEqual(t, result, CodeUserAdded, "AddToQueue should return CodeUserAdded")
-	_, result = wrapper.AddToQueue([]engine.Fact{{ID: 2}}, "test.txt", csvParams, user2)
+	_, result = wrapper.AddToQueue([]engine.Fact{{ID: 2}}, "test.txt", csvParams, user2, make(map[string]string))
 	expression.AssertEqual(t, result, CodeQueueFull, "AddToQueue should return CodeQueueFull")
 }
 
@@ -118,7 +119,7 @@ func TestStartDispatcher(t *testing.T) {
 
 	// add a task to the queue and check if the task was added to queue
 	user := users.User{Login: "test"}
-	_, result := wrapper.AddToQueue([]engine.Fact{{ID: 1}}, fileName, CSVParameters{}, user)
+	_, result := wrapper.AddToQueue([]engine.Fact{{ID: 1}}, fileName, CSVParameters{}, user, make(map[string]string))
 	expression.AssertEqual(t, result, CodeAdded, "AddToQueue should return CodeAdded")
 	wrapper.queueMutex.Lock()
 	expression.AssertEqual(t, len(wrapper.queue), 1)
@@ -224,16 +225,16 @@ func TestWrapper_GetUserExports(t *testing.T) {
 	wrapper := NewWrapper("/tmp", 1, 1, 2)
 	user1 := users.User{Login: "bla"}
 	user2 := users.User{Login: "blabla"}
-	item1 := NewWrapperItem([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, user1)
-	item2 := NewWrapperItem([]engine.Fact{{ID: 2}}, "test.txt", CSVParameters{}, user1)
-	item3 := NewWrapperItem([]engine.Fact{{ID: 3}}, "test.txt", CSVParameters{}, user1)
-	item4 := NewWrapperItem([]engine.Fact{{ID: 4}}, "test.txt", CSVParameters{}, user2)
+	item1 := NewWrapperItem([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, user1, make(map[string]string))
+	item2 := NewWrapperItem([]engine.Fact{{ID: 2}}, "test.txt", CSVParameters{}, user1, make(map[string]string))
+	item3 := NewWrapperItem([]engine.Fact{{ID: 3}}, "test.txt", CSVParameters{}, user1, make(map[string]string))
+	item4 := NewWrapperItem([]engine.Fact{{ID: 4}}, "test.txt", CSVParameters{}, user2, make(map[string]string))
 	wrapper.archive.Store(item1.Id, *item1)
 	wrapper.archive.Store(item2.Id, *item2)
 	wrapper.archive.Store(item3.Id, *item3)
 	wrapper.archive.Store(item4.Id, *item4)
-	wrapper.AddToQueue([]engine.Fact{{ID: 5}}, "test.txt", CSVParameters{}, user1)
-	wrapper.AddToQueue([]engine.Fact{{ID: 6}}, "test.txt", CSVParameters{}, user2)
+	wrapper.AddToQueue([]engine.Fact{{ID: 5}}, "test.txt", CSVParameters{}, user1, make(map[string]string))
+	wrapper.AddToQueue([]engine.Fact{{ID: 6}}, "test.txt", CSVParameters{}, user2, make(map[string]string))
 	exports := wrapper.GetUserExports(user1)
 	expression.AssertEqual(t, len(exports), 4)
 	exports = wrapper.GetUserExports(user2)
@@ -245,8 +246,8 @@ func TestWrapper_DequeueWrapperItem(t *testing.T) {
 	i, ok := wrapper.dequeueWrapperItem(&WrapperItem{})
 	expression.AssertEqual(t, ok, false)
 	expression.AssertEqual(t, i, 0)
-	wrapper.AddToQueue([]engine.Fact{{ID: 5}}, "test.txt", CSVParameters{}, users.User{Login: "bla"})
-	wrapper.AddToQueue([]engine.Fact{{ID: 6}}, "test.txt", CSVParameters{}, users.User{Login: "blabla"})
+	wrapper.AddToQueue([]engine.Fact{{ID: 5}}, "test.txt", CSVParameters{}, users.User{Login: "bla"}, make(map[string]string))
+	wrapper.AddToQueue([]engine.Fact{{ID: 6}}, "test.txt", CSVParameters{}, users.User{Login: "blabla"}, make(map[string]string))
 
 	expression.AssertEqual(t, len(wrapper.queue), 2)
 	item1 := wrapper.queue[0]
@@ -298,7 +299,7 @@ func TestWrapper_dispatchExportQueue(t *testing.T) {
 	expression.AssertEqual(t, worker.IsAvailable(), true, "worker should still be available, because no items in queue")
 
 	// we add an item to the queue
-	wrapper.AddToQueue([]engine.Fact{{ID: 1}}, fileName, CSVParameters{}, users.User{Login: "test"})
+	wrapper.AddToQueue([]engine.Fact{{ID: 1}}, fileName, CSVParameters{}, users.User{Login: "test"}, make(map[string]string))
 
 	// we test if dispatchExportQueue will not dispatch the item, no worker available
 	worker.SwapAvailable(false)
@@ -329,7 +330,7 @@ func TestWrapper_dispatchExportQueue(t *testing.T) {
 
 func TestWrapper_FindArchive(t *testing.T) {
 	wrapper := NewWrapper("/tmp", 1, 1, 2)
-	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"})
+	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"}, make(map[string]string))
 	wrapper.archive.Store(item.Id, *item)
 
 	// testing with non-existing item in archive
@@ -346,14 +347,14 @@ func TestWrapper_FindArchive(t *testing.T) {
 }
 
 func TestWrapper_ContainsUser(t *testing.T) {
-	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"})
+	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"}, make(map[string]string))
 	expression.AssertEqual(t, item.ContainsUser(users.User{Login: "bla"}), true)
 	expression.AssertEqual(t, item.ContainsUser(users.User{Login: "blabla"}), false)
 }
 
 func TestWrapper_DeleteExport(t *testing.T) {
 	wrapper := NewWrapper("/tmp", 1, 1, 2)
-	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"})
+	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"}, make(map[string]string))
 
 	// test archive
 	wrapper.archive.Store(item.Id, *item)
@@ -370,7 +371,7 @@ func TestWrapper_DeleteExport(t *testing.T) {
 	item.Users = []string{"bla"}
 
 	// test queue
-	queueItem, code := wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"})
+	queueItem, code := wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"}, make(map[string]string))
 	expression.AssertEqual(t, code, CodeAdded, "item should have been added to queue")
 	wrapper.queueMutex.Lock()
 	expression.AssertEqual(t, len(wrapper.queue), 1, "item should be in queue")
@@ -381,9 +382,9 @@ func TestWrapper_DeleteExport(t *testing.T) {
 	wrapper.queueMutex.Unlock()
 
 	// test queue multi-user
-	queueItem, code = wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"})
+	queueItem, code = wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"}, make(map[string]string))
 	expression.AssertEqual(t, code, CodeAdded, "item should have been added to queue")
-	_, code = wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "blabla"})
+	_, code = wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "blabla"}, make(map[string]string))
 	expression.AssertEqual(t, code, CodeUserAdded, "user should have been added to existing item in queue")
 	wrapper.queueMutex.Lock()
 	expression.AssertEqual(t, len(wrapper.queue), 1, "item should be in queue")
@@ -419,7 +420,7 @@ func TestWrapper_DeleteExport(t *testing.T) {
 
 func TestWrapper_GetUserExport(t *testing.T) {
 	wrapper := NewWrapper("/tmp", 1, 1, 2)
-	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"})
+	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"}, make(map[string]string))
 
 	// test item in archive
 	wrapper.archive.Store(item.Id, *item)
@@ -431,7 +432,7 @@ func TestWrapper_GetUserExport(t *testing.T) {
 	wrapper.archive.Delete(item.Id)
 
 	// test item in queue queue
-	queueItem, code := wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"})
+	queueItem, code := wrapper.AddToQueue([]engine.Fact{{ID: 1}}, "test.txt", CSVParameters{}, users.User{Login: "bla"}, make(map[string]string))
 	expression.AssertEqual(t, code, CodeAdded, "item should have been added to queue")
 	export, ok = wrapper.GetUserExport(queueItem.Id, users.User{Login: "bla"})
 	expression.AssertEqual(t, ok, true)

@@ -319,3 +319,33 @@ func gvalParsingEnabled(params url.Values) bool {
 	}
 	return parsedVal
 }
+
+// ParsefactParametres takes a string of encoded parameters and returns a map of these decoded parameters.
+func ParseFactParametres(factParametres string) (map[string]string, error) {
+
+	if factParametres == "" {
+		return make(map[string]string), nil
+	}
+
+	decodedValue, err := url.QueryUnescape(factParametres)
+
+	if err != nil {
+		return nil, fmt.Errorf("cannot decode: %v", err)
+	}
+
+	paramsMap := make(map[string]string)
+
+	//Separation of key pairs = value
+	pairs := strings.Split(decodedValue, "&")
+	for _, pair := range pairs {
+		// Separation of key and value
+		kv := strings.Split(pair, "=")
+		if len(kv) != 2 {
+			return nil, fmt.Errorf("invalid pair: %v", pair)
+		}
+
+		paramsMap[kv[0]] = kv[1]
+	}
+
+	return paramsMap, nil
+}
