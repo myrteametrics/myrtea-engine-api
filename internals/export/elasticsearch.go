@@ -33,7 +33,7 @@ func (export StreamedExport) StreamedExportFactHitsFull(ctx context.Context, f e
 	case 7:
 		fallthrough
 	case 8:
-		return export.StreamedExportFactHitsFullV8(ctx, f, limit, placeholders)
+		return export.StreamedExportFactHitsFullV8(ctx, f, limit, factParameters)
 	default:
 		// No fatal here, 6 is unsupported
 		//zap.L().Fatal("Unsupported Elasticsearch version", zap.Int("version", version))
