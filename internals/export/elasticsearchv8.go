@@ -45,12 +45,12 @@ func (export StreamedExport) StreamedExportFactHitsFullV8(ctx context.Context, f
 	// Change the behaviour of the Fact
 	f.Intent.Operator = engine.Select
 
-	err := f.ContextualizeCondition(ti, placeholders)
+	err := f.ContextualizeCondition(ti, factParameters)
 	if err != nil {
 		return err
 	}
 
-	searchRequest, err := elasticsearchv8.ConvertFactToSearchRequestV8(f, ti, placeholders)
+	searchRequest, err := elasticsearchv8.ConvertFactToSearchRequestV8(f, ti, factParameters)
 	if err != nil {
 		zap.L().Error("ConvertFactToSearchRequestV8 failed", zap.Error(err))
 		return err
