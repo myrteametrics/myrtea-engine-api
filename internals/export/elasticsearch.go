@@ -27,7 +27,7 @@ func ExportFactHitsFull(f engine.Fact) ([]reader.Hit, error) {
 	}
 }
 
-func (export StreamedExport) StreamedExportFactHitsFull(ctx context.Context, f engine.Fact, limit int64, placeholders map[string]string) error {
+func (export StreamedExport) StreamedExportFactHitsFull(ctx context.Context, f engine.Fact, limit int64, factParameters map[string]string) error {
 	version := viper.GetInt("ELASTICSEARCH_VERSION")
 	switch version {
 	case 7:
