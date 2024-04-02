@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
-	"go.uber.org/zap"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"strconv"
 	"sync"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
+	"go.uber.org/zap"
 )
 
 type ExportHandler struct {
@@ -121,7 +122,7 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 		defer close(streamedExport.Data)
 
 		for _, f := range facts {
-			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, request.Limit)
+			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, request.Limit, make(map[string]string))
 			if writerErr != nil {
 				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
 				break // break here when error occurs?
@@ -318,6 +319,13 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	factParameters, err := ParseFactParameters(r.URL.Query().Get("factParameters"))
+	if err != nil {
+		zap.L().Error("Parse input Fact Parametres", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("factParameters")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
 	facts := findCombineFacts(request.FactIDs)
 	if len(facts) == 0 {
 		zap.L().Warn("No fact was found in export request")
@@ -325,7 +333,7 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User)
+	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User, factParameters)
 
 	switch status {
 	case export.CodeAdded:

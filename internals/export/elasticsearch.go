@@ -3,9 +3,10 @@ package export
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"github.com/spf13/viper"
-	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
 	"go.uber.org/zap"
@@ -26,13 +27,13 @@ func ExportFactHitsFull(f engine.Fact) ([]reader.Hit, error) {
 	}
 }
 
-func (export StreamedExport) StreamedExportFactHitsFull(ctx context.Context, f engine.Fact, limit int64) error {
+func (export StreamedExport) StreamedExportFactHitsFull(ctx context.Context, f engine.Fact, limit int64, factParameters map[string]string) error {
 	version := viper.GetInt("ELASTICSEARCH_VERSION")
 	switch version {
 	case 7:
 		fallthrough
 	case 8:
-		return export.StreamedExportFactHitsFullV8(ctx, f, limit)
+		return export.StreamedExportFactHitsFullV8(ctx, f, limit, factParameters)
 	default:
 		// No fatal here, 6 is unsupported
 		//zap.L().Fatal("Unsupported Elasticsearch version", zap.Int("version", version))
