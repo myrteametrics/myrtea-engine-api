@@ -5,11 +5,12 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
-	"go.uber.org/zap"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
+	"go.uber.org/zap"
 )
 
 type ExportWorker struct {
@@ -161,7 +162,7 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 		defer close(streamedExport.Data)
 
 		for _, f := range item.Facts {
-			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit)
+			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit, item.FactParameters)
 			if writerErr != nil {
 				break // break here when error occurs?
 			}

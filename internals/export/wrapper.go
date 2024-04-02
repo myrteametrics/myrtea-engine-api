@@ -2,17 +2,18 @@ package export
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
-	"time"
 )
 
 const (
@@ -40,16 +41,17 @@ const (
 
 // WrapperItem represents an export demand
 type WrapperItem struct {
-	Id       string        `json:"id"`      // unique id that represents an export demand
-	FactIDs  []int64       `json:"factIds"` // list of fact ids that are part of the export (for archive and json)
-	Facts    []engine.Fact `json:"-"`
-	Error    string        `json:"error"`
-	Status   int           `json:"status"`
-	FileName string        `json:"fileName"`
-	Title    string        `json:"title"`
-	Date     time.Time     `json:"date"`
-	Users    []string      `json:"-"`
-	Params   CSVParameters `json:"-"`
+	Id           string            `json:"id"`      // unique id that represents an export demand
+	FactIDs      []int64           `json:"factIds"` // list of fact ids that are part of the export (for archive and json)
+	Facts        []engine.Fact     `json:"-"`
+	Error        string            `json:"error"`
+	Status       int               `json:"status"`
+	FileName     string            `json:"fileName"`
+	Title        string            `json:"title"`
+	Date         time.Time         `json:"date"`
+	Users        []string          `json:"-"`
+	Params       CSVParameters     `json:"-"`
+	FactParameters map[string]string `json:"factParameters"`
 }
 
 type Wrapper struct {
@@ -76,7 +78,7 @@ type Wrapper struct {
 }
 
 // NewWrapperItem creates a new export wrapper item
-func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, user users.User) *WrapperItem {
+func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, user users.User, factParameters map[string]string) *WrapperItem {
 	var factIDs []int64
 	for _, fact := range facts {
 		factIDs = append(factIDs, fact.ID)
@@ -88,16 +90,17 @@ func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, use
 		strings.ReplaceAll(title, " ", "_") + ".csv.gz"
 
 	return &WrapperItem{
-		Users:    append([]string{}, user.Login),
-		Id:       uuid.New().String(),
-		Facts:    facts,
-		FactIDs:  factIDs,
-		Date:     time.Now(),
-		Status:   StatusPending,
-		Error:    "",
-		FileName: fileName,
-		Title:    title,
-		Params:   params,
+		Users:        append([]string{}, user.Login),
+		Id:           uuid.New().String(),
+		Facts:        facts,
+		FactIDs:      factIDs,
+		Date:         time.Now(),
+		Status:       StatusPending,
+		Error:        "",
+		FileName:     fileName,
+		Title:        title,
+		Params:       params,
+		FactParameters: factParameters,
 	}
 }
 
@@ -177,7 +180,7 @@ func factsEquals(a, b []engine.Fact) bool {
 }
 
 // AddToQueue Adds a new export to the export worker queue
-func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParameters, user users.User) (*WrapperItem, int) {
+func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParameters, user users.User, factParameters map[string]string) (*WrapperItem, int) {
 	ew.queueMutex.Lock()
 	defer ew.queueMutex.Unlock()
 
@@ -201,7 +204,7 @@ func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParam
 		return nil, CodeQueueFull
 	}
 
-	item := NewWrapperItem(facts, title, params, user)
+	item := NewWrapperItem(facts, title, params, user, factParameters)
 	ew.queue = append(ew.queue, item)
 	return item, CodeAdded
 }

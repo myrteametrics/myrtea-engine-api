@@ -505,6 +505,13 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	factParameters, err := ParseFactParameters(r.URL.Query().Get("factParameters"))
+	if err != nil {
+		zap.L().Error("Parse input FactParametres", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("factParameters")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
 	id := chi.URLParam(r, "id")
 	var f engine.Fact
 	var found bool
@@ -602,6 +609,12 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 		for key, param := range situationInstance.Parameters {
 			placeholders[key] = param
 		}
+
+	}
+
+	// parameters entered from the front-ends
+	for key, param := range factParameters {
+		placeholders[key] = param
 	}
 
 	// Change the behaviour of the Fact
