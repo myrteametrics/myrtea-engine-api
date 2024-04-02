@@ -51,7 +51,7 @@ type WrapperItem struct {
 	Date         time.Time         `json:"date"`
 	Users        []string          `json:"-"`
 	Params       CSVParameters     `json:"-"`
-	Placeholders map[string]string `json:"placeholders"`
+	FactParameters map[string]string `json:"factParameters"`
 }
 
 type Wrapper struct {
@@ -78,7 +78,7 @@ type Wrapper struct {
 }
 
 // NewWrapperItem creates a new export wrapper item
-func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, user users.User, placeholders map[string]string) *WrapperItem {
+func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, user users.User, factParameters map[string]string) *WrapperItem {
 	var factIDs []int64
 	for _, fact := range facts {
 		factIDs = append(factIDs, fact.ID)
@@ -100,7 +100,7 @@ func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, use
 		FileName:     fileName,
 		Title:        title,
 		Params:       params,
-		Placeholders: placeholders,
+		FactParameters: factParameters,
 	}
 }
 
@@ -180,7 +180,7 @@ func factsEquals(a, b []engine.Fact) bool {
 }
 
 // AddToQueue Adds a new export to the export worker queue
-func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParameters, user users.User, placeholders map[string]string) (*WrapperItem, int) {
+func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParameters, user users.User, factParameters map[string]string) (*WrapperItem, int) {
 	ew.queueMutex.Lock()
 	defer ew.queueMutex.Unlock()
 
@@ -204,7 +204,7 @@ func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParam
 		return nil, CodeQueueFull
 	}
 
-	item := NewWrapperItem(facts, title, params, user, placeholders)
+	item := NewWrapperItem(facts, title, params, user, factParameters)
 	ew.queue = append(ew.queue, item)
 	return item, CodeAdded
 }

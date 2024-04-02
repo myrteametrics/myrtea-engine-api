@@ -40,7 +40,7 @@ func (export StreamedExport) DrainChannel() {
 
 // StreamedExportFactHitsFullV8 export data from ElasticSearch to a channel
 // Please note that the channel is not closed when this function is executed
-func (export StreamedExport) StreamedExportFactHitsFullV8(ctx context.Context, f engine.Fact, limit int64, placeholders map[string]string) error {
+func (export StreamedExport) StreamedExportFactHitsFullV8(ctx context.Context, f engine.Fact, limit int64, factParameters map[string]string) error {
 	ti := time.Now()
 	// Change the behaviour of the Fact
 	f.Intent.Operator = engine.Select

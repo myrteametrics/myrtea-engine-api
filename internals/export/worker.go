@@ -162,7 +162,7 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 		defer close(streamedExport.Data)
 
 		for _, f := range item.Facts {
-			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit, item.Placeholders)
+			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit, item.FactParameters)
 			if writerErr != nil {
 				break // break here when error occurs?
 			}
