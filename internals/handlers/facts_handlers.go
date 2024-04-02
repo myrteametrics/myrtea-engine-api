@@ -505,9 +505,9 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	factParametres, err := ParseFactParametres(r.URL.Query().Get("factParametres"))
+	factParameters, err := ParseFactParameters(r.URL.Query().Get("factParameters"))
 	if err != nil {
-		zap.L().Error("Parse input FactParametres", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("factparametres")))
+		zap.L().Error("Parse input FactParametres", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("factParameters")))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
 		return
 	}
@@ -613,7 +613,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// parameters entered from the front-ends
-	for key, param := range factParametres {
+	for key, param := range factParameters {
 		placeholders[key] = param
 	}
 

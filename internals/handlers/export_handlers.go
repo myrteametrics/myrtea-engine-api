@@ -319,9 +319,9 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	factParametres, err := ParseFactParametres(r.URL.Query().Get("factParametres"))
+	factParameters, err := ParseFactParameters(r.URL.Query().Get("factParameters"))
 	if err != nil {
-		zap.L().Error("Parse input Fact Parametres", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("factparametres")))
+		zap.L().Error("Parse input Fact Parametres", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("factParameters")))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
 		return
 	}
@@ -333,7 +333,7 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User, factParametres)
+	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User, factParameters)
 
 	switch status {
 	case export.CodeAdded:

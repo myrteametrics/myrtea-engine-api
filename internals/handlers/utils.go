@@ -320,14 +320,14 @@ func gvalParsingEnabled(params url.Values) bool {
 	return parsedVal
 }
 
-// ParsefactParametres takes a string of encoded parameters and returns a map of these decoded parameters.
-func ParseFactParametres(factParametres string) (map[string]string, error) {
+// ParsefactParameters takes a string of encoded parameters and returns a map of these decoded parameters.
+func ParseFactParameters(factParameters string) (map[string]string, error) {
 
-	if factParametres == "" {
+	if factParameters == "" {
 		return make(map[string]string), nil
 	}
 
-	decodedValue, err := url.QueryUnescape(factParametres)
+	decodedValue, err := url.QueryUnescape(factParameters)
 
 	if err != nil {
 		return nil, fmt.Errorf("cannot decode: %v", err)
