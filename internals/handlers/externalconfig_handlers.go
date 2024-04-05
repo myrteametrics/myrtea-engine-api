@@ -84,7 +84,7 @@ func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
 // @Description Get an externalConfig definition
 // @Tags ExternalConfigs
 // @Produce json
-// @Param name path string true "ExternalConfig Name"
+// @Param name path string true "ExternalConfig Name (escaped html accepted)"
 // @Security Bearer
 // @Success 200 {object} models.ExternalConfig "externalConfig"
 // @Failure 400 "Status Bad Request"
