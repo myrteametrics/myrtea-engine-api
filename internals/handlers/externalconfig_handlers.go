@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 
@@ -83,13 +84,19 @@ func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
 // @Description Get an externalConfig definition
 // @Tags ExternalConfigs
 // @Produce json
-// @Param name path string true "ExternalConfig Name"
+// @Param name path string true "ExternalConfig Name (escaped html accepted)"
 // @Security Bearer
 // @Success 200 {object} models.ExternalConfig "externalConfig"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/externalconfigs/name/{name} [get]
 func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	escapedName := chi.URLParam(r, "name")
+	name, err := url.QueryUnescape(escapedName)
+	if err != nil {
+		zap.L().Error("Cannot unescape external config name", zap.String("name", escapedName), zap.Error(err))
+		render.Error(w, r, render.ErrAPIProcessError, err)
+		return
+	}
 
 	a, found, err := externalconfig.R().GetByName(name)
 	if err != nil {
