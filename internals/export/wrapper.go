@@ -41,16 +41,16 @@ const (
 
 // WrapperItem represents an export demand
 type WrapperItem struct {
-	Id           string            `json:"id"`      // unique id that represents an export demand
-	FactIDs      []int64           `json:"factIds"` // list of fact ids that are part of the export (for archive and json)
-	Facts        []engine.Fact     `json:"-"`
-	Error        string            `json:"error"`
-	Status       int               `json:"status"`
-	FileName     string            `json:"fileName"`
-	Title        string            `json:"title"`
-	Date         time.Time         `json:"date"`
-	Users        []string          `json:"-"`
-	Params       CSVParameters     `json:"-"`
+	Id             string            `json:"id"`      // unique id that represents an export demand
+	FactIDs        []int64           `json:"factIds"` // list of fact ids that are part of the export (for archive and json)
+	Facts          []engine.Fact     `json:"-"`
+	Error          string            `json:"error"`
+	Status         int               `json:"status"`
+	FileName       string            `json:"fileName"`
+	Title          string            `json:"title"`
+	Date           time.Time         `json:"date"`
+	Users          []string          `json:"-"`
+	Params         CSVParameters     `json:"-"`
 	FactParameters map[string]string `json:"factParameters"`
 }
 
@@ -90,16 +90,16 @@ func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, use
 		strings.ReplaceAll(title, " ", "_") + ".csv.gz"
 
 	return &WrapperItem{
-		Users:        append([]string{}, user.Login),
-		Id:           uuid.New().String(),
-		Facts:        facts,
-		FactIDs:      factIDs,
-		Date:         time.Now(),
-		Status:       StatusPending,
-		Error:        "",
-		FileName:     fileName,
-		Title:        title,
-		Params:       params,
+		Users:          append([]string{}, user.Login),
+		Id:             uuid.New().String(),
+		Facts:          facts,
+		FactIDs:        factIDs,
+		Date:           time.Now(),
+		Status:         StatusPending,
+		Error:          "",
+		FileName:       fileName,
+		Title:          title,
+		Params:         params,
 		FactParameters: factParameters,
 	}
 }
