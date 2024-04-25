@@ -3,9 +3,10 @@ package export
 import "github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
 
 type CSVParameters struct {
-	Columns   []Column `json:"columns"`
-	Separator string   `json:"separator"`
-	Limit     int64    `json:"limit"`
+	Columns       []Column `json:"columns"`
+	Separator     string   `json:"separator"`
+	Limit         int64    `json:"limit"`
+	ListSeparator string   `json:"listSeparator`
 }
 
 type Column struct {

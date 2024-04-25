@@ -90,26 +90,28 @@ var (
 	// encountered issues, but not all of them have failed. The error should provide
 	// information about the requests that succeeded and those that failed.
 	ErrAPIPartialSuccess = APIError{Status: http.StatusPartialContent, ErrType: "MixedResult", Code: 7000, Message: `Some requests have succeeded, while others have failed.`}
-	// ErrAPIGenerateRandomStateFailed doit être utilisé lorsque la génération d'un état aléatoire échoue
+	// ErrAPIGenerateRandomStateFailed should be used when the generation of a random state fails.
 	ErrAPIGenerateRandomStateFailed = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 7000, Message: `Failed to generate a random state`}
-	// ErrAPIInvalidOIDCState doit être utilisé lorsque le "state" dans le callback OIDC ne correspond pas à l'état attendu
+	// ErrAPIInvalidOIDCState should be used when the 'state' in the OIDC callback does not match the expected state.
 	ErrAPIInvalidOIDCState = APIError{Status: http.StatusBadRequest, ErrType: "SecurityError", Code: 7002, Message: `Invalid OIDC state. The state parameter in the callback does not match the expected state`}
-	// ErrAPIExchangeTokenFailed doit être utilisé lorsque l'échange de token OIDC échoue
+	// ErrAPIExchangeOIDCTokenFailed should be used when the exchange of the OIDC token fails.
 	ErrAPIExchangeOIDCTokenFailed = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 7003, Message: `Failed to exchange OIDC token`}
-	// ErrAPINoIDToken doit être utilisé lorsqu'aucun ID Token n'est trouvé
+	// ErrAPINoIDOIDCToken should be used when no ID Token is found.
 	ErrAPINoIDOIDCToken = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 7004, Message: `No ID token found`}
-	// ErrAPIVerifyIDTokenFailed doit être utilisé lorsque la vérification de l'ID Token échoue
+	// ErrAPIVerifyIDOIDCTokenFailed should be used when the verification of the ID Token fails.
 	ErrAPIVerifyIDOIDCTokenFailed = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 7005, Message: `Failed to verify ID token`}
-	// ErrAPIMissingAuthCookie doit être utilisé lorsqu'un cookie d'authentification est manquant
+	// ErrAPIMissingAuthCookie should be used when an authentication cookie is missing.
 	ErrAPIMissingAuthCookie = APIError{Status: http.StatusUnauthorized, ErrType: "ProcessError", Code: 7006, Message: `Missing auth cookie`}
-	// ErrAPIInvalidAuthToken doit être utilisé lorsqu'un token d'authentification est invalide
+	// ErrAPIInvalidAuthToken should be used when an authentication token is invalid.
 	ErrAPIInvalidAuthToken = APIError{Status: http.StatusUnauthorized, ErrType: "ProcessError", Code: 7007, Message: `Invalid auth token`}
-	// ErrAPIExpiredAuthToken doit être utilisé lorsqu'un token d'authentification a expiré
+	// ErrAPIExpiredAuthToken should be used when an authentication token has expired.
 	ErrAPIExpiredAuthToken = APIError{Status: http.StatusUnauthorized, ErrType: "ProcessError", Code: 7008, Message: `Expired auth token`}
-	// ErrAPIMissingIDTokenFromContext doit être utilisé lorsqu'un token d'ID est manquant du contexte
+	// ErrAPIMissingIDTokenFromContext should be used when an ID Token is missing from the context.
 	ErrAPIMissingIDTokenFromContext = APIError{Status: http.StatusUnauthorized, ErrType: "ProcessError", Code: 7009, Message: `Missing idToken from context`}
-	// ErrAPIFailedToGetUserClaims doit être utilisé lorsque la récupération des claims de l'utilisateur échoue
+	// ErrAPIFailedToGetUserClaims should be used when retrieval of user claims fails.
 	ErrAPIFailedToGetUserClaims = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 7010, Message: `Failed to get user claims`}
+	// ErrAPIExportSeparatorConflict must be used when exporting a CSV file where the column separator and the list separator within a column are the same (e.g., both are commas). This configuration is not allowed as it causes ambiguity in parsing the CSV, where it becomes unclear whether a comma separates columns or list items within a column.
+	ErrAPIExportSeparatorConflict = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 7011, Message: `CSV file separator column and list separator in a column cannot be the same`}
 )
 
 // OK returns a HTTP status 200 with an empty body
