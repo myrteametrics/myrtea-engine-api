@@ -33,19 +33,21 @@ func WriteConvertHitsToCSV(w *csv.Writer, hits []reader.Hit, params CSVParameter
 		for _, column := range params.Columns {
 			value, err := nestedMapLookup(hit.Fields, strings.Split(column.Name, ".")...)
 			if err != nil {
-				value = ""
-			} else if column.Format != "" {
-				if date, ok := value.(time.Time); ok {
-					value = date.Format(column.Format)
-				} else if dateStr, ok := value.(string); ok {
-					date, err := parseDate(dateStr)
-					if err != nil {
-						zap.L().Error("Failed to parse date string:", zap.Any(":", dateStr), zap.Error(err))
-					} else {
-						value = date.Format(column.Format)
-					}
+				record = append(record,"")
+				continue
+			}
+
+			switch v := value.(type) {
+			case []interface{}:
+				if params.ListSeparator != "" {
+					value = convertSliceToString(v, column.Format, params.ListSeparator)
+				}
+			default:
+				if column.Format != "" {
+					value = formatValue(value, column.Format)
 				}
 			}
+
 			record = append(record, fmt.Sprintf("%v", value))
 		}
 		w.Write(record)
@@ -101,4 +103,31 @@ func parseDate(dateStr string) (time.Time, error) {
 	}
 
 	return time.Time{}, fmt.Errorf("failed to parse date string: %s", dateStr)
+}
+
+// formatValue Apply the specified format to a given value.
+func formatValue(value interface{}, format string) interface{} {
+	switch v := value.(type) {
+	case time.Time:
+		return v.Format(format)
+	case string:
+		date, err := parseDate(v)
+		if err == nil {
+			return date.Format(format)
+		}
+		zap.L().Error("Failed to parse date string:", zap.Any("value", v), zap.Error(err))
+	}
+	return value
+}
+
+// convertSliceToString Take a slice []interface{}, format and returns the elements separated by custom separator.
+func convertSliceToString(slice []interface{}, format string, separator string) string {
+	var strValues []string
+	for _, elem := range slice {
+		if format != "" {
+			elem = formatValue(elem, format)
+		}
+		strValues = append(strValues, fmt.Sprintf("%v", elem))
+	}
+	return strings.Join(strValues, separator)
 }

@@ -71,6 +71,12 @@ func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if request.Separator == request.ListSeparator {
+		zap.L().Warn("CSV file separator column and list separator in a column cannot be the same")
+		render.Error(w, r, render.ErrAPIExportSeparatorConflict, errors.New("CSV file separator column and list separator in a column cannot be the same"))
+		return
+	}
+
 	err = handleStreamedExport(r.Context(), w, request)
 	if err != nil {
 		render.Error(w, r, render.ErrAPIProcessError, err)
@@ -316,6 +322,12 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 	if len(request.Title) == 0 {
 		zap.L().Warn("Missing title (len is 0) in export request")
 		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing title (len is 0)"))
+		return
+	}
+
+	if request.Separator == request.ListSeparator {
+		zap.L().Warn("CSV file separator column and list separator in a column cannot be the same")
+		render.Error(w, r, render.ErrAPIExportSeparatorConflict, errors.New("CSV file separator column and list separator in a column cannot be the same"))
 		return
 	}
 
