@@ -111,3 +111,28 @@ func TestConvertHitsToCSV_WithEmptyHits(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestWriteConvertHitsToCSVWithFilter(t *testing.T) {
+	hits := []reader.Hit{
+		{ID: "1", Fields: map[string]interface{}{"a": "hello", "b": 20, "c": 3.123456, "d": []interface{}{"10", "11", "12"}}},
+		{ID: "2", Fields: map[string]interface{}{"b": 20, "c": 3.123456, "d": []interface{}{"10"}}},
+	}
+	params := CSVParameters{
+		Columns: []Column{
+			{Name: "a", Label: "Label A", Format: ""},
+			{Name: "b", Label: "Label B", Format: ""},
+			{Name: "c", Label: "Label C", Format: ""},
+			{Name: "d", Label: "Label D", Format: ""},
+		},
+		Separator:     ",",
+		ListSeparator: "|",
+	}
+	b := new(bytes.Buffer)
+	w := csv2.NewWriter(b)
+	err := WriteConvertHitsToCSV(w, hits, params, true)
+	if err != nil {
+		t.Log(err)
+		t.FailNow()
+	}
+	t.Log("\n" + string(b.Bytes()))
+}
