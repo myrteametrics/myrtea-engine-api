@@ -2,6 +2,7 @@ package export
 
 import (
 	"context"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,6 +53,12 @@ type WrapperItem struct {
 	Users          []string          `json:"-"`
 	Params         CSVParameters     `json:"-"`
 	FactParameters map[string]string `json:"factParameters"`
+
+	// For custom export requests
+	Custom        bool            `json:"custom"`
+	ElasticName   string          `json:"elasticName"`
+	Indices       string          `json:"-"`
+	SearchRequest *search.Request `json:"-"`
 }
 
 type Wrapper struct {
@@ -101,6 +108,7 @@ func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, use
 		Title:          title,
 		Params:         params,
 		FactParameters: factParameters,
+		Custom:         false,
 	}
 }
 
@@ -185,7 +193,7 @@ func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParam
 	defer ew.queueMutex.Unlock()
 
 	for _, queueItem := range ew.queue {
-		if !factsEquals(queueItem.Facts, facts) || !queueItem.Params.Equals(params) || queueItem.Title != title {
+		if queueItem.Custom || !factsEquals(queueItem.Facts, facts) || !queueItem.Params.Equals(params) || queueItem.Title != title {
 			continue
 		}
 
@@ -205,6 +213,40 @@ func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParam
 	}
 
 	item := NewWrapperItem(facts, title, params, user, factParameters)
+	ew.queue = append(ew.queue, item)
+	return item, CodeAdded
+}
+
+// AddToQueueCustom Adds a new export with a custom elastic connection and a custom search request
+func (ew *Wrapper) AddToQueueCustom(elasticName string, request *search.Request, indices, title string, params CSVParameters, user users.User) (*WrapperItem, int) {
+	ew.queueMutex.Lock()
+	defer ew.queueMutex.Unlock()
+
+	for _, queueItem := range ew.queue {
+		if !queueItem.Custom || !queueItem.Params.Equals(params) || queueItem.Title != title {
+			continue
+		}
+
+		// check if user not already in queue.users
+		for _, u := range queueItem.Users {
+			if u == user.Login {
+				return nil, CodeUserExists
+			}
+		}
+
+		queueItem.Users = append(queueItem.Users, user.Login)
+		return nil, CodeUserAdded
+	}
+
+	if len(ew.queue) >= ew.queueMaxSize {
+		return nil, CodeQueueFull
+	}
+
+	item := NewWrapperItem([]engine.Fact{}, title, params, user, map[string]string{})
+	item.Custom = true
+	item.ElasticName = elasticName
+	item.SearchRequest = request
+	item.Indices = indices
 	ew.queue = append(ew.queue, item)
 	return item, CodeAdded
 }

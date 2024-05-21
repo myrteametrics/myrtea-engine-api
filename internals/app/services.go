@@ -2,19 +2,20 @@ package app
 
 import (
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/connectorconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/esconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/externalconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
 	"strings"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connector"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connectorconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/coordinator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/email"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/action"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/draft"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/externalconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/history"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/variablesconfig"
@@ -57,8 +58,10 @@ func initRepositories() {
 	connector.ReplaceGlobals(connector.NewPostgresRepository(dbClient))
 	rule.ReplaceGlobals(rule.NewPostgresRepository(dbClient))
 	modeler.ReplaceGlobals(modeler.NewPostgresRepository(dbClient))
+	// Configs
 	externalconfig.ReplaceGlobals(externalconfig.NewPostgresRepository(dbClient))
 	connectorconfig.ReplaceGlobals(connectorconfig.NewPostgresRepository(dbClient))
+	esconfig.ReplaceGlobals(esconfig.NewPostgresRepository(dbClient))
 	history.ReplaceGlobals(history.New(dbClient))
 	variablesconfig.ReplaceGlobals(variablesconfig.NewPostgresRepository(dbClient))
 }

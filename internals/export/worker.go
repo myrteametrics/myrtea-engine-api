@@ -161,12 +161,17 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 		defer wg.Done()
 		defer close(streamedExport.Data)
 
-		for _, f := range item.Facts {
-			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit, item.FactParameters)
-			if writerErr != nil {
-				break // break here when error occurs?
+		if item.Custom {
+
+		} else {
+			for _, f := range item.Facts {
+				writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit, item.FactParameters)
+				if writerErr != nil {
+					break // break here when error occurs?
+				}
 			}
 		}
+
 	}()
 
 	// Chunk handler

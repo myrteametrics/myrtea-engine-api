@@ -130,7 +130,7 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 		for _, f := range facts {
 			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, request.Limit, make(map[string]string))
 			if writerErr != nil {
-				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
+				zap.L().Error("Error during export (StreamedExportFactHitsFull)", zap.Error(err))
 				break // break here when error occurs?
 			}
 		}
@@ -152,7 +152,7 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 				data, err := export.ConvertHitsToCSV(hits, request.CSVParameters, first)
 
 				if err != nil {
-					zap.L().Error("ConvertHitsToCSV error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
+					zap.L().Error("ConvertHitsToCSV error during export (StreamedExportFactHitsFull)", zap.Error(err))
 					cancel()
 					return
 				}
@@ -160,7 +160,7 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 				// Write data
 				_, err = w.Write(data)
 				if err != nil {
-					zap.L().Error("Write error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
+					zap.L().Error("Write error during export (StreamedExportFactHitsFull)", zap.Error(err))
 					cancel()
 					return
 				}
