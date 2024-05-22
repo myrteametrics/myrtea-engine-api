@@ -47,7 +47,7 @@ func (r *PostgresRepository) checkRowsAffected(res sql.Result, nbRows int64) err
 // Get use to retrieve an elasticSearchConfig by id
 func (r *PostgresRepository) Get(id int64) (models.ElasticSearchConfig, bool, error) {
 	rows, err := r.newStatement().
-		Select("name", "urls", "default").
+		Select("name", "urls", "default", "export_activated").
 		From(table).
 		Where(sq.Eq{"id": id}).
 		Query()
@@ -57,9 +57,9 @@ func (r *PostgresRepository) Get(id int64) (models.ElasticSearchConfig, bool, er
 	defer rows.Close()
 
 	var name, urls string
-	var isDefault bool
+	var isDefault, exportActivated bool
 	if rows.Next() {
-		err := rows.Scan(&name, &urls, &isDefault)
+		err := rows.Scan(&name, &urls, &isDefault, &exportActivated)
 		if err != nil {
 			return models.ElasticSearchConfig{}, false, fmt.Errorf("couldn't scan the elasticsearch config with id %d: %s", id, err.Error())
 		}
@@ -68,17 +68,18 @@ func (r *PostgresRepository) Get(id int64) (models.ElasticSearchConfig, bool, er
 	}
 
 	return models.ElasticSearchConfig{
-		Id:      id,
-		Name:    name,
-		URLs:    strings.Split(urls, ","),
-		Default: isDefault,
+		Id:              id,
+		Name:            name,
+		URLs:            strings.Split(urls, ","),
+		Default:         isDefault,
+		ExportActivated: exportActivated,
 	}, true, nil
 }
 
 // GetByName use to retrieve an elasticSearchConfig by name
 func (r *PostgresRepository) GetByName(name string) (models.ElasticSearchConfig, bool, error) {
 	rows, err := r.newStatement().
-		Select("id", "urls", "default").
+		Select("id", "urls", "default", "export_activated").
 		From(table).
 		Where(sq.Eq{"name": name}).
 		Query()
@@ -92,7 +93,7 @@ func (r *PostgresRepository) GetByName(name string) (models.ElasticSearchConfig,
 	}
 	var urls string
 	if rows.Next() {
-		err = rows.Scan(&esConfig.Id, &urls, &esConfig.Default)
+		err = rows.Scan(&esConfig.Id, &urls, &esConfig.Default, &esConfig.ExportActivated)
 		if err != nil {
 			return models.ElasticSearchConfig{}, false, fmt.Errorf("couldn't scan the elasticsearch config with name %s: %s", name, err.Error())
 		}
@@ -108,7 +109,7 @@ func (r *PostgresRepository) GetByName(name string) (models.ElasticSearchConfig,
 // GetDefault use to retrieve the default elasticSearchConfig
 func (r *PostgresRepository) GetDefault() (models.ElasticSearchConfig, bool, error) {
 	rows, err := r.newStatement().
-		Select("id", "name", "urls").
+		Select("id", "name", "urls", "export_activated").
 		From(table).
 		Where(sq.Eq{"default": true}).
 		Query()
@@ -122,7 +123,7 @@ func (r *PostgresRepository) GetDefault() (models.ElasticSearchConfig, bool, err
 	}
 	var urls string
 	if rows.Next() {
-		err = rows.Scan(&esConfig.Id, &esConfig.Name, &urls)
+		err = rows.Scan(&esConfig.Id, &esConfig.Name, &urls, &esConfig.ExportActivated)
 		if err != nil {
 			return models.ElasticSearchConfig{}, false, fmt.Errorf("couldn't scan the default elasticsearch config: %s", err.Error())
 		}
@@ -140,8 +141,8 @@ func (r *PostgresRepository) Create(elasticSearchConfig models.ElasticSearchConf
 	var id int64
 	err := r.newStatement().
 		Insert(table).
-		Columns("name", "urls", "default").
-		Values(elasticSearchConfig.Name, strings.Join(elasticSearchConfig.URLs, ","), elasticSearchConfig.Default).
+		Columns("name", "urls", "default", "export_activated").
+		Values(elasticSearchConfig.Name, strings.Join(elasticSearchConfig.URLs, ","), elasticSearchConfig.Default, elasticSearchConfig.ExportActivated).
 		Suffix("RETURNING \"id\"").
 		QueryRow().
 		Scan(&id)
@@ -158,6 +159,7 @@ func (r *PostgresRepository) Update(id int64, elasticSearchConfig models.Elastic
 		Set("name", elasticSearchConfig.Name).
 		Set("urls", strings.Join(elasticSearchConfig.URLs, ",")).
 		Set("default", elasticSearchConfig.Default).
+		Set("export_activated", elasticSearchConfig.ExportActivated).
 		Where("id = ?", id).
 		Exec()
 	if err != nil {
@@ -184,7 +186,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 func (r *PostgresRepository) GetAll() (map[int64]models.ElasticSearchConfig, error) {
 	elasticSearchConfigs := make(map[int64]models.ElasticSearchConfig)
 	rows, err := r.newStatement().
-		Select("id", "name", "urls", "default").
+		Select("id", "name", "urls", "default", "export_activated").
 		From(table).
 		Query()
 
@@ -196,7 +198,7 @@ func (r *PostgresRepository) GetAll() (map[int64]models.ElasticSearchConfig, err
 	for rows.Next() {
 		esConfig := models.ElasticSearchConfig{}
 		var urls string
-		err = rows.Scan(&esConfig.Id, &esConfig.Name, &urls, &esConfig.Default)
+		err = rows.Scan(&esConfig.Id, &esConfig.Name, &urls, &esConfig.Default, &esConfig.ExportActivated)
 		if err != nil {
 			return nil, err
 		}

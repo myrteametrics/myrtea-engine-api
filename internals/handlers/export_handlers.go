@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -38,6 +39,14 @@ type ExportRequest struct {
 	export.CSVParameters
 	FactIDs []int64 `json:"factIDs"`
 	Title   string  `json:"title"`
+}
+
+// CustomExportRequest represents a request for an custom export
+type CustomExportRequest struct {
+	export.CSVParameters
+	Title         string         `json:"title"`
+	Indices       string         `json:"indices"`
+	SearchRequest search.Request `json:"searchRequest"`
 }
 
 // ExportFactStreamed godoc
@@ -299,6 +308,88 @@ func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "internal server error"
 // @Router /engine/exports/fact [post]
 func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	var request ExportRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		zap.L().Warn("Decode export request json", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	if len(request.FactIDs) == 0 {
+		zap.L().Warn("Missing factIDs in export request")
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing factIDs"))
+		return
+	}
+
+	if len(request.Title) == 0 {
+		zap.L().Warn("Missing title (len is 0) in export request")
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing title (len is 0)"))
+		return
+	}
+
+	if request.Separator == request.ListSeparator {
+		zap.L().Warn("CSV file separator column and list separator in a column cannot be the same")
+		render.Error(w, r, render.ErrAPIExportSeparatorConflict, errors.New("CSV file separator column and list separator in a column cannot be the same"))
+		return
+	}
+
+	factParameters, err := ParseFactParameters(r.URL.Query().Get("factParameters"))
+	if err != nil {
+		zap.L().Error("Parse input Fact Parametres", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("factParameters")))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	facts := findCombineFacts(request.FactIDs)
+	if len(facts) == 0 {
+		zap.L().Warn("No fact was found in export request")
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("no fact was found in export request"))
+		return
+	}
+
+	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User, factParameters)
+
+	switch status {
+	case export.CodeAdded:
+		w.WriteHeader(http.StatusCreated)
+	case export.CodeUserAdded:
+		w.WriteHeader(http.StatusOK)
+	case export.CodeUserExists:
+		w.WriteHeader(http.StatusConflict)
+	case export.CodeQueueFull:
+		render.Error(w, r, render.ErrAPIQueueFull, fmt.Errorf("export queue is full"))
+		return
+	default:
+		render.Error(w, r, render.ErrAPIProcessError, fmt.Errorf("unknown status code (%d)", status))
+		return
+	}
+
+	render.JSON(w, r, item)
+}
+
+// ExportCustom godoc
+// @Summary Creates a new custom export request
+// @Description Creates a new custom export request
+// @Tags Exports
+// @Produce json
+// @Security Bearer
+// @Param request body handlers.ExportRequest true "request (json)"
+// @Success 200 {object} export.WrapperItem "Status OK: user was added to existing export in queue"
+// @Success 201 {object} export.WrapperItem "Status Created: new export was added in queue"
+// @Failure 400 "Bad Request: missing fact id / fact id is not an integer"
+// @Failure 403 "Status Forbidden: missing permission"
+// @Failure 409 {object} export.WrapperItem "Status Conflict: user already exists in export queue"
+// @Failure 429 "Status Too Many Requests: export queue is full"
+// @Failure 500 "internal server error"
+// @Router /engine/exports/custom [post]
+func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionCreate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
