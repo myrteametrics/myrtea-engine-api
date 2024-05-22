@@ -105,6 +105,36 @@ func (r *PostgresRepository) GetByName(name string) (models.ElasticSearchConfig,
 	return esConfig, true, nil
 }
 
+// GetDefault use to retrieve the default elasticSearchConfig
+func (r *PostgresRepository) GetDefault() (models.ElasticSearchConfig, bool, error) {
+	rows, err := r.newStatement().
+		Select("id", "name", "urls").
+		From(table).
+		Where(sq.Eq{"default": true}).
+		Query()
+	if err != nil {
+		return models.ElasticSearchConfig{}, false, err
+	}
+	defer rows.Close()
+
+	esConfig := models.ElasticSearchConfig{
+		Default: true,
+	}
+	var urls string
+	if rows.Next() {
+		err = rows.Scan(&esConfig.Id, &esConfig.Name, &urls)
+		if err != nil {
+			return models.ElasticSearchConfig{}, false, fmt.Errorf("couldn't scan the default elasticsearch config: %s", err.Error())
+		}
+	} else {
+		return models.ElasticSearchConfig{}, false, nil
+	}
+
+	esConfig.URLs = strings.Split(urls, ",")
+
+	return esConfig, true, nil
+}
+
 // Create method used to create an elasticSearchConfig
 func (r *PostgresRepository) Create(elasticSearchConfig models.ElasticSearchConfig) (int64, error) {
 	var id int64

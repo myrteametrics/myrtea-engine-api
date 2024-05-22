@@ -12,6 +12,7 @@ import (
 type Repository interface {
 	Get(id int64) (models.ElasticSearchConfig, bool, error)
 	GetByName(name string) (models.ElasticSearchConfig, bool, error)
+	GetDefault() (models.ElasticSearchConfig, bool, error)
 	Create(config models.ElasticSearchConfig) (int64, error)
 	Update(id int64, config models.ElasticSearchConfig) error
 	Delete(id int64) error
