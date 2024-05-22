@@ -102,6 +102,14 @@ func engineRouter(services Services) http.Handler {
 	r.Put("/connectorconfigs/{id}", handlers.PutConnectorConfig)
 	r.Delete("/connectorconfigs/{id}", handlers.DeleteConnectorConfig)
 
+	r.Get("/esconfigs", handlers.GetElasticSearchConfigs)
+	r.Get("/esconfigs/{id}", handlers.GetElasticSearchConfig)
+	r.Get("/esconfigs/name/{name}", handlers.GetElasticSearchConfigByName)
+	r.Get("/esconfigs/default", handlers.GetDefaultElasticSearchConfig)
+	r.Post("/esconfigs", handlers.PostElasticSearchConfig)
+	r.Put("/esconfigs/{id}", handlers.PutElasticSearchConfig)
+	r.Delete("/esconfigs/{id}", handlers.DeleteElasticSearchConfig)
+
 	r.Get("/rules", handlers.GetRules)
 	r.Get("/rules/{id}", handlers.GetRule)
 	r.Get("/rules/{id}/versions/{versionid}", handlers.GetRuleByVersion)
