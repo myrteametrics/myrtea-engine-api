@@ -223,7 +223,7 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newElasticSearchConfigGet, found, err := esconfig.R().Get(idElasticSearchConfig)
+	newEsConfig, found, err := esconfig.R().Get(idElasticSearchConfig)
 	if err != nil {
 		zap.L().Error("Cannot get elasticSearchConfig", zap.String("elasticSearchConfigId", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -235,7 +235,7 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.JSON(w, r, newElasticSearchConfigGet)
+	render.JSON(w, r, newEsConfig)
 }
 
 // DeleteElasticSearchConfig godoc

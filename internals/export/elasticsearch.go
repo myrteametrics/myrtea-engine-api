@@ -160,7 +160,7 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, elasticC
 	return nil
 }
 
-func ExportFactHitsFullV8(f engine.Fact) ([]reader.Hit, error) {
+func ExportFactHitsFull(f engine.Fact) ([]reader.Hit, error) {
 	ti := time.Now()
 	placeholders := make(map[string]string)
 	fullHits := make([]reader.Hit, 0)

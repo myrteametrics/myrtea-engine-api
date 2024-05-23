@@ -105,7 +105,7 @@ func TestExportFactHits(t *testing.T) {
 		},
 		},
 	}
-	hits, err := ExportFactHitsFullV8(f)
+	hits, err := ExportFactHitsFull(f)
 	if err != nil {
 		t.Error(err)
 	}
