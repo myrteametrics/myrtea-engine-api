@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/esconfig"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -47,6 +48,7 @@ type CustomExportRequest struct {
 	Title         string         `json:"title"`
 	Indices       string         `json:"indices"`
 	SearchRequest search.Request `json:"searchRequest"`
+	ElasticName   string         `json:"elasticName"`
 }
 
 // ExportFactStreamed godoc
@@ -356,6 +358,10 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 
 	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User, factParameters)
 
+	e.handleAddToQueueResponse(w, r, status, item)
+}
+
+func (e *ExportHandler) handleAddToQueueResponse(w http.ResponseWriter, r *http.Request, status int, item *export.WrapperItem) {
 	switch status {
 	case export.CodeAdded:
 		w.WriteHeader(http.StatusCreated)
@@ -396,17 +402,17 @@ func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request ExportRequest
+	var request CustomExportRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		zap.L().Warn("Decode export request json", zap.Error(err))
+		zap.L().Warn("Decode export custom request json", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
-	if len(request.FactIDs) == 0 {
-		zap.L().Warn("Missing factIDs in export request")
-		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing factIDs"))
+	if request.Indices == "" {
+		zap.L().Warn("Missing indices in export request")
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing indices"))
 		return
 	}
 
@@ -422,38 +428,25 @@ func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	factParameters, err := ParseFactParameters(r.URL.Query().Get("factParameters"))
+	elastic, found, err := esconfig.R().GetByName(request.ElasticName)
 	if err != nil {
-		zap.L().Error("Parse input Fact Parametres", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("factParameters")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		zap.L().Warn("Cannot get esconfig config", zap.String("name", request.ElasticName), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+	if !found {
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("export not found"))
+		return
+	}
+	if !elastic.ExportActivated {
+		render.Error(w, r, render.ErrAPIElasticExportDisabled, nil)
 		return
 	}
 
-	facts := findCombineFacts(request.FactIDs)
-	if len(facts) == 0 {
-		zap.L().Warn("No fact was found in export request")
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("no fact was found in export request"))
-		return
-	}
+	item, status := e.exportWrapper.AddToQueueCustom(elastic.Name, &request.SearchRequest,
+		request.Indices, request.Title, request.CSVParameters, userCtx.User)
 
-	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User, factParameters)
-
-	switch status {
-	case export.CodeAdded:
-		w.WriteHeader(http.StatusCreated)
-	case export.CodeUserAdded:
-		w.WriteHeader(http.StatusOK)
-	case export.CodeUserExists:
-		w.WriteHeader(http.StatusConflict)
-	case export.CodeQueueFull:
-		render.Error(w, r, render.ErrAPIQueueFull, fmt.Errorf("export queue is full"))
-		return
-	default:
-		render.Error(w, r, render.ErrAPIProcessError, fmt.Errorf("unknown status code (%d)", status))
-		return
-	}
-
-	render.JSON(w, r, item)
+	e.handleAddToQueueResponse(w, r, status, item)
 }
 
 // DownloadExport godoc

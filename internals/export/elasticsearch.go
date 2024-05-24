@@ -3,7 +3,9 @@ package export
 import (
 	"context"
 	"errors"
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/esconfig"
 	"strings"
 	"time"
 
@@ -70,7 +72,33 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, elasticC
 	cli := elasticsearchv8.C() // defaults to singleton instance
 
 	if elasticClient != "" {
-		// TODO: cli ...
+		config, b, err := esconfig.R().GetByName(elasticClient)
+		if err != nil {
+			zap.L().Error("Error when getting esconfig from repository",
+				zap.String("elasticClient", elasticClient), zap.Error(err))
+			return err
+		}
+		if !b {
+			zap.L().Error("Error when getting esconfig from repository",
+				zap.String("elasticClient", elasticClient), zap.Error(err))
+			return errors.New("selected elasticClient not exists")
+		}
+		if !config.ExportActivated {
+			zap.L().Warn("trying to export on a disabled elasticsearch config", zap.Any("esconfig", config))
+			return errors.New("export is disabled for this elasticsearch config")
+		}
+		if len(config.URLs) == 0 {
+			zap.L().Warn("ElasticSearch config urls is empty, cannot export", zap.Any("esconfig", config))
+			return errors.New("cannot init an elasticsearch client with missing URLs")
+		}
+
+		cli, err = elasticsearch.NewTypedClient(elasticsearch.Config{
+			Addresses: config.URLs,
+		})
+		if err != nil {
+			zap.L().Error("Cannot init new elasticsearch typed client", zap.Error(err))
+			return err
+		}
 	}
 
 	// handle pit creation
