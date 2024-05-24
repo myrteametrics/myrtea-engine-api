@@ -190,13 +190,13 @@ func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 // @Tags ElasticSearchConfigs
 // @Accept json
 // @Produce json
-// @Param name path string true "ElasticSearchConfig ID"
+// @Param id path string true "ElasticSearchConfig ID"
 // @Param elasticSearchConfig body models.ElasticSearchConfig true "ElasticSearchConfig definition (json)"
 // @Security Bearer
 // @Success 200 {object} models.ElasticSearchConfig "elasticSearchConfig"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
-// @Router /engine/esconfigs/{name} [put]
+// @Router /engine/esconfigs/{id} [put]
 func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idElasticSearchConfig, err := strconv.ParseInt(id, 10, 64)
@@ -243,11 +243,11 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 // @Description Delete an elasticSearchConfig definition
 // @Tags ElasticSearchConfigs
 // @Produce json
-// @Param name path string true "ElasticSearchConfig ID"
+// @Param id path string true "ElasticSearchConfig ID"
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
-// @Router /engine/esconfigs/{name} [delete]
+// @Router /engine/esconfigs/{id} [delete]
 func DeleteElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idElasticSearchConfig, err := strconv.ParseInt(id, 10, 64)
@@ -259,7 +259,6 @@ func DeleteElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = esconfig.R().Delete(idElasticSearchConfig)
-
 	if err != nil {
 		zap.L().Error("Error while deleting the ElasticSearchConfig", zap.String("ElasticSearchConfig ID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
