@@ -272,7 +272,7 @@ func TestWrapper_dispatchExportQueue(t *testing.T) {
 	defer os.RemoveAll(dname)
 
 	// create a file that is 2 days old
-	file, err := os.CreateTemp(dname, "exportdispatcher")
+	file, err := os.Create(filepath.Join(dname, "exportdispatcher.csv.gz"))
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
