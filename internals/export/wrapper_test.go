@@ -39,9 +39,16 @@ func TestNewWrapperItem(t *testing.T) {
 	expression.AssertEqual(t, factsEquals(item.Facts, []engine.Fact{{ID: 1}}), true)
 	expression.AssertEqual(t, item.Params.Equals(CSVParameters{}), true)
 	expression.AssertEqual(t, item.Status, StatusPending)
-	expression.AssertEqual(t, strings.HasSuffix(item.FileName, "test.csv.gz"), true, "test.txt.gz")
+	expression.AssertEqual(t, item.FileName, "test.csv.gz")
 	expression.AssertNotEqual(t, len(item.Users), 0)
 	expression.AssertEqual(t, item.Users[0], "test")
+
+	item = NewWrapperItem([]engine.Fact{{ID: 1}}, "test.csv.gz", CSVParameters{}, users.User{Login: "test"}, make(map[string]string), false)
+	expression.AssertEqual(t, item.FileName, "test.csv.gz")
+
+	// test file name formatting
+	item = NewWrapperItem([]engine.Fact{{ID: 1}}, "test", CSVParameters{}, users.User{Login: "test"}, make(map[string]string), true)
+	expression.AssertEqual(t, strings.HasSuffix(item.FileName, "test.csv.gz"), true, "Expected file name to end with test.csv.gz")
 }
 
 func TestWrapperItem_ContainsFact(t *testing.T) {
@@ -78,6 +85,21 @@ func TestAddToQueue(t *testing.T) {
 	expression.AssertEqual(t, result, CodeUserAdded, "AddToQueue should return CodeUserAdded")
 	_, result = wrapper.AddToQueue([]engine.Fact{{ID: 2}}, "test.txt", csvParams, user2, make(map[string]string), false)
 	expression.AssertEqual(t, result, CodeQueueFull, "AddToQueue should return CodeQueueFull")
+}
+
+func TestAddToQueueCustom(t *testing.T) {
+	wrapper := NewWrapper("/tmp", 1, 1, 1)
+	user1 := users.User{Login: "bla"}
+	user2 := users.User{Login: "blabla"}
+	csvParams := CSVParameters{}
+	_, result := wrapper.AddToQueueCustom("", nil, "", "test.txt", csvParams, user1, false)
+	expression.AssertEqual(t, result, CodeAdded, "AddToQueueCustom should return CodeAdded")
+	_, result = wrapper.AddToQueueCustom("", nil, "", "test.txt", csvParams, user1, false)
+	expression.AssertEqual(t, result, CodeUserExists, "AddToQueueCustom should return CodeUserExists")
+	_, result = wrapper.AddToQueueCustom("", nil, "", "test.txt", csvParams, user2, false)
+	expression.AssertEqual(t, result, CodeUserAdded, "AddToQueueCustom should return CodeUserAdded")
+	_, result = wrapper.AddToQueueCustom("", nil, "", "test2.txt", csvParams, user2, false)
+	expression.AssertEqual(t, result, CodeQueueFull, "AddToQueueCustom should return CodeQueueFull")
 }
 
 func TestStartDispatcher(t *testing.T) {
