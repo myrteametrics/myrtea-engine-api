@@ -85,16 +85,25 @@ type Wrapper struct {
 }
 
 // NewWrapperItem creates a new export wrapper item
-func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, user users.User, factParameters map[string]string) *WrapperItem {
+//
+// addHashPrefix adds a hash as prefix to resulting files, to avoid duplicates
+func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, user users.User, factParameters map[string]string, addHashPrefix bool) *WrapperItem {
 	var factIDs []int64
 	for _, fact := range facts {
 		factIDs = append(factIDs, fact.ID)
 	}
 
-	// file extension should be gz
-	// add random string to avoid multiple files with same name
-	fileName := security.RandStringWithCharset(5, randCharSet) + "_" +
-		strings.ReplaceAll(title, " ", "_") + ".csv.gz"
+	var fileName string
+	if addHashPrefix {
+		// file extension should be gz
+		// add random string to avoid multiple files with same name
+		fileName = security.RandStringWithCharset(5, randCharSet) + "_" +
+			strings.ReplaceAll(title, " ", "_") + ".csv.gz"
+	} else if !strings.HasSuffix(title, ".csv.gz") {
+		fileName = strings.ReplaceAll(title, " ", "_") + ".csv.gz"
+	} else {
+		fileName = strings.ReplaceAll(title, " ", "_")
+	}
 
 	return &WrapperItem{
 		Users:          append([]string{}, user.Login),
@@ -188,7 +197,9 @@ func factsEquals(a, b []engine.Fact) bool {
 }
 
 // AddToQueue Adds a new export to the export worker queue
-func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParameters, user users.User, factParameters map[string]string) (*WrapperItem, int) {
+//
+// addHashPrefix adds a hash as prefix to resulting files, to avoid duplicates
+func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParameters, user users.User, factParameters map[string]string, addHashPrefix bool) (*WrapperItem, int) {
 	ew.queueMutex.Lock()
 	defer ew.queueMutex.Unlock()
 
@@ -212,13 +223,15 @@ func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParam
 		return nil, CodeQueueFull
 	}
 
-	item := NewWrapperItem(facts, title, params, user, factParameters)
+	item := NewWrapperItem(facts, title, params, user, factParameters, addHashPrefix)
 	ew.queue = append(ew.queue, item)
 	return item, CodeAdded
 }
 
 // AddToQueueCustom Adds a new export with a custom elastic connection and a custom search request
-func (ew *Wrapper) AddToQueueCustom(elasticName string, request *search.Request, indices, title string, params CSVParameters, user users.User) (*WrapperItem, int) {
+//
+// addHashPrefix adds a hash as prefix to resulting files, to avoid duplicates
+func (ew *Wrapper) AddToQueueCustom(elasticName string, request *search.Request, indices, title string, params CSVParameters, user users.User, addHashPrefix bool) (*WrapperItem, int) {
 	ew.queueMutex.Lock()
 	defer ew.queueMutex.Unlock()
 
@@ -242,7 +255,7 @@ func (ew *Wrapper) AddToQueueCustom(elasticName string, request *search.Request,
 		return nil, CodeQueueFull
 	}
 
-	item := NewWrapperItem([]engine.Fact{}, title, params, user, map[string]string{})
+	item := NewWrapperItem([]engine.Fact{}, title, params, user, map[string]string{}, addHashPrefix)
 	item.Custom = true
 	item.ElasticName = elasticName
 	item.SearchRequest = request
