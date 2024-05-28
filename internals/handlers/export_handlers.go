@@ -356,7 +356,7 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User, factParameters)
+	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User, factParameters, true)
 
 	e.handleAddToQueueResponse(w, r, status, item)
 }
@@ -444,7 +444,7 @@ func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, status := e.exportWrapper.AddToQueueCustom(elastic.Name, &request.SearchRequest,
-		request.Indices, request.Title, request.CSVParameters, userCtx.User)
+		request.Indices, request.Title, request.CSVParameters, userCtx.User, true)
 
 	e.handleAddToQueueResponse(w, r, status, item)
 }
