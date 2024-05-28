@@ -16,7 +16,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
-	"github.com/myrteametrics/myrtea-sdk/v4/builder"
+	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv8"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
 )
@@ -752,17 +752,27 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		zap.L().Debug("Debugging fact", zap.Any("f", f))
 	}
 
-	pf, err := fact.PrepareV6(&f, nhit, offset, t, parameters, false)
+	f.ContextualizeDimensions(t, parameters)
+
+	err = f.ContextualizeCondition(t, parameters)
+
 	if err != nil {
-		zap.L().Error("Cannot execute fact", zap.Error(err), zap.Any("fact", f))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		render.Error(w, r, apiError, err)
 		return
 	}
 
-	source, _ := builder.BuildEsSearchSource(pf)
-	zap.L().Info("Debugging final elastic query", zap.Any("query", source))
+	searchRequest, err := elasticsearchv8.ConvertFactToSearchRequestV8(f, t, parameters)
 
-	render.JSON(w, r, source)
+	if err != nil {
+		zap.L().Error("ConvertFactToSearchRequestV8 failed", zap.Error(err))
+		render.Error(w, r, apiError, err)
+		return
+	}
+
+	searchRequest.From = &offset
+	searchRequest.Size = &nhit
+
+	render.JSON(w, r, searchRequest)
 }
 
 func lookupFact(byName bool, id string) (engine.Fact, render.APIError, error) {
