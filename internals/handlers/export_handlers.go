@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/esconfig"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -38,6 +40,15 @@ type ExportRequest struct {
 	export.CSVParameters
 	FactIDs []int64 `json:"factIDs"`
 	Title   string  `json:"title"`
+}
+
+// CustomExportRequest represents a request for an custom export
+type CustomExportRequest struct {
+	export.CSVParameters
+	Title         string         `json:"title"`
+	Indices       string         `json:"indices"`
+	SearchRequest search.Request `json:"searchRequest"`
+	ElasticName   string         `json:"elasticName"`
 }
 
 // ExportFactStreamed godoc
@@ -130,7 +141,7 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 		for _, f := range facts {
 			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, request.Limit, make(map[string]string))
 			if writerErr != nil {
-				zap.L().Error("Error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
+				zap.L().Error("Error during export (StreamedExportFactHitsFull)", zap.Error(err))
 				break // break here when error occurs?
 			}
 		}
@@ -152,7 +163,7 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 				data, err := export.ConvertHitsToCSV(hits, request.CSVParameters, first)
 
 				if err != nil {
-					zap.L().Error("ConvertHitsToCSV error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
+					zap.L().Error("ConvertHitsToCSV error during export (StreamedExportFactHitsFull)", zap.Error(err))
 					cancel()
 					return
 				}
@@ -160,7 +171,7 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 				// Write data
 				_, err = w.Write(data)
 				if err != nil {
-					zap.L().Error("Write error during export (StreamedExportFactHitsFullV8)", zap.Error(err))
+					zap.L().Error("Write error during export (StreamedExportFactHitsFull)", zap.Error(err))
 					cancel()
 					return
 				}
@@ -345,8 +356,12 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User, factParameters)
+	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User, factParameters, true)
 
+	e.handleAddToQueueResponse(w, r, status, item)
+}
+
+func (e *ExportHandler) handleAddToQueueResponse(w http.ResponseWriter, r *http.Request, status int, item *export.WrapperItem) {
 	switch status {
 	case export.CodeAdded:
 		w.WriteHeader(http.StatusCreated)
@@ -363,6 +378,75 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.JSON(w, r, item)
+}
+
+// ExportCustom godoc
+// @Summary Creates a new custom export request
+// @Description Creates a new custom export request
+// @Tags Exports
+// @Produce json
+// @Security Bearer
+// @Param request body handlers.ExportRequest true "request (json)"
+// @Success 200 {object} export.WrapperItem "Status OK: user was added to existing export in queue"
+// @Success 201 {object} export.WrapperItem "Status Created: new export was added in queue"
+// @Failure 400 "Bad Request: missing fact id / fact id is not an integer"
+// @Failure 403 "Status Forbidden: missing permission"
+// @Failure 409 {object} export.WrapperItem "Status Conflict: user already exists in export queue"
+// @Failure 429 "Status Too Many Requests: export queue is full"
+// @Failure 500 "internal server error"
+// @Router /engine/exports/custom [post]
+func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	var request CustomExportRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		zap.L().Warn("Decode export custom request json", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	if request.Indices == "" {
+		zap.L().Warn("Missing indices in export request")
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing indices"))
+		return
+	}
+
+	if len(request.Title) == 0 {
+		zap.L().Warn("Missing title (len is 0) in export request")
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing title (len is 0)"))
+		return
+	}
+
+	if request.Separator == request.ListSeparator {
+		zap.L().Warn("CSV file separator column and list separator in a column cannot be the same")
+		render.Error(w, r, render.ErrAPIExportSeparatorConflict, errors.New("CSV file separator column and list separator in a column cannot be the same"))
+		return
+	}
+
+	elastic, found, err := esconfig.R().GetByName(request.ElasticName)
+	if err != nil {
+		zap.L().Warn("Cannot get esconfig config", zap.String("name", request.ElasticName), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+	if !found {
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("export not found"))
+		return
+	}
+	if !elastic.ExportActivated {
+		render.Error(w, r, render.ErrAPIElasticExportDisabled, nil)
+		return
+	}
+
+	item, status := e.exportWrapper.AddToQueueCustom(elastic.Name, &request.SearchRequest,
+		request.Indices, request.Title, request.CSVParameters, userCtx.User, true)
+
+	e.handleAddToQueueResponse(w, r, status, item)
 }
 
 // DownloadExport godoc

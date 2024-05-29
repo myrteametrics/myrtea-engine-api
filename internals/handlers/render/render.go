@@ -52,6 +52,9 @@ var (
 	// ErrAPIQueueFull must be used in case an internal processing queue is full
 	ErrAPIQueueFull = APIError{Status: http.StatusServiceUnavailable, ErrType: "ResourceError", Code: 2003, Message: `The queue is full, please retry later`}
 
+	// ErrAPIElasticExportDisabled must be used in case an custom export is asked and export is disabled in config
+	ErrAPIElasticExportDisabled = APIError{Status: http.StatusForbidden, ErrType: "ResourceError", Code: 2004, Message: `Export is disabled on the selected elastic config`}
+
 	// ErrAPITooManyRequests must be used in case the client has sent too many requests in a given amount of time
 	ErrAPITooManyRequests = APIError{Status: http.StatusTooManyRequests, ErrType: "ResourceError", Code: 2004, Message: `Too many requests, please try again later`}
 

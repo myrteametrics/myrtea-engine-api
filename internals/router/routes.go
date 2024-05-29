@@ -102,6 +102,14 @@ func engineRouter(services Services) http.Handler {
 	r.Put("/connectorconfigs/{id}", handlers.PutConnectorConfig)
 	r.Delete("/connectorconfigs/{id}", handlers.DeleteConnectorConfig)
 
+	r.Get("/esconfigs", handlers.GetElasticSearchConfigs)
+	r.Get("/esconfigs/{id}", handlers.GetElasticSearchConfig)
+	r.Get("/esconfigs/name/{name}", handlers.GetElasticSearchConfigByName)
+	r.Get("/esconfigs/default", handlers.GetDefaultElasticSearchConfig)
+	r.Post("/esconfigs", handlers.PostElasticSearchConfig)
+	r.Put("/esconfigs/{id}", handlers.PutElasticSearchConfig)
+	r.Delete("/esconfigs/{id}", handlers.DeleteElasticSearchConfig)
+
 	r.Get("/rules", handlers.GetRules)
 	r.Get("/rules/{id}", handlers.GetRule)
 	r.Get("/rules/{id}/versions/{versionid}", handlers.GetRuleByVersion)
@@ -181,6 +189,7 @@ func engineRouter(services Services) http.Handler {
 	r.Get("/exports/{id}/download", services.ExportHandler.DownloadExport)
 	r.Delete("/exports/{id}", services.ExportHandler.DeleteExport)
 	r.Post("/exports/fact", services.ExportHandler.ExportFact)
+	r.Post("/exports/custom", services.ExportHandler.ExportCustom)
 
 	r.Get("/variablesconfig", handlers.GetVariablesConfig)
 	r.Get("/variablesconfig/{id}", handlers.GetVariableConfig)
