@@ -80,8 +80,8 @@ func (e *ExportWorker) DrainCancelChannel() {
 	}
 }
 
-// finalise sets the worker availability to true and clears the queueItem
-func (e *ExportWorker) finalise() {
+// finalize sets the worker availability to true and clears the queueItem
+func (e *ExportWorker) finalize() {
 	e.Mutex.Lock()
 
 	// set status to error if error occurred
@@ -104,7 +104,7 @@ func (e *ExportWorker) finalise() {
 // Start starts the export task
 // It handles one queueItem at a time and when finished it stops the goroutine
 func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
-	defer e.finalise()
+	defer e.finalize()
 	item.Status = StatusRunning
 
 	e.Mutex.Lock()
@@ -161,12 +161,17 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 		defer wg.Done()
 		defer close(streamedExport.Data)
 
-		for _, f := range item.Facts {
-			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit, item.FactParameters)
-			if writerErr != nil {
-				break // break here when error occurs?
+		if item.Custom {
+			writerErr = streamedExport.ProcessStreamedExport(ctx, item.ElasticName, item.Indices, item.SearchRequest, item.Params.Limit)
+		} else {
+			for _, f := range item.Facts {
+				writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit, item.FactParameters)
+				if writerErr != nil {
+					break // break here when error occurs?
+				}
 			}
 		}
+
 	}()
 
 	// Chunk handler

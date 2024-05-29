@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connectorconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/connectorconfig"
 	"net/http"
 	"sort"
 	"strconv"
