@@ -1,9 +1,10 @@
 package export
 
 import (
+	"github.com/elastic/go-elasticsearch/v8"
+	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
 	"testing"
 
-	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/coordinator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/history"
@@ -11,7 +12,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv8"
 	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/spf13/viper"
@@ -71,7 +71,7 @@ func TestExportFactHits(t *testing.T) {
 	helpers.InitializeConfig(AllowedConfigKey, ConfigName, "../../config", EnvPrefix)
 	helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
 	urls := viper.GetStringSlice("ELASTICSEARCH_URLS")
-	elasticsearchv8.ReplaceGlobals(elasticsearch.Config{
+	elasticsearchsdk.ReplaceGlobals(elasticsearch.Config{
 		Addresses: urls,
 	})
 
@@ -105,7 +105,7 @@ func TestExportFactHits(t *testing.T) {
 		},
 		},
 	}
-	hits, err := ExportFactHitsFullV8(f)
+	hits, err := ExportFactHitsFull(f)
 	if err != nil {
 		t.Error(err)
 	}

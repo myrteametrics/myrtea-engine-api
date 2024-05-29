@@ -2,6 +2,8 @@ package scheduler
 
 import (
 	"fmt"
+	"github.com/elastic/go-elasticsearch/v8"
+	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
 	"log"
 	"testing"
 	"time"
@@ -13,7 +15,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv6"
 	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
 	"github.com/spf13/viper"
@@ -83,10 +84,9 @@ func TestFactRecalculationJobRun(t *testing.T) {
 	zap.ReplaceGlobals(logger)
 
 	loadConfiguration()
-	credentials := &elasticsearchv6.Credentials{
-		URLs: []string{"http://localhost:9200"},
-	}
-	elasticsearchv6.ReplaceGlobals(credentials)
+	elasticsearchsdk.ReplaceGlobals(elasticsearch.Config{
+		Addresses: []string{"http://localhost:9200"},
+	})
 
 	db := tests.DBClient(t)
 	postgres.ReplaceGlobals(db)

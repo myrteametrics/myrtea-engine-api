@@ -2,6 +2,7 @@ package export
 
 import (
 	"context"
+	sdksecurity "github.com/myrteametrics/myrtea-sdk/v4/security"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v4/engine"
 	"go.uber.org/zap"
@@ -86,7 +86,7 @@ func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, use
 
 	// file extension should be gz
 	// add random string to avoid multiple files with same name
-	fileName := security.RandStringWithCharset(5, randCharSet) + "_" +
+	fileName := sdksecurity.RandStringWithCharset(5, randCharSet) + "_" +
 		strings.ReplaceAll(title, " ", "_") + ".csv.gz"
 
 	return &WrapperItem{

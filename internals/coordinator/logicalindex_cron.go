@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
 	"sort"
 	"sync"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/updatealiases"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/some"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv8"
 	"github.com/myrteametrics/myrtea-sdk/v4/index"
 	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
 
@@ -21,8 +21,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// LogicalIndexCronV8 abstracts a group a technical elasticsearchv6 indices, which are accessibles with specific aliases
-type LogicalIndexCronV8 struct {
+// LogicalIndexCron abstracts a group a technical elasticsearchv8 indices, which are accessibles with specific aliases
+type LogicalIndexCron struct {
 	Initialized bool
 	Name        string
 	Cron        *cron.Cron
@@ -30,17 +30,17 @@ type LogicalIndexCronV8 struct {
 	mu          sync.RWMutex
 }
 
-func NewLogicalIndexCronV8(instanceName string, model modeler.Model) (*LogicalIndexCronV8, error) {
+func NewLogicalIndexCron(instanceName string, model modeler.Model) (*LogicalIndexCron, error) {
 
 	logicalIndexName := fmt.Sprintf("%s-%s", instanceName, model.Name)
 
-	zap.L().Info("Initialize logicalIndex (LogicalIndexCronV8)", zap.String("name", logicalIndexName), zap.String("model", model.Name), zap.Any("options", model.ElasticsearchOptions))
+	zap.L().Info("Initialize logicalIndex (LogicalIndexCron)", zap.String("name", logicalIndexName), zap.String("model", model.Name), zap.Any("options", model.ElasticsearchOptions))
 
 	if model.ElasticsearchOptions.Rollmode != "cron" {
 		return nil, errors.New("invalid rollmode for this logicalIndex type")
 	}
 
-	logicalIndex := &LogicalIndexCronV8{
+	logicalIndex := &LogicalIndexCron{
 		Initialized: false,
 		Name:        logicalIndexName,
 		Cron:        nil,
@@ -55,7 +55,7 @@ func NewLogicalIndexCronV8(instanceName string, model modeler.Model) (*LogicalIn
 	// First create template if not exists
 
 	templateName := fmt.Sprintf("template-%s", logicalIndexName)
-	templateExists, err := elasticsearchv8.C().Indices.ExistsTemplate(templateName).IsSuccess(ctx)
+	templateExists, err := elasticsearch.C().Indices.ExistsTemplate(templateName).IsSuccess(ctx)
 	if err != nil {
 		zap.L().Error("IndexTemplateExists()", zap.String("templateName", templateName), zap.Error(err))
 		return nil, err
@@ -68,7 +68,7 @@ func NewLogicalIndexCronV8(instanceName string, model modeler.Model) (*LogicalIn
 
 	// Then create base index name if not exists
 	baseIndexName := logicalIndexName + "-active-000001"
-	baseIndexExists, err := elasticsearchv8.C().Indices.Exists(baseIndexName).IsSuccess(ctx)
+	baseIndexExists, err := elasticsearch.C().Indices.Exists(baseIndexName).IsSuccess(ctx)
 	if err != nil {
 		zap.L().Error("IndexExists()", zap.String("baseIndexName", baseIndexName), zap.Error(err))
 		return nil, err
@@ -76,9 +76,9 @@ func NewLogicalIndexCronV8(instanceName string, model modeler.Model) (*LogicalIn
 	if !baseIndexExists {
 		zap.L().Info("Creating missing index", zap.String("baseIndexName", baseIndexName),
 			zap.String("model", model.Name))
-		_, err = elasticsearchv8.C().Indices.Create(baseIndexName).Do(ctx)
+		_, err = elasticsearch.C().Indices.Create(baseIndexName).Do(ctx)
 		if err != nil {
-			zap.L().Error("elasticsearchv8.C().PutIndex()", zap.String("baseIndexName", baseIndexName),
+			zap.L().Error("elasticsearch.C().PutIndex()", zap.String("baseIndexName", baseIndexName),
 				zap.Error(err))
 			return nil, err
 		}
@@ -126,8 +126,8 @@ func NewLogicalIndexCronV8(instanceName string, model modeler.Model) (*LogicalIn
 	return logicalIndex, nil
 }
 
-func (logicalIndex *LogicalIndexCronV8) putAlias(name, indexPattern, modelName string, ctx context.Context) error {
-	aliasExists, err := elasticsearchv8.C().Indices.ExistsAlias(name).IsSuccess(ctx)
+func (logicalIndex *LogicalIndexCron) putAlias(name, indexPattern, modelName string, ctx context.Context) error {
+	aliasExists, err := elasticsearch.C().Indices.ExistsAlias(name).IsSuccess(ctx)
 	if err != nil {
 		zap.L().Error("IndexExists()", zap.String("aliasName", name), zap.Error(err))
 		return err
@@ -138,20 +138,20 @@ func (logicalIndex *LogicalIndexCronV8) putAlias(name, indexPattern, modelName s
 
 	zap.L().Info("Creating missing alias", zap.String("aliasName", name), zap.String("aliasIndex", indexPattern), zap.String("model", modelName))
 
-	_, err = elasticsearchv8.C().Indices.PutAlias(indexPattern, name).Do(ctx)
+	_, err = elasticsearch.C().Indices.PutAlias(indexPattern, name).Do(ctx)
 	if err != nil {
-		zap.L().Error("elasticsearchv8.C().PutAlias()", zap.String("aliasName", name), zap.Error(err))
+		zap.L().Error("elasticsearch.C().PutAlias()", zap.String("aliasName", name), zap.Error(err))
 		return err
 	}
 	return nil
 }
 
-func (logicalIndex *LogicalIndexCronV8) putTemplate(name string, indexPattern string, model modeler.Model) {
-	req := elasticsearchv8.NewPutTemplateRequestV8([]string{indexPattern}, model)
+func (logicalIndex *LogicalIndexCron) putTemplate(name string, indexPattern string, model modeler.Model) {
+	req := elasticsearch.NewPutTemplateRequestV8([]string{indexPattern}, model)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
-	response, err := elasticsearchv8.C().Indices.PutTemplate(name).Request(req).Do(ctx)
+	response, err := elasticsearch.C().Indices.PutTemplate(name).Request(req).Do(ctx)
 	if err != nil {
 		zap.L().Error("PutTemplate", zap.Error(err))
 	}
@@ -160,12 +160,12 @@ func (logicalIndex *LogicalIndexCronV8) putTemplate(name string, indexPattern st
 	}
 }
 
-func (logicalIndex *LogicalIndexCronV8) GetCron() *cron.Cron {
+func (logicalIndex *LogicalIndexCron) GetCron() *cron.Cron {
 	return logicalIndex.Cron
 }
 
 // FindIndices search in indices referential every indices between two dates (calculated using current time and depth)
-func (logicalIndex *LogicalIndexCronV8) FindIndices(t time.Time, depthDays int64) ([]string, error) {
+func (logicalIndex *LogicalIndexCron) FindIndices(t time.Time, depthDays int64) ([]string, error) {
 	if depthDays == 0 {
 		return []string{fmt.Sprintf("%s-%s", logicalIndex.Name, index.All)}, nil
 	}
@@ -195,7 +195,7 @@ func (logicalIndex *LogicalIndexCronV8) FindIndices(t time.Time, depthDays int64
 	return indices, nil
 }
 
-func (logicalIndex *LogicalIndexCronV8) rollover() {
+func (logicalIndex *LogicalIndexCron) rollover() {
 	ctx := context.Background()
 
 	// Using rollover API to manage alias swap and indices names
@@ -205,7 +205,7 @@ func (logicalIndex *LogicalIndexCronV8) rollover() {
 	// req.Conditions.MaxAge = "24 h"
 	// req.Conditions.MaxDocs = some.Int64(0)
 
-	resRollover, err := elasticsearchv8.C().Indices.Rollover(logicalIndex.Name + "-current").Request(req).Do(ctx)
+	resRollover, err := elasticsearch.C().Indices.Rollover(logicalIndex.Name + "-current").Request(req).Do(ctx)
 	if err != nil {
 		zap.L().Error("RollOverV2", zap.Error(err))
 		return
@@ -213,7 +213,7 @@ func (logicalIndex *LogicalIndexCronV8) rollover() {
 
 	// Roll patch alias
 	alias := logicalIndex.Name + "-patch"
-	resAlias, err := elasticsearchv8.C().Indices.GetAlias().Name(alias).Do(ctx)
+	resAlias, err := elasticsearch.C().Indices.GetAlias().Name(alias).Do(ctx)
 	if err != nil {
 		zap.L().Error("GetIndicesByAlias", zap.Error(err))
 		return
@@ -236,7 +236,7 @@ func (logicalIndex *LogicalIndexCronV8) rollover() {
 			types.IndicesAction{Add: &types.AddAction{Index: some.String(resRollover.NewIndex), Alias: some.String(alias)}},
 		)
 
-		updateAliasesResponse, err := elasticsearchv8.C().Indices.UpdateAliases().Request(updateAliasesRequest).Do(ctx)
+		updateAliasesResponse, err := elasticsearch.C().Indices.UpdateAliases().Request(updateAliasesRequest).Do(ctx)
 		if err != nil {
 			zap.L().Error("Putting alias", zap.Error(err), zap.String("index", resRollover.NewIndex),
 				zap.String("alias", alias))
@@ -255,7 +255,7 @@ func (logicalIndex *LogicalIndexCronV8) rollover() {
 	// Adding search alias on the newly created active index
 	// Includes every active + inactive indices
 	// TODO: Remove this step when template are reworked (and include this search alias)
-	_, err = elasticsearchv8.C().Indices.PutAlias(logicalIndex.Name+"-*", logicalIndex.Name+"-search").Do(ctx)
+	_, err = elasticsearch.C().Indices.PutAlias(logicalIndex.Name+"-*", logicalIndex.Name+"-search").Do(ctx)
 	if err != nil {
 		zap.L().Error("Putting alias", zap.Error(err), zap.String("index", logicalIndex.Name+"-*"),
 			zap.String("alias", logicalIndex.Name+"-search"))
@@ -269,7 +269,7 @@ func (logicalIndex *LogicalIndexCronV8) rollover() {
 
 	// Purge outdated indices
 	if logicalIndex.Model.ElasticsearchOptions.EnablePurge {
-		resAlias, err := elasticsearchv8.C().Indices.GetAlias().Name(logicalIndex.Name + "-search").Do(ctx)
+		resAlias, err := elasticsearch.C().Indices.GetAlias().Name(logicalIndex.Name + "-search").Do(ctx)
 		if err != nil {
 			zap.L().Error("GetIndicesByAlias", zap.Error(err))
 			return
@@ -283,7 +283,7 @@ func (logicalIndex *LogicalIndexCronV8) rollover() {
 		if len(searchIndices) > logicalIndex.Model.ElasticsearchOptions.PurgeMaxConcurrentIndices {
 			toDelete := searchIndices[0] // oldest indices
 
-			_, err := elasticsearchv8.C().Indices.Delete(toDelete).Do(ctx)
+			_, err := elasticsearch.C().Indices.Delete(toDelete).Do(ctx)
 			if err != nil {
 				zap.L().Error("DeleteIndex", zap.Error(err), zap.String("index", searchIndices[0]))
 				return
@@ -297,7 +297,7 @@ func (logicalIndex *LogicalIndexCronV8) rollover() {
 	}
 }
 
-func (logicalIndex *LogicalIndexCronV8) persistTechnicalIndex(newIndex string, t time.Time) error {
+func (logicalIndex *LogicalIndexCron) persistTechnicalIndex(newIndex string, t time.Time) error {
 	if postgres.DB() == nil {
 		return errors.New("postgresql Client not initialized")
 	}
@@ -318,7 +318,7 @@ func (logicalIndex *LogicalIndexCronV8) persistTechnicalIndex(newIndex string, t
 	return nil
 }
 
-func (logicalIndex *LogicalIndexCronV8) purgeTechnicalIndex(technicalIndex string) error {
+func (logicalIndex *LogicalIndexCron) purgeTechnicalIndex(technicalIndex string) error {
 	if postgres.DB() == nil {
 		return errors.New("postgresql Client not initialized")
 	}
