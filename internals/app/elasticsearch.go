@@ -2,28 +2,45 @@ package app
 
 import (
 	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv6"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/esconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv8"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
-func InitElasticsearch() {
-	version := viper.GetInt("ELASTICSEARCH_VERSION")
-	urls := viper.GetStringSlice("ELASTICSEARCH_URLS")
+func initElasticsearch() {
+	config, exists, err := esconfig.R().GetDefault()
+	replaceWithEnv := true
 
-	switch version {
-	case 6:
-		elasticsearchv6.ReplaceGlobals(&elasticsearchv6.Credentials{
-			URLs: urls,
-		})
-	case 7:
-		fallthrough
-	case 8:
-		elasticsearchv8.ReplaceGlobals(elasticsearch.Config{
-			Addresses: urls,
-		})
-	default:
-		zap.L().Fatal("Unsupported Elasticsearch version", zap.Int("version", version))
+	if err != nil {
+		zap.L().Error("Could not get default ElasticSearch config", zap.Error(err))
+	} else if !exists {
+		urls := viper.GetStringSlice("ELASTICSEARCH_URLS")
+		zap.L().Warn("Default ElasticSearch config does not exists, creating one using ELASTICSEARCH_URLS", zap.Strings("urls", urls))
+		config = models.ElasticSearchConfig{
+			Name:    "default",
+			URLs:    urls,
+			Default: true,
+		}
+		id, err := esconfig.R().Create(config)
+		if err != nil {
+			zap.L().Error("Could not create default ElasticSearch config", zap.Error(err))
+		} else {
+			zap.L().Info("Default ElasticSearch config created", zap.Int64("id", id), zap.Strings("urls", urls))
+		}
+		replaceWithEnv = false
+	}
+
+	if replaceWithEnv && len(config.URLs) == 0 {
+		config.URLs = viper.GetStringSlice("ELASTICSEARCH_URLS")
+		zap.L().Warn("ElasticSearch default config does not contains any urls, using ELASTICSEARCH_URLS", zap.Strings("urls", config.URLs))
+	}
+
+	err = elasticsearchv8.ReplaceGlobals(elasticsearch.Config{
+		Addresses: config.URLs,
+	})
+	if err != nil {
+		zap.L().Error("Could not init elasticsearchv8", zap.Error(err))
 	}
 }

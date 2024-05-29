@@ -1,8 +1,10 @@
 package notifier
 
 import (
+	"errors"
 	"github.com/google/uuid"
 	"net/http"
+	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"go.uber.org/zap"
@@ -47,7 +49,10 @@ func BuildWebsocketClient(w http.ResponseWriter, r *http.Request, user *users.Us
 
 // Write a message on a client socket
 func (c *WebsocketClient) Write() {
+	ticker := time.NewTicker(10 * time.Second)
+
 	defer func() {
+		ticker.Stop()
 		destroyWebsocketClient(c)
 	}()
 
@@ -55,10 +60,17 @@ func (c *WebsocketClient) Write() {
 		select {
 		case message, ok := <-c.Send:
 			if !ok {
+				zap.L().Info("Notification nok write, closing")
 				c.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
+			zap.L().Info("Notification write msg", zap.ByteString("msg", message))
 			c.Socket.WriteMessage(websocket.TextMessage, message)
+		case <-ticker.C:
+			// Send the Ping and return to close conn whether an error occurs
+			if err := c.Socket.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+				return
+			}
 		}
 	}
 }
@@ -72,10 +84,10 @@ func (c *WebsocketClient) Read() {
 	for {
 		mt, message, err := c.Socket.ReadMessage()
 		if err != nil {
-			switch err.(type) {
-			case *websocket.CloseError:
-				e := err.(*websocket.CloseError)
-				if e.Code != websocket.CloseNormalClosure && e.Code != websocket.CloseGoingAway {
+			var closeError *websocket.CloseError
+			switch {
+			case errors.As(err, &closeError):
+				if closeError.Code != websocket.CloseNormalClosure && closeError.Code != websocket.CloseGoingAway {
 					zap.L().Error("Read socket", zap.Error(err))
 				}
 			default:
@@ -90,6 +102,15 @@ func (c *WebsocketClient) Read() {
 }
 
 func destroyWebsocketClient(c *WebsocketClient) {
-	C().Unregister(c)
-	c.Socket.Close()
+	if c == nil {
+		return
+	}
+	err := C().Unregister(c)
+	if err != nil {
+		zap.L().Error("Could not unregister ws client", zap.Error(err), zap.String("id", c.ID))
+	}
+	err = c.Socket.Close()
+	if err != nil {
+		zap.L().Error("Could not unregister ws client", zap.Error(err), zap.String("id", c.ID))
+	}
 }

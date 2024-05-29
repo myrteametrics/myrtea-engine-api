@@ -256,6 +256,16 @@ const (
 		data jsonb        not null
 	);`
 
+	// ElasticSearchConfigDropTableV1 SQL statement to drop table elasticsearch_config_v1
+	ElasticSearchConfigDropTableV1 string = `DROP TABLE IF EXISTS elasticsearch_config_v1`
+	// ElasticSearchConfigV1 SQL statement to create table elasticsearch_config_v1
+	ElasticSearchConfigV1 string = `create table if not exists elasticsearch_config_v1 (
+    	id   serial primary key,
+		name varchar(100) not null unique,
+		urls varchar(100) not null,
+		"default" boolean not null
+	);`
+
 	// IssueFeedbackDropTableV3 SQL statement to drop table issue_detection_feedback_v3
 	IssueFeedbackDropTableV3 string = `DROP TABLE IF EXISTS issue_detection_feedback_v3;`
 	// IssueFeedbackTableV3 SQL statement to create table issue_detection_feedback_v3

@@ -7,15 +7,13 @@ import (
 
 // Init initialize all the app configuration and components
 func Init() {
-
 	docs.SwaggerInfo.Host = viper.GetString("SWAGGER_HOST")
 	docs.SwaggerInfo.BasePath = viper.GetString("SWAGGER_BASEPATH")
 
-	InitElasticsearch()
 	initPostgres()
 	initRepositories()
+	initElasticsearch()
 	initServices()
-
 }
 
 // Stop cleanup everything before stopping the app
