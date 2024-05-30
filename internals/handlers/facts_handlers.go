@@ -752,6 +752,14 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		zap.L().Debug("Debugging fact", zap.Any("f", f))
 	}
 
+	// Add context to fact, replace params and evaluate queries
+	f.ContextualizeDimensions(t, parameters)
+	err = f.ContextualizeCondition(t, parameters)
+	if err != nil {
+		render.Error(w, r, apiError, err)
+		return
+	}
+
 	source, err := elasticsearch.ConvertFactToSearchRequestV8(f, t, parameters)
 	if err != nil {
 		zap.L().Error("Cannot convert fact to search request", zap.Error(err), zap.Any("fact", f))
