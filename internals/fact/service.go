@@ -3,14 +3,14 @@ package fact
 import (
 	"context"
 	"errors"
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
+	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"strings"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/coordinator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
-	"github.com/myrteametrics/myrtea-sdk/v4/index"
+	"github.com/myrteametrics/myrtea-sdk/v5/engine"
+	"github.com/myrteametrics/myrtea-sdk/v5/index"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

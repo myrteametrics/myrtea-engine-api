@@ -6,7 +6,7 @@ import (
 	es "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/esconfig"
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
+	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"strings"
 	"time"
 
@@ -14,7 +14,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
 )
 

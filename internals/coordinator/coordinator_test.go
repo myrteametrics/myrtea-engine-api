@@ -2,13 +2,13 @@ package coordinator
 
 import (
 	"github.com/elastic/go-elasticsearch/v8"
-	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
+	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
-	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
+	"github.com/myrteametrics/myrtea-sdk/v5/helpers"
+	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
 	"github.com/spf13/viper"
 )
 

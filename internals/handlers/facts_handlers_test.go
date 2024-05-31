@@ -9,7 +9,7 @@ import (
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 )
 
 func initGlobalRepository() {

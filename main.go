@@ -17,8 +17,8 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/app"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/router"
 	plugin "github.com/myrteametrics/myrtea-engine-api/v5/plugins"
-	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
-	"github.com/myrteametrics/myrtea-sdk/v4/server"
+	"github.com/myrteametrics/myrtea-sdk/v5/helpers"
+	"github.com/myrteametrics/myrtea-sdk/v5/server"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

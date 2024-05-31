@@ -3,16 +3,16 @@ package tasker
 import (
 	"time"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/ruleeng"
+	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
 )
 
-//TaskBatch batch of action to be performed
+// TaskBatch batch of action to be performed
 type TaskBatch struct {
 	Context map[string]interface{}
 	Agenda  []ruleeng.Action
 }
 
-//ContextData struct to represent the data related to the context in an action perform
+// ContextData struct to represent the data related to the context in an action perform
 type ContextData struct {
 	RuleID                      int64
 	RuleVersion                 int64

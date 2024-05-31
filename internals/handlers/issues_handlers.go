@@ -13,7 +13,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
-	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 	"go.uber.org/zap"
 )
 

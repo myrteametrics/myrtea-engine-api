@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
+	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"sort"
 	"sync"
 	"time"
@@ -13,10 +13,10 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/updatealiases"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/some"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
-	"github.com/myrteametrics/myrtea-sdk/v4/index"
-	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
+	"github.com/myrteametrics/myrtea-sdk/v5/index"
+	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 )

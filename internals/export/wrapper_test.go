@@ -12,8 +12,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
-	"github.com/myrteametrics/myrtea-sdk/v4/expression"
+	"github.com/myrteametrics/myrtea-sdk/v5/engine"
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 )
 
 func TestNewWrapper(t *testing.T) {

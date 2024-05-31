@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
+	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"sort"
 	"sync"
 	"time"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
+	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
 
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"

@@ -4,7 +4,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/esconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
-	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v4/elasticsearch"
+	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
-	"github.com/myrteametrics/myrtea-sdk/v4/expression"
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 )
 
 func TestEvaluateExpressionFactsChain(t *testing.T) {

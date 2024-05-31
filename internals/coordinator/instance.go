@@ -3,7 +3,7 @@ package coordinator
 import (
 	"sync"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
+	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
 	"go.uber.org/zap"
 )
 

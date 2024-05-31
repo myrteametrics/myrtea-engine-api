@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 )
 
 // NativeMapRepository is an implementation of entity.Repository, supported by standard native in-memory map

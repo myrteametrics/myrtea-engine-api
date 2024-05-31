@@ -1,7 +1,7 @@
 package explainer
 
 import (
-	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 )
 
 // RootCauseStats is a single rootcause usage stats

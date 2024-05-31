@@ -20,7 +20,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/json-iterator/go v1.1.12
 	github.com/lib/pq v1.10.9
-	github.com/myrteametrics/myrtea-sdk/v4 v4.6.3-0.20240529152032-fce93d8e62e5 // temporary (to test remove-elasticv6)
+	github.com/myrteametrics/myrtea-sdk/v5 v5.0.0
 	github.com/prataprc/goparsec v0.0.0-20211219142520-daac0e635e7e
 	github.com/prometheus/client_golang v1.19.1
 	github.com/robfig/cron/v3 v3.0.1
