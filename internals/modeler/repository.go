@@ -3,7 +3,7 @@ package modeler
 import (
 	"sync"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
+	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend

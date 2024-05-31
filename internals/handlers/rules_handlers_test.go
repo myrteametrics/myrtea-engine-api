@@ -13,7 +13,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
-	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 )
 
 func dbInit(dbClient *sqlx.DB, t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/ruleeng"
+	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
 )
 
 // Rule ...
@@ -34,7 +34,7 @@ func (r *Rule) IsValid() (bool, error) {
 	return true, nil
 }
 
-//SameCasesAs returns true if the cases of the are equal to the case of the rule passed as parameter or false otherwise
+// SameCasesAs returns true if the cases of the are equal to the case of the rule passed as parameter or false otherwise
 func (r Rule) SameCasesAs(rule Rule) bool {
 	rCasesData, err := json.Marshal(r.Cases)
 	if err != nil {
@@ -47,7 +47,7 @@ func (r Rule) SameCasesAs(rule Rule) bool {
 	return string(rCasesData) == string(ruleCasesData)
 }
 
-//EqualTo returns true if the rule is equal to the rule passed as parameter or false otherwise
+// EqualTo returns true if the rule is equal to the rule passed as parameter or false otherwise
 func (r Rule) EqualTo(rule Rule) bool {
 	if r.Name != rule.Name {
 		return false
@@ -64,15 +64,15 @@ func (r Rule) EqualTo(rule Rule) bool {
 // UnmarshalJSON unmashals a quoted json string to Expression
 func (r *Rule) UnmarshalJSON(data []byte) error {
 	type Alias struct {
-		Name        string                 `json:"name"`
-		Description string                 `json:"description"`
-		Enabled     bool                   `json:"enabled"`
-		CalendarID  int                    `json:"calendarId"`
-		ID          int64                  `json:"id,omitempty"`
-		Cases       []ruleeng.Case         `json:"cases"`
-		Version     int64                  `json:"version"`
-		Parameters  map[string]interface{} `json:"parameters"`
-		EvaluateAllCases bool               `json:"evaluateallcase"`
+		Name             string                 `json:"name"`
+		Description      string                 `json:"description"`
+		Enabled          bool                   `json:"enabled"`
+		CalendarID       int                    `json:"calendarId"`
+		ID               int64                  `json:"id,omitempty"`
+		Cases            []ruleeng.Case         `json:"cases"`
+		Version          int64                  `json:"version"`
+		Parameters       map[string]interface{} `json:"parameters"`
+		EvaluateAllCases bool                   `json:"evaluateallcase"`
 	}
 	aux := Alias{}
 

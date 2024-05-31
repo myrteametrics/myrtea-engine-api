@@ -2,8 +2,8 @@ package service
 
 import (
 	"errors"
-	"github.com/myrteametrics/myrtea-sdk/v4/connector"
-	"github.com/myrteametrics/myrtea-sdk/v4/expression"
+	"github.com/myrteametrics/myrtea-sdk/v5/connector"
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"testing"
 )
 

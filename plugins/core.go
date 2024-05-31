@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/assistant"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/standalone"
@@ -53,13 +52,6 @@ func (c *Core) RegisterPlugins() {
 		}
 
 		switch config.Name {
-		case "assistant":
-			if a := assistant.NewAssistantPlugin(config); a != nil {
-				plugin.Plugin = a
-			} else {
-				continue
-			}
-			break
 		case "baseline":
 			if b := baseline.NewBaselinePlugin(config); b != nil {
 				plugin.Plugin = b

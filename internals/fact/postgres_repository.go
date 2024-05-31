@@ -8,7 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 )
 
 // PostgresRepository is a repository containing the Fact definition based on a PSQL database and
@@ -26,7 +26,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	return ifm
 }
 
-//Get search and returns an entity from the repository by its id
+// Get search and returns an entity from the repository by its id
 func (r *PostgresRepository) Get(id int64) (engine.Fact, bool, error) {
 	query := `SELECT definition FROM fact_definition_v1 WHERE id = :id`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
@@ -59,7 +59,7 @@ func (r *PostgresRepository) Get(id int64) (engine.Fact, bool, error) {
 	return fact, true, nil
 }
 
-//GetByName search and returns an entity from the repository by its name
+// GetByName search and returns an entity from the repository by its name
 func (r *PostgresRepository) GetByName(name string) (engine.Fact, bool, error) {
 	query := `SELECT id, definition FROM fact_definition_v1 WHERE name = :name`
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{

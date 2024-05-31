@@ -2,7 +2,6 @@ package router
 
 import (
 	"fmt"
-	"github.com/lestrrat-go/jwx/v2/jwa"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -16,9 +15,10 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internals/router/oidc"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security"
 	plugin "github.com/myrteametrics/myrtea-engine-api/v5/plugins"
-	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
+	sdkrouter "github.com/myrteametrics/myrtea-sdk/v5/router"
+	sdksecurity "github.com/myrteametrics/myrtea-sdk/v5/security"
 	"github.com/spf13/viper"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
@@ -132,8 +132,8 @@ func New(config Config, services Services) *chi.Mux {
 }
 
 func buildRoutesV3Basic(config Config, services Services) (func(r chi.Router), error) {
-	signingKey := []byte(security.RandString(128))
-	securityMiddleware := security.NewMiddlewareJWT(signingKey, security.NewDatabaseAuth(postgres.DB()))
+	signingKey := []byte(sdksecurity.RandString(128))
+	securityMiddleware := sdksecurity.NewMiddlewareJWT(signingKey, sdksecurity.NewDatabaseAuth(postgres.DB()))
 
 	return func(r chi.Router) {
 
@@ -155,13 +155,13 @@ func buildRoutesV3Basic(config Config, services Services) (func(r chi.Router), e
 				if config.GatewayMode {
 					// Warning: No signature verification will be done on JWT.
 					// JWT MUST have been verified before by the API Gateway
-					rg.Use(UnverifiedAuthenticator)
+					rg.Use(sdkrouter.UnverifiedAuthenticator)
 				} else {
 					rg.Use(func(next http.Handler) http.Handler {
 						// jwtauth.Verifier function only verifies header & cookie but not query
 						// websocket requests only handles uri parameters, so jwtauth.TokenFromHeader
 						// is needed here.
-						return jwtauth.Verify(jwtauth.New(jwa.HS256.String(), signingKey, nil),
+						return jwtauth.Verify(jwtauth.New("HS256", signingKey, nil),
 							jwtauth.TokenFromQuery, jwtauth.TokenFromHeader, jwtauth.TokenFromCookie)(next)
 					})
 					rg.Use(CustomAuthenticator)
@@ -189,9 +189,9 @@ func buildRoutesV3Basic(config Config, services Services) (func(r chi.Router), e
 				if config.GatewayMode {
 					// Warning: No signature verification will be done on JWT.
 					// JWT MUST have been verified before by the API Gateway
-					rg.Use(UnverifiedAuthenticator)
+					rg.Use(sdkrouter.UnverifiedAuthenticator)
 				} else {
-					rg.Use(jwtauth.Verifier(jwtauth.New(jwa.HS256.String(), signingKey, nil)))
+					rg.Use(jwtauth.Verifier(jwtauth.New("HS256", signingKey, nil)))
 					rg.Use(CustomAuthenticator)
 				}
 				// rg.Use(security.AdminAuthentificator)

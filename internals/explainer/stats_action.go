@@ -1,6 +1,6 @@
 package explainer
 
-import "github.com/myrteametrics/myrtea-sdk/v4/postgres"
+import "github.com/myrteametrics/myrtea-sdk/v5/postgres"
 
 // ActionStats is a single action usage stats
 type ActionStats struct {

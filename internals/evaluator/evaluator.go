@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/myrteametrics/myrtea-sdk/v4/ruleeng"
+	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
 )
 
 func BuildLocalRuleEngine(engineID string) (*ruleeng.RuleEngine, error) {

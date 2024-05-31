@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/myrteametrics/myrtea-sdk/v4/connector"
+	"github.com/myrteametrics/myrtea-sdk/v5/connector"
 	"go.uber.org/zap"
 	"io"
 	"net/http"

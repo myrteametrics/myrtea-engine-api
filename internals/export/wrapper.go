@@ -3,6 +3,7 @@ package export
 import (
 	"context"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
+	sdksecurity "github.com/myrteametrics/myrtea-sdk/v5/security"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,9 +12,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
 )
 
@@ -97,7 +97,7 @@ func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, use
 	if addHashPrefix {
 		// file extension should be gz
 		// add random string to avoid multiple files with same name
-		fileName = security.RandStringWithCharset(5, randCharSet) + "_" +
+		fileName = sdksecurity.RandStringWithCharset(5, randCharSet) + "_" +
 			strings.ReplaceAll(title, " ", "_") + ".csv.gz"
 	} else if !strings.HasSuffix(title, ".csv.gz") {
 		fileName = strings.ReplaceAll(title, " ", "_") + ".csv.gz"

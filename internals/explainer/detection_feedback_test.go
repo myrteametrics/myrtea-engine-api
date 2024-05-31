@@ -11,7 +11,7 @@ package explainer
 // 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 // 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
 // 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/users"
-// 	"github.com/myrteametrics/myrtea-sdk/v4/security"
+// 	"github.com/myrteametrics/myrtea-sdk/v5/security"
 // )
 
 // func dbInitDetection(dbClient *sqlx.DB, t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
-	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 	"go.uber.org/zap"
 )
 
@@ -27,7 +27,7 @@ func DraftIssues(idIssues []int64, user users.User, status *models.DraftIssuesSt
 			DrafHandleError(status, idIssue, errors.New("recommendation tree based on issue resolution stats table"), render.ErrAPIDBSelectFailed)
 			continue
 		}
-		
+
 		err = SaveIssueDraft(nil, issue, *tree, user)
 		if err != nil {
 			zap.L().Error("SaveIssueDraft", zap.Error(err))
