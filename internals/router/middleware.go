@@ -34,7 +34,14 @@ func ContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		userID, _ := uuid.Parse(rawUserID.(string))
+		rawUserIDStr, ok := rawUserID.(string)
+		if !ok {
+			zap.L().Warn("Cannot parse user ID", zap.Any("claims", claims))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
+			return
+		}
+
+		userID, _ := uuid.Parse(rawUserIDStr)
 
 		user, found, err := users.R().Get(userID)
 		if err != nil {
