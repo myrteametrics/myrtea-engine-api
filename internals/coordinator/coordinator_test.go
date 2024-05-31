@@ -1,18 +1,15 @@
 package coordinator
 
 import (
-	"context"
-	"fmt"
+	"github.com/elastic/go-elasticsearch/v8"
+	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv6"
-	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
-	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
-	"github.com/olivere/elastic"
+	"github.com/myrteametrics/myrtea-sdk/v5/helpers"
+	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 )
 
 // ConfigPath is the toml configuration file path
@@ -111,34 +108,6 @@ var (
 
 // }
 
-func TestGetIndices(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping elasticsearch test in short mode")
-	}
-	helpers.InitializeConfig(AllowedConfigKey, ConfigName, ConfigPath, EnvPrefix)
-	helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
-
-	client, err := elastic.NewClient(elastic.SetSniff(false),
-		elastic.SetHealthcheckTimeoutStartup(60*time.Second),
-		elastic.SetURL(viper.GetStringSlice("ELASTICSEARCH_URLS")...),
-		// elastic.SetHttpClient(retryClient.StandardClient()),
-	)
-	if err != nil {
-		zap.L().Error("Elasticsearch client initialization", zap.Error(err))
-	} else {
-		zap.L().Info("Initialize Elasticsearch client", zap.String("status", "done"))
-	}
-
-	indices, err := client.CatIndices().Index("myrtea-myindex-*").Columns("index").Do(context.Background())
-	if err != nil {
-		t.Error(err)
-	}
-	for _, index := range indices {
-		t.Logf("%+v", index.Index)
-	}
-	t.Fail()
-}
-
 func TestCoordinator(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping elasticsearch test in short mode")
@@ -146,7 +115,7 @@ func TestCoordinator(t *testing.T) {
 	helpers.InitializeConfig(AllowedConfigKey, ConfigName, ConfigPath, EnvPrefix)
 	helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
 
-	elasticsearchv6.ReplaceGlobals(&elasticsearchv6.Credentials{URLs: viper.GetStringSlice("ELASTICSEARCH_URLS")})
+	elasticsearchsdk.ReplaceGlobals(elasticsearch.Config{Addresses: viper.GetStringSlice("ELASTICSEARCH_URLS")})
 
 	err := InitInstance(
 		viper.GetString("INSTANCE_NAME"),
@@ -178,9 +147,9 @@ func TestPurge(t *testing.T) {
 	helpers.InitializeConfig(AllowedConfigKey, ConfigName, ConfigPath, EnvPrefix)
 	helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
 
-	elasticsearchv6.ReplaceGlobals(&elasticsearchv6.Credentials{URLs: viper.GetStringSlice("ELASTICSEARCH_URLS")})
+	elasticsearchsdk.ReplaceGlobals(elasticsearch.Config{Addresses: viper.GetStringSlice("ELASTICSEARCH_URLS")})
 
-	logicalIndex, err := NewLogicalIndexTimeBasedV6("myrtea", modeler.Model{Name: "myindex", ElasticsearchOptions: modeler.ElasticsearchOptions{
+	logicalIndex, err := NewLogicalIndexTimeBased("myrtea", modeler.Model{Name: "myindex", ElasticsearchOptions: modeler.ElasticsearchOptions{
 		Rollmode:                  "timebased",
 		Rollcron:                  "0 * * * *",
 		EnablePurge:               true,
@@ -192,71 +161,4 @@ func TestPurge(t *testing.T) {
 	}
 	logicalIndex.purge()
 	t.Fail()
-}
-
-func TestFindIndices(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping elasticsearch test in short mode")
-	}
-	helpers.InitializeConfig(AllowedConfigKey, ConfigName, ConfigPath, EnvPrefix)
-	helpers.InitLogger(viper.GetBool("LOGGER_PRODUCTION"))
-
-	client, err := elastic.NewClient(elastic.SetSniff(false),
-		elastic.SetHealthcheckTimeoutStartup(60*time.Second),
-		elastic.SetURL(viper.GetStringSlice("ELASTICSEARCH_URLS")...),
-		// elastic.SetHttpClient(retryClient.StandardClient()),
-	)
-	if err != nil {
-		zap.L().Error("Elasticsearch client initialization", zap.Error(err))
-	} else {
-		zap.L().Info("Initialize Elasticsearch client", zap.String("status", "done"))
-	}
-
-	catIndicesResponse, err := client.CatIndices().Index("myrtea-myindex-*").Columns("index").Do(context.Background())
-	if err != nil {
-		t.Error(err)
-	}
-
-	indices := make([]string, 0)
-	for _, index := range catIndicesResponse {
-		indices = append(indices, index.Index)
-	}
-	t.Fail()
-	// indices := []string{
-	// 	"myrtea-myindex-2022-01-01",
-	// 	"myrtea-myindex-2022-12-31",
-	// 	"myrtea-myindex-2023-01-01",
-	// 	"myrtea-myindex-2023-01-02",
-	// 	"myrtea-myindex-2023-01-03",
-	// 	"myrtea-myindex-2023-01-14",
-	// 	"myrtea-myindex-2023-01-15",
-	// 	"myrtea-myindex-2023-01-16",
-	// 	"myrtea-myindex-2023-01-28",
-	// 	"myrtea-myindex-2023-01-29",
-	// 	"myrtea-myindex-2023-01-30",
-	// 	"myrtea-myindex-2023-02-01",
-	// 	"myrtea-myindex-2023-02-02",
-	// 	"myrtea-myindex-2023-02-03",
-	// }
-
-	tsEnd := time.Date(2023, 1, 30, 12, 0, 0, 0, time.UTC)
-	tsStart := tsEnd.Add(-20 * 24 * time.Hour)
-
-	indexEnd := fmt.Sprintf("myrtea-%s-%s", "myindex", tsEnd.Format("2006-01-02"))
-	indexStart := fmt.Sprintf("myrtea-%s-%s", "myindex", tsStart.Format("2006-01-02"))
-
-	t.Log(indexEnd)
-	t.Log(indexStart)
-
-	subIndices := make([]string, 0)
-	for _, index := range indices {
-		if index < indexStart {
-			// if index >= indexStart {
-			subIndices = append(subIndices, index)
-		}
-	}
-	t.Log(indices)
-	t.Log(subIndices)
-	t.Fail()
-
 }

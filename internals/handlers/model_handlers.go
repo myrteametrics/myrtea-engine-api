@@ -11,7 +11,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	model "github.com/myrteametrics/myrtea-engine-api/v5/internals/modeler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
-	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
+	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
 	"go.uber.org/zap"
 )
 

@@ -1,9 +1,9 @@
 package baseline
 
 import (
+	"google.golang.org/protobuf/types/known/emptypb"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/go-plugin"
 	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline/proto"
 	"go.uber.org/zap"
@@ -111,7 +111,7 @@ func (m *GRPCServer) GetBaselineValues(ctx context.Context, req *proto.BaselineV
 	return &proto.BaselineValues{Values: baselineValues}, err
 }
 
-func (m *GRPCServer) BuildBaselineValues(ctx context.Context, req *proto.BuildBaselineRequest) (*empty.Empty, error) {
+func (m *GRPCServer) BuildBaselineValues(ctx context.Context, req *proto.BuildBaselineRequest) (*emptypb.Empty, error) {
 	err := m.Impl.BuildBaselineValues(req.Id)
-	return &empty.Empty{}, err
+	return &emptypb.Empty{}, err
 }

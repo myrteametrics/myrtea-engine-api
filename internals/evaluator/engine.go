@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/rule"
-	"github.com/myrteametrics/myrtea-sdk/v4/ruleeng"
+	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
 )
 
 var (

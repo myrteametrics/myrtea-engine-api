@@ -3,7 +3,7 @@ package fact
 import (
 	"testing"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 )
 
 func TestNew(t *testing.T) {

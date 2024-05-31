@@ -4,7 +4,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/esconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
-	"github.com/myrteametrics/myrtea-sdk/v4/elasticsearchv8"
+	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
@@ -37,10 +37,12 @@ func initElasticsearch() {
 		zap.L().Warn("ElasticSearch default config does not contains any urls, using ELASTICSEARCH_URLS", zap.Strings("urls", config.URLs))
 	}
 
-	err = elasticsearchv8.ReplaceGlobals(elasticsearch.Config{
-		Addresses: config.URLs,
+	urls := viper.GetStringSlice("ELASTICSEARCH_URLS")
+	err = elasticsearchsdk.ReplaceGlobals(elasticsearch.Config{
+		Addresses: urls,
 	})
 	if err != nil {
-		zap.L().Error("Could not init elasticsearchv8", zap.Error(err))
+		zap.L().Error("Could not init elasticsearch", zap.Error(err))
+
 	}
 }

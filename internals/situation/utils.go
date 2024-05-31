@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/variablesconfig"
-	"github.com/myrteametrics/myrtea-sdk/v4/expression"
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 )
 
 func shouldParseGlobalVariables(translateOpt ...bool) bool {

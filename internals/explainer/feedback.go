@@ -12,7 +12,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/rootcause"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
-	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 )
 
 // CloseIssueWithoutFeedback close an issue without standard feedback on rootcause / action

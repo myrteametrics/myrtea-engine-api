@@ -3,7 +3,7 @@ package fact
 import (
 	"sync"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend

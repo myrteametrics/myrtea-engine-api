@@ -7,7 +7,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/ingester"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/processor"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/scheduler"
-	"github.com/myrteametrics/myrtea-sdk/v4/models"
+	"github.com/myrteametrics/myrtea-sdk/v5/models"
 	"go.uber.org/zap"
 	"net/http"
 )

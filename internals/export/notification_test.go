@@ -3,7 +3,7 @@ package export
 import (
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/notifier/notification"
-	"github.com/myrteametrics/myrtea-sdk/v4/expression"
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"testing"
 )
 

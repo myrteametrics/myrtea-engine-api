@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
-	sdk_models "github.com/myrteametrics/myrtea-sdk/v4/models"
+	"github.com/myrteametrics/myrtea-sdk/v5/engine"
+	sdk_models "github.com/myrteametrics/myrtea-sdk/v5/models"
 	"go.uber.org/zap"
 )
 

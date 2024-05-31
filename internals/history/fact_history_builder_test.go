@@ -8,7 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
-	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 )
 
 func TestGetHistoryFactLast(t *testing.T) {

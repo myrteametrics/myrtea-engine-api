@@ -33,7 +33,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tasker"
-	"github.com/myrteametrics/myrtea-sdk/v4/postgres"
+	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

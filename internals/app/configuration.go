@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/myrteametrics/myrtea-sdk/v4/helpers"
+	"github.com/myrteametrics/myrtea-sdk/v5/helpers"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

@@ -3,7 +3,7 @@ package evaluator
 import (
 	"time"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/ruleeng"
+	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
 )
 
 // SituationToEvaluate is used to notify a rule engine instance that a situation must me evaluated

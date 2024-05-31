@@ -8,7 +8,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/history"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/reader"
-	"github.com/myrteametrics/myrtea-sdk/v4/engine"
+	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
 )
 
@@ -70,7 +70,7 @@ func IsOpenOrDraftIssue(issueKey string) (bool, error) {
 	return true, nil
 }
 
-//GetFactsHistory get the history of facts for an issue
+// GetFactsHistory get the history of facts for an issue
 func GetFactsHistory(issue models.Issue) ([]models.FrontFactHistory, bool, error) {
 
 	// TODO: interval shouldn't hard coded ?

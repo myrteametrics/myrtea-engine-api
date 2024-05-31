@@ -3,7 +3,7 @@ package modeler
 import (
 	"testing"
 
-	"github.com/myrteametrics/myrtea-sdk/v4/modeler"
+	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
 )
 
 func TestNew(t *testing.T) {
