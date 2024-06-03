@@ -91,14 +91,15 @@ func TestAddToQueueCustom(t *testing.T) {
 	wrapper := NewWrapper("/tmp", 1, 1, 1)
 	user1 := users.User{Login: "bla"}
 	user2 := users.User{Login: "blabla"}
+	esParams := ElasticParams{}
 	csvParams := CSVParameters{}
-	_, result := wrapper.AddToQueueCustom("", nil, "", "test.txt", csvParams, user1, false)
+	_, result := wrapper.AddToQueueCustom("test.txt", esParams, csvParams, user1, false)
 	expression.AssertEqual(t, result, CodeAdded, "AddToQueueCustom should return CodeAdded")
-	_, result = wrapper.AddToQueueCustom("", nil, "", "test.txt", csvParams, user1, false)
+	_, result = wrapper.AddToQueueCustom("test.txt", esParams, csvParams, user1, false)
 	expression.AssertEqual(t, result, CodeUserExists, "AddToQueueCustom should return CodeUserExists")
-	_, result = wrapper.AddToQueueCustom("", nil, "", "test.txt", csvParams, user2, false)
+	_, result = wrapper.AddToQueueCustom("test.txt", esParams, csvParams, user2, false)
 	expression.AssertEqual(t, result, CodeUserAdded, "AddToQueueCustom should return CodeUserAdded")
-	_, result = wrapper.AddToQueueCustom("", nil, "", "test2.txt", csvParams, user2, false)
+	_, result = wrapper.AddToQueueCustom("test2.txt", esParams, csvParams, user2, false)
 	expression.AssertEqual(t, result, CodeQueueFull, "AddToQueueCustom should return CodeQueueFull")
 }
 

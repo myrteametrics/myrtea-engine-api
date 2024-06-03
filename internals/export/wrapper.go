@@ -233,8 +233,7 @@ func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParam
 // AddToQueueCustom Adds a new export with a custom elastic connection and a custom search request
 //
 // addHashPrefix adds a hash as prefix to resulting files, to avoid duplicates
-func (ew *Wrapper) AddToQueueCustom(elasticName string, request *search.Request, indices, title string, params CSVParameters,
-	user users.User, addHashPrefix, ignoreUnavailable, allowNoIndices bool) (*WrapperItem, int) {
+func (ew *Wrapper) AddToQueueCustom(title string, esParams ElasticParams, params CSVParameters, user users.User, addHashPrefix bool) (*WrapperItem, int) {
 	ew.queueMutex.Lock()
 	defer ew.queueMutex.Unlock()
 
@@ -260,11 +259,11 @@ func (ew *Wrapper) AddToQueueCustom(elasticName string, request *search.Request,
 
 	item := NewWrapperItem([]engine.Fact{}, title, params, user, map[string]string{}, addHashPrefix)
 	item.Custom = true
-	item.ElasticName = elasticName
-	item.SearchRequest = request
-	item.Indices = indices
-	item.IgnoreUnavailable = ignoreUnavailable
-	item.AllowNoIndices = allowNoIndices
+	item.ElasticName = esParams.Client
+	item.SearchRequest = esParams.SearchRequest
+	item.Indices = esParams.Indices
+	item.IgnoreUnavailable = esParams.IgnoreUnavailable
+	item.AllowNoIndices = esParams.AllowNoIndices
 	ew.queue = append(ew.queue, item)
 	return item, CodeAdded
 }
