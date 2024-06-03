@@ -162,7 +162,15 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 		defer close(streamedExport.Data)
 
 		if item.Custom {
-			writerErr = streamedExport.ProcessStreamedExport(ctx, item.ElasticName, item.Indices, item.SearchRequest, item.Params.Limit)
+			params := ElasticParams{
+				Indices:           item.Indices,
+				Limit:             item.Params.Limit,
+				Client:            item.ElasticName,
+				SearchRequest:     item.SearchRequest,
+				IgnoreUnavailable: item.IgnoreUnavailable,
+				AllowNoIndices:    item.AllowNoIndices,
+			}
+			writerErr = streamedExport.ProcessStreamedExport(ctx, params)
 		} else {
 			for _, f := range item.Facts {
 				writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit, item.FactParameters)

@@ -45,10 +45,12 @@ type ExportRequest struct {
 // CustomExportRequest represents a request for an custom export
 type CustomExportRequest struct {
 	export.CSVParameters
-	Title         string         `json:"title"`
-	Indices       string         `json:"indices"`
-	SearchRequest search.Request `json:"searchRequest"`
-	ElasticName   string         `json:"elasticName"`
+	Title                    string         `json:"title"`
+	Indices                  string         `json:"indices"`
+	SearchRequest            search.Request `json:"searchRequest"`
+	ElasticName              string         `json:"elasticName"`
+	IgnoreUnavailableIndices bool           `json:"ignoreUnavailableIndices"`
+	AllowNoIndices           bool           `json:"allowNoIndices"`
 }
 
 // ExportFactStreamed godoc
