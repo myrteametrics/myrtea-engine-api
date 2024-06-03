@@ -45,10 +45,12 @@ type ExportRequest struct {
 // CustomExportRequest represents a request for an custom export
 type CustomExportRequest struct {
 	export.CSVParameters
-	Title         string         `json:"title"`
-	Indices       string         `json:"indices"`
-	SearchRequest search.Request `json:"searchRequest"`
-	ElasticName   string         `json:"elasticName"`
+	Title                    string         `json:"title"`
+	Indices                  string         `json:"indices"`
+	SearchRequest            search.Request `json:"searchRequest"`
+	ElasticName              string         `json:"elasticName"`
+	IgnoreUnavailableIndices bool           `json:"ignoreUnavailableIndices"`
+	AllowNoIndices           bool           `json:"allowNoIndices"`
 }
 
 // ExportFactStreamed godoc
@@ -443,8 +445,15 @@ func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, status := e.exportWrapper.AddToQueueCustom(elastic.Name, &request.SearchRequest,
-		request.Indices, request.Title, request.CSVParameters, userCtx.User, true)
+	params := export.ElasticParams{
+		Indices:           request.Indices,
+		Limit:             request.Limit,
+		Client:            elastic.Name,
+		SearchRequest:     &request.SearchRequest,
+		IgnoreUnavailable: request.IgnoreUnavailableIndices,
+		AllowNoIndices:    request.AllowNoIndices,
+	}
+	item, status := e.exportWrapper.AddToQueueCustom(request.Title, params, request.CSVParameters, userCtx.User, true)
 
 	e.handleAddToQueueResponse(w, r, status, item)
 }

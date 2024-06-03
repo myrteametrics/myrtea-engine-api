@@ -22,6 +22,15 @@ type StreamedExport struct {
 	Data chan []reader.Hit
 }
 
+type ElasticParams struct {
+	Indices           string
+	Client            string
+	Limit             int64
+	SearchRequest     *search.Request
+	IgnoreUnavailable bool
+	AllowNoIndices    bool
+}
+
 // NewStreamedExport returns a pointer to a new StreamedExport instance
 // One instance per StreamedExport since the channel Data will be closed after export is finished
 func NewStreamedExport() *StreamedExport {
@@ -62,25 +71,30 @@ func (export StreamedExport) StreamedExportFactHitsFull(ctx context.Context, f e
 	indices := fact.FindIndices(f, ti, false)
 	indicesStr := strings.Join(indices, ",")
 
-	return export.ProcessStreamedExport(ctx, "", indicesStr, searchRequest, limit)
+	params := ElasticParams{
+		Indices:       indicesStr,
+		Limit:         limit,
+		SearchRequest: searchRequest,
+	}
+	return export.ProcessStreamedExport(ctx, params)
 }
 
 // ProcessStreamedExport export data from ElasticSearch to a channel
 // using a given elastic client, request and indices to query
 // Please note that the channel is not closed when this function is executed
-func (export StreamedExport) ProcessStreamedExport(ctx context.Context, elasticClient, indicesStr string, searchRequest *search.Request, limit int64) error {
+func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params ElasticParams) error {
 	cli := elasticsearch.C() // defaults to singleton instance
 
-	if elasticClient != "" {
-		config, b, err := esconfig.R().GetByName(elasticClient)
+	if params.Client != "" {
+		config, b, err := esconfig.R().GetByName(params.Client)
 		if err != nil {
 			zap.L().Error("Error when getting esconfig from repository",
-				zap.String("elasticClient", elasticClient), zap.Error(err))
+				zap.String("elasticClient", params.Client), zap.Error(err))
 			return err
 		}
 		if !b {
 			zap.L().Error("Error when getting esconfig from repository",
-				zap.String("elasticClient", elasticClient), zap.Error(err))
+				zap.String("elasticClient", params.Client), zap.Error(err))
 			return errors.New("selected elasticClient not exists")
 		}
 		if !config.ExportActivated {
@@ -102,7 +116,7 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, elasticC
 	}
 
 	// handle pit creation
-	pit, err := cli.OpenPointInTime(indicesStr).KeepAlive("5m").Do(context.Background())
+	pit, err := cli.OpenPointInTime(params.Indices).KeepAlive("5m").Do(context.Background())
 	if err != nil {
 		zap.L().Error("OpenPointInTime failed", zap.Error(err))
 		return err
@@ -121,34 +135,35 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, elasticC
 		}
 	}()
 
-	searchRequest.Pit = &types.PointInTimeReference{Id: pit.Id, KeepAlive: "5m"}
-	searchRequest.SearchAfter = []types.FieldValue{}
-	searchRequest.Sort = append(searchRequest.Sort, "_shard_doc")
+	params.SearchRequest.Pit = &types.PointInTimeReference{Id: pit.Id, KeepAlive: "5m"}
+	params.SearchRequest.SearchAfter = []types.FieldValue{}
+	params.SearchRequest.Sort = append(params.SearchRequest.Sort, "_shard_doc")
 	// searchRequest.TrackTotalHits = false // Speeds up pagination (maybe impl?)
 
 	processed := int64(0)
-	hasLimit := limit > 0
+	hasLimit := params.Limit > 0
 	var size int
 
 	for {
 
-		if hasLimit && processed >= limit {
+		if hasLimit && processed >= params.Limit {
 			break
 		}
 
-		if !hasLimit || limit-processed > 10000 {
+		if !hasLimit || params.Limit-processed > 10000 {
 			size = 10000
 		} else {
-			size = int(limit - processed)
+			size = int(params.Limit - processed)
 		}
 
 		response, err := cli.Search().
-			Request(searchRequest).
+			Request(params.SearchRequest).
 			Size(size).
+			IgnoreUnavailable(params.IgnoreUnavailable).
+			AllowNoIndices(params.AllowNoIndices).
 			Do(context.Background())
 		if err != nil {
 			zap.L().Error("ES Search failed", zap.Error(err))
-			// TODO: maybe close PIT (defer close function?)
 			return err
 		}
 
@@ -168,7 +183,7 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, elasticC
 		}
 
 		// Handle SearchAfter to paginate
-		searchRequest.SearchAfter = response.Hits.Hits[hitsLen-1].Sort
+		params.SearchRequest.SearchAfter = response.Hits.Hits[hitsLen-1].Sort
 
 		// if ctx was cancelled, stop data pulling
 		select {
