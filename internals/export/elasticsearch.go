@@ -161,7 +161,6 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params E
 		response, err := cli.Search().
 			Request(params.SearchRequest).
 			Size(size).
-			IgnoreUnavailable(params.IgnoreUnavailable).
 			AllowNoIndices(params.AllowNoIndices).
 			Do(context.Background())
 		if err != nil {
