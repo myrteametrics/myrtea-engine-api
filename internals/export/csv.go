@@ -33,7 +33,7 @@ func WriteConvertHitsToCSV(w *csv.Writer, hits []reader.Hit, params CSVParameter
 		for _, column := range params.Columns {
 			value, err := nestedMapLookup(hit.Fields, strings.Split(column.Name, ".")...)
 			if err != nil {
-				record = append(record,"")
+				record = append(record, "")
 				continue
 			}
 

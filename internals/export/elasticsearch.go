@@ -116,9 +116,13 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params E
 	}
 
 	// handle pit creation
-	pit, err := cli.OpenPointInTime(params.Indices).
-		IgnoreUnavailable(params.IgnoreUnavailable).
-		KeepAlive("5m").Do(context.Background())
+	pitRequest := cli.OpenPointInTime(params.Indices).KeepAlive("5m")
+	if params.IgnoreUnavailable {
+		pitRequest = pitRequest.IgnoreUnavailable(true)
+	}
+
+	pit, err := pitRequest.Do(context.Background())
+
 	if err != nil {
 		zap.L().Error("OpenPointInTime failed", zap.Error(err))
 		return err
@@ -158,11 +162,15 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params E
 			size = int(params.Limit - processed)
 		}
 
-		response, err := cli.Search().
+		searchRequest := cli.Search().
 			Request(params.SearchRequest).
-			Size(size).
-			AllowNoIndices(params.AllowNoIndices).
-			Do(context.Background())
+			Size(size)
+
+		if params.AllowNoIndices {
+			searchRequest = searchRequest.AllowNoIndices(true)
+		}
+
+		response, err := searchRequest.Do(context.Background())
 		if err != nil {
 			zap.L().Error("ES Search failed", zap.Error(err))
 			return err
