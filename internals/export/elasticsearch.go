@@ -124,6 +124,11 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params E
 		return err
 	}
 
+	if err != nil {
+		zap.L().Error("OpenPointInTime failed", zap.Error(err))
+		return err
+	}
+
 	// close point in time
 	defer func() {
 		do, err := cli.ClosePointInTime().
@@ -158,11 +163,15 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params E
 			size = int(params.Limit - processed)
 		}
 
-		response, err := cli.Search().
+		searchRequest := cli.Search().
 			Request(params.SearchRequest).
-			Size(size).
-			AllowNoIndices(params.AllowNoIndices).
-			Do(context.Background())
+			Size(size)
+
+		if params.AllowNoIndices {
+			searchRequest = searchRequest.AllowNoIndices(true)
+		}
+
+		response, err := searchRequest.Do(context.Background())
 		if err != nil {
 			zap.L().Error("ES Search failed", zap.Error(err))
 			return err
