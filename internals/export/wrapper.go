@@ -59,7 +59,7 @@ type WrapperItem struct {
 	ElasticName       string          `json:"elasticName"`
 	Indices           string          `json:"-"`
 	SearchRequest     *search.Request `json:"-"`
-	AllowNoIndices    bool            `json:"-"`
+	AllowNoIndices    string          `json:"-"`
 	IgnoreUnavailable bool            `json:"-"`
 }
 

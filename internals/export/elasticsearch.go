@@ -3,12 +3,13 @@ package export
 import (
 	"context"
 	"errors"
+	"strings"
+	"time"
+
 	es "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/esconfig"
 	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
-	"strings"
-	"time"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/closepointintime"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
@@ -28,7 +29,7 @@ type ElasticParams struct {
 	Limit             int64
 	SearchRequest     *search.Request
 	IgnoreUnavailable bool
-	AllowNoIndices    bool
+	AllowNoIndices    string
 }
 
 // NewStreamedExport returns a pointer to a new StreamedExport instance
@@ -167,8 +168,8 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params E
 			Request(params.SearchRequest).
 			Size(size)
 
-		if params.AllowNoIndices {
-			searchRequest = searchRequest.AllowNoIndices(true)
+		if params.AllowNoIndices != "" {
+			searchRequest = searchRequest.AllowNoIndices(params.AllowNoIndices == "true")
 		}
 
 		response, err := searchRequest.Do(context.Background())
