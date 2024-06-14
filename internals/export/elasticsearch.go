@@ -116,12 +116,13 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params E
 	}
 
 	// handle pit creation
-	pitRequest := cli.OpenPointInTime(params.Indices).KeepAlive("5m")
-	if params.IgnoreUnavailable {
-		pitRequest = pitRequest.IgnoreUnavailable(true)
+	pit, err := cli.OpenPointInTime(params.Indices).
+		IgnoreUnavailable(params.IgnoreUnavailable).
+		KeepAlive("5m").Do(context.Background())
+	if err != nil {
+		zap.L().Error("OpenPointInTime failed", zap.Error(err))
+		return err
 	}
-
-	pit, err := pitRequest.Do(context.Background())
 
 	if err != nil {
 		zap.L().Error("OpenPointInTime failed", zap.Error(err))
