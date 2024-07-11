@@ -44,6 +44,8 @@ var (
 
 	// ErrAPIMissingParam must be used when a mandatory query parameter is missing
 	ErrAPIMissingParam = APIError{Status: http.StatusBadRequest, ErrType: "ResourceError", Code: 2000, Message: `Query has missing parameter and cannot be processed`}
+	// ErrAPIUnexpectedParamValue must be used when a parameter value is not expected
+	ErrAPIUnexpectedParamValue = APIError{Status: http.StatusBadRequest, ErrType: "ResourceError", Code: 2000, Message: `Query has unexpected parameter value and cannot be processed`}
 	// ErrAPIResourceInvalid must be used when the provided resource is invalid from a "business view" (ie. the JSON is valid, but it's content is not)
 	ErrAPIResourceInvalid = APIError{Status: http.StatusBadRequest, ErrType: "ResourceError", Code: 2001, Message: `Provided resource definition can be parsed, but is invalid`}
 	// ErrAPIResourceDuplicate must be used in case a duplicate resource has been identified

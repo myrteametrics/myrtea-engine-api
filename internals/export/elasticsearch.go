@@ -3,12 +3,13 @@ package export
 import (
 	"context"
 	"errors"
+	"strings"
+	"time"
+
 	es "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/esconfig"
 	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
-	"strings"
-	"time"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/closepointintime"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
@@ -28,7 +29,7 @@ type ElasticParams struct {
 	Limit             int64
 	SearchRequest     *search.Request
 	IgnoreUnavailable bool
-	AllowNoIndices    bool
+	AllowNoIndices    string
 }
 
 // NewStreamedExport returns a pointer to a new StreamedExport instance
@@ -116,7 +117,14 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params E
 	}
 
 	// handle pit creation
-	pit, err := cli.OpenPointInTime(params.Indices).KeepAlive("5m").Do(context.Background())
+	pit, err := cli.OpenPointInTime(params.Indices).
+		IgnoreUnavailable(params.IgnoreUnavailable).
+		KeepAlive("5m").Do(context.Background())
+	if err != nil {
+		zap.L().Error("OpenPointInTime failed", zap.Error(err))
+		return err
+	}
+
 	if err != nil {
 		zap.L().Error("OpenPointInTime failed", zap.Error(err))
 		return err
@@ -156,12 +164,15 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params E
 			size = int(params.Limit - processed)
 		}
 
-		response, err := cli.Search().
+		searchRequest := cli.Search().
 			Request(params.SearchRequest).
-			Size(size).
-			IgnoreUnavailable(params.IgnoreUnavailable).
-			AllowNoIndices(params.AllowNoIndices).
-			Do(context.Background())
+			Size(size)
+
+		if params.AllowNoIndices != "" {
+			searchRequest = searchRequest.AllowNoIndices(params.AllowNoIndices == "true")
+		}
+
+		response, err := searchRequest.Do(context.Background())
 		if err != nil {
 			zap.L().Error("ES Search failed", zap.Error(err))
 			return err

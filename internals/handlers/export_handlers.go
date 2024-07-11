@@ -50,7 +50,7 @@ type CustomExportRequest struct {
 	SearchRequest            search.Request `json:"searchRequest"`
 	ElasticName              string         `json:"elasticName"`
 	IgnoreUnavailableIndices bool           `json:"ignoreUnavailableIndices"`
-	AllowNoIndices           bool           `json:"allowNoIndices"`
+	AllowNoIndices           string           `json:"allowNoIndices"`
 }
 
 // ExportFactStreamed godoc
