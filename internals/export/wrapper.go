@@ -55,12 +55,12 @@ type WrapperItem struct {
 	FactParameters map[string]string `json:"factParameters"`
 
 	// For custom export requests
-	Custom            bool            `json:"custom"`
-	ElasticName       string          `json:"elasticName"`
-	Indices           string          `json:"-"`
-	SearchRequest     *search.Request `json:"-"`
-	AllowNoIndices    string          `json:"-"`
-	IgnoreUnavailable bool            `json:"-"`
+	Custom            bool             `json:"custom"`
+	ElasticName       string           `json:"elasticName"`
+	Indices           string           `json:"-"`
+	SearchRequests    []search.Request `json:"-"`
+	AllowNoIndices    string           `json:"-"`
+	IgnoreUnavailable bool             `json:"-"`
 }
 
 type Wrapper struct {
@@ -233,7 +233,7 @@ func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParam
 // AddToQueueCustom Adds a new export with a custom elastic connection and a custom search request
 //
 // addHashPrefix adds a hash as prefix to resulting files, to avoid duplicates
-func (ew *Wrapper) AddToQueueCustom(title string, esParams ElasticParams, params CSVParameters, user users.User, addHashPrefix bool) (*WrapperItem, int) {
+func (ew *Wrapper) AddToQueueCustom(title string, esParams ElasticParams, searchRequests []search.Request, params CSVParameters, user users.User, addHashPrefix bool) (*WrapperItem, int) {
 	ew.queueMutex.Lock()
 	defer ew.queueMutex.Unlock()
 
@@ -260,7 +260,7 @@ func (ew *Wrapper) AddToQueueCustom(title string, esParams ElasticParams, params
 	item := NewWrapperItem([]engine.Fact{}, title, params, user, map[string]string{}, addHashPrefix)
 	item.Custom = true
 	item.ElasticName = esParams.Client
-	item.SearchRequest = esParams.SearchRequest
+	item.SearchRequests = searchRequests
 	item.Indices = esParams.Indices
 	item.IgnoreUnavailable = esParams.IgnoreUnavailable
 	item.AllowNoIndices = esParams.AllowNoIndices
