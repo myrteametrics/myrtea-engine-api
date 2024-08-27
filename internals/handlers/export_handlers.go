@@ -431,6 +431,12 @@ func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(request.SearchRequests) == 0 {
+		zap.L().Warn("Missing searchRequests (len is 0) in export request")
+		render.Error(w, r, render.ErrAPIMissingParam, errors.New("missing searchRequests (len is 0)"))
+		return
+	}
+
 	if len(request.SearchRequests) > viper.GetInt("EXPORT_MAX_CUSTOM_SEARCH_REQUESTS") {
 		zap.L().Warn("Maximum single custom export search requests reached", zap.Int("count", len(request.SearchRequests)))
 		render.Error(w, r, render.ErrAPITooManyRequests, errors.New("maximum single custom export search requests reached"))
