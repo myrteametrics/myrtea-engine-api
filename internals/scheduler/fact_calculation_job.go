@@ -117,6 +117,7 @@ func (job FactCalculationJob) Run() {
 	localRuleEngine, err := evaluator.BuildLocalRuleEngine("standart")
 	if err != nil {
 		zap.L().Error("BuildLocalRuleEngine", zap.Error(err))
+		S().RemoveRunningJob(job.ScheduleID)
 		return
 	}
 
