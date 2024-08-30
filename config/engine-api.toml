@@ -270,3 +270,7 @@ EXPORT_DIRECT_DOWNLOAD = true
 # Full URL to the exports directory
 # Default value: ""
 EXPORT_INDIRECT_DOWNLOAD_URL = ""
+
+# Maximum search requests in a single custom export request
+# Default value: 10
+EXPORT_MAX_CUSTOM_SEARCH_REQUESTS = 10

@@ -166,11 +166,17 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 				Indices:           item.Indices,
 				Limit:             item.Params.Limit,
 				Client:            item.ElasticName,
-				SearchRequest:     item.SearchRequest,
 				IgnoreUnavailable: item.IgnoreUnavailable,
 				AllowNoIndices:    item.AllowNoIndices,
 			}
-			writerErr = streamedExport.ProcessStreamedExport(ctx, params)
+
+			for _, searchRequest := range item.SearchRequests {
+				writerErr = streamedExport.ProcessStreamedExport(ctx, &searchRequest, params)
+				if writerErr != nil {
+					break
+				}
+			}
+
 		} else {
 			for _, f := range item.Facts {
 				writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, item.Params.Limit, item.FactParameters)
