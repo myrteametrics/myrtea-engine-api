@@ -27,7 +27,6 @@ type ElasticParams struct {
 	Indices           string
 	Client            string
 	Limit             int64
-	SearchRequest     *search.Request
 	IgnoreUnavailable bool
 	AllowNoIndices    string
 }
@@ -73,17 +72,16 @@ func (export StreamedExport) StreamedExportFactHitsFull(ctx context.Context, f e
 	indicesStr := strings.Join(indices, ",")
 
 	params := ElasticParams{
-		Indices:       indicesStr,
-		Limit:         limit,
-		SearchRequest: searchRequest,
+		Indices: indicesStr,
+		Limit:   limit,
 	}
-	return export.ProcessStreamedExport(ctx, params)
+	return export.ProcessStreamedExport(ctx, searchRequest, params)
 }
 
 // ProcessStreamedExport export data from ElasticSearch to a channel
 // using a given elastic client, request and indices to query
 // Please note that the channel is not closed when this function is executed
-func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params ElasticParams) error {
+func (export StreamedExport) ProcessStreamedExport(ctx context.Context, searchRequest *search.Request, params ElasticParams) error {
 	cli := elasticsearch.C() // defaults to singleton instance
 
 	if params.Client != "" {
@@ -143,9 +141,9 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params E
 		}
 	}()
 
-	params.SearchRequest.Pit = &types.PointInTimeReference{Id: pit.Id, KeepAlive: "5m"}
-	params.SearchRequest.SearchAfter = []types.FieldValue{}
-	params.SearchRequest.Sort = append(params.SearchRequest.Sort, "_shard_doc")
+	searchRequest.Pit = &types.PointInTimeReference{Id: pit.Id, KeepAlive: "5m"}
+	searchRequest.SearchAfter = []types.FieldValue{}
+	searchRequest.Sort = append(searchRequest.Sort, "_shard_doc")
 	// searchRequest.TrackTotalHits = false // Speeds up pagination (maybe impl?)
 
 	processed := int64(0)
@@ -164,15 +162,15 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params E
 			size = int(params.Limit - processed)
 		}
 
-		searchRequest := cli.Search().
-			Request(params.SearchRequest).
+		customSearchRequest := cli.Search().
+			Request(searchRequest).
 			Size(size)
 
 		if params.AllowNoIndices != "" {
-			searchRequest = searchRequest.AllowNoIndices(params.AllowNoIndices == "true")
+			customSearchRequest = customSearchRequest.AllowNoIndices(params.AllowNoIndices == "true")
 		}
 
-		response, err := searchRequest.Do(context.Background())
+		response, err := customSearchRequest.Do(context.Background())
 		if err != nil {
 			zap.L().Error("ES Search failed", zap.Error(err))
 			return err
@@ -194,7 +192,7 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, params E
 		}
 
 		// Handle SearchAfter to paginate
-		params.SearchRequest.SearchAfter = response.Hits.Hits[hitsLen-1].Sort
+		searchRequest.SearchAfter = response.Hits.Hits[hitsLen-1].Sort
 
 		// if ctx was cancelled, stop data pulling
 		select {

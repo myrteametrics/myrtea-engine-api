@@ -3,6 +3,7 @@ package export
 import (
 	"context"
 	"fmt"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"os"
 	"path/filepath"
 	"strings"
@@ -93,13 +94,13 @@ func TestAddToQueueCustom(t *testing.T) {
 	user2 := users.User{Login: "blabla"}
 	esParams := ElasticParams{}
 	csvParams := CSVParameters{}
-	_, result := wrapper.AddToQueueCustom("test.txt", esParams, csvParams, user1, false)
+	_, result := wrapper.AddToQueueCustom("test.txt", esParams, []search.Request{}, csvParams, user1, false)
 	expression.AssertEqual(t, result, CodeAdded, "AddToQueueCustom should return CodeAdded")
-	_, result = wrapper.AddToQueueCustom("test.txt", esParams, csvParams, user1, false)
+	_, result = wrapper.AddToQueueCustom("test.txt", esParams, []search.Request{}, csvParams, user1, false)
 	expression.AssertEqual(t, result, CodeUserExists, "AddToQueueCustom should return CodeUserExists")
-	_, result = wrapper.AddToQueueCustom("test.txt", esParams, csvParams, user2, false)
+	_, result = wrapper.AddToQueueCustom("test.txt", esParams, []search.Request{}, csvParams, user2, false)
 	expression.AssertEqual(t, result, CodeUserAdded, "AddToQueueCustom should return CodeUserAdded")
-	_, result = wrapper.AddToQueueCustom("test2.txt", esParams, csvParams, user2, false)
+	_, result = wrapper.AddToQueueCustom("test2.txt", esParams, []search.Request{}, csvParams, user2, false)
 	expression.AssertEqual(t, result, CodeQueueFull, "AddToQueueCustom should return CodeQueueFull")
 }
 

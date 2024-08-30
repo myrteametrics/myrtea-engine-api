@@ -6,7 +6,7 @@ type CSVParameters struct {
 	Columns       []Column `json:"columns"`
 	Separator     string   `json:"separator"`
 	Limit         int64    `json:"limit"`
-	ListSeparator string   `json:"listSeparator`
+	ListSeparator string   `json:"listSeparator"`
 }
 
 type Column struct {
