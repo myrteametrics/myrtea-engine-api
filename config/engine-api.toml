@@ -274,3 +274,9 @@ EXPORT_INDIRECT_DOWNLOAD_URL = ""
 # Maximum search requests in a single custom export request
 # Default value: 10
 EXPORT_MAX_CUSTOM_SEARCH_REQUESTS = 10
+
+# Specify the maximum number of historical versions to keep for External Configs
+# When a new version is added, any versions exceeding this number will be deleted,
+# starting with the oldest versions to retain only the most recent ones.
+# Default value: 5
+MAX_EXTERNAL_CONFIG_VERSIONS_TO_KEEP = 5

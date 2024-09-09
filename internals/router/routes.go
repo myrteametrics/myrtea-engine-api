@@ -91,6 +91,7 @@ func engineRouter(services Services) http.Handler {
 
 	r.Get("/externalconfigs", handlers.GetExternalConfigs)
 	r.Get("/externalconfigs/{id}", handlers.GetExternalConfig)
+	r.Get("/externalconfigs/{id}/alloldversions", handlers.GetAllOldVersions)
 	r.Get("/externalconfigs/name/{name}", handlers.GetExternalConfigByName)
 	r.Post("/externalconfigs", handlers.PostExternalConfig)
 	r.Put("/externalconfigs/{id}", handlers.PutExternalConfig)
