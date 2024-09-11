@@ -64,13 +64,7 @@ func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/externalconfigs/{id} [get]
 func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
-
-	userCtx, _ := GetUserFromContext(r)
-	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
-		return
-	}
-
+	
 	id := chi.URLParam(r, "id")
 	idExternalConfig, err := strconv.ParseInt(id, 10, 64)
 
@@ -107,12 +101,6 @@ func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/externalconfigs/name/{name} [get]
 func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
-
-	userCtx, _ := GetUserFromContext(r)
-	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
-		return
-	}
 
 	escapedName := chi.URLParam(r, "name")
 	name, err := url.QueryUnescape(escapedName)
