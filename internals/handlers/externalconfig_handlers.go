@@ -151,7 +151,7 @@ func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/externalconfigs [post]
 func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
-	
+
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionCreate)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
