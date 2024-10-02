@@ -54,6 +54,7 @@ var AllowedConfigKey = [][]helpers.ConfigKey{
 		{Type: helpers.StringFlag, Name: "AUTHENTICATION_OIDC_FRONT_END_URL", DefaultValue: "https://127.0.0.1:4200", Description: "The URL of the front-end application to which the user will be redirected after successful authentication."},
 		{Type: helpers.StringFlag, Name: "AUTHENTICATION_OIDC_ENCRYPTION_KEY", DefaultValue: "hisis24characterslongs", Description: "The secret key used for state encryption/decryption in the OpenID Connect authentication process."},
 		{Type: helpers.StringFlag, Name: "AUTHENTICATION_OIDC_SCOPES ", DefaultValue: "The scopes of access requested when authenticating with the OIDC server. (Only if AUTHENTICATION_MODE=`OIDC`)"},
+		{Type: helpers.StringFlag, Name: "MAX_EXTERNAL_CONFIG_VERSIONS_TO_KEEP", DefaultValue: 5, Description: "Maximum number of historical versions to keep for external configurations. When a new version is added, versions exceeding this number will be deleted, starting with the oldest."},
 	},
 }
 

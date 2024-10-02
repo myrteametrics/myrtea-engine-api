@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/esconfig"
+	"errors"
 	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/esconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
@@ -24,6 +27,13 @@ import (
 // @Failure 500 "internal server error"
 // @Router /engine/esconfigs [get]
 func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	elasticSearchConfigs, err := esconfig.R().GetAll()
 	if err != nil {
 		zap.L().Error("Error getting elasticSearchConfigs", zap.Error(err))
@@ -54,6 +64,12 @@ func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/esconfigs/{id} [get]
 func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	id := chi.URLParam(r, "id")
 	idElasticSearchConfig, err := strconv.ParseInt(id, 10, 64)
 
@@ -90,6 +106,13 @@ func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/esconfigs/name/{name} [get]
 func GetElasticSearchConfigByName(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	escapedName := chi.URLParam(r, "name")
 	name, err := url.QueryUnescape(escapedName)
 	if err != nil {
@@ -124,6 +147,13 @@ func GetElasticSearchConfigByName(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/esconfigs/default [get]
 func GetDefaultElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	a, found, err := esconfig.R().GetDefault()
 	if err != nil {
 		zap.L().Error("Cannot get default elasticSearchConfig", zap.Error(err))
@@ -153,6 +183,12 @@ func GetDefaultElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/esconfigs [post]
 func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
 
 	var newElasticSearchConfig models.ElasticSearchConfig
 	err := json.NewDecoder(r.Body).Decode(&newElasticSearchConfig)
@@ -198,6 +234,13 @@ func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/esconfigs/{id} [put]
 func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	id := chi.URLParam(r, "id")
 	idElasticSearchConfig, err := strconv.ParseInt(id, 10, 64)
 
@@ -249,6 +292,13 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/esconfigs/{id} [delete]
 func DeleteElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionDelete)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	id := chi.URLParam(r, "id")
 	idElasticSearchConfig, err := strconv.ParseInt(id, 10, 64)
 

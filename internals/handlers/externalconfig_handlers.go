@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/externalconfig"
+	"errors"
 	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/config/externalconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
@@ -24,6 +27,13 @@ import (
 // @Failure 500 "internal server error"
 // @Router /engine/externalconfigs [get]
 func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	externalConfigs, err := externalconfig.R().GetAll()
 	if err != nil {
 		zap.L().Error("Error getting externalConfigs", zap.Error(err))
@@ -54,6 +64,7 @@ func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/externalconfigs/{id} [get]
 func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
+	
 	id := chi.URLParam(r, "id")
 	idExternalConfig, err := strconv.ParseInt(id, 10, 64)
 
@@ -90,6 +101,7 @@ func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/externalconfigs/name/{name} [get]
 func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
+
 	escapedName := chi.URLParam(r, "name")
 	name, err := url.QueryUnescape(escapedName)
 	if err != nil {
@@ -127,6 +139,12 @@ func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/externalconfigs [post]
 func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
 
 	var newExternalConfig models.ExternalConfig
 	err := json.NewDecoder(r.Body).Decode(&newExternalConfig)
@@ -172,6 +190,13 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/externalconfigs/{name} [put]
 func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	id := chi.URLParam(r, "id")
 	idExternalConfig, err := strconv.ParseInt(id, 10, 64)
 
@@ -223,6 +248,13 @@ func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/externalconfigs/{name} [delete]
 func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionDelete)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	id := chi.URLParam(r, "id")
 	idExternalConfig, err := strconv.ParseInt(id, 10, 64)
 
@@ -241,4 +273,46 @@ func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.OK(w, r)
+}
+
+// GetAllOldVersions godoc
+// @Summary Get all old versions of a specific externalConfig
+// @Description Get all old versions of a specific externalConfig by id
+// @Tags ExternalConfigs
+// @Produce json
+// @Security Bearer
+// @Param id path int true "ExternalConfig ID"
+// @Success 200 {array} models.ExternalConfig "list of all old versions of the externalConfig"
+// @Failure 400 "bad request"
+// @Failure 500 "internal server error"
+// @Router /engine/externalconfigs/{id}/alloldversions [get]
+func GetAllOldVersions(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+	idExternalConfig, err := strconv.ParseInt(id, 10, 64)
+
+	if err != nil {
+		zap.L().Warn("Error on parsing external config id", zap.String("idExternalConfig", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	oldVersions, err := externalconfig.R().GetAllOldVersions(idExternalConfig)
+	if err != nil {
+		zap.L().Error("Error getting old versions of externalConfig", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	if oldVersions == nil {
+		render.JSON(w, r, []models.ExternalConfig{})
+		return
+	}
+	render.JSON(w, r, oldVersions)
 }
