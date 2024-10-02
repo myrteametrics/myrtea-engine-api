@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/variablesconfig"
 	"go.uber.org/zap"
 )
@@ -22,6 +24,13 @@ import (
 // @Failure 500 "internal server error"
 // @Router /engine/variablesconfig [get]
 func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	VariablesConfig, err := variablesconfig.R().GetAll()
 	if err != nil {
 		zap.L().Error("Error getting VariableConfigs", zap.Error(err))
@@ -43,6 +52,13 @@ func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/variablesconfig/{id} [get]
 func GetVariableConfig(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	id := chi.URLParam(r, "id")
 	idVariableConfig, err := strconv.ParseInt(id, 10, 64)
 
@@ -79,6 +95,13 @@ func GetVariableConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/variablesconfig/key/{key} [get]
 func GetVariableConfigByKey(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	key := chi.URLParam(r, "key")
 
 	a, found, err := variablesconfig.R().GetByKey(key)
@@ -110,6 +133,12 @@ func GetVariableConfigByKey(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/variablesconfig [post]
 func PostVariableConfig(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionCreate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
 
 	var newVariableConfig models.VariablesConfig
 	err := json.NewDecoder(r.Body).Decode(&newVariableConfig)
@@ -155,6 +184,13 @@ func PostVariableConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 "Status" internal server error"
 // @Router /engine/variablesconfig/{id} [put]
 func PutVariableConfig(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	id := chi.URLParam(r, "id")
 	idVariableConfig, err := strconv.ParseInt(id, 10, 64)
 
@@ -206,6 +242,13 @@ func PutVariableConfig(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 "Status Bad Request"
 // @Router /engine/variablesconfig/{id} [delete]
 func DeleteVariableConfig(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionUpdate)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	id := chi.URLParam(r, "id")
 	idVariableConfig, err := strconv.ParseInt(id, 10, 64)
 

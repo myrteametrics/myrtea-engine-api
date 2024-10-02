@@ -16,6 +16,7 @@ type Repository interface {
 	Update(id int64, config models.ExternalConfig) error
 	Delete(id int64) error
 	GetAll() (map[int64]models.ExternalConfig, error)
+	GetAllOldVersions(id int64) ([]models.ExternalConfig, error)
 }
 
 var (
