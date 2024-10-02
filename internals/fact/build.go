@@ -3,7 +3,6 @@ package fact
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact/lexer"
@@ -31,18 +30,19 @@ func BuildFactsFromFile(path string, file string) (map[string]*engine.Fact, []er
 	factsRaw := conf.GetStringMap("facts")
 	for rawFactKey, rawFactValue := range factsRaw {
 		zap.L().Info("Reflecting fact", zap.String("fact", rawFactKey))
-		if reflect.ValueOf(rawFactValue).Kind() != reflect.Map {
+
+		if factValueMap, ok := rawFactValue.(map[string]interface{}); ok {
+			fact, err := ParseFact(rawFactKey, factValueMap)
+			if err != nil {
+				errs = append(errs, errors.New(rawFactKey+": "+err.Error()))
+			}
+
+			if fact != nil {
+				facts[rawFactKey] = fact
+			}
+		} else {
 			zap.L().Info("ERROR: Reflect fact data is not a map", zap.String("fact", rawFactKey))
 			continue
-		}
-
-		fact, err := ParseFact(rawFactKey, rawFactValue.(map[string]interface{}))
-		if err != nil {
-			errs = append(errs, errors.New(rawFactKey+": "+err.Error()))
-		}
-
-		if fact != nil {
-			facts[rawFactKey] = fact
 		}
 	}
 	return facts, errs
@@ -63,38 +63,37 @@ func ParseFact(factName string, factData map[string]interface{}) (*engine.Fact, 
 
 		switch factFieldKey {
 		case "source":
-			if reflect.ValueOf(factFieldValue).Kind() == reflect.String {
-				source = factFieldValue.(string)
+			if val, ok := factFieldValue.(string); ok {
+				source = val
 			} else {
 				return nil, errors.New("source is not a string")
 			}
 
 		case "model":
-			if reflect.ValueOf(factFieldValue).Kind() == reflect.String {
-				model = factFieldValue.(string)
+			if val, ok := factFieldValue.(string); ok {
+				model = val
 			} else {
 				return nil, errors.New("model is not a string")
 			}
 
 		case "operator":
-			if reflect.ValueOf(factFieldValue).Kind() == reflect.String {
-				intentOperator = factFieldValue.(string)
+			if val, ok := factFieldValue.(string); ok {
+				intentOperator = val
 			} else {
 				return nil, errors.New("intent operator is not a string")
 			}
 
 		case "term":
-			if reflect.ValueOf(factFieldValue).Kind() == reflect.String {
-				term = factFieldValue.(string)
+			if val, ok := factFieldValue.(string); ok {
+				term = val
 			} else {
 				return nil, errors.New("term is not a string")
 			}
 
 		case "dimensions":
-			if reflect.ValueOf(factFieldValue).Kind() == reflect.Slice {
-				factDimensions := factFieldValue.([]interface{})
+			if factDimensions, ok := factFieldValue.([]interface{}); ok {
 				for _, iDimension := range factDimensions {
-					if reflect.ValueOf(iDimension).Kind() == reflect.String {
+					if _, ok := iDimension.(string); ok {
 						dim := iDimension.(string)
 						dimParts := strings.Split(dim, " ")
 						operator := strings.ToLower(dimParts[0])
@@ -119,9 +118,7 @@ func ParseFact(factName string, factData map[string]interface{}) (*engine.Fact, 
 			}
 
 		case "filters":
-			if reflect.ValueOf(factFieldValue).Kind() == reflect.Map {
-				filters := factFieldValue.(map[string]interface{})
-
+			if filters, ok := factFieldValue.(map[string]interface{}); ok {
 				if len(filters) > 1 {
 					return nil, errors.New("more than one conditions group on root")
 				}
@@ -140,8 +137,8 @@ func ParseFact(factName string, factData map[string]interface{}) (*engine.Fact, 
 			}
 
 		case "comment":
-			if reflect.ValueOf(factFieldValue).Kind() == reflect.String {
-				comment = factFieldValue.(string)
+			if val, ok := factFieldValue.(string); ok {
+				comment = val
 			} else {
 				return nil, errors.New("comment is not a string")
 			}
@@ -196,59 +193,63 @@ func parseFilters(filters map[string]interface{}) ([]engine.ConditionFragment, e
 	for key, value := range filters {
 		switch key {
 		case "conditions":
-			if reflect.ValueOf(value).Kind() != reflect.Slice {
+			if valueSlice, ok := value.([]interface{}); ok {
+				leafFrags, err := getConditions(valueSlice)
+				if err != nil {
+					return nil, err
+				}
+				fragments = append(fragments, leafFrags...)
+			} else {
 				return nil, errors.New("conditions value is not a slice")
 			}
-			leafFrags, err := getConditions(value.([]interface{}))
-			if err != nil {
-				return nil, err
-			}
-			fragments = append(fragments, leafFrags...)
 
 		case "and":
-			if reflect.ValueOf(value).Kind() != reflect.Map {
+			if valueMap, ok := value.(map[string]interface{}); ok {
+				frags, err := parseFilters(valueMap)
+				if err != nil {
+					return nil, err
+				}
+				and, err := engine.GetBooleanFragment(engine.And.String())
+				if err != nil {
+					return nil, err
+				}
+				and.Fragments = frags
+				fragments = append(fragments, and)
+			} else {
 				return nil, errors.New("and value is not a map or has no children")
 			}
-			frags, err := parseFilters(value.(map[string]interface{}))
-			if err != nil {
-				return nil, err
-			}
-			and, err := engine.GetBooleanFragment(engine.And.String())
-			if err != nil {
-				return nil, err
-			}
-			and.Fragments = frags
-			fragments = append(fragments, and)
 
 		case "or":
-			if reflect.ValueOf(value).Kind() != reflect.Map {
+			if valueMap, ok := value.(map[string]interface{}); ok {
+				frags, err := parseFilters(valueMap)
+				if err != nil {
+					return nil, err
+				}
+				or, err := engine.GetBooleanFragment(engine.Or.String())
+				if err != nil {
+					return nil, err
+				}
+				or.Fragments = frags
+				fragments = append(fragments, or)
+			} else {
 				return nil, errors.New("or value is not a map or has no children")
 			}
-			frags, err := parseFilters(value.(map[string]interface{}))
-			if err != nil {
-				return nil, err
-			}
-			or, err := engine.GetBooleanFragment(engine.Or.String())
-			if err != nil {
-				return nil, err
-			}
-			or.Fragments = frags
-			fragments = append(fragments, or)
 
 		case "not":
-			if reflect.ValueOf(value).Kind() != reflect.Map {
+			if valueMap, ok := value.(map[string]interface{}); ok {
+				frags, err := parseFilters(valueMap)
+				if err != nil {
+					return nil, err
+				}
+				not, err := engine.GetBooleanFragment(engine.Not.String())
+				if err != nil {
+					return nil, err
+				}
+				not.Fragments = frags
+				fragments = append(fragments, not)
+			} else {
 				return nil, errors.New("not value is not a map or has no children")
 			}
-			frags, err := parseFilters(value.(map[string]interface{}))
-			if err != nil {
-				return nil, err
-			}
-			not, err := engine.GetBooleanFragment(engine.Not.String())
-			if err != nil {
-				return nil, err
-			}
-			not.Fragments = frags
-			fragments = append(fragments, not)
 
 		default:
 			return nil, errors.New("unknown config key " + key)
@@ -259,24 +260,26 @@ func parseFilters(filters map[string]interface{}) ([]engine.ConditionFragment, e
 }
 
 func getConditions(conditionsStr []interface{}) ([]engine.ConditionFragment, error) {
-
 	lexerC := lexer.L()
 	leafConditions := make([]engine.ConditionFragment, 0)
 
-	if len(conditionsStr) > 0 {
-		for _, conditionStr := range conditionsStr {
-			if reflect.ValueOf(conditionStr).Kind() != reflect.String {
-				return nil, errors.New("condition is not a string")
-			}
-			nodes, _ := lexerC.Ast.Parsewith(lexerC.Parser, parsec.NewScanner([]byte(conditionStr.(string))))
+	if len(conditionsStr) == 0 {
+		return leafConditions, nil
+	}
+
+	for _, conditionStr := range conditionsStr {
+		if condition, ok := conditionStr.(string); ok {
+			nodes, _ := lexerC.Ast.Parsewith(lexerC.Parser, parsec.NewScanner([]byte(condition)))
 			if nodes == nil {
-				return nil, errors.New("cannot parse expression : " + conditionStr.(string))
+				return nil, errors.New("cannot parse expression : " + condition)
 			}
 			leafCondition, err := astToLeafCondition(nodes)
 			if err != nil {
 				return nil, errors.New("cannot convert condition AST in condition fragment")
 			}
 			leafConditions = append(leafConditions, leafCondition)
+		} else {
+			return nil, errors.New("condition is not a string")
 		}
 	}
 
