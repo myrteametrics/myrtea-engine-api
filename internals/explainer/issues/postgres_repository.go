@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/utils/queryutils"
 	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/queryutils"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/users"
 	"go.uber.org/zap"
 )
@@ -182,10 +182,10 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, u
 	return nil
 }
 
-// GetOpenStateByKey get all issues that belong to the same situation in 'open' or 'draft' states
+// GetOpenAndDraftIssuesByKey get all issues that belong to the same situation in 'open' or 'draft' states
 // if existed
 func (r *PostgresRepository) GetOpenAndDraftIssuesByKey(key string) (map[int64]models.Issue, error) {
-	issues := make(map[int64]models.Issue, 0)
+	issues := make(map[int64]models.Issue)
 
 	query := `SELECT i.id, i.key, i.name, i.level,  i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
@@ -244,7 +244,7 @@ func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS
 	return issues, nil
 }
 
-//Get used to get issues by key
+// Get used to get issues by key
 func (r *PostgresRepository) GetByKeyByPage(key string, options models.SearchOptions) ([]models.Issue, int, error) {
 	issues := make([]models.Issue, 0)
 
@@ -752,9 +752,8 @@ func (r *PostgresRepository) DeleteOldIssueResolutions(ts time.Time) error {
 	if err != nil {
 		return err
 	}
-    
+
 	zap.L().Info("Auto purge of the table issue_resolution_v1 ", zap.Int64("Number of rows deleted", affectedRows))
 
 	return nil
 }
-
