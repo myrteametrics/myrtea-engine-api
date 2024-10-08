@@ -147,7 +147,11 @@ func Parse(res *search.Response) (*WidgetData, error) {
 			zap.L().Warn("Cannot unmarshall Source", zap.Any("source", hit.Source_))
 			continue
 		}
-		hits = append(hits, Hit{ID: hit.Id_, Fields: fields})
+		if hit.Id_ == nil {
+			zap.L().Warn("Cannot get ID", zap.Any("hit", hit))
+			continue
+		}
+		hits = append(hits, Hit{ID: *hit.Id_, Fields: fields})
 	}
 
 	widgetData := WidgetData{

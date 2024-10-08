@@ -298,7 +298,6 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Fact ID"
 // @Param byName query string false "Find fact by it's name"
 // @Param time query string false "Timestamp used for the fact execution"
-// @Param cache query string false "Cache maximum age in minutes(go duration: 10m, 1h, ...). If unset, use cache with no limit of age. If set to 0, disable cache"
 // @Param nhit query int false "Hit per page"
 // @Param offset query int false "Offset number"
 // @Param placeholders query string false "Placeholders (format: key1:value1,key2:value2)"
@@ -507,7 +506,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 
 	factParameters, err := ParseFactParameters(r.URL.Query().Get("factParameters"))
 	if err != nil {
-		zap.L().Error("Parse input FactParametres", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("factParameters")))
+		zap.L().Error("Parse input FactParameters", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("factParameters")))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
 		return
 	}
@@ -580,23 +579,23 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var situationInstance situation.TemplateInstance
-		situationInstaceIDStr := r.URL.Query().Get("situationInstanceId")
-		if situationInstaceIDStr != "" {
-			situationInstaceID, err := strconv.ParseInt(situationInstaceIDStr, 10, 64)
+		situationInstanceIDStr := r.URL.Query().Get("situationInstanceId")
+		if situationInstanceIDStr != "" {
+			situationInstanceID, err := strconv.ParseInt(situationInstanceIDStr, 10, 64)
 			if err != nil {
 				zap.L().Warn("Parse input situationInstanceId", zap.Error(err), zap.String("rawSituationInstanceId", r.URL.Query().Get("situationInstanceId")))
 				render.Error(w, r, render.ErrAPIParsingInteger, err)
 				return
 			}
 
-			situationInstance, found, err = situation.R().GetTemplateInstance(situationInstaceID)
+			situationInstance, found, err = situation.R().GetTemplateInstance(situationInstanceID)
 			if err != nil {
-				zap.L().Error("Cannot retrieve situation Instance", zap.Int64("situationInstanceID", situationInstaceID), zap.Error(err))
+				zap.L().Error("Cannot retrieve situation Instance", zap.Int64("situationInstanceID", situationInstanceID), zap.Error(err))
 				render.Error(w, r, render.ErrAPIDBSelectFailed, err)
 				return
 			}
 			if !found {
-				zap.L().Warn("Situation Instance does not exists", zap.Int64("situationInstanceID", situationInstaceID))
+				zap.L().Warn("Situation Instance does not exists", zap.Int64("situationInstanceID", situationInstanceID))
 				render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
 				return
 			}
@@ -640,7 +639,6 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 // @Param situationid query string false "Optional SituationID"
 // @Param instanceid query string false "Optional InstanceID"
 // @Param time query string true "Timestamp used for the fact execution"
-// @Param cache query string false "Cache maximum age in minutes(go duration: 10m, 1h, ...). If unset, use cache with no limit of age. If set to 0, disable cache"
 // @Param nhit query int false "Hit per page"
 // @Param offset query int false "Offset number"
 // @Param placeholders query string false "Placeholders (format: key1:value1,key2:value2)"
