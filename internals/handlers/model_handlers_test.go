@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"net/http"
 	"testing"
 
@@ -47,7 +48,7 @@ func initModelRepository(t *testing.T) []modeler.Model {
 			EnablePurge:               true,
 			PurgeMaxConcurrentIndices: 30,
 			PatchAliasMaxIndices:      2,
-			AdvancedSettings:          map[string]interface{}{"number_of_replica": 2, "number_of_shard": 6},
+			AdvancedSettings:          types.IndexSettings{NumberOfReplicas: "2", NumberOfShards: "6"},
 		},
 		Source: "{}",
 	}
@@ -61,7 +62,7 @@ func initModelRepository(t *testing.T) []modeler.Model {
 			EnablePurge:               true,
 			PurgeMaxConcurrentIndices: 30,
 			PatchAliasMaxIndices:      2,
-			AdvancedSettings:          map[string]interface{}{"number_of_replica": 2, "number_of_shard": 6},
+			AdvancedSettings:          types.IndexSettings{NumberOfReplicas: "2", NumberOfShards: "6"},
 		},
 		Source: "{}",
 	}
