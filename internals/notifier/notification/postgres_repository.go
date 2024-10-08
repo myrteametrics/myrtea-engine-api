@@ -2,11 +2,11 @@ package notification
 
 import (
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/utils/dbutils"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/dbutils"
 )
 
 // PostgresRepository is a repository containing the Fact definition based on a PSQL database and

@@ -2,10 +2,9 @@ package notification
 
 import (
 	sq "github.com/Masterminds/squirrel"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/utils/dbutils"
 	"sync"
 	"time"
-
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/dbutils"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend
