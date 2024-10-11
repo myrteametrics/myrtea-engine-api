@@ -6,7 +6,7 @@ toolchain go1.22.3
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/coreos/go-oidc/v3 v3.10.0
+	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/crewjam/saml v0.4.14
 	github.com/elastic/go-elasticsearch/v8 v8.15.0
 	github.com/go-chi/chi/v5 v5.1.0
@@ -14,13 +14,13 @@ require (
 	github.com/go-chi/jwtauth/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/context v1.1.2
-	github.com/gorilla/websocket v1.5.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-plugin v1.6.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/json-iterator/go v1.1.12
 	github.com/lib/pq v1.10.9
-	github.com/myrteametrics/myrtea-sdk/v5 v5.0.9
+	github.com/myrteametrics/myrtea-sdk/v5 v5.1.0
 	github.com/prataprc/goparsec v0.0.0-20211219142520-daac0e635e7e
 	github.com/prometheus/client_golang v1.20.2
 	github.com/robfig/cron/v3 v3.0.1
@@ -52,7 +52,7 @@ require (
 	github.com/elastic/elastic-transport-go/v8 v8.6.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.0.1 // indirect
+	github.com/go-jose/go-jose/v4 v4.0.2 // indirect
 	github.com/go-kit/kit v0.13.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
