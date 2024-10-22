@@ -223,7 +223,7 @@ func (r *PostgresRepository) Update(id int64, externalConfig models.ExternalConf
 			ToSql()
 
 		if err != nil {
-			tx.Rollback() // Annulation de la transaction en cas d'erreur
+			tx.Rollback() // Cancel transaction in case of error
 			return err
 		}
 
@@ -234,7 +234,7 @@ func (r *PostgresRepository) Update(id int64, externalConfig models.ExternalConf
 			Exec()
 
 		if err != nil {
-			tx.Rollback() // Annulation de la transaction en cas d'erreur
+			tx.Rollback() // Cancel transaction in case of error
 			return err
 		}
 	}
