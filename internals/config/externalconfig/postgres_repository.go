@@ -212,17 +212,27 @@ func (r *PostgresRepository) Update(id int64, externalConfig models.ExternalConf
 	maxVersions := viper.GetInt("MAX_EXTERNAL_CONFIG_VERSIONS_TO_KEEP")
 
 	if versionCount > maxVersions {
+
+		subQuery, _, err := r.newStatement().
+			Select("created_at").
+			From("external_generic_config_versions_v1").
+			Where("config_id = ?", id).
+			OrderBy("created_at DESC").
+			Offset(uint64(maxVersions)).
+			Limit(1).
+			ToSql()
+
+		if err != nil {
+			tx.Rollback() // Cancel transaction in case of error
+			return err
+		}
+
 		_, err = r.newStatement().
 			Delete("external_generic_config_versions_v1").
 			Where("config_id = ?", id).
-			Where("created_at < ?", r.newStatement().
-				Select("created_at").
-				From("external_generic_config_versions_v1").
-				Where("config_id = ?", id).
-				OrderBy("created_at DESC").
-				Offset(uint64(maxVersions)).
-				Limit(1)).
+			Where("created_at < (" + subQuery + ")").
 			Exec()
+
 		if err != nil {
 			tx.Rollback() // Cancel transaction in case of error
 			return err
