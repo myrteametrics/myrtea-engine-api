@@ -124,7 +124,7 @@ func TestCoordinator(t *testing.T) {
 				ID:   1,
 				Name: "myindex",
 				ElasticsearchOptions: modeler.ElasticsearchOptions{
-					Rollmode:                  "timebased",
+					Rollmode:                  modeler.RollmodeSettings{Type: modeler.RollmodeTimeBased},
 					Rollcron:                  "0 * * * *",
 					EnablePurge:               true,
 					PurgeMaxConcurrentIndices: 30,
@@ -150,7 +150,7 @@ func TestPurge(t *testing.T) {
 	elasticsearchsdk.ReplaceGlobals(elasticsearch.Config{Addresses: viper.GetStringSlice("ELASTICSEARCH_URLS")})
 
 	logicalIndex, err := NewLogicalIndexTimeBased("myrtea", modeler.Model{Name: "myindex", ElasticsearchOptions: modeler.ElasticsearchOptions{
-		Rollmode:                  "timebased",
+		Rollmode:                  modeler.RollmodeSettings{Type: modeler.RollmodeTimeBased},
 		Rollcron:                  "0 * * * *",
 		EnablePurge:               true,
 		PurgeMaxConcurrentIndices: 30,

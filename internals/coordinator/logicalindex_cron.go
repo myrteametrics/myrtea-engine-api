@@ -36,7 +36,7 @@ func NewLogicalIndexCron(instanceName string, model modeler.Model) (*LogicalInde
 
 	zap.L().Info("Initialize logicalIndex (LogicalIndexCron)", zap.String("name", logicalIndexName), zap.String("model", model.Name), zap.Any("options", model.ElasticsearchOptions))
 
-	if model.ElasticsearchOptions.Rollmode != "cron" {
+	if model.ElasticsearchOptions.Rollmode.Type != modeler.RollmodeCron {
 		return nil, errors.New("invalid rollmode for this logicalIndex type")
 	}
 
