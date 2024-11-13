@@ -187,7 +187,12 @@ func (logicalIndex *LogicalIndexTimeBased) FindIndices(t time.Time, depthDays in
 		indexStart = fmt.Sprintf("%s-%s", logicalIndex.Name, tsStart.Format("2006-01-02"))
 	} else if logicalIndex.Model.ElasticsearchOptions.Rollmode.Timebased.Interval == modeler.Monthly {
 		// For a monthly interval, we calculate the starting point in months
-		tsStart := t.AddDate(0, int(-depthDays/30), 0)
+		tempDate := t.AddDate(0, 0, int(-depthDays))
+		yearsDiff := t.Year() - tempDate.Year()
+		monthsDiff := int(t.Month()) - int(tempDate.Month())
+		monthsToSubtract := yearsDiff*12 + monthsDiff
+
+		tsStart := t.AddDate(0, -monthsToSubtract, 0)
 		indexEnd = fmt.Sprintf("%s-%s", logicalIndex.Name, t.Format("2006-01"))
 		indexStart = fmt.Sprintf("%s-%s", logicalIndex.Name, tsStart.Format("2006-01"))
 	}

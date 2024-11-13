@@ -124,7 +124,8 @@ func TestCoordinator(t *testing.T) {
 				ID:   1,
 				Name: "myindex",
 				ElasticsearchOptions: modeler.ElasticsearchOptions{
-					Rollmode:                  modeler.RollmodeSettings{Type: modeler.RollmodeTimeBased},
+					Rollmode: modeler.RollmodeSettings{Type: modeler.RollmodeTimeBased,
+						Timebased: &modeler.TimebasedSettings{Interval: modeler.Daily}},
 					Rollcron:                  "0 * * * *",
 					EnablePurge:               true,
 					PurgeMaxConcurrentIndices: 30,
@@ -150,7 +151,8 @@ func TestPurge(t *testing.T) {
 	elasticsearchsdk.ReplaceGlobals(elasticsearch.Config{Addresses: viper.GetStringSlice("ELASTICSEARCH_URLS")})
 
 	logicalIndex, err := NewLogicalIndexTimeBased("myrtea", modeler.Model{Name: "myindex", ElasticsearchOptions: modeler.ElasticsearchOptions{
-		Rollmode:                  modeler.RollmodeSettings{Type: modeler.RollmodeTimeBased},
+		Rollmode: modeler.RollmodeSettings{Type: modeler.RollmodeTimeBased,
+			Timebased: &modeler.TimebasedSettings{Interval: modeler.Daily}},
 		Rollcron:                  "0 * * * *",
 		EnablePurge:               true,
 		PurgeMaxConcurrentIndices: 30,
@@ -161,4 +163,69 @@ func TestPurge(t *testing.T) {
 	}
 	logicalIndex.purge()
 	t.Fail()
+}
+
+func TestFindIndices(t *testing.T) {
+	refDate := time.Date(2024, 11, 1, 0, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name            string
+		depthDays       int64
+		rollMode        modeler.RollmodeType
+		interval        modeler.IndexIntervalType
+		expectedIndices []string
+		liveIndices     []string
+	}{
+		{
+			name:            "Daily interval",
+			depthDays:       10,
+			rollMode:        modeler.RollmodeTimeBased,
+			interval:        modeler.Daily,
+			liveIndices:     []string{"my_index-2024-10-22", "my_index-2024-10-23", "my_index-2024-10-24", "my_index-2024-10-25", "my_index-2024-10-26", "my_index-2024-10-27", "my_index-2024-10-28", "my_index-2024-10-29", "my_index-2024-10-30", "my_index-2024-10-31", "my_index-2024-11-01"},
+			expectedIndices: []string{"my_index-2024-10-22", "my_index-2024-10-23", "my_index-2024-10-24", "my_index-2024-10-25", "my_index-2024-10-26", "my_index-2024-10-27", "my_index-2024-10-28", "my_index-2024-10-29", "my_index-2024-10-30", "my_index-2024-10-31", "my_index-2024-11-01"},
+		},
+		{
+			name:            "Monthly interval",
+			depthDays:       60,
+			rollMode:        modeler.RollmodeTimeBased,
+			interval:        modeler.Monthly,
+			liveIndices:     []string{"my_index-2024-09", "my_index-2024-10", "my_index-2024-11"},
+			expectedIndices: []string{"my_index-2024-09", "my_index-2024-10", "my_index-2024-11"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logicalIndex := LogicalIndexTimeBased{
+				Name: "my_index",
+				Model: modeler.Model{
+					ElasticsearchOptions: modeler.ElasticsearchOptions{
+						Rollmode: modeler.RollmodeSettings{
+							Type: tt.rollMode,
+							Timebased: &modeler.TimebasedSettings{
+								Interval: tt.interval,
+							},
+						},
+					},
+				},
+				LiveIndices: tt.liveIndices,
+			}
+
+			indices, err := logicalIndex.FindIndices(refDate, tt.depthDays)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			if len(indices) != len(tt.expectedIndices) {
+				t.Fatalf("Expected %d indices, but got %d", len(tt.expectedIndices), len(indices))
+			}
+
+			for i := range indices {
+				if indices[i] != tt.expectedIndices[i] {
+					t.Errorf("Mismatch at index %d: expected %s, got %s", i, tt.expectedIndices[i], indices[i])
+				}
+			}
+
+		})
+	}
 }
