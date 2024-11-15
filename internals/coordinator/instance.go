@@ -40,10 +40,10 @@ func InitInstance(instanceName string, models map[int64]modeler.Model) error {
 	for _, model := range models {
 		var err error
 		var logicalIndex LogicalIndex
-		switch model.ElasticsearchOptions.Rollmode {
-		case "cron":
+		switch model.ElasticsearchOptions.Rollmode.Type {
+		case modeler.RollmodeCron:
 			logicalIndex, err = NewLogicalIndexCron(instance.Name, model)
-		case "timebased":
+		case modeler.RollmodeTimeBased:
 			logicalIndex, err = NewLogicalIndexTimeBased(instance.Name, model)
 		}
 		if err != nil {

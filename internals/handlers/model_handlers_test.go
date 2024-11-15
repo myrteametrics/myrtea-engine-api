@@ -43,7 +43,7 @@ func initModelRepository(t *testing.T) []modeler.Model {
 		Synonyms: []string{"model1"},
 		Fields:   fieldarray,
 		ElasticsearchOptions: modeler.ElasticsearchOptions{
-			Rollmode:                  "cron",
+			Rollmode:                  modeler.RollmodeSettings{Type: modeler.RollmodeCron},
 			Rollcron:                  "0 0 * * *",
 			EnablePurge:               true,
 			PurgeMaxConcurrentIndices: 30,
@@ -57,7 +57,7 @@ func initModelRepository(t *testing.T) []modeler.Model {
 		Synonyms: []string{"model2"},
 		Fields:   fieldarray,
 		ElasticsearchOptions: modeler.ElasticsearchOptions{
-			Rollmode:                  "cron",
+			Rollmode:                  modeler.RollmodeSettings{Type: modeler.RollmodeCron},
 			Rollcron:                  "0 0 * * *",
 			EnablePurge:               true,
 			PurgeMaxConcurrentIndices: 30,
@@ -123,7 +123,7 @@ func TestGetModel(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	expected := `{"id":1,"name":"test","synonyms":["model1"],"fields":[{"name":"test","type":"string","semantic":false,"synonyms":["other"]},{"name":"test_object","type":"object","keepObjectSeparation":false,"fields":[{"name":"test_subfield","type":"string","semantic":false,"synonyms":["other2"]}]}],"source":"{}","elasticsearchOptions":{"rollmode":"cron","rollcron":"0 0 * * *","enablePurge":true,"purgeMaxConcurrentIndices":30,"patchAliasMaxIndices":2,"advancedSettings":{"number_of_replicas":"2","number_of_shards":"6"}}}` + "\n"
+	expected := `{"id":1,"name":"test","synonyms":["model1"],"fields":[{"name":"test","type":"string","semantic":false,"synonyms":["other"]},{"name":"test_object","type":"object","keepObjectSeparation":false,"fields":[{"name":"test_subfield","type":"string","semantic":false,"synonyms":["other2"]}]}],"source":"{}","elasticsearchOptions":{"rollmode":{"type":"cron"},"rollcron":"0 0 * * *","enablePurge":true,"purgeMaxConcurrentIndices":30,"patchAliasMaxIndices":2,"advancedSettings":{"number_of_replicas":"2","number_of_shards":"6"}}}` + "\n"
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
 	}
