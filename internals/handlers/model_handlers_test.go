@@ -43,7 +43,7 @@ func initModelRepository(t *testing.T) []modeler.Model {
 		Synonyms: []string{"model1"},
 		Fields:   fieldarray,
 		ElasticsearchOptions: modeler.ElasticsearchOptions{
-			Rollmode:                  "cron",
+			Rollmode:                  modeler.RollmodeSettings{Type: modeler.RollmodeCron},
 			Rollcron:                  "0 0 * * *",
 			EnablePurge:               true,
 			PurgeMaxConcurrentIndices: 30,
@@ -57,7 +57,7 @@ func initModelRepository(t *testing.T) []modeler.Model {
 		Synonyms: []string{"model2"},
 		Fields:   fieldarray,
 		ElasticsearchOptions: modeler.ElasticsearchOptions{
-			Rollmode:                  "cron",
+			Rollmode:                  modeler.RollmodeSettings{Type: modeler.RollmodeCron},
 			Rollcron:                  "0 0 * * *",
 			EnablePurge:               true,
 			PurgeMaxConcurrentIndices: 30,
