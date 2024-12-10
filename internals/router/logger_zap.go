@@ -46,7 +46,7 @@ func CustomZapRequestLogger(f chimiddleware.LogFormatter) func(next http.Handler
 				gorillacontext.Clear(r)
 				zapFields := entry.(*customZapLogEntry).ZapFields
 				if user != nil {
-					zapFields = append(zapFields, zap.String("user", user.(string)))
+					zapFields = append(zapFields, zap.String("myrtea_user", user.(string)))
 				}
 
 				zapFields = append(zapFields,
@@ -94,7 +94,7 @@ func (l *CustomZapLogFormatter) NewLogEntry(r *http.Request) chimiddleware.LogEn
 	entry.ZapFields = append(entry.ZapFields,
 		zap.String("method", r.Method),
 		zap.String("scheme", scheme),
-		zap.String("host", r.Host),
+		zap.String("myrtea_host", r.Host),
 		zap.String("path", r.RequestURI),
 		zap.String("proto", r.Proto),
 		zap.String("remoteaddr", r.RemoteAddr),
