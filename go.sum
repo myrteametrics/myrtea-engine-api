@@ -219,6 +219,8 @@ github.com/myrteametrics/myrtea-sdk/v5 v5.1.6-0.20241206150919-2d3059e0fe94 h1:1
 github.com/myrteametrics/myrtea-sdk/v5 v5.1.6-0.20241206150919-2d3059e0fe94/go.mod h1:dXuc7MzW6V7t4kIupE0BFQGe8JzngDEkdbqzAeMy164=
 github.com/myrteametrics/myrtea-sdk/v5 v5.1.6-0.20241206151605-7800c183834a h1:xrlH18VTpJ3kVuMzDQxUCKAt+xfZCB5dKSSsyHXercI=
 github.com/myrteametrics/myrtea-sdk/v5 v5.1.6-0.20241206151605-7800c183834a/go.mod h1:dXuc7MzW6V7t4kIupE0BFQGe8JzngDEkdbqzAeMy164=
+github.com/myrteametrics/myrtea-sdk/v5 v5.1.6-0.20241211100415-4194616956fe h1:qDZQPCdY/3uUxxuHnJrN58b6DOHXmTIB3ctkEulZSqk=
+github.com/myrteametrics/myrtea-sdk/v5 v5.1.6-0.20241211100415-4194616956fe/go.mod h1:dXuc7MzW6V7t4kIupE0BFQGe8JzngDEkdbqzAeMy164=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/oklog/run v1.0.0 h1:Ru7dDtJNOyC66gQ5dQmaCa0qIsAUFY3sFpK1Xk8igrw=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
