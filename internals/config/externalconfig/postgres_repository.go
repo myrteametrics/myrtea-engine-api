@@ -163,7 +163,9 @@ func (r *PostgresRepository) Update(id int64, externalConfig models.ExternalConf
 		return err
 	}
 
-	_, err = r.newStatement().
+	statementBuilder := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(tx)
+
+	_, err = statementBuilder.
 		Update("external_generic_config_v1").
 		Set("name", externalConfig.Name).
 		Where("id = ?", id).
@@ -174,7 +176,7 @@ func (r *PostgresRepository) Update(id int64, externalConfig models.ExternalConf
 	}
 
 	// Update old version (current_version = false)
-	_, err = r.newStatement().
+	_, err = statementBuilder.
 		Update("external_generic_config_versions_v1").
 		Set("current_version", false).
 		Where("config_id = ?", id).
@@ -186,7 +188,7 @@ func (r *PostgresRepository) Update(id int64, externalConfig models.ExternalConf
 	}
 
 	// Insert the new version with current_version = true
-	_, err = r.newStatement().
+	_, err = statementBuilder.
 		Insert("external_generic_config_versions_v1").
 		Columns("config_id", "data", "current_version").
 		Values(id, externalConfig.Data, true).
@@ -198,7 +200,7 @@ func (r *PostgresRepository) Update(id int64, externalConfig models.ExternalConf
 
 	// Count total versions
 	var versionCount int
-	err = r.newStatement().
+	err = statementBuilder.
 		Select("COUNT(*)").
 		From("external_generic_config_versions_v1").
 		Where("config_id = ?", id).
@@ -213,7 +215,7 @@ func (r *PostgresRepository) Update(id int64, externalConfig models.ExternalConf
 
 	if versionCount > maxVersions {
 
-		subQuery, _, err := r.newStatement().
+		subQuery, _, err := statementBuilder.
 			Select("created_at").
 			From("external_generic_config_versions_v1").
 			Where("config_id = ?", id).
@@ -227,7 +229,7 @@ func (r *PostgresRepository) Update(id int64, externalConfig models.ExternalConf
 			return err
 		}
 
-		_, err = r.newStatement().
+		_, err = statementBuilder.
 			Delete("external_generic_config_versions_v1").
 			Where("config_id = ?", id).
 			Where("created_at < (" + subQuery + ")").
