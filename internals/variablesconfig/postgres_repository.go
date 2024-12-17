@@ -33,7 +33,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 		zap.L().Fatal("Unable to retrieve the list of global variables", zap.Error(err))
 	}
 
-	expression.GlobalVars.Load(listMap)
+	expression.G().Load(listMap)
 
 	return repo
 }
@@ -128,7 +128,7 @@ func (r *PostgresRepository) Create(variable models.VariablesConfig) (int64, err
 		return -1, err
 	}
 
-	expression.GlobalVars.Set(variable.Key, variable.Value)
+	expression.G().Set(variable.Key, variable.Value)
 
 	return id, nil
 }
@@ -145,7 +145,7 @@ func (r *PostgresRepository) Update(id int64, variable models.VariablesConfig) e
 		return err
 	}
 
-	expression.GlobalVars.Set(variable.Key, variable.Value)
+	expression.G().Set(variable.Key, variable.Value)
 
 	return r.checkRowsAffected(res, 1)
 }
@@ -174,7 +174,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 		if err := rows.Scan(&key, &value); err != nil {
 			return fmt.Errorf("failed to scan row: %v", err)
 		}
-		expression.GlobalVars.Delete(key)
+		expression.G().Delete(key)
 		rowCount++
 	}
 
