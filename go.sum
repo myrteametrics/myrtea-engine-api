@@ -213,10 +213,8 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/myrteametrics/myrtea-sdk/v5 v5.1.6-0.20241212103740-2c397073ca30 h1:1LlJFC/6YArDpxpKe7r9BPmxQVt3xwZ735DhhUuSOa4=
-github.com/myrteametrics/myrtea-sdk/v5 v5.1.6-0.20241212103740-2c397073ca30/go.mod h1:dXuc7MzW6V7t4kIupE0BFQGe8JzngDEkdbqzAeMy164=
-github.com/myrteametrics/myrtea-sdk/v5 v5.1.6-0.20241217141314-8732d4c0dc42 h1:ywMyNJwwkjx87U8YOHoBGx+h8Uoh/4r68ywNeX4M9ec=
-github.com/myrteametrics/myrtea-sdk/v5 v5.1.6-0.20241217141314-8732d4c0dc42/go.mod h1:dXuc7MzW6V7t4kIupE0BFQGe8JzngDEkdbqzAeMy164=
+github.com/myrteametrics/myrtea-sdk/v5 v5.1.6 h1:mRJ5ii2DbPUZLMiWZfTE7TSCkKPSh9FYzk4D/obpqpI=
+github.com/myrteametrics/myrtea-sdk/v5 v5.1.6/go.mod h1:dXuc7MzW6V7t4kIupE0BFQGe8JzngDEkdbqzAeMy164=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/oklog/run v1.0.0 h1:Ru7dDtJNOyC66gQ5dQmaCa0qIsAUFY3sFpK1Xk8igrw=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
