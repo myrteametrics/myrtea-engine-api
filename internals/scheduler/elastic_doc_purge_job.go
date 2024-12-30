@@ -31,7 +31,7 @@ func (job ElasticDocPurgeJob) Run() {
 	}
 	S().AddRunningJob(job.ScheduleID)
 
-	zap.L().Info("Fact calculation job started", zap.Int64s("ids", job.FactIds))
+	zap.L().Info("Delete Elastic Document  job started", zap.Int64s("ids", job.FactIds))
 
 	t := time.Now().Truncate(1 * time.Second).UTC()
 
@@ -43,7 +43,6 @@ func (job ElasticDocPurgeJob) Run() {
 }
 
 func PurgeElasticDocs(t time.Time, factIds []int64) {
-	// Initial log indicating the start of the operation
 	zap.L().Info("Starting Elastic document purge", zap.Time("timestamp", t), zap.Int("number_of_facts", len(factIds)))
 
 	for _, factId := range factIds {
