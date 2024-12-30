@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
+	"go.uber.org/zap"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -24,6 +26,15 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 		conn: dbClient,
 	}
 	var repo Repository = &r
+
+	listMap, err := repo.GetAllAsMap()
+
+	if err != nil {
+		zap.L().Fatal("Unable to retrieve the list of global variables", zap.Error(err))
+	}
+
+	expression.G().Load(listMap)
+
 	return repo
 }
 
@@ -116,6 +127,9 @@ func (r *PostgresRepository) Create(variable models.VariablesConfig) (int64, err
 	if err != nil {
 		return -1, err
 	}
+
+	expression.G().Set(variable.Key, variable.Value)
+
 	return id, nil
 }
 
@@ -130,19 +144,49 @@ func (r *PostgresRepository) Update(id int64, variable models.VariablesConfig) e
 	if err != nil {
 		return err
 	}
+
+	expression.G().Set(variable.Key, variable.Value)
+
 	return r.checkRowsAffected(res, 1)
 }
 
-// Delete use to retrieve an Variable Config by id
 func (r *PostgresRepository) Delete(id int64) error {
-	res, err := r.newStatement().
+	builder := r.newStatement().
 		Delete(table).
 		Where("id = ?", id).
-		Exec()
+		Suffix("RETURNING key, value")
+
+	query, args, err := builder.ToSql()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build SQL query: %v", err)
 	}
-	return r.checkRowsAffected(res, 1)
+
+	rows, err := r.conn.Query(query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to execute query: %v", err)
+	}
+	defer rows.Close()
+
+	var rowCount int64
+
+	for rows.Next() {
+		var key, value string
+		if err := rows.Scan(&key, &value); err != nil {
+			return fmt.Errorf("failed to scan row: %v", err)
+		}
+		expression.G().Delete(key)
+		rowCount++
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error iterating rows: %v", err)
+	}
+
+	if rowCount != 1 {
+		return errors.New("unexpected number of rows affected")
+	}
+
+	return nil
 }
 
 // GetAll method used to get all Variables Config
