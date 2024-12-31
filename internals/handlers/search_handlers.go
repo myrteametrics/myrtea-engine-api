@@ -223,3 +223,54 @@ func SearchLastByCustomInterval(w http.ResponseWriter, r *http.Request) {
 
 	render.JSON(w, r, result)
 }
+
+// SearchByInterval godoc
+// @Summary query situation history data
+// @Description query situation history data
+// @Tags Search
+// @Accept json
+// @Produce json
+// @Param situationid 			query	int		false	"situationid"
+// @Param situationinstanceid 	query	int		false	"situationinstanceid"
+// @Param interval				query 	string 	true	"month | week | day | hour | minute"
+// @Security Bearer
+// @Success 200 {array} search.QueryResult "query result"
+// @Failure 500 "internal server error"
+// @Router /engine/search/byinterval [get]
+func SearchByInterval(w http.ResponseWriter, r *http.Request) {
+
+	options, apiError, err := baseSearchOptions(w, r)
+	if err != nil {
+		render.Error(w, r, apiError, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(options.SituationID, 10), permissions.ActionSearch)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	interval := r.URL.Query().Get("interval")
+	if interval != "month" && interval != "week" && interval != "day" && interval != "hour" && interval != "minute" {
+		zap.L().Warn("Error on parsing interval", zap.String("interval", interval), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingDuration, fmt.Errorf("interval %s is not supported", interval))
+		return
+	}
+
+	historySituations, err := history.S().GetAllHistorySituationsIdsByStandardInterval(options, interval)
+	if err != nil {
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	historyFacts, historySituationFacts, err := history.S().GetHistoryFactsFromSituation(historySituations)
+	if err != nil {
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	result := history.ExtractHistoryDataSearch(historySituations, historySituationFacts, historyFacts)
+
+	render.JSON(w, r, result)
+}
