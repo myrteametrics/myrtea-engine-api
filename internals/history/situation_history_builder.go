@@ -66,6 +66,17 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsByStandardInterva
 		OrderBy("situation_id", "situation_instance_id", "date_trunc('"+interval+"', ts) desc, ts desc")
 }
 
+func (builder HistorySituationsBuilder) GetAllHistorySituationsIdsByStandardInterval(options GetHistorySituationsOptions, interval string) sq.SelectBuilder {
+	return builder.newStatement().
+		Select(fmt.Sprintf("situation_id, situation_instance_id, date_trunc('%s', ts) AS interval_ts, id", interval)).
+		From("situation_history_v5").
+		Where("situation_id = ?", options.SituationID).
+		Where("situation_instance_id = ?", options.SituationInstanceID).
+		//Where(fmt.Sprintf("date_trunc('%s', ts) = date_trunc('%s', CURRENT_DATE)", interval, interval)). //TODO remove
+		Where(fmt.Sprintf("ts >= date_trunc('%s', CURRENT_DATE)", interval)).
+		Where(fmt.Sprintf("ts < date_trunc('%s', CURRENT_DATE) + INTERVAL '1 %s'", interval, interval)).
+		OrderBy("situation_id, situation_instance_id, interval_ts DESC, ts DESC")
+}
 func (builder HistorySituationsBuilder) GetHistorySituationsIdsByCustomInterval(options GetHistorySituationsOptions, interval time.Duration, referenceDate time.Time) sq.SelectBuilder {
 	intervalSeconds := fmt.Sprintf("%d", int64(interval.Seconds()))
 	referenceDateStr := referenceDate.Format("2006-01-02T15:04:05Z07:00")
@@ -83,6 +94,30 @@ func (builder HistorySituationsBuilder) GetHistorySituationsDetails(subQueryIds 
 		LeftJoin("calendar_v1 c on c.id = COALESCE(si.calendar_id, s.calendar_id)").
 		InnerJoin("situation_history_v5 sh on (s.id = sh.situation_id and (sh.situation_instance_id = si.id OR sh.situation_instance_id = 0))").
 		Where("sh.id = any ("+subQueryIds+")", subQueryIdsArgs...)
+}
+
+func (builder HistorySituationsBuilder) GetAllHistorySituationsDetails(subQuery sq.SelectBuilder) sq.SelectBuilder {
+	return builder.newStatement().
+		Select(`
+			sh.id, 
+			sh.situation_id, 
+			sh.situation_instance_id, 
+			sh.ts, 
+			sh.parameters, 
+			sh.expression_facts, 
+			sh.metadatas, 
+			s.name AS situation_name, 
+			coalesce(si.name, '') AS situation_instance_name, 
+			c.id AS calendar_id, 
+			c.name AS calendar_name, 
+			c.description AS calendar_description, 
+			c.timezone AS calendar_timezone
+		`).
+		FromSelect(subQuery, "sub").
+		LeftJoin("situation_definition_v1 s ON sub.situation_id = s.id").
+		LeftJoin("situation_template_instances_v1 si on s.id = si.situation_id").
+		LeftJoin("calendar_v1 c on c.id = COALESCE(si.calendar_id, s.calendar_id)").
+		InnerJoin("situation_history_v5 sh on (s.id = sh.situation_id and (sh.situation_instance_id = si.id OR sh.situation_instance_id = 0))")
 }
 
 func (builder HistorySituationsBuilder) Insert(history HistorySituationsV4, parametersJSON []byte, expressionFactsJSON []byte, metadatasJSON []byte) sq.InsertBuilder {

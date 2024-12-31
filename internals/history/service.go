@@ -76,6 +76,26 @@ func (service HistoryService) GetHistorySituationsIdsByStandardInterval(options 
 	)
 }
 
+func (service HistoryService) GetAllHistorySituationsIdsByStandardInterval(options GetHistorySituationsOptions, interval string) ([]HistorySituationsV4, error) {
+	subQuery := service.HistorySituationsQuerier.Builder.
+		GetAllHistorySituationsIdsByStandardInterval(options, interval)
+
+	_, _, err := subQuery.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	query := service.HistorySituationsQuerier.Builder.GetAllHistorySituationsDetails(subQuery)
+	// TODO remove
+	//queryString, interfacevalue, errr := query.ToSql()
+	////show values
+	//zap.L().Info("f", zap.String("queryString", queryString), zap.Any("interfacevalue", interfacevalue), zap.Error(errr))
+
+	return service.HistorySituationsQuerier.Query(
+		query,
+	)
+}
+
 func (service HistoryService) GetHistorySituationsIdsByCustomInterval(options GetHistorySituationsOptions, interval time.Duration, referenceDate time.Time) ([]HistorySituationsV4, error) {
 	subQuery, subQueryArgs, err := service.HistorySituationsQuerier.Builder.
 		GetHistorySituationsIdsByCustomInterval(options, interval, referenceDate).
