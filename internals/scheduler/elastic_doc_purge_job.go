@@ -26,7 +26,7 @@ func (job ElasticDocPurgeJob) IsValid() (bool, error) {
 func (job ElasticDocPurgeJob) Run() {
 
 	if S().ExistingRunningJob(job.ScheduleID) {
-		zap.L().Info("Skipping Elastic Documents  Purge Job because last execution is still running", zap.Int64s("ids", job.FactIds))
+		zap.L().Info("Skipping Elastic document purge job because last execution is still running", zap.Int64s("ids", job.FactIds))
 		return
 	}
 	S().AddRunningJob(job.ScheduleID)
