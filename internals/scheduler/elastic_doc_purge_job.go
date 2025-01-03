@@ -31,7 +31,7 @@ func (job ElasticDocPurgeJob) Run() {
 	}
 	S().AddRunningJob(job.ScheduleID)
 
-	zap.L().Info("Delete Elastic Document  job started", zap.Int64s("ids", job.FactIds))
+	zap.L().Info("Delete Elastic document job started", zap.Int64s("ids", job.FactIds))
 
 	t := time.Now().Truncate(1 * time.Second).UTC()
 
