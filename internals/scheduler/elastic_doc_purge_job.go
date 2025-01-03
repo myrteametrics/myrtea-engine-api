@@ -37,7 +37,7 @@ func (job ElasticDocPurgeJob) Run() {
 
 	PurgeElasticDocs(t, job.FactIds)
 
-	zap.L().Info("Elastic Doc Purge job  Ended", zap.Int64("id Schedule", job.ScheduleID))
+	zap.L().Info("Elastic document purge job ended", zap.Int64("id Schedule", job.ScheduleID))
 	S().RemoveRunningJob(job.ScheduleID)
 
 }
