@@ -15,10 +15,11 @@ type InternalJob interface {
 }
 
 var jobTypes = map[string]struct{}{
-	"fact":     {},
-	"baseline": {},
-	"compact":  {},
-	"purge":    {},
+	"fact":              {},
+	"baseline":          {},
+	"compact":           {},
+	"purge":             {},
+	"elastic_doc_purge": {},
 }
 
 // InternalSchedule wrap a schedule
@@ -26,7 +27,7 @@ type InternalSchedule struct {
 	ID       int64       `json:"id"`
 	Name     string      `json:"name"`
 	CronExpr string      `json:"cronexpr" example:"0 */15 * * *"`
-	JobType  string      `json:"jobtype" enums:"fact,baseline,compact,purge"`
+	JobType  string      `json:"jobtype" enums:"fact,baseline,compact,purge,elastic_doc_purge"`
 	Job      InternalJob `json:"job"`
 	Enabled  bool        `json:"enabled"`
 }
@@ -100,6 +101,11 @@ func UnmarshalInternalJob(t string, b json.RawMessage, scheduleID int64) (Intern
 		job = tJob
 	case "purge":
 		var tJob PurgeHistoryJob
+		err = json.Unmarshal(b, &tJob)
+		tJob.ScheduleID = scheduleID
+		job = tJob
+	case "elastic_doc_purge":
+		var tJob ElasticDocPurgeJob
 		err = json.Unmarshal(b, &tJob)
 		tJob.ScheduleID = scheduleID
 		job = tJob
