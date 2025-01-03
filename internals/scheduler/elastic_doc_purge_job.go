@@ -61,6 +61,7 @@ func PurgeElasticDocs(t time.Time, factIds []int64) {
 
 		if f.Intent.Operator != engine.Delete {
 			zap.L().Warn("Fact is not a delete fact; skipping deletion", zap.Int64("factId", factId))
+			continue
 		}
 
 		// Execute deletion
