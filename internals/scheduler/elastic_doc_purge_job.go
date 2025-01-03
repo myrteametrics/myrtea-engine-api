@@ -14,10 +14,7 @@ type ElasticDocPurgeJob struct {
 }
 
 func (job ElasticDocPurgeJob) IsValid() (bool, error) {
-	if job.FactIds == nil {
-		return false, errors.New("missing FactIds")
-	}
-	if len(job.FactIds) <= 0 {
+	if job.FactIds == nil || len(job.FactIds) <= 0 {
 		return false, errors.New("missing FactIds")
 	}
 	return true, nil
