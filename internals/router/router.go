@@ -100,9 +100,9 @@ func New(config Config, services Services) *chi.Mux {
 	r.Use(chimiddleware.StripSlashes)
 	r.Use(chimiddleware.RedirectSlashes)
 	if config.Production {
-		r.Use(CustomZapLogger)
+		r.Use(sdkrouter.CustomZapLogger)
 	} else {
-		r.Use(CustomLogger)
+		r.Use(sdkrouter.CustomLogger)
 	}
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Timeout(60 * time.Second))
