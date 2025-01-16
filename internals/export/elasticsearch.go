@@ -247,8 +247,8 @@ func ExportFactHitsFull(f engine.Fact) ([]reader.Hit, error) {
 	for {
 		response, err := elasticsearch.C().Search().
 			//Index(indicesStr).
-			Size(10000).
 			Request(searchRequest).
+			Size(10000).
 			Sort("_shard_doc").
 			Do(context.Background())
 		if err != nil {

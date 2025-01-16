@@ -42,9 +42,9 @@ func ExecuteFact(
 
 	response, err := elasticsearch.C().Search().
 		Index(strings.Join(indices, ",")).
+		Request(searchRequest).
 		From(offset).
 		Size(nhit).
-		Request(searchRequest).
 		Do(context.Background())
 	if err != nil {
 		zap.L().Error("ES Search failed", zap.Error(err))
