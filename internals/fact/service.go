@@ -40,13 +40,11 @@ func ExecuteFact(
 	indices := FindIndices(f, ti, update)
 	zap.L().Debug("search", zap.Strings("indices", indices), zap.Any("request", searchRequest))
 
-	// overwrite of pagination and size parameters in request
-	searchRequest.Size = &nhit
-	searchRequest.From = &offset
-
 	response, err := elasticsearch.C().Search().
 		Index(strings.Join(indices, ",")).
 		Request(searchRequest).
+		From(offset).
+		Size(nhit).
 		Do(context.Background())
 	if err != nil {
 		zap.L().Error("ES Search failed", zap.Error(err))
