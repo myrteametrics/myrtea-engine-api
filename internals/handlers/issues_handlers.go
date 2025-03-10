@@ -604,16 +604,25 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Issue ID"
 // @Param issue body interface{} true "Recommendation tree (json)"
+// @Param wasRealAlert path bool true "Indicates if the closed issue was a real alert (true) or false positive (false)"
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
-// @Router /engine/issues/{id}/feedback [post]
+// @Router /engine/issues/{id}/feedback/{wasRealAlert} [post]
 func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
+		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		return
+	}
+
+	wasRealAlertParam := chi.URLParam(r, "wasRealAlert")
+	wasRealAlert, err := strconv.ParseBool(wasRealAlertParam)
+	if err != nil {
+		zap.L().Warn("Error on parsing wasRealAlert parameter", zap.String("issueID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
 		return
 	}
@@ -644,7 +653,7 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = explainer.CloseIssueWithFeedback(postgres.DB(), issue, newFeedback, userCtx.User)
+	err = explainer.CloseIssueWithFeedback(postgres.DB(), issue, newFeedback, userCtx.User, wasRealAlert)
 	if err != nil {
 		zap.L().Error("CloseIssueWithFeedback", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
@@ -661,12 +670,13 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Issue ID"
+// @Param wasRealAlert path bool true "Indicates if the closed issue was a real alert (true) or false positive (false)"
 // @Param reason body interface{} false "Close reason (json)"
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
-// @Router /engine/issues/{id}/close [post]
+// @Router /engine/issues/{id}/close/{wasRealAlert} [post]
 func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idIssue, err := strconv.ParseInt(id, 10, 64)
@@ -674,6 +684,27 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
 		return
+	}
+
+	var targetState models.IssueState
+	wasRealAlertParam := chi.URLParam(r, "wasRealAlert")
+
+	if wasRealAlertParam == "" {
+		targetState = models.ClosedNoFeedback
+	} else {
+		var parseErr error
+		wasRealAlert, parseErr := strconv.ParseBool(wasRealAlertParam)
+		if parseErr != nil {
+			zap.L().Warn("Error on parsing wasRealAlert parameter", zap.String("issueID", id), zap.Error(parseErr))
+			render.Error(w, r, render.ErrAPIParsingInteger, parseErr)
+			return
+		}
+
+		if wasRealAlert {
+			targetState = models.ClosedConfirmed
+		} else {
+			targetState = models.ClosedRejected
+		}
 	}
 
 	issue, found, err := issues.R().Get(idIssue)
@@ -688,27 +719,32 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if issue.State.IsClosed() {
+		zap.L().Warn("Issue with id is already in a closed state", zap.String("issueID", id))
+		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		return
+	}
+
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
-	reason := struct {
-		S string `json:"reason"`
-	}{
-		S: "unknown",
-	}
-	if r.Body != nil && r.Body != http.NoBody {
-		err = json.NewDecoder(r.Body).Decode(&reason)
-		if err != nil {
-			zap.L().Warn("Body decode", zap.Error(err))
-			render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
-			return
-		}
-	}
-
-	err = explainer.CloseIssueWithoutFeedback(postgres.DB(), issue, reason.S, userCtx.User)
+	//reason := struct {
+	//	S string `json:"reason"`
+	//}{
+	//	S: "unknown",
+	//}
+	//if r.Body != nil && r.Body != http.NoBody {
+	//	err = json.NewDecoder(r.Body).Decode(&reason)
+	//	if err != nil {
+	//		zap.L().Warn("Body decode", zap.Error(err))
+	//		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+	//		return
+	//	}
+	//}
+	err = explainer.CloseIssueWithoutFeedback(postgres.DB(), issue, userCtx.User, targetState)
 	if err != nil {
 		zap.L().Error("CloseIssueWithoutFeedback", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
