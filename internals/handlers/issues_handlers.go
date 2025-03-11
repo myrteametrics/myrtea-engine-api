@@ -604,12 +604,12 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Issue ID"
 // @Param issue body interface{} true "Recommendation tree (json)"
-// @Param wasRealAlert path bool true "Indicates if the closed issue was a real alert (true) or false positive (false)"
+// @Param isFakeAlert path bool true "Indicates if the closed issue was a real alert (true) or false positive (false)"
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
-// @Router /engine/issues/{id}/feedback/{wasRealAlert} [post]
+// @Router /engine/issues/{id}/feedback/{isFakeAlert} [post]
 func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idIssue, err := strconv.ParseInt(id, 10, 64)
@@ -619,10 +619,10 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wasRealAlertParam := chi.URLParam(r, "wasRealAlert")
-	wasRealAlert, err := strconv.ParseBool(wasRealAlertParam)
+	isFakeAlertParam := chi.URLParam(r, "isFakeAlert")
+	isFakeAlert, err := strconv.ParseBool(isFakeAlertParam)
 	if err != nil {
-		zap.L().Warn("Error on parsing wasRealAlert parameter", zap.String("issueID", id), zap.Error(err))
+		zap.L().Warn("Error on parsing isFakeAlert parameter", zap.String("issueID", id), zap.Error(err))
 		render.Error(w, r, render.ErrAPIParsingInteger, err)
 		return
 	}
@@ -653,7 +653,7 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = explainer.CloseIssueWithFeedback(postgres.DB(), issue, newFeedback, userCtx.User, wasRealAlert)
+	err = explainer.CloseIssueWithFeedback(postgres.DB(), issue, newFeedback, userCtx.User, isFakeAlert)
 	if err != nil {
 		zap.L().Error("CloseIssueWithFeedback", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
@@ -670,13 +670,13 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Issue ID"
-// @Param wasRealAlert path bool true "Indicates if the closed issue was a real alert (true) or false positive (false)"
+// @Param isFakeAlert query bool true "Indicates if the closed issue was a real alert (true) or false positive (false)"
 // @Param reason body interface{} false "Close reason (json)"
 // @Security Bearer
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
-// @Router /engine/issues/{id}/close/{wasRealAlert} [post]
+// @Router /engine/issues/{id}/close [post]
 func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idIssue, err := strconv.ParseInt(id, 10, 64)
@@ -687,23 +687,23 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var targetState models.IssueState
-	wasRealAlertParam := chi.URLParam(r, "wasRealAlert")
+	isFakeAlertParam := r.URL.Query().Get("isFakeAlert")
 
-	if wasRealAlertParam == "" {
+	if isFakeAlertParam == "" {
 		targetState = models.ClosedNoFeedback
 	} else {
 		var parseErr error
-		wasRealAlert, parseErr := strconv.ParseBool(wasRealAlertParam)
+		isFakeAlert, parseErr := strconv.ParseBool(isFakeAlertParam)
 		if parseErr != nil {
-			zap.L().Warn("Error on parsing wasRealAlert parameter", zap.String("issueID", id), zap.Error(parseErr))
+			zap.L().Warn("Error on parsing isFakeAlert parameter", zap.String("issueID", id), zap.Error(parseErr))
 			render.Error(w, r, render.ErrAPIParsingInteger, parseErr)
 			return
 		}
 
-		if wasRealAlert {
-			targetState = models.ClosedConfirmed
-		} else {
+		if isFakeAlert {
 			targetState = models.ClosedRejected
+		} else {
+			targetState = models.ClosedConfirmed
 		}
 	}
 
@@ -731,19 +731,6 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//reason := struct {
-	//	S string `json:"reason"`
-	//}{
-	//	S: "unknown",
-	//}
-	//if r.Body != nil && r.Body != http.NoBody {
-	//	err = json.NewDecoder(r.Body).Decode(&reason)
-	//	if err != nil {
-	//		zap.L().Warn("Body decode", zap.Error(err))
-	//		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
-	//		return
-	//	}
-	//}
 	err = explainer.CloseIssueWithoutFeedback(postgres.DB(), issue, userCtx.User, targetState)
 	if err != nil {
 		zap.L().Error("CloseIssueWithoutFeedback", zap.Error(err))
@@ -752,64 +739,6 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.OK(w, r)
-}
-
-// PostIssuesCloseWithoutFeedback godoc
-// @Summary Close many issues without feedback
-// @Description Close many issues without feedback
-// @Tags Issues
-// @Accept json
-// @Produce json
-// @Param issue body models.IssuesIdsToClose true "Issues IDs"
-// @Security Bearer
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/issues/close [post]
-func PostIssuesCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
-	var issueIdsToClose models.IssuesIdsToDraf
-	err := json.NewDecoder(r.Body).Decode(&issueIdsToClose)
-	if err != nil {
-		zap.L().Warn("Body decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
-		return
-	}
-
-	status := &models.CloseIssuesStatus{}
-	var idIssuesOk []int64
-	userCtx, _ := GetUserFromContext(r)
-
-	for _, idIssue := range issueIdsToClose.Ids {
-		issue, found, err := issues.R().Get(idIssue)
-		if err != nil {
-			zap.L().Error("Cannot retrieve issue", zap.Error(err), zap.Int64("IdIssues", idIssue))
-			explainer.CloseHandleError(status, idIssue, err, render.ErrAPIDBSelectFailed)
-			continue
-		}
-		if !found {
-			zap.L().Warn("issue does not exist", zap.Int64("issueID", idIssue), zap.Int64("IdIssues ", idIssue))
-			explainer.CloseHandleError(status, idIssue, errors.New("issue not found"), render.ErrAPIDBResourceNotFound)
-			continue
-		}
-		if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-			explainer.CloseHandleError(status, idIssue, errors.New("missing permission"), render.ErrAPISecurityNoPermissions)
-			continue
-		}
-		idIssuesOk = append(idIssuesOk, idIssue)
-		status.SuccessCount++
-	}
-
-	explainer.CloseIssues(idIssuesOk, userCtx.User, status)
-
-	if status.AllOk {
-		render.OK(w, r)
-		return
-	}
-	if status.SuccessCount == 0 {
-		render.Error(w, r, render.ErrAPIProcessError, errors.New(status.ErrorMessages))
-		return
-	}
-	render.Error(w, r, render.ErrAPIPartialSuccess, errors.New(status.ErrorMessages))
 }
 
 // PostIssueDetectionFeedback godoc

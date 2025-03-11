@@ -41,17 +41,17 @@ func CloseIssueWithoutFeedback(dbClient *sqlx.DB, issue models.Issue, user users
 }
 
 // CloseIssueWithFeedback generate and persist an issue feedback for the rootcause/action stats and ML models
-func CloseIssueWithFeedback(dbClient *sqlx.DB, issue models.Issue, recommendation models.FrontRecommendation, user users.User, wasRealAlert bool) error {
+func CloseIssueWithFeedback(dbClient *sqlx.DB, issue models.Issue, recommendation models.FrontRecommendation, user users.User, isFakeAlert bool) error {
 
 	if issue.State.IsClosed() {
 		return fmt.Errorf("Issue with id %d is already in a closed state", issue.ID)
 	}
 
 	var targetState models.IssueState
-	if wasRealAlert {
-		targetState = models.ClosedFeedbackConfirmed
-	} else {
+	if isFakeAlert {
 		targetState = models.ClosedFeedbackRejected
+	} else {
+		targetState = models.ClosedFeedbackConfirmed
 	}
 
 	exists, err := checkExistsIssueResolution(dbClient, issue.ID)
