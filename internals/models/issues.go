@@ -172,8 +172,8 @@ var issueStateToID = map[string]IssueState{
 	"closeddiscard":           ClosedDiscard,
 	"closedfeedbackconfirmed": ClosedFeedbackConfirmed,
 	"closedfeedbackrejected":  ClosedFeedbackRejected,
-	"closed_confirmed":        ClosedConfirmed,
-	"closed_rejected":         ClosedRejected,
+	"closedconfirmed":         ClosedConfirmed,
+	"closedrejected":          ClosedRejected,
 }
 
 // GetStringIssueState gets the string representation of a IssueState
