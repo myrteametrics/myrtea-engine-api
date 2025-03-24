@@ -16,17 +16,17 @@ import (
 )
 
 // CloseIssueWithoutFeedback close an issue without standard feedback on rootcause / action
-func CloseIssueWithoutFeedback(dbClient *sqlx.DB, issue models.Issue, reason string, user users.User) error {
+func CloseIssueWithoutFeedback(dbClient *sqlx.DB, issue models.Issue, user users.User, targetState models.IssueState) error {
+
 	if issue.State.IsClosed() {
 		return fmt.Errorf("Issue with id %d is already in a closed state", issue.ID)
 	}
-
 	tx, err := dbClient.Beginx()
 	if err != nil {
 		return err
 	}
 
-	err = updateIssueState(tx, issue, models.ClosedNoFeedback, user)
+	err = updateIssueState(tx, issue, targetState, user)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -41,10 +41,17 @@ func CloseIssueWithoutFeedback(dbClient *sqlx.DB, issue models.Issue, reason str
 }
 
 // CloseIssueWithFeedback generate and persist an issue feedback for the rootcause/action stats and ML models
-func CloseIssueWithFeedback(dbClient *sqlx.DB, issue models.Issue, recommendation models.FrontRecommendation, user users.User) error {
+func CloseIssueWithFeedback(dbClient *sqlx.DB, issue models.Issue, recommendation models.FrontRecommendation, user users.User, isFakeAlert bool) error {
 
 	if issue.State.IsClosed() {
 		return fmt.Errorf("Issue with id %d is already in a closed state", issue.ID)
+	}
+
+	var targetState models.IssueState
+	if isFakeAlert {
+		targetState = models.ClosedFeedbackRejected
+	} else {
+		targetState = models.ClosedFeedbackConfirmed
 	}
 
 	exists, err := checkExistsIssueResolution(dbClient, issue.ID)
@@ -77,7 +84,7 @@ func CloseIssueWithFeedback(dbClient *sqlx.DB, issue models.Issue, recommendatio
 		return err
 	}
 
-	err = updateIssueState(tx, issue, models.ClosedFeedback, user)
+	err = updateIssueState(tx, issue, targetState, user)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -102,8 +109,8 @@ func checkExistsIssueResolution(dbClient *sqlx.DB, issueID int64) (bool, error) 
 	return exists, nil
 }
 
-func updateIssueState(tx *sqlx.Tx, issue models.Issue, state models.IssueState, user users.User) error {
-	issue.State = state
+func updateIssueState(tx *sqlx.Tx, issue models.Issue, targetState models.IssueState, user users.User) error {
+	issue.State = targetState
 	err := issues.R().Update(tx, issue.ID, issue, user)
 	if err != nil {
 		return err
