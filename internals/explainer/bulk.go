@@ -53,8 +53,8 @@ func CloseIssues(idIssues []int64, user users.User, status *models.CloseIssuesSt
 			continue
 		}
 
-		//reason := models.Reason{S: "unknown"}
-		err = CloseIssueWithoutFeedback(postgres.DB(), issue, user, models.ClosedNoFeedback)
+		reason := models.Reason{S: "unknown"}
+		err = CloseIssueWithoutFeedback(postgres.DB(), issue, reason.S, user)
 		if err != nil {
 			zap.L().Error("CloseIssueWithoutFeedback", zap.Error(err))
 			CloseHandleError(status, idIssue, err, render.ErrAPIDBUpdateFailed)

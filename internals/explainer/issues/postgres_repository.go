@@ -140,8 +140,7 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, u
 	query := `UPDATE issues_v1 SET name = :name, expiration_date = :expiration_date,
 	state = :state, last_modified = :last_modified, comment = :comment`
 
-	if issue.State == models.ClosedNoFeedback || issue.State == models.ClosedFeedbackConfirmed || issue.State == models.ClosedFeedbackRejected ||
-		issue.State == models.ClosedConfirmed || issue.State == models.ClosedRejected {
+	if issue.State == models.ClosedNoFeedback || issue.State == models.ClosedFeedback {
 		query = query + `, closed_at = :ts, closed_by = :user`
 	}
 	if issue.State == models.Draft && issue.AssignedAt == nil {
@@ -228,15 +227,7 @@ func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
 		"key":                  key,
 		"first_situation_date": firstSituationTS,
-		"closed_states": pq.Array([]string{
-			models.ClosedFeedbackConfirmed.String(),
-			models.ClosedFeedbackRejected.String(),
-			models.ClosedNoFeedback.String(),
-			models.ClosedTimeout.String(),
-			models.ClosedDiscard.String(),
-			models.ClosedConfirmed.String(),
-			models.ClosedRejected.String(),
-		}),
+		"closed_states":        pq.Array([]string{models.ClosedFeedback.String(), models.ClosedNoFeedback.String(), models.ClosedTimeout.String(), models.ClosedDiscard.String()}),
 	})
 	if err != nil {
 		return nil, errors.New("couldn't retrieve the issues with key and first situation date: " + err.Error())

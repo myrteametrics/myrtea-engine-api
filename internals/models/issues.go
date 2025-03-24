@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Action object that represents the actions to be taken for an Issue
+//Action object that represents the actions to be taken for an Issue
 type Action struct {
 	ID          int64  `json:"id"`
 	Name        string `json:"name,omitempty"`
@@ -36,7 +36,7 @@ func (action *Action) IsValid() (bool, error) {
 	return true, nil
 }
 
-// RootCause is the causes for the Issues
+//RootCause is the causes for the Issues
 type RootCause struct {
 	ID          int64  `json:"id"`
 	Name        string `json:"name,omitempty"`
@@ -70,7 +70,7 @@ func (rootcause *RootCause) IsValid() (bool, error) {
 	return true, nil
 }
 
-// Issue is created for a situation to take Root causes and Actions
+//Issue is created for a situation to take Root causes and Actions
 type Issue struct {
 	ID                 int64      `json:"id"`
 	Key                string     `json:"key"`
@@ -93,7 +93,7 @@ type Issue struct {
 	Comment            *string    `json:"comment,omitempty"`
 }
 
-// RuleData rule identification
+//RuleData rule identification
 type RuleData struct {
 	RuleID      int64  `json:"ruleId"`
 	RuleVersion int64  `json:"ruleVersion"`
@@ -108,20 +108,14 @@ const (
 	Open IssueState = iota + 1
 	// Draft state of issue
 	Draft
+	// ClosedFeedback state of issue
+	ClosedFeedback
 	// ClosedNoFeedback state of issue
 	ClosedNoFeedback
 	// ClosedTimeout state of issue
 	ClosedTimeout
 	// ClosedDiscard state of issue
 	ClosedDiscard
-	// ClosedFeedbackConfirmed state of issue
-	ClosedFeedbackConfirmed
-	// ClosedFeedbackRejected state of issue
-	ClosedFeedbackRejected
-	// ClosedConfirmed  state of issue
-	ClosedConfirmed
-	// ClosedRejected  state of issue
-	ClosedRejected
 )
 
 // IsClosed returns if the IssueState is a closed state
@@ -129,12 +123,9 @@ func (s IssueState) IsClosed() bool {
 	switch s {
 	case
 		ClosedNoFeedback,
+		ClosedFeedback,
 		ClosedTimeout,
-		ClosedDiscard,
-		ClosedConfirmed,
-		ClosedRejected,
-		ClosedFeedbackConfirmed,
-		ClosedFeedbackRejected:
+		ClosedDiscard:
 		return true
 	}
 	return false
@@ -144,7 +135,7 @@ func (s IssueState) String() string {
 	return issueStateToString[s]
 }
 
-// ToIssueState get the IssueState from is string representation
+//ToIssueState get the IssueState from is string representation
 func ToIssueState(s string) IssueState {
 	if state, ok := issueStateToID[s]; ok {
 		return state
@@ -153,30 +144,24 @@ func ToIssueState(s string) IssueState {
 }
 
 var issueStateToString = map[IssueState]string{
-	Open:                    "open",
-	Draft:                   "draft",
-	ClosedNoFeedback:        "closednofeedback",
-	ClosedTimeout:           "closedtimeout",
-	ClosedDiscard:           "closeddiscard",
-	ClosedFeedbackConfirmed: "closedfeedbackconfirmed",
-	ClosedFeedbackRejected:  "closedfeedbackrejected",
-	ClosedConfirmed:         "closedconfirmed",
-	ClosedRejected:          "closedrejected",
+	Open:             "open",
+	Draft:            "draft",
+	ClosedFeedback:   "closedfeedback",
+	ClosedNoFeedback: "closednofeedback",
+	ClosedTimeout:    "closedtimeout",
+	ClosedDiscard:    "closeddiscard",
 }
 
 var issueStateToID = map[string]IssueState{
-	"open":                    Open,
-	"draft":                   Draft,
-	"closednofeedback":        ClosedNoFeedback,
-	"closedtimeout":           ClosedTimeout,
-	"closeddiscard":           ClosedDiscard,
-	"closedfeedbackconfirmed": ClosedFeedbackConfirmed,
-	"closedfeedbackrejected":  ClosedFeedbackRejected,
-	"closedconfirmed":         ClosedConfirmed,
-	"closedrejected":          ClosedRejected,
+	"open":             Open,
+	"draft":            Draft,
+	"closedfeedback":   ClosedFeedback,
+	"closednofeedback": ClosedNoFeedback,
+	"closedtimeout":    ClosedTimeout,
+	"closeddiscard":    ClosedDiscard,
 }
 
-// GetStringIssueState gets the string representation of a IssueState
+//GetStringIssueState gets the string representation of a IssueState
 func GetStringIssueState(issueState IssueState) string {
 	if state, ok := issueStateToString[issueState]; ok {
 		return state

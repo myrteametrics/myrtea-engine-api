@@ -128,10 +128,11 @@ func engineRouter(services Services) http.Handler {
 	r.Get("/issues/{id}/facts_history", handlers.GetIssueFactsHistory)
 	r.Post("/issues", handlers.PostIssue)
 	r.Get("/issues/{id}/recommendation", handlers.GetIssueFeedbackTree)
-	r.Post("/issues/{id}/feedback/{isFakeAlert}", handlers.PostIssueCloseWithFeedback)
+	r.Post("/issues/{id}/feedback", handlers.PostIssueCloseWithFeedback)
 	r.Post("/issues/{id}/draft", handlers.PostIssueDraft)
 	r.Post("/issues/draft", handlers.PostIssuesDraft)
 	r.Post("/issues/{id}/close", handlers.PostIssueCloseWithoutFeedback)
+	r.Post("/issues/close", handlers.PostIssuesCloseWithoutFeedback)
 	r.Post("/issues/{id}/detection/feedback", handlers.PostIssueDetectionFeedback)
 	r.Put("/issues/{id}/comment", handlers.UpdateIssueComment)
 
