@@ -146,6 +146,7 @@ func buildRoutesV3Basic(config Config, services Services) (func(r chi.Router), e
 			rg.Post("/login", securityMiddleware.GetToken())
 			r.Get("/authmode", handlers.GetAuthenticationMode)
 			rg.Get("/engine/issues/unprotected", handlers.GetIssuesByStatesByPageUnProtected)
+			rg.Get("/engine/security/apikey/validate", handlers.ValidateAPIKey)
 			rg.Get("/engine/situations/{id}/instances/unprotected", handlers.GetSituationTemplateInstancesUnprotected)
 		})
 
@@ -253,6 +254,7 @@ func buildRoutesV3SAML(config Config, services Services) (func(r chi.Router), er
 			r.Get("/authmode", handlers.GetAuthenticationMode)
 			rg.Get("/engine/issues/unprotected", handlers.GetIssuesByStatesByPageUnProtected)
 			rg.Get("/engine/situations/{id}/instances/unprotected", handlers.GetSituationTemplateInstancesUnprotected)
+			rg.Get("/engine/security/apikey/validate", handlers.ValidateAPIKey)
 		})
 
 		// Protected routes
