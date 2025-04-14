@@ -69,7 +69,7 @@ func initRepositories() {
 }
 
 func initServices() {
-	initCoordinator()
+	//initCoordinator()
 	initNotifier()
 	initScheduler()
 	initTasker()

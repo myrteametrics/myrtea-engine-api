@@ -2,11 +2,6 @@ package router
 
 import (
 	"fmt"
-	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"time"
-
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -19,9 +14,12 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 	sdkrouter "github.com/myrteametrics/myrtea-sdk/v5/router"
 	sdksecurity "github.com/myrteametrics/myrtea-sdk/v5/security"
-	"github.com/spf13/viper"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"time"
 )
 
 // Config wraps common configuration parameters
@@ -42,6 +40,16 @@ type Services struct {
 	ExportHandler    *handlers.ExportHandler
 	ServiceHandler   *handlers.ServiceHandler
 }
+
+const (
+	AuthModeBasic  = "BASIC"
+	AuthModeOIDC   = "OIDC"
+	AuthModeApiKey = "API_KEY"
+)
+
+const (
+	HeaderKeyApiKey = "X-API-Key"
+)
 
 // Check clean up the configuration and logs comments if required
 func (config *Config) Check() {
@@ -76,7 +84,6 @@ func (config *Config) Check() {
 // New returns a new fully configured instance of chi.Mux
 // It instanciates all middlewares including the security ones, all routes and route groups
 func New(config Config, services Services) *chi.Mux {
-
 	config.Check()
 
 	r := chi.NewRouter()
@@ -86,7 +93,7 @@ func New(config Config, services Services) *chi.Mux {
 		corsHandler := cors.New(cors.Options{
 			AllowedOrigins:   []string{"*"},
 			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", HeaderKeyApiKey},
 			ExposedHeaders:   []string{"Link", "Authenticate-To", "Content-Disposition"},
 			AllowCredentials: true,
 			MaxAge:           300, // Maximum value not ignored by any of major browsers
@@ -107,22 +114,69 @@ func New(config Config, services Services) *chi.Mux {
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Timeout(60 * time.Second))
 
-	var routes func(r chi.Router)
-	var err error
+	signingKey := []byte(sdksecurity.RandString(128))
+	jwtAuth := jwtauth.New("HS256", signingKey, nil)
 
-	switch config.AuthenticationMode {
-	case "BASIC":
-		routes, err = buildRoutesV3Basic(config, services)
-	case "SAML":
-		routes, err = buildRoutesV3SAML(config, services)
-	case "OIDC":
-		routes, err = buildRoutesV3OIDC(config, services)
-	default:
-		zap.L().Panic("Authentication mode not supported", zap.String("AuthenticationMode", config.AuthenticationMode))
-		return nil
-	}
-	if err != nil {
-		zap.L().Panic("Cannot initialize API routes", zap.String("AuthenticationMode", config.AuthenticationMode), zap.Error(err))
+	dynamicMiddleware := dynamicAuthMiddleware(config, jwtAuth)
+
+	routes := func(r chi.Router) {
+		// Public routes
+		r.Group(func(rg chi.Router) {
+			rg.Use(SwaggerUICustomizationMiddleware)
+			rg.Get("/isalive", handlers.IsAlive)
+			rg.Get("/swagger/*", httpSwagger.WrapHandler)
+
+			// Routes spécifiques selon le mode d'authentification
+			switch config.AuthenticationMode {
+			case AuthModeBasic:
+				securityMiddleware := sdksecurity.NewMiddlewareJWT(signingKey, sdksecurity.NewDatabaseAuth(postgres.DB()))
+				rg.Post("/login", securityMiddleware.GetToken())
+			case AuthModeOIDC:
+				rg.Get("/auth/oidc", handlers.HandleOIDCRedirect)
+				rg.Get("/auth/oidc/callback", handlers.HandleOIDCCallback)
+			}
+
+			// Routes publiques communes
+			rg.Get("/authmode", handlers.GetAuthenticationMode)
+			rg.Get("/engine/issues/unprotected", handlers.GetIssuesByStatesByPageUnProtected)
+			rg.Get("/engine/security/apikey/validate", handlers.ValidateAPIKey)
+			rg.Get("/engine/situations/{id}/instances/unprotected", handlers.GetSituationTemplateInstancesUnprotected)
+		})
+
+		// Protected routes
+		r.Group(func(rg chi.Router) {
+			if config.Security {
+				rg.Use(dynamicMiddleware)
+			}
+			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
+
+			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
+			rg.Mount("/engine", engineRouter(services))
+
+			for _, plugin := range services.PluginCore.Plugins {
+				rg.Mount(plugin.Plugin.HandlerPrefix(), plugin.Plugin.Handler())
+				rg.HandleFunc(fmt.Sprintf("/plugin%s", plugin.Plugin.HandlerPrefix()), func(w http.ResponseWriter, r *http.Request) {
+					render.JSON(w, r, map[string]interface{}{"loaded": true})
+				})
+				rg.HandleFunc(fmt.Sprintf("/plugin%s/*", plugin.Plugin.HandlerPrefix()), ReverseProxy(plugin.Plugin))
+			}
+		})
+
+		// Admin Protection routes
+		r.Group(func(rg chi.Router) {
+			if config.Security {
+				// Même middleware dynamique pour les routes admin
+				rg.Use(dynamicMiddleware)
+			}
+			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
+			rg.Mount("/admin", adminRouter())
+		})
+
+		// System intra service Protection routes
+		r.Group(func(rg chi.Router) {
+			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
+			rg.Mount("/service", serviceRouter(services))
+		})
 	}
 
 	r.Route("/api/v4", routes)
@@ -131,236 +185,53 @@ func New(config Config, services Services) *chi.Mux {
 	return r
 }
 
-func buildRoutesV3Basic(config Config, services Services) (func(r chi.Router), error) {
-	signingKey := []byte(sdksecurity.RandString(128))
-	securityMiddleware := sdksecurity.NewMiddlewareJWT(signingKey, sdksecurity.NewDatabaseAuth(postgres.DB()))
+// dynamicAuthMiddleware selects the appropriate authentication middleware
+func dynamicAuthMiddleware(config Config, jwtAuth *jwtauth.JWTAuth) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if apiKey := r.Header.Get(HeaderKeyApiKey); apiKey != "" {
+				zap.L().Debug("Using API Key authentication")
 
-	return func(r chi.Router) {
+				handler := ContextMiddlewareApiKey(next)
+				handler.ServeHTTP(w, r)
+				return
+			}
 
-		// Public routes
-		r.Group(func(rg chi.Router) {
-			rg.Use(SwaggerUICustomizationMiddleware)
-			rg.Get("/isalive", handlers.IsAlive)
-			rg.Get("/swagger/*", httpSwagger.WrapHandler)
-
-			rg.Post("/login", securityMiddleware.GetToken())
-			r.Get("/authmode", handlers.GetAuthenticationMode)
-			rg.Get("/engine/issues/unprotected", handlers.GetIssuesByStatesByPageUnProtected)
-			rg.Get("/engine/security/apikey/validate", handlers.ValidateAPIKey)
-			rg.Get("/engine/situations/{id}/instances/unprotected", handlers.GetSituationTemplateInstancesUnprotected)
-		})
-
-		// Protected routes
-		r.Group(func(rg chi.Router) {
-			if config.Security {
+			switch config.AuthenticationMode {
+			case AuthModeBasic:
 				if config.GatewayMode {
-					// Warning: No signature verification will be done on JWT.
-					// JWT MUST have been verified before by the API Gateway
-					rg.Use(sdkrouter.UnverifiedAuthenticator)
+					handler := sdkrouter.UnverifiedAuthenticator(next)
+					handler.ServeHTTP(w, r)
 				} else {
-					rg.Use(func(next http.Handler) http.Handler {
-						// jwtauth.Verifier function only verifies header & cookie but not query
-						// websocket requests only handles uri parameters, so jwtauth.TokenFromHeader
-						// is needed here.
-						return jwtauth.Verify(jwtauth.New("HS256", signingKey, nil),
-							jwtauth.TokenFromQuery, jwtauth.TokenFromHeader, jwtauth.TokenFromCookie)(next)
-					})
-					rg.Use(CustomAuthenticator)
+					handler := ContextMiddleware(next)
+					jwtVerifier := jwtauth.Verify(jwtAuth,
+						jwtauth.TokenFromQuery,
+						jwtauth.TokenFromHeader,
+						jwtauth.TokenFromCookie)
+					handler = CustomAuthenticator(handler)
+					handler = jwtVerifier(handler)
+
+					handler.ServeHTTP(w, r)
 				}
-				rg.Use(ContextMiddleware)
-			}
-			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
-			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
-			rg.Mount("/engine", engineRouter(services))
-
-			for _, plugin := range services.PluginCore.Plugins {
-				rg.Mount(plugin.Plugin.HandlerPrefix(), plugin.Plugin.Handler())
-				rg.HandleFunc(fmt.Sprintf("/plugin%s", plugin.Plugin.HandlerPrefix()), func(w http.ResponseWriter, r *http.Request) {
-					render.JSON(w, r, map[string]interface{}{"loaded": true})
-				})
-				rg.HandleFunc(fmt.Sprintf("/plugin%s/*", plugin.Plugin.HandlerPrefix()), ReverseProxy(plugin.Plugin))
-			}
-
-		})
-
-		// Admin Protection routes
-		r.Group(func(rg chi.Router) {
-			if config.Security {
+			case AuthModeOIDC:
 				if config.GatewayMode {
-					// Warning: No signature verification will be done on JWT.
-					// JWT MUST have been verified before by the API Gateway
-					rg.Use(sdkrouter.UnverifiedAuthenticator)
+					zap.L().Warn("Request with OIDC mode in Gateway mode - falling back to BASIC")
+					handler := sdkrouter.UnverifiedAuthenticator(next)
+					handler.ServeHTTP(w, r)
 				} else {
-					rg.Use(jwtauth.Verifier(jwtauth.New("HS256", signingKey, nil)))
-					rg.Use(CustomAuthenticator)
+					handler := oidcAuth.ContextMiddleware(next)
+					handler = oidcAuth.OIDCMiddleware(handler)
+					handler.ServeHTTP(w, r)
 				}
-				// rg.Use(security.AdminAuthentificator)
-				rg.Use(ContextMiddleware)
+
+			default:
+				zap.L().Error("Unsupported authentication mode",
+					zap.String("AuthenticationMode", config.AuthenticationMode))
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
 			}
-			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
-
-			rg.Mount("/admin", adminRouter())
 		})
-
-		// System intra service Protection routes
-		r.Group(func(rg chi.Router) {
-			//TODO: change to be intra APIs
-			// if config.Security {
-			// 	rg.Use(jwtauth.Verifier(jwtauth.New(jwa.HS256.String(), signingKey, nil)))
-			// 	rg.Use(CustomAuthenticator)
-			// 	rg.Use(ContextMiddleware)
-			// }
-			// rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
-
-			rg.Mount("/service", serviceRouter(services))
-		})
-	}, nil
-}
-
-func buildRoutesV3SAML(config Config, services Services) (func(r chi.Router), error) {
-
-	samlConfig := SamlSPMiddlewareConfig{
-		MetadataMode:             viper.GetString("AUTHENTICATION_SAML_METADATA_MODE"),
-		MetadataFilePath:         viper.GetString("AUTHENTICATION_SAML_METADATA_FILE_PATH"),
-		MetadataURL:              viper.GetString("AUTHENTICATION_SAML_METADATA_URL"),
-		EnableMemberOfValidation: viper.GetBool("AUTHENTICATION_SAML_ENABLE_MEMBEROF_VALIDATION"),
-		AttributeUserID:          viper.GetString("AUTHENTICATION_SAML_ATTRIBUTE_USER_ID"),
-		AttributeUserDisplayName: viper.GetString("AUTHENTICATION_SAML_ATTRIBUTE_USER_DISPLAYNAME"),
-		AttributeUserMemberOf:    viper.GetString("AUTHENTICATION_SAML_ATTRIBUTE_USER_MEMBEROF"),
-		CookieMaxAge:             viper.GetDuration("AUTHENTICATION_SAML_COOKIE_MAX_AGE_DURATION"),
 	}
-	if ok, err := samlConfig.IsValid(); !ok {
-		return nil, err
-	}
-
-	spRootURLStr := viper.GetString("AUTHENTICATION_SAML_ROOT_URL")
-	entityID := viper.GetString("AUTHENTICATION_SAML_ENTITYID")
-	samlKeyFile := viper.GetString("AUTHENTICATION_SAML_KEY_FILE_PATH")
-	samlCrtFile := viper.GetString("AUTHENTICATION_SAML_CRT_FILE_PATH")
-	samlSPMiddleware, err := NewSamlSP(spRootURLStr, entityID, samlKeyFile, samlCrtFile, samlConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(r chi.Router) {
-
-		// Public routes
-		r.Group(func(rg chi.Router) {
-			rg.Get("/isalive", handlers.IsAlive)
-			rg.Get("/swagger/*", httpSwagger.WrapHandler)
-			rg.Handle("/saml/*", samlSPMiddleware)
-			rg.Handle("/logout", handlers.LogoutHandler(samlSPMiddleware.Deconnexion))
-			r.Get("/authmode", handlers.GetAuthenticationMode)
-			rg.Get("/engine/issues/unprotected", handlers.GetIssuesByStatesByPageUnProtected)
-			rg.Get("/engine/situations/{id}/instances/unprotected", handlers.GetSituationTemplateInstancesUnprotected)
-			rg.Get("/engine/security/apikey/validate", handlers.ValidateAPIKey)
-		})
-
-		// Protected routes
-		r.Group(func(rg chi.Router) {
-			if config.Security {
-				rg.Use(samlSPMiddleware.RequireAccount)
-				rg.Use(samlSPMiddleware.ContextMiddleware)
-			}
-			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
-
-			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
-			rg.Mount("/engine", engineRouter(services))
-
-			for _, plugin := range services.PluginCore.Plugins {
-				rg.Mount(plugin.Plugin.HandlerPrefix(), plugin.Plugin.Handler())
-				rg.HandleFunc(fmt.Sprintf("/plugin%s", plugin.Plugin.HandlerPrefix()), func(w http.ResponseWriter, r *http.Request) {
-					render.JSON(w, r, map[string]interface{}{"loaded": true})
-				})
-				rg.HandleFunc(fmt.Sprintf("/plugin%s/*", plugin.Plugin.HandlerPrefix()), ReverseProxy(plugin.Plugin))
-			}
-
-		})
-
-		// Admin Protection routes
-		r.Group(func(rg chi.Router) {
-			if config.Security {
-				rg.Use(samlSPMiddleware.RequireAccount)
-				rg.Use(samlSPMiddleware.ContextMiddleware)
-				// rg.Use(samlSPMiddleware.AdminAuthentificator)
-			}
-			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
-
-			rg.Mount("/admin", adminRouter())
-		})
-
-		// System intra service Protection routes
-		r.Group(func(rg chi.Router) {
-			//TODO: change to be intra APIs
-			// if config.Security {
-			// 	rg.Use(samlSPMiddleware.RequireAccount)
-			// 	rg.Use(samlSPMiddleware.ContextMiddleware)
-			// 	rg.Use(security.AdminAuthentificator)
-			// }
-			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
-
-			rg.Mount("/service", serviceRouter(services))
-		})
-	}, nil
-}
-
-func buildRoutesV3OIDC(config Config, services Services) (func(r chi.Router), error) {
-
-	return func(r chi.Router) {
-		// Public routes
-		r.Group(func(rg chi.Router) {
-			rg.Get("/isalive", handlers.IsAlive)
-			rg.Get("/swagger/*", httpSwagger.WrapHandler)
-
-			// Endpoints OIDC
-			rg.Get("/auth/oidc", handlers.HandleOIDCRedirect)
-			rg.Get("/auth/oidc/callback", handlers.HandleOIDCCallback)
-			r.Get("/authmode", handlers.GetAuthenticationMode)
-			rg.Get("/engine/issues/unprotected", handlers.GetIssuesByStatesByPageUnProtected)
-			rg.Get("/engine/situations/{id}/instances/unprotected", handlers.GetSituationTemplateInstancesUnprotected)
-		})
-
-		// Protected routes
-		r.Group(func(rg chi.Router) {
-			if config.Security {
-				// Middleware OIDC
-				rg.Use(oidcAuth.OIDCMiddleware)
-				rg.Use(oidcAuth.ContextMiddleware)
-
-			}
-			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
-
-			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
-			rg.Mount("/engine", engineRouter(services))
-
-			for _, plugin := range services.PluginCore.Plugins {
-				rg.Mount(plugin.Plugin.HandlerPrefix(), plugin.Plugin.Handler())
-				rg.HandleFunc(fmt.Sprintf("/plugin%s", plugin.Plugin.HandlerPrefix()), func(w http.ResponseWriter, r *http.Request) {
-					render.JSON(w, r, map[string]interface{}{"loaded": true})
-				})
-				rg.HandleFunc(fmt.Sprintf("/plugin%s/*", plugin.Plugin.HandlerPrefix()), ReverseProxy(plugin.Plugin))
-			}
-		})
-
-		// Admin Protection routes
-		r.Group(func(rg chi.Router) {
-			if config.Security {
-				rg.Use(oidcAuth.OIDCMiddleware)
-				rg.Use(oidcAuth.ContextMiddleware)
-			}
-			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
-
-			rg.Mount("/admin", adminRouter())
-		})
-
-		// System intra service Protection routes
-		r.Group(func(rg chi.Router) {
-			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
-
-			rg.Mount("/service", serviceRouter(services))
-		})
-	}, nil
 }
 
 // ReverseProxy act as a reverse proxy for any plugin http handlers

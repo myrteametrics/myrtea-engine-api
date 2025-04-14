@@ -7,7 +7,7 @@ import (
 
 type Repository interface {
 	Get(uuid uuid.UUID) (APIKey, bool, error)
-	Create(apiKey APIKey) (CreateResponse, error)
+	Create(apiKey APIKey) (APIKey, error)
 	Update(apiKey APIKey) error
 	Delete(uuid uuid.UUID) error
 	GetAll() ([]APIKey, error)

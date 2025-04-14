@@ -23,11 +23,6 @@ type APIKey struct {
 	CreatedBy  string     `json:"createdBy" db:"created_by"`
 }
 
-type CreateResponse struct {
-	Id  uuid.UUID `json:"id"`
-	Key string    `json:"key"`
-}
-
 func (key *APIKey) IsValid() error {
 	if key.Name == "" {
 		return errors.New("missing Name")

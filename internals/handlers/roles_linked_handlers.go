@@ -20,6 +20,7 @@ import (
 // @Produce json
 // @Param id path string true "role ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} permissions.Permission "permission"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 404 {string} string "Not Found"

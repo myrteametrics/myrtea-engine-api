@@ -20,6 +20,7 @@ import (
 // @Tags Roles
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} roles.Role "list of roles"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/roles [get]
@@ -51,6 +52,7 @@ func GetRoles(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "role ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} roles.Role "role"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 404 {string} string "Not Found"
@@ -94,6 +96,7 @@ func GetRole(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param role body roles.Role true "role (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} roles.Role "role"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -124,6 +127,7 @@ func ValidateRole(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param role body roles.Role true "role (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} roles.Role "role"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -180,6 +184,7 @@ func PostRole(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "role ID"
 // @Param role body roles.Role true "role (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} roles.Role "role"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -243,6 +248,7 @@ func PutRole(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "role ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {string} string "status OK"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -281,6 +287,7 @@ func DeleteRole(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "role ID"
 // @Param role body []string true "List of permissions UUIDs"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} roles.Role "role"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"

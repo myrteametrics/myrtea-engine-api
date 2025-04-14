@@ -31,6 +31,7 @@ func NewProcessorHandler() *ProcessorHandler {
 // @Produce json
 // @Param fact query string true "Fact object name"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 500 "internal server error"
 // @Router /service/objects [post]
@@ -70,6 +71,7 @@ func PostObjects(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param query body []scheduler.ExternalAggregate true "query (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 429 "Processing queue is full please retry later"
 // @Failure 500 "internal server error"

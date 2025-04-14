@@ -20,6 +20,7 @@ import (
 // @Tags VariablesConfig
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} models.VariablesConfig "list of all Variables with it's config"
 // @Failure 500 "internal server error"
 // @Router /engine/variablesconfig [get]
@@ -48,6 +49,7 @@ func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Variable Config ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.VariablesConfig "One Variable Config getted by id"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/variablesconfig/{id} [get]
@@ -91,6 +93,7 @@ func GetVariableConfig(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param key path string true "Variable Config key"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.VariablesConfig " One Variable Config getted by key"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/variablesconfig/key/{key} [get]
@@ -128,6 +131,7 @@ func GetVariableConfigByKey(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param VariableConfig body models.VariablesConfig true "VariableConfig definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.VariablesConfig "Ppost VariableConfig"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -179,6 +183,7 @@ func PostVariableConfig(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "VariableConfig ID"
 // @Param VariableConfig body models.VariablesConfig true "VariableConfig definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.VariablesConfig "VariableConfig"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -238,6 +243,7 @@ func PutVariableConfig(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "VariableConfig ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/variablesconfig/{id} [delete]

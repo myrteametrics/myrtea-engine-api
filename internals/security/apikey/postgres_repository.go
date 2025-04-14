@@ -50,7 +50,7 @@ func (r *PostgresRepository) Get(apiKeyUUID uuid.UUID) (APIKey, bool, error) {
 }
 
 // Create creates a new APIKey in the repository
-func (r *PostgresRepository) Create(apiKey APIKey) (CreateResponse, error) {
+func (r *PostgresRepository) Create(apiKey APIKey) (APIKey, error) {
 	newUUID := uuid.New()
 	if apiKey.ID != uuid.Nil {
 		newUUID = apiKey.ID
@@ -75,9 +75,11 @@ func (r *PostgresRepository) Create(apiKey APIKey) (CreateResponse, error) {
 		).
 		Exec()
 	if err != nil {
-		return CreateResponse{}, err
+		return APIKey{}, err
 	}
-	return CreateResponse{Id: newUUID, Key: keyValue}, nil
+	apiKey.ID = newUUID
+	apiKey.KeyHash = keyValue
+	return apiKey, nil
 }
 
 // Update updates an APIKey in the repository

@@ -20,9 +20,10 @@ import (
 // @Tags APIKeys
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} apikey.APIKey "list of API keys"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/apikeys [get]
+// @Router /admin/security/apikey [get]
 func GetAPIKeys(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeAPIKey, permissions.All, permissions.ActionList)) {
@@ -51,6 +52,7 @@ func GetAPIKeys(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "API key ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} apikey.APIKey "API key"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 404 {string} string "Not Found"
@@ -130,10 +132,11 @@ func ValidateAPIKey(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param apikey body apikey.APIKey true "API key (json)"
 // @Security Bearer
-// @Success 200 {object} apikey.APIKeyWithValue "API key with value"
+// @Security ApiKeyAuth
+// @Success 200 {object} apikey.APIKey "API key with value"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/apikeys [post]
+// @Router /admin/security/apikey [post]
 func CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeAPIKey, permissions.All, permissions.ActionCreate)) {
@@ -156,18 +159,16 @@ func CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set the creator to the current user
 	key.CreatedBy = userCtx.Login
 
-	// Create the API key
-	keyWithValue, err := apikey.R().Create(key)
+	apiKey, err := apikey.R().Create(key)
 	if err != nil {
 		zap.L().Error("PostAPIKey.Create", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	render.JSON(w, r, keyWithValue)
+	render.JSON(w, r, apiKey)
 }
 
 // PutAPIKey godoc
@@ -179,6 +180,7 @@ func CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "API key ID"
 // @Param apikey body apikey.APIKey true "API key (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} apikey.APIKey "API key"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -243,6 +245,7 @@ func PutAPIKey(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "API key ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {string} string "status OK"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -279,6 +282,7 @@ func DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "API key ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {string} string "status OK"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -315,10 +319,11 @@ func DeactivateAPIKey(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param roleId path string true "Role ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} apikey.APIKey "list of API keys"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/roles/{roleId}/apikeys [get]
+// @Router /admin/security/roles/{roleId}/apikey [get]
 func GetAPIKeysForRole(w http.ResponseWriter, r *http.Request) {
 	roleID := chi.URLParam(r, "roleId")
 	roleUUID, err := uuid.Parse(roleID)
