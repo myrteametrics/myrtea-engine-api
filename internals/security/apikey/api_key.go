@@ -4,10 +4,11 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	sdksecurity "github.com/myrteametrics/myrtea-sdk/v5/security"
+	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
-const ApiKeyLength = 24
+const ApiKeyLength = 48
 
 // APIKey represents a stored API key
 type APIKey struct {
@@ -88,4 +89,19 @@ func (key *APIKey) IsValidForUpdate() error {
 func GenerateAPIKey(prefix string) string {
 	randomPart := sdksecurity.RandString(ApiKeyLength - len(prefix))
 	return prefix + "_" + randomPart
+}
+
+// HashAPIKey generates a bcrypt hash for an API key
+func HashAPIKey(keyValue string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(keyValue), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
+}
+
+// CompareAPIKey compares an API key with a bcrypt hash
+func CompareAPIKey(keyValue, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(keyValue))
+	return err == nil
 }

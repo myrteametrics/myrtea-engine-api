@@ -57,13 +57,17 @@ func (r *PostgresRepository) Create(apiKey APIKey) (APIKey, error) {
 	}
 
 	keyValue := GenerateAPIKey(apiKey.KeyPrefix)
+	keyHash, err := HashAPIKey(keyValue)
+	if err != nil {
+		return APIKey{}, err
+	}
 
-	_, err := r.newStatement().
+	_, err = r.newStatement().
 		Insert(table).
 		Columns(fields...).
 		Values(
 			newUUID,
-			sq.Expr("crypt(?, gen_salt('md5'))", keyValue),
+			keyHash,
 			apiKey.KeyPrefix,
 			apiKey.Name,
 			apiKey.RoleID,
@@ -169,25 +173,30 @@ func (r *PostgresRepository) Validate(keyValue string) (APIKey, bool, error) {
 		Where("key_prefix = ?", keyPrefix).
 		Where("is_active = true").
 		Where("(expires_at IS NULL OR expires_at > NOW())").
-		Where("key_hash = crypt(?, key_hash)", keyValue).
 		Query()
 	if err != nil {
 		return APIKey{}, false, err
 	}
 	defer rows.Close()
 
-	apiKey, found, err := r.scanFirst(rows)
-	if err != nil || !found {
+	apiKeys, err := r.scanAll(rows)
+	if err != nil {
 		return APIKey{}, false, err
 	}
 
-	_, _ = r.newStatement().
-		Update(table).
-		Set("last_used_at", time.Now()).
-		Where("id = ?", apiKey.ID).
-		Exec()
+	for _, apiKey := range apiKeys {
+		if CompareAPIKey(keyValue, apiKey.KeyHash) {
+			_, _ = r.newStatement().
+				Update(table).
+				Set("last_used_at", time.Now()).
+				Where("id = ?", apiKey.ID).
+				Exec()
 
-	return apiKey, true, nil
+			return apiKey, true, nil
+		}
+	}
+
+	return APIKey{}, true, nil
 }
 
 func (r *PostgresRepository) newStatement() sq.StatementBuilderType {

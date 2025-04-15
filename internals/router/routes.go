@@ -41,7 +41,7 @@ func adminRouter() http.Handler {
 	r.Get("/security/apikey/{id}", handlers.GetAPIKey)
 	r.Post("/security/apikey", handlers.CreateAPIKey)
 	r.Put("/security/apikey/{id}", handlers.PutAPIKey)
-	r.Delete("/security/apikey/{id}", handlers.GetAPIKey)
+	r.Delete("/security/apikey/{id}", handlers.DeleteAPIKey)
 	r.Post("/security/apikey/{id}/deactivate", handlers.DeactivateAPIKey)
 	r.Get("/security/roles/{roleId}/apikey", handlers.GetAPIKeysForRole)
 
