@@ -192,7 +192,7 @@ func engineRouter(services Services) http.Handler {
 	r.Post("/exports/custom", services.ExportHandler.ExportCustom)
 
 	r.Get("/variablesconfig", handlers.GetVariablesConfig)
-	r.Get("/variablesconfig/{scope}", handlers.GetVariablesConfigByScope)
+	r.Get("/variablesconfig/scope/{scope}", handlers.GetVariablesConfigByScope)
 	r.Get("/variablesconfig/{id}", handlers.GetVariableConfig)
 	r.Get("/variablesconfig/key/{key}", handlers.GetVariableConfigByKey)
 	r.Post("/variablesconfig", handlers.PostVariableConfig)
