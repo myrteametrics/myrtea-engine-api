@@ -12,7 +12,7 @@ func Init() {
 
 	initPostgres()
 	initRepositories()
-	//initElasticsearch()
+	initElasticsearch()
 	initServices()
 }
 
