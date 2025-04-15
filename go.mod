@@ -27,6 +27,7 @@ require (
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.3
 	go.uber.org/zap v1.27.0
+	golang.org/x/crypto v0.33.0
 	golang.org/x/net v0.35.0
 	golang.org/x/oauth2 v0.25.0
 	google.golang.org/grpc v1.67.3
@@ -98,7 +99,7 @@ require (
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
-	github.com/rickar/cal/v2 v2.1.23 // indirect
+	github.com/rickar/cal v1.0.2-0.20191101183814-0e8e6fcfe1c2 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
@@ -112,7 +113,6 @@ require (
 	go.opentelemetry.io/otel/metric v1.29.0 // indirect
 	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
-	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/tools v0.30.0 // indirect
