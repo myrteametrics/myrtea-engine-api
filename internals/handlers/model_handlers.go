@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/utils/dbutils"
 	"net/http"
 	"sort"
 	"strconv"
@@ -191,6 +192,10 @@ func PostModel(w http.ResponseWriter, r *http.Request) {
 
 	idModel, err := model.R().Create(newModel)
 	if err != nil {
+		if dbutils.UniqueViolation(err) != nil {
+			render.Error(w, r, render.ErrAPIResourceInvalid, errors.New("model with same name already exists"))
+			return
+		}
 		zap.L().Error("Error while creating the Model", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
 		return
