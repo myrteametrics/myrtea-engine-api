@@ -58,7 +58,7 @@ func (r *PostgresRepository) checkRowsAffected(res sql.Result, nbRows int64) err
 // Get use to retrieve an variableConfig by id
 func (r *PostgresRepository) Get(id int64) (models.VariablesConfig, bool, error) {
 	rows, err := r.newStatement().
-		Select("key", "value").
+		Select("key", "value", "scope").
 		From(table).
 		Where(sq.Eq{"id": id}).
 		Query()
@@ -67,9 +67,9 @@ func (r *PostgresRepository) Get(id int64) (models.VariablesConfig, bool, error)
 	}
 	defer rows.Close()
 
-	var key, value string
+	var key, value, scope string
 	if rows.Next() {
-		err := rows.Scan(&key, &value)
+		err := rows.Scan(&key, &value, &scope)
 		if err != nil {
 			return models.VariablesConfig{}, false, fmt.Errorf("couldn't scan the action with id %d: %s", id, err.Error())
 		}
@@ -81,13 +81,14 @@ func (r *PostgresRepository) Get(id int64) (models.VariablesConfig, bool, error)
 		Id:    id,
 		Key:   key,
 		Value: value,
+		Scope: scope,
 	}, true, nil
 }
 
 // GetByName use to retrieve an variableConfig by name
 func (r *PostgresRepository) GetByKey(key string) (models.VariablesConfig, bool, error) {
 	rows, err := r.newStatement().
-		Select("id", "value").
+		Select("id", "value", "scope").
 		From(table).
 		Where(sq.Eq{"key": key}).
 		Query()
@@ -97,7 +98,7 @@ func (r *PostgresRepository) GetByKey(key string) (models.VariablesConfig, bool,
 	defer rows.Close()
 
 	var id int64
-	var value string
+	var value, scope string
 	if rows.Next() {
 		err := rows.Scan(&id, &value)
 		if err != nil {
@@ -111,6 +112,7 @@ func (r *PostgresRepository) GetByKey(key string) (models.VariablesConfig, bool,
 		Id:    id,
 		Key:   key,
 		Value: value,
+		Scope: scope,
 	}, true, nil
 }
 
@@ -119,8 +121,8 @@ func (r *PostgresRepository) Create(variable models.VariablesConfig) (int64, err
 	var id int64
 	err := r.newStatement().
 		Insert(table).
-		Columns("key", "value").
-		Values(variable.Key, variable.Value).
+		Columns("key", "value", "scope").
+		Values(variable.Key, variable.Value, variable.Scope).
 		Suffix("RETURNING \"id\"").
 		QueryRow().
 		Scan(&id)
@@ -128,7 +130,9 @@ func (r *PostgresRepository) Create(variable models.VariablesConfig) (int64, err
 		return -1, err
 	}
 
-	expression.G().Set(variable.Key, variable.Value)
+	if variable.Scope == "global" {
+		expression.G().Set(variable.Key, variable.Value)
+	}
 
 	return id, nil
 }
@@ -138,14 +142,17 @@ func (r *PostgresRepository) Update(id int64, variable models.VariablesConfig) e
 	res, err := r.newStatement().
 		Update(table).
 		Set("key", variable.Key).
-		Set("Value", variable.Value).
+		Set("value", variable.Value).
+		Set("scope", variable.Scope).
 		Where("id = ?", id).
 		Exec()
 	if err != nil {
 		return err
 	}
 
-	expression.G().Set(variable.Key, variable.Value)
+	if variable.Scope == "global" {
+		expression.G().Set(variable.Key, variable.Value)
+	}
 
 	return r.checkRowsAffected(res, 1)
 }
@@ -154,7 +161,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 	builder := r.newStatement().
 		Delete(table).
 		Where("id = ?", id).
-		Suffix("RETURNING key, value")
+		Suffix("RETURNING key, value, scope")
 
 	query, args, err := builder.ToSql()
 	if err != nil {
@@ -170,11 +177,13 @@ func (r *PostgresRepository) Delete(id int64) error {
 	var rowCount int64
 
 	for rows.Next() {
-		var key, value string
-		if err := rows.Scan(&key, &value); err != nil {
+		var key, value, scope string
+		if err := rows.Scan(&key, &value, &scope); err != nil {
 			return fmt.Errorf("failed to scan row: %v", err)
 		}
-		expression.G().Delete(key)
+		if scope == "global" {
+			expression.G().Delete(key)
+		}
 		rowCount++
 	}
 
@@ -191,12 +200,23 @@ func (r *PostgresRepository) Delete(id int64) error {
 
 // GetAll method used to get all Variables Config
 func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
+	return r.GetAllByScope("")
+}
+
+// GetAll method used to get all Variables Config filtered on a specified scope value
+// Scope used to filter is by default set to "global" for retro-compatibility
+func (r *PostgresRepository) GetAllByScope(scope string) ([]models.VariablesConfig, error) {
 	variablesConfig := make([]models.VariablesConfig, 0)
 
-	rows, err := r.newStatement().
-		Select("id", "key", "value").
-		From(table).
-		Query()
+	query := r.newStatement().
+		Select("id", "key", "value", "scope").
+		From(table)
+
+	if scope != "" {
+		query = query.Where(sq.Eq{"scope": scope})
+	}
+
+	rows, err := query.Query()
 
 	if err != nil {
 		return nil, err
@@ -205,9 +225,9 @@ func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
 
 	for rows.Next() {
 		var id int64
-		var key, value string
+		var key, value, scope string
 
-		err := rows.Scan(&id, &key, &value)
+		err := rows.Scan(&id, &key, &value, &scope)
 		if err != nil {
 			return nil, err
 		}
@@ -216,6 +236,7 @@ func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
 			Id:    id,
 			Key:   key,
 			Value: value,
+			Scope: scope,
 		}
 
 		variablesConfig = append(variablesConfig, variable)
@@ -225,13 +246,24 @@ func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
 
 // GetAllAsMap method used to get all Variables Config as map[string]interface{}
 func (r *PostgresRepository) GetAllAsMap() (map[string]interface{}, error) {
+	return r.GetAllAsMapByScope("")
+}
+
+// GetAllAsMap method used to get all Variables Config as map[string]interface{} filtered on a specified scope value
+// Scope used to filter is by default set to "global" for retro-compatibility
+func (r *PostgresRepository) GetAllAsMapByScope(scope string) (map[string]interface{}, error) {
 
 	variableConfigMap := make(map[string]interface{})
 
-	rows, err := r.newStatement().
-		Select("key", "value").
-		From(table).
-		Query()
+	query := r.newStatement().
+		Select("key", "value", "scope").
+		From(table)
+
+	if scope != "" {
+		query = query.Where(sq.Eq{"scope": scope})
+	}
+
+	rows, err := query.Query()
 
 	if err != nil {
 		return nil, err
@@ -239,9 +271,9 @@ func (r *PostgresRepository) GetAllAsMap() (map[string]interface{}, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var key, value string
+		var key, value, scope string
 
-		err := rows.Scan(&key, &value)
+		err := rows.Scan(&key, &value, &scope)
 		if err != nil {
 			return nil, err
 		}

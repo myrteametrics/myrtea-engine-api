@@ -41,6 +41,34 @@ func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, VariablesConfig)
 }
 
+// GetVariablesConfig godoc
+// @Summary Get all Variables Config definitions by scope
+// @Description Get all VariableConfig definitions that match with scope value or scope 'global' by default
+// @Tags VariablesConfig
+// @Produce json
+// @Security Bearer
+// @Success 200 {array} models.VariablesConfig "list of all Variables with it's config"
+// @Failure 500 "internal server error"
+// @Router /engine/variablesconfig/{scope} [get]
+func GetVariablesConfigByScope(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionList)) {
+		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	scope := chi.URLParam(r, "scope")
+	VariablesConfig, err := variablesconfig.R().GetAllByScope(scope)
+	if err != nil {
+		zap.L().Error("Error getting VariableConfigs filtered by scope", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	render.JSON(w, r, VariablesConfig)
+}
+
 // GetVariableConfig godoc
 // @Summary Get an Variable Config definition
 // @Description Get an Variable Config definition
