@@ -19,7 +19,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/json-iterator/go v1.1.12
 	github.com/lib/pq v1.10.9
-	github.com/myrteametrics/myrtea-sdk/v5 v5.2.0
+	github.com/myrteametrics/myrtea-sdk/v5 v5.2.1
 	github.com/prataprc/goparsec v0.0.0-20211219142520-daac0e635e7e
 	github.com/prometheus/client_golang v1.22.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -35,7 +35,7 @@ require (
 )
 
 require (
-	github.com/IBM/sarama v1.45.0 // indirect
+	github.com/IBM/sarama v1.45.1 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PaesslerAG/gval v1.2.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -115,7 +115,7 @@ require (
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
-	golang.org/x/tools v0.30.0 // indirect
+	golang.org/x/tools v0.31.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
