@@ -13,6 +13,7 @@ import (
 )
 
 const table = "variables_config_v1"
+const globalVariablesScope = "global"
 
 // PostgresRepository is a repository containing the VariablesConfig definition based on a PSQL database and
 // implementing the repository interface
@@ -130,7 +131,7 @@ func (r *PostgresRepository) Create(variable models.VariablesConfig) (int64, err
 		return -1, err
 	}
 
-	if variable.Scope == "global" {
+	if variable.Scope == globalVariablesScope {
 		expression.G().Set(variable.Key, variable.Value)
 	}
 
@@ -150,7 +151,7 @@ func (r *PostgresRepository) Update(id int64, variable models.VariablesConfig) e
 		return err
 	}
 
-	if variable.Scope == "global" {
+	if variable.Scope == globalVariablesScope {
 		expression.G().Set(variable.Key, variable.Value)
 	}
 
@@ -181,7 +182,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 		if err := rows.Scan(&key, &value, &scope); err != nil {
 			return fmt.Errorf("failed to scan row: %v", err)
 		}
-		if scope == "global" {
+		if scope == globalVariablesScope {
 			expression.G().Delete(key)
 		}
 		rowCount++
@@ -204,7 +205,7 @@ func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
 }
 
 // GetAll method used to get all Variables Config filtered on a specified scope value
-// Scope used to filter is by default set to "global" for retro-compatibility
+// Scope used to filter is by default set to globalVariablesScope for retro-compatibility
 func (r *PostgresRepository) GetAllByScope(scope string) ([]models.VariablesConfig, error) {
 	variablesConfig := make([]models.VariablesConfig, 0)
 
@@ -250,7 +251,7 @@ func (r *PostgresRepository) GetAllAsMap() (map[string]interface{}, error) {
 }
 
 // GetAllAsMap method used to get all Variables Config as map[string]interface{} filtered on a specified scope value
-// Scope used to filter is by default set to "global" for retro-compatibility
+// Scope used to filter is by default set to globalVariablesScope for retro-compatibility
 func (r *PostgresRepository) GetAllAsMapByScope(scope string) (map[string]interface{}, error) {
 
 	variableConfigMap := make(map[string]interface{})
