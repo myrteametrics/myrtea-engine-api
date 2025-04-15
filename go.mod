@@ -119,5 +119,3 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241223144023-3abc09e42ca8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/myrteametrics/myrtea-sdk/v5 => ../myrtea-sdk

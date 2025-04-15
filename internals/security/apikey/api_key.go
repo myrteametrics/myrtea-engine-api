@@ -12,16 +12,16 @@ const ApiKeyLength = 48
 
 // APIKey represents a stored API key
 type APIKey struct {
-	ID         uuid.UUID  `json:"id" db:"id"`
-	KeyHash    string     `json:"keyHash" db:"key_hash"`
-	KeyPrefix  string     `json:"keyPrefix" db:"key_prefix"`
-	Name       string     `json:"name" db:"name"`
-	RoleID     uuid.UUID  `json:"roleId" db:"role_id"`
-	CreatedAt  time.Time  `json:"createdAt" db:"created_at"`
-	ExpiresAt  *time.Time `json:"expiresAt" db:"expires_at"`
-	LastUsedAt *time.Time `json:"lastUsedAt" db:"last_used_at"`
-	IsActive   bool       `json:"isActive" db:"is_active"`
-	CreatedBy  string     `json:"createdBy" db:"created_by"`
+	ID         uuid.UUID  `json:"id"`
+	KeyHash    string     `json:"keyHash"`
+	KeyPrefix  string     `json:"keyPrefix"`
+	Name       string     `json:"name"`
+	RoleID     uuid.UUID  `json:"roleId"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	ExpiresAt  *time.Time `json:"expiresAt"`
+	LastUsedAt *time.Time `json:"lastUsedAt"`
+	IsActive   bool       `json:"isActive"`
+	CreatedBy  string     `json:"createdBy"`
 }
 
 func (key *APIKey) IsValid() error {
