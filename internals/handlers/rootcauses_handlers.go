@@ -19,6 +19,7 @@ import (
 // @Tags RootCauses
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} models.RootCause "list of rootcauses"
 // @Failure 500 "internal server error"
 // @Router /engine/rootcauses [get]
@@ -49,6 +50,7 @@ func GetRootCauses(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "RootCause ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.RootCause "rootcause"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/rootcauses/{id} [get]
@@ -84,6 +86,7 @@ func GetRootCause(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param rootcause body models.RootCause true "RootCause definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.RootCause "rootcause"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -114,6 +117,7 @@ func ValidateRootCause(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param rootcause body models.RootCause true "RootCause definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.RootCause "rootcause"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -164,6 +168,7 @@ func PostRootCause(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "RootCause ID"
 // @Param rootcause body models.RootCause true "RootCause definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.RootCause "rootcause"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -221,6 +226,7 @@ func PutRootCause(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "RootCause ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/rootcauses/{id} [delete]

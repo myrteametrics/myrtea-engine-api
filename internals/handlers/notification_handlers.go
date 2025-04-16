@@ -21,6 +21,7 @@ import (
 // @Param nhit query int false "Hit per page"
 // @Param offset query int false "Offset number for pagination"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Failure 500 "internal server error"
 // @Router /engine/notifications [get]
 func GetNotifications(w http.ResponseWriter, r *http.Request) {
@@ -77,6 +78,7 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 // @Param id path int false "notification ID"
 // @Param status query boolean false "notification's read property given value"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 500 "internal server error"
 // @Failure 400 "Status bad request"

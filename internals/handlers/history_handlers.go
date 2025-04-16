@@ -16,6 +16,7 @@ import (
 // @Produce json
 // @Param factHistory body history.ParamGetFactHistory  true "JSON payload containing criteria for fetching today's history fact result."
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} history.FactResult "Successfully fetched result"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -55,6 +56,7 @@ func GetFactResultForTodayByCriteria(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param factHistory body history.ParamGetFactHistoryByDate true "JSON payload containing criteria and date range for fetching history fact result, with dates in '2006-01-02 15:04:05' format."
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} history.FactResult "Successfully fetched result"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status Internal Server Error"

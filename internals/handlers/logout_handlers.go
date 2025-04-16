@@ -14,6 +14,7 @@ import (
 // @Tags Admin
 // @Produce plain
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {string} string "Logged out successfully."
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /engine/logout [post]
@@ -36,6 +37,7 @@ func LogoutHandler(deleteSessionMiddleware func(http.Handler) http.Handler) http
 // @Tags Admin
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} routerauth.AuthenticationMode
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"

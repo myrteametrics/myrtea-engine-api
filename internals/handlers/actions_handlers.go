@@ -19,6 +19,7 @@ import (
 // @Tags Actions
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} models.Action "list of all actions"
 // @Failure 500 "internal server error"
 // @Router /engine/actions [get]
@@ -49,6 +50,7 @@ func GetActions(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Action ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.Action "action"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/actions/{id} [get]
@@ -84,6 +86,7 @@ func GetAction(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param action body models.Action true "Action definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.Action "action"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -115,6 +118,7 @@ func ValidateAction(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param action body models.Action true "Action definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.Action "action"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -166,6 +170,7 @@ func PostAction(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Action ID"
 // @Param action body models.Action true "Action definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.Action "action"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -223,6 +228,7 @@ func PutAction(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Action ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/actions/{id} [delete]

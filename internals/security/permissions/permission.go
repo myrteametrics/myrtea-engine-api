@@ -29,6 +29,7 @@ const (
 	TypeExport            = "export"
 	TypeService           = "service"
 	TypeConfig            = "config"
+	TypeAPIKey            = "api_key"
 )
 
 type Permission struct {

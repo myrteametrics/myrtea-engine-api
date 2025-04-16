@@ -21,6 +21,7 @@ import (
 // @Produce json
 // @Param id path string true "Rule ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "list of situations"
 // @Failure 400 "Status Bad Request"
 // @Failure 401 "Status Unauthorized"
@@ -61,6 +62,7 @@ func GetRuleSituations(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Rule ID"
 // @Param situationIds body []int64 true "Situation association"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 401 "Status Unauthorized"
