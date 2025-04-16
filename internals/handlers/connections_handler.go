@@ -18,6 +18,7 @@ import (
 // @Param successOnly query string false "true to ignore failed connector executions"
 // @Param maxage query string false "maximum age of data (duration)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {string} string "Status OK"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"

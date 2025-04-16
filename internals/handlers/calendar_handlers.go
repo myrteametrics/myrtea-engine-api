@@ -20,6 +20,7 @@ import (
 // @Tags Calendars
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} calendar.Calendar "list of calendars"
 // @Failure 500 "internal server error"
 // @Router /engine/calendars [get]
@@ -56,6 +57,7 @@ func GetCalendars(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Calendar ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} calendar.Calendar "calendar"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/calendars/{id} [get]
@@ -96,6 +98,7 @@ func GetCalendar(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Calendar ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} calendar.Calendar "calendar"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/calendars/resolved/{id} [get]
@@ -139,6 +142,7 @@ func GetResolvedCalendar(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Calendar ID"
 // @Param time query string true "Timestamp to be found within a calendar period"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} calendar.InPeriodContains "InPeriodContains"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/calendars/{id}/contains [get]
@@ -189,6 +193,7 @@ func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param calendar body interface{} true "Calendar (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} calendar.Calendar "calendar"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -239,6 +244,7 @@ func PostCalendar(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Calendar ID"
 // @Param user body interface{} true "calendar (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} calendar.Calendar "calendar"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -295,6 +301,7 @@ func PutCalendar(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Calendar ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400	"Status Bad Request"
 // @Failure 500	"Status Internal Server Error"

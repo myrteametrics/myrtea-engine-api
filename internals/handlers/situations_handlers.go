@@ -21,6 +21,7 @@ import (
 // @Tags Situations
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} situation.Situation "list of situations"
 // @Failure 500 "internal server error"
 // @Router /engine/situations [get]
@@ -63,6 +64,7 @@ func GetSituations(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Situation ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} situation.Situation "situation"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/situations/{id} [get]
@@ -104,6 +106,7 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param situation body situation.Situation true "Situation definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} situation.Situation "situation"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -135,6 +138,7 @@ func ValidateSituation(w http.ResponseWriter, r *http.Request) {
 // @Param factsByName query string false "Find fact by it's name"
 // @Param situation body situation.Situation true "Situation definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} situation.Situation "situation"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -242,6 +246,7 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Situation ID"
 // @Param situation body situation.Situation true "Situation definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} situation.Situation "situation"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -304,6 +309,7 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 // @Tags Situations
 // @Param id path string true "Situation ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/situations/{id} [delete]

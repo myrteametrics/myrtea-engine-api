@@ -27,6 +27,7 @@ import (
 // @Tags Facts
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 500 "internal server error"
 // @Router /engine/facts [get]
@@ -70,6 +71,7 @@ func GetFacts(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Fact ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/facts/{id} [get]
@@ -111,6 +113,7 @@ func GetFact(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param fact body interface{} true "Fact definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -142,6 +145,7 @@ func ValidateFact(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param fact body interface{} true "Fact definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -199,6 +203,7 @@ func PostFact(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Fact ID"
 // @Param fact body interface{} true "Fact definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -262,6 +267,7 @@ func PutFact(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Fact ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/facts/{id} [delete]
@@ -303,6 +309,7 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 // @Param placeholders query string false "Placeholders (format: key1:value1,key2:value2)"
 // @Param debug query string false "Debug true/false"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/facts/{id}/execute [get]
@@ -392,6 +399,7 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 // @Param placeholders query string false "Placeholders (format key1:value1,key2:value2)"
 // @Param debug query string false "Debug true/false"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/facts/execute [post]
@@ -478,6 +486,7 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 // @Param situationInstanceId query string false "Situation instance Id if applicable"
 // @Param debug query string false "Debug true/false"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/facts/{id}/hits [get]
@@ -644,6 +653,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 // @Param placeholders query string false "Placeholders (format: key1:value1,key2:value2)"
 // @Param debug query string false "Debug true/false"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/facts/{id}/es [get]

@@ -71,6 +71,7 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 // @Param maxdate				query 	string 	false	"time.Time"
 // @Param mindate				query 	string 	false	"time.Time"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} search.QueryResult "query result"
 // @Failure 500 "internal server error"
 // @Router /engine/search/last [get]
@@ -117,6 +118,7 @@ func SearchLast(w http.ResponseWriter, r *http.Request) {
 // @Param mindate				query 	string 	false	"time.Time"
 // @Param interval				query 	string 	true	"year | quarter | month | week | day | hour | minute"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} search.QueryResult "query result"
 // @Failure 500 "internal server error"
 // @Router /engine/search/last/byinterval [get]
@@ -171,6 +173,7 @@ func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 // @Param referencedate			query 	string 	true	"time.Time"
 // @Param interval				query 	string 	true	"time.Duration"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} search.QueryResult "query result"
 // @Failure 500 "internal server error"
 // @Router /engine/search/last/bycustominterval [get]

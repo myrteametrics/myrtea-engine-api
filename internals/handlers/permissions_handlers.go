@@ -19,6 +19,7 @@ import (
 // @Tags Permissions
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} permissions.Permission "list of permissions"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/permissions [get]
@@ -50,6 +51,7 @@ func GetPermissions(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "permission ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} permissions.Permission "permission"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 404 {string} string "Not Found"
@@ -93,6 +95,7 @@ func GetPermission(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param permission body permissions.Permission true "permission (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} permissions.Permission "permission"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -123,6 +126,7 @@ func ValidatePermission(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param permission body permissions.Permission true "permission (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} permissions.Permission "permission"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -179,6 +183,7 @@ func PostPermission(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "permission ID"
 // @Param permission body permissions.Permission true "permission (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} permissions.Permission "permission"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -242,6 +247,7 @@ func PutPermission(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "permission ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {string} string "status OK"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"

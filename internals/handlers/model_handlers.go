@@ -22,6 +22,7 @@ import (
 // @Tags Models
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 500 "internal server error"
 // @Router /engine/models [get]
@@ -66,6 +67,7 @@ func GetModels(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Model ID"
 // @Param byName query string false "Find model by it's name"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/models/{id} [get]
@@ -131,6 +133,7 @@ func GetModel(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param model body interface{} true "Model definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -161,6 +164,7 @@ func ValidateModel(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param model body interface{} true "Model definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -221,6 +225,7 @@ func PostModel(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Model ID"
 // @Param model body interface{} true "Model definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -284,6 +289,7 @@ func PutModel(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Model ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/models/{id} [delete]

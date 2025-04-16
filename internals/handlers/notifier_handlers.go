@@ -16,6 +16,7 @@ import (
 // @Produce json
 // @Param jwt query string false "Json Web Token"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/notifications/ws [get]
@@ -67,6 +68,7 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param jwt query string false "Json Web Token"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/notifications/sse [get]
@@ -126,6 +128,7 @@ func NotificationsSSERegister(w http.ResponseWriter, r *http.Request) {
 // @Param key query string true "Notifier cache key"
 // @Param notification body interface{} true "Notify task definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"

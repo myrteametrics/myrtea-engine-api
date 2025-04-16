@@ -23,6 +23,7 @@ import (
 // @Param id path string true "Situation ID"
 // @Param instanceid path string true "Situation Template Instance ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/situations/{id}/evaluation/{instanceid} [get]
@@ -65,6 +66,7 @@ func GetSituationEvaluation(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Situation ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 401 "Status Unauthorized"
@@ -127,6 +129,7 @@ func GetSituationFacts(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Situation ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} rule.Rule
 // @Failure 400 "Status Bad Request"
 // @Failure 401 "Status Unauthorized"
@@ -190,6 +193,7 @@ func GetSituationRules(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Situation ID"
 // @Param ruleIds body []int64 true "Situation Rules"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 401 "Status Unauthorized"
@@ -245,6 +249,7 @@ func SetSituationRules(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Situation ID"
 // @Param templateInstance body situation.TemplateInstance true "Situation template instance (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} situation.TemplateInstance "situation template instance"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -314,6 +319,7 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 // @Param instanceid path string true "Situation Template Instance ID"
 // @Param templateInstance body situation.TemplateInstance true "Situation template instance (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} situation.TemplateInstance "situation template instance"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -390,6 +396,7 @@ func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Situation ID"
 // @Param templateInstances body []situation.TemplateInstance true "Situation template instance list (json array)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -485,6 +492,7 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Situation ID"
 // @Param instanceid path string true "Situation Template Instance ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/situations/{id}/instances/{instanceid} [delete]
@@ -538,6 +546,7 @@ func DeleteSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Situation ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} situation.TemplateInstance
 // @Failure 400 "Status Bad Request"
 // @Failure 401 "Status Unauthorized"
@@ -592,6 +601,7 @@ func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Situation ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} situation.TemplateInstance
 // @Failure 400 "Status Bad Request"
 // @Failure 401 "Status Unauthorized"

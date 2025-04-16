@@ -23,6 +23,7 @@ import (
 // @Tags ExternalConfigs
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} models.ExternalConfig "list of all externalConfigs"
 // @Failure 500 "internal server error"
 // @Router /engine/externalconfigs [get]
@@ -60,11 +61,12 @@ func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "ExternalConfig ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.ExternalConfig "externalConfig"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/externalconfigs/{id} [get]
 func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
-	
+
 	id := chi.URLParam(r, "id")
 	idExternalConfig, err := strconv.ParseInt(id, 10, 64)
 
@@ -97,6 +99,7 @@ func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param name path string true "ExternalConfig Name (escaped html accepted)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.ExternalConfig "externalConfig"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/externalconfigs/name/{name} [get]
@@ -134,6 +137,7 @@ func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param externalConfig body models.ExternalConfig true "ExternalConfig definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.ExternalConfig "externalConfig"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -185,6 +189,7 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 // @Param name path string true "ExternalConfig ID"
 // @Param externalConfig body models.ExternalConfig true "ExternalConfig definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.ExternalConfig "externalConfig"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -244,6 +249,7 @@ func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param name path string true "ExternalConfig ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/externalconfigs/{name} [delete]
@@ -281,6 +287,7 @@ func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 // @Tags ExternalConfigs
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Param id path int true "ExternalConfig ID"
 // @Success 200 {array} models.ExternalConfig "list of all old versions of the externalConfig"
 // @Failure 400 "bad request"

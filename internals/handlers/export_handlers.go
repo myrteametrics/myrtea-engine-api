@@ -60,6 +60,7 @@ type CustomExportRequest struct {
 // @Tags ExportFactStreamed
 // @Produce octet-stream
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Param request body handlers.ExportRequest true "request (json)"
 // @Success 200 {file} Returns data to be saved into a file
 // @Failure 500 "internal server error"
@@ -209,6 +210,7 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 // @Description Get in memory user exports
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} export.WrapperItem "Returns a list of exports"
 // @Failure 403 "Status Forbidden: missing permission"
 // @Failure 500 "internal server error"
@@ -228,6 +230,7 @@ func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
 // @Tags Exports
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} export.WrapperItem "Status OK"
 // @Failure 400 "Bad Request: missing export id"
 // @Failure 403 "Status Forbidden: missing permission"
@@ -262,6 +265,7 @@ func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
 // @Tags Exports
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 202 "Status Accepted: export found & cancellation request has been taken into account & will be processed"
 // @Success 204 "Status OK: export was found and deleted"
 // @Failure 400 "Bad Request: missing export id"
@@ -303,6 +307,7 @@ func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 // @Tags Exports
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Param request body handlers.ExportRequest true "request (json)"
 // @Success 200 {object} export.WrapperItem "Status OK: user was added to existing export in queue"
 // @Success 201 {object} export.WrapperItem "Status Created: new export was added in queue"
@@ -389,6 +394,7 @@ func (e *ExportHandler) handleAddToQueueResponse(w http.ResponseWriter, r *http.
 // @Tags Exports
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Param request body handlers.ExportRequest true "request (json)"
 // @Success 200 {object} export.WrapperItem "Status OK: user was added to existing export in queue"
 // @Success 201 {object} export.WrapperItem "Status Created: new export was added in queue"
@@ -476,6 +482,7 @@ func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 // @Tags Exports
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {file} Returns data to be saved into a file
 // @Success 308 Redirects to the export file location
 // @Failure 400 "Bad Request: missing export id"

@@ -19,6 +19,7 @@ import (
 // @Tags ConnectorConfigs
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} models.ConnectorConfig "list of all connectorConfigs"
 // @Failure 500 "internal server error"
 // @Router /engine/connectorconfigs [get]
@@ -49,6 +50,7 @@ func GetConnectorConfigs(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "ConnectorConfig ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.ConnectorConfig "connectorConfig"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/connectorconfigs/{id} [get]
@@ -86,6 +88,7 @@ func GetConnectorConfig(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param connectorConfig body models.ConnectorConfig true "ConnectorConfig definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.ConnectorConfig "connectorConfig"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -130,6 +133,7 @@ func PostConnectorConfig(w http.ResponseWriter, r *http.Request) {
 // @Param name path string true "ConnectorConfig ID"
 // @Param connectorConfig body models.ConnectorConfig true "ConnectorConfig definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.ConnectorConfig "connectorConfig"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -182,6 +186,7 @@ func PutConnectorConfig(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param name path string true "ConnectorConfig ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/connectorconfigs/{name} [delete]

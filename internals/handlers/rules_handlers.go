@@ -21,6 +21,7 @@ import (
 // @Tags Rules
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} rule.Rule "list of rules"
 // @Failure 500 "internal server error"
 // @Router /engine/rules [get]
@@ -68,6 +69,7 @@ func GetRules(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Rule ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} rule.Rule "rule"
 // @Failure 500 "internal server error"
 // @Router /engine/rules/{id} [get]
@@ -108,6 +110,7 @@ func GetRule(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Rule ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} rule.Rule "rule"
 // @Failure 500 "internal server error"
 // @Router /engine/rules/{id}/versions/{versionid} [get]
@@ -157,6 +160,7 @@ func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param rule body rule.Rule true "Rule definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} rule.Rule "rule"
 // @Failure 400	"Status Bad Request"
 // @Failure 500	"Status Internal Server Error"
@@ -187,6 +191,7 @@ func ValidateRule(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param rule body rule.Rule true "Rule definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} rule.Rule "rule"
 // @Failure 400	"Status Bad Request"
 // @Failure 500	"Status Internal Server Error"
@@ -255,6 +260,7 @@ func PostRule(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Rule ID"
 // @Param rule body rule.Rule true "Rule definition (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} rule.Rule "rule"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -318,6 +324,7 @@ func PutRule(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Rule ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400	"Status Bad Request"
 // @Failure 500	"Status Internal Server Error"

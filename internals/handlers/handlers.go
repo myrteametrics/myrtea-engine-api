@@ -40,6 +40,7 @@ func FuncLogin() {}
 // @Tags Logs
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /log_level [get]
@@ -55,6 +56,7 @@ func FuncGetLogLevel() {}
 // @Produce json
 // @Param level body interface{} true "Level (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /log_level [put]

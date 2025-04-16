@@ -29,6 +29,7 @@ func NewServiceHandler(manager *service.Manager) *ServiceHandler {
 // @Tags Services
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} service.Definition
 // @Failure 401 "missing permission"
 // @Failure 500 "internal server error"

@@ -25,6 +25,7 @@ var allowedSortByFields = []string{"id", "created_at", "last_modified"}
 // @Tags Issues
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 500 "internal server error"
 // @Router /admin/engine/issues_all [get]
@@ -62,6 +63,7 @@ func GetIssues(w http.ResponseWriter, r *http.Request) {
 // @Param offset query string false "Result offset (default: 0)"
 // @Param sort_by query string false "Result offset (example: 'sort_by=desc(last_modified),asc(id)')"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 500 "internal server error"
 // @Router /engine/issues/unprotected [get]
@@ -135,6 +137,7 @@ func GetIssuesByStatesByPageUnProtected(w http.ResponseWriter, r *http.Request) 
 // @Param offset query string false "Result offset (default: 0)"
 // @Param sort_by query string false "Result offset (example: 'sort_by=desc(last_modified),asc(id)')"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 500 "internal server error"
 // @Router /engine/issues [get]
@@ -215,6 +218,7 @@ func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Issue ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/issues/{id} [get]
@@ -255,6 +259,7 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Issue ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Router /engine/issues/{id}/history [get]
@@ -346,6 +351,7 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Issue ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 500 "Status Internal Server Error"
 // @Failure 404 "Status Not Found"
@@ -401,6 +407,7 @@ func GetIssueFactsHistory(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param issue body interface{} true "Issue (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -439,6 +446,7 @@ func PostIssue(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Issue ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} models.FrontRecommendation "recommendation"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -489,6 +497,7 @@ func GetIssueFeedbackTree(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Issue ID"
 // @Param issue body models.FrontRecommendation true "Draft Recommendation tree (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -546,6 +555,7 @@ func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param issue body models.IssuesIdsToDraf true "Issues IDs"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -606,6 +616,7 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 // @Param issue body interface{} true "Recommendation tree (json)"
 // @Param isFakeAlert path bool true "Indicates if the closed issue was a real alert (true) or false positive (false)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -673,6 +684,7 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 // @Param isFakeAlert query bool true "Indicates if the closed issue was a real alert (true) or false positive (false)"
 // @Param reason body interface{} false "Close reason (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -750,6 +762,7 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Issue ID"
 // @Param reason body interface{} false "Rating"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"
@@ -813,6 +826,7 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Issue ID"
 // @Param reason body interface{} false "Comment to update"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
 // @Failure 500 "Status" internal server error"

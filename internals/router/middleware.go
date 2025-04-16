@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/apikey"
 	"net/http"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -111,5 +112,72 @@ func CustomAuthenticator(next http.Handler) http.Handler {
 
 		// Token is authenticated, pass it through
 		next.ServeHTTP(w, r)
+	})
+}
+
+// ContextMiddlewareApiKey :
+func ContextMiddlewareApiKey(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		keyValue := r.Header.Get(HeaderKeyApiKey)
+
+		if keyValue == "" {
+			zap.L().Debug("API key missing from request")
+			http.Error(w, "API key required (X-API-Key header)", http.StatusUnauthorized)
+			return
+		}
+
+		apikey, found, err := apikey.R().Validate(keyValue)
+		if err != nil {
+			zap.L().Error("API key validation error", zap.Error(err))
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if !found {
+			zap.L().Debug("API key not found", zap.String("key", keyValue))
+			http.Error(w, "Invalid API key", http.StatusUnauthorized)
+			return
+		}
+
+		role, found, err := roles.R().Get(apikey.RoleID)
+		if err != nil {
+			zap.L().Error("Error retrieving role", zap.Error(err), zap.Any("roleID", apikey.RoleID))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal error"))
+			return
+		}
+		if !found {
+			zap.L().Debug("Role not found", zap.Any("roleID", apikey.RoleID))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("role not found"))
+			return
+		}
+
+		userPermissions, err := permissions.R().GetAllForRole(role.ID)
+		if err != nil {
+			zap.L().Error("Error retrieving permissions", zap.Error(err), zap.Any("roleID", role.ID))
+			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal error"))
+			return
+		}
+
+		up := users.UserWithPermissions{
+			User: users.User{
+				ID:        apikey.ID,
+				Login:     "apikey-" + apikey.Name,
+				Created:   apikey.CreatedAt,
+				LastName:  "API Service",
+				FirstName: apikey.Name,
+			},
+			Roles:       []roles.Role{role},
+			Permissions: userPermissions,
+		}
+
+		loggerR := r.Context().Value(models.ContextKeyLoggerR)
+		if loggerR != nil {
+			gorillacontext.Set(loggerR.(*http.Request), models.UserLogin, fmt.Sprintf("%s(%s)", up.User.Login, up.User.ID))
+		}
+
+		zap.L().Debug("API key authentication successful",
+			zap.String("apikey", apikey.Name),
+			zap.String("user", up.User.Login))
+		ctx := context.WithValue(r.Context(), models.ContextKeyUser, up)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

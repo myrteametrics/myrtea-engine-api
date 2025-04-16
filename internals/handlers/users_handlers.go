@@ -20,6 +20,7 @@ import (
 // @Tags Users
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {string} string "status OK"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -41,6 +42,7 @@ func GetUserSelf(w http.ResponseWriter, r *http.Request) {
 // @Tags Users
 // @Produce json
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {array} users.User "list of users"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /admin/security/users [get]
@@ -72,6 +74,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "user ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} users.User "user"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 404 {string} string "Not Found"
@@ -115,6 +118,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param user body users.User true "user (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} users.User "user"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -145,6 +149,7 @@ func ValidateUser(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param user body users.User true "user (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} users.User "user"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -201,6 +206,7 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "user ID"
 // @Param user body users.User true "user (json)"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} users.User "user"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -264,6 +270,7 @@ func PutUser(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "user ID"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {string} string "status OK"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -302,6 +309,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "user ID"
 // @Param user body []string true "List of roles UUIDs"
 // @Security Bearer
+// @Security ApiKeyAuth
 // @Success 200 {object} users.User "user"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
