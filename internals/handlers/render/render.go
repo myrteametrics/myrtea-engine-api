@@ -119,6 +119,11 @@ var (
 	ErrAPIExportSeparatorConflict = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 7011, Message: `CSV file separator column and list separator in a column cannot be the same`}
 )
 
+// displayedErrorDetails prints details to the client
+var displayedErrorDetails = []APIError{
+	ErrAPIResourceInvalid,
+}
+
 // OK returns a HTTP status 200 with an empty body
 func OK(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -148,8 +153,17 @@ func JSON(w http.ResponseWriter, r *http.Request, data interface{}) {
 func Error(w http.ResponseWriter, r *http.Request, apiError APIError, err error) {
 	apiError.RequestID = middleware.GetReqID(r.Context())
 
-	if viper.GetBool("HTTP_SERVER_API_ENABLE_VERBOSE_ERROR") && err != nil {
-		apiError.Details = err.Error()
+	if err != nil {
+		if viper.GetBool("HTTP_SERVER_API_ENABLE_VERBOSE_ERROR") {
+			apiError.Details = err.Error()
+		} else {
+			for _, detail := range displayedErrorDetails {
+				if detail.Code == apiError.Code {
+					apiError.Details = err.Error()
+					break
+				}
+			}
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

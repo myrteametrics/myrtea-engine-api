@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -287,6 +288,16 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	}
 	newInstance.SituationID = idSituation
 
+	if valid, err := newInstance.IsValid(); !valid {
+		if err != nil {
+			err = fmt.Errorf("instance is invalid: %s", err.Error())
+		} else {
+			err = fmt.Errorf("instance is invalid")
+		}
+		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		return
+	}
+
 	instanceID, err := situation.R().CreateTemplateInstance(idSituation, newInstance)
 	if err != nil {
 		zap.L().Info("Error while creating the situation template instance ", zap.String("Situation ID", id), zap.Error(err))
@@ -307,6 +318,37 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.JSON(w, r, instance)
+}
+
+// ValidateSituationTemplateInstance godoc
+// @Summary Validate a new situation template instance definition
+// @Description Validate a new  situation template instance definition
+// @Tags Situations
+// @Accept json
+// @Produce json
+// @Param templateInstance body situation.TemplateInstance true "Situation template instance (json)"
+// @Security Bearer
+// @Security ApiKeyAuth
+// @Success 200 {object} situation.TemplateInstance "Situation template instance"
+// @Failure 400 "Status Bad Request"
+// @Failure 500 "Status" internal server error"
+// @Router /engine/situations/{id}/instances/validate [post]
+func ValidateSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
+	var newInstance situation.TemplateInstance
+	err := json.NewDecoder(r.Body).Decode(&newInstance)
+	if err != nil {
+		zap.L().Warn("Template instance json decode", zap.Error(err))
+		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	if ok, err := newInstance.IsValid(); !ok {
+		zap.L().Warn("Template instance is invalid", zap.Error(err))
+		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		return
+	}
+
+	render.JSON(w, r, newInstance)
 }
 
 // PutSituationTemplateInstance godoc
@@ -364,6 +406,16 @@ func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	newInstance.SituationID = idSituation
+
+	if valid, err := newInstance.IsValid(); !valid {
+		if err != nil {
+			err = fmt.Errorf("instance is invalid: %s", err.Error())
+		} else {
+			err = fmt.Errorf("instance is invalid")
+		}
+		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		return
+	}
 
 	err = situation.R().UpdateTemplateInstance(instanceID, newInstance)
 	if err != nil {
@@ -436,6 +488,17 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 	var resolvedNewInstances []situation.TemplateInstance
 	for _, instance := range newInstances {
 		instance.SituationID = idSituation
+
+		if valid, err := instance.IsValid(); !valid {
+			if err != nil {
+				err = fmt.Errorf("instance '%s' is invalid: %s", instance.Name, err.Error())
+			} else {
+				err = fmt.Errorf("instance '%s' is invalid", instance.Name)
+			}
+			render.Error(w, r, render.ErrAPIResourceInvalid, err)
+			return
+		}
+
 		resolvedNewInstances = append(resolvedNewInstances, instance)
 	}
 

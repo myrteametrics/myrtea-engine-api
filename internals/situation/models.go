@@ -3,6 +3,8 @@ package situation
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 )
 
 // Situation is a struct used to represent a situation (or an ensemble of fact)
@@ -23,7 +25,7 @@ type ExpressionFact struct {
 	Expression string `json:"expression"`
 }
 
-// IsValid checks if an internal schedule definition is valid and has no missing mandatory fields
+// IsValid checks if an situation definition is valid and has no missing mandatory fields
 func (s Situation) IsValid() (bool, error) {
 	if s.Name == "" {
 		return false, errors.New("missing Name")
@@ -34,6 +36,15 @@ func (s Situation) IsValid() (bool, error) {
 	if len(s.Facts) <= 0 {
 		return false, errors.New("missing Facts")
 	}
+
+	// we want to verify, if all parameter's syntaxes are valid
+	for key, value := range s.Parameters {
+		_, err := expression.Process(expression.LangEval, value, map[string]interface{}{})
+		if err != nil {
+			return false, fmt.Errorf("parameters: the value of the key %s could not be evaluated: %s", key, err.Error())
+		}
+	}
+
 	return true, nil
 }
 
@@ -69,4 +80,21 @@ type TemplateInstance struct {
 	CalendarID          int64             `json:"calendarId"`
 	EnableDependsOn     bool              `json:"enableDependsOn"`
 	DependsOnParameters map[string]string `json:"dependsOnParameters"`
+}
+
+// IsValid checks if an situation template definition is valid and has no missing mandatory fields
+func (s TemplateInstance) IsValid() (bool, error) {
+	if s.Name == "" {
+		return false, errors.New("missing Name")
+	}
+
+	// we want to verify, if all parameter's syntaxes are valid
+	for key, value := range s.Parameters {
+		_, err := expression.Process(expression.LangEval, value, map[string]interface{}{})
+		if err != nil {
+			return false, fmt.Errorf("parameters: the value of the key %s could not be evaluated: %s", key, err.Error())
+		}
+	}
+
+	return true, nil
 }
