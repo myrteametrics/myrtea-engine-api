@@ -8,6 +8,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/security/apikey"
 	"strings"
+	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/connector"
@@ -65,7 +66,7 @@ func initRepositories() {
 	esconfig.ReplaceGlobals(esconfig.NewPostgresRepository(dbClient))
 	history.ReplaceGlobals(history.New(dbClient))
 	variablesconfig.ReplaceGlobals(variablesconfig.NewPostgresRepository(dbClient))
-	apikey.ReplaceGlobals(apikey.NewPostgresRepository(dbClient))
+	apikey.ReplaceGlobals(apikey.NewPostgresRepository(dbClient, time.Hour))
 }
 
 func initServices() {
