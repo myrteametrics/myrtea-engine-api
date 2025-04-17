@@ -33,7 +33,7 @@ func (r *PostgresRulesRepository) CheckByName(name string) (bool, error) {
 	var exists bool
 	checkNameQuery := `select exists(select 1 from rules_v1 where name = $1) AS "exists"`
 	err := r.conn.QueryRow(checkNameQuery, name).Scan(&exists)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return false, err
 	}
 	return exists, nil
@@ -107,7 +107,7 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 	return ruleID, nil
 }
 
-//Get search and returns an entity from the repository by its id
+// Get search and returns an entity from the repository by its id
 func (r *PostgresRulesRepository) Get(id int64) (Rule, bool, error) {
 	query := `select rules_v1.id, rule_versions_v1.version_number, rule_versions_v1.data 
 			from rules_v1 inner join rule_versions_v1 on rules_v1.id = rule_versions_v1.rule_id 
@@ -181,7 +181,7 @@ func (r *PostgresRulesRepository) GetByVersion(id int64, version int64) (Rule, b
 	return Rule{}, false, nil
 }
 
-//GetByName search and returns an entity from the repository by its name
+// GetByName search and returns an entity from the repository by its name
 func (r *PostgresRulesRepository) GetByName(name string) (Rule, bool, error) {
 	query := `select rules_v1.id, rule_versions_v1.version_number, rule_versions_v1.data 
 		from rules_v1 inner join rule_versions_v1 on rules_v1.id = rule_versions_v1.rule_id 
