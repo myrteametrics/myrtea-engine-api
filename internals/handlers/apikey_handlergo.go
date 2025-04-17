@@ -31,7 +31,7 @@ func GetAPIKeys(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apiKeys, err := apikey.R().GetAll()
+	apiKeys, err := apikey.R().GetAll(userCtx.Login)
 	if err != nil {
 		zap.L().Error("GetAPIKeys", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -73,7 +73,7 @@ func GetAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key, found, err := apikey.R().Get(keyID)
+	key, found, err := apikey.R().Get(keyID, userCtx.Login)
 	if err != nil {
 		zap.L().Error("Cannot get API key", zap.String("uuid", keyID.String()), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -216,14 +216,14 @@ func PutAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = apikey.R().Update(key)
+	err = apikey.R().Update(key, userCtx.Login)
 	if err != nil {
 		zap.L().Error("PutAPIKey.Update", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	key, found, err := apikey.R().Get(keyID)
+	key, found, err := apikey.R().Get(keyID, userCtx.Login)
 	if err != nil {
 		zap.L().Error("Cannot get API key", zap.String("uuid", keyID.String()), zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
@@ -265,7 +265,7 @@ func DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = apikey.R().Delete(keyID)
+	err = apikey.R().Delete(keyID, userCtx.Login)
 	if err != nil {
 		zap.L().Error("Cannot delete API key", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
@@ -302,7 +302,7 @@ func DeactivateAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = apikey.R().Deactivate(keyID)
+	err = apikey.R().Deactivate(keyID, userCtx.Login)
 	if err != nil {
 		zap.L().Error("Cannot deactivate API key", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
@@ -339,7 +339,7 @@ func GetAPIKeysForRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apiKeys, err := apikey.R().GetAllForRole(roleUUID)
+	apiKeys, err := apikey.R().GetAllForRole(roleUUID, userCtx.Login)
 	if err != nil {
 		zap.L().Error("GetAPIKeysForRole", zap.Error(err))
 		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
