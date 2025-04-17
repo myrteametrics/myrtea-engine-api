@@ -204,7 +204,7 @@ func TestPutModelInvalidResource(t *testing.T) {
 	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
 	}
-	expected := `{"requestID":"","status":400,"type":"ResourceError","code":2001,"message":"Provided resource definition can be parsed, but is invalid"}` + "\n"
+	expected := `{"requestID":"","status":400,"type":"ResourceError","code":2001,"message":"Provided resource definition can be parsed, but is invalid","details":"Invalid ElasticsearchOptions:missing Rollmode"}` + "\n"
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), "")
 	}
