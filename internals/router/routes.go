@@ -96,6 +96,7 @@ func engineRouter(services Services) http.Handler {
 	r.Put("/situations/{id}/instances/{instanceid}", handlers.PutSituationTemplateInstance)
 	r.Put("/situations/{id}/instances", handlers.PutSituationTemplateInstances)
 	r.Delete("/situations/{id}/instances/{instanceid}", handlers.DeleteSituationTemplateInstance)
+	r.Post("/situations/{id}/instances/validate", handlers.ValidateSituationTemplateInstance)
 
 	r.Get("/externalconfigs", handlers.GetExternalConfigs)
 	r.Get("/externalconfigs/{id}", handlers.GetExternalConfig)
