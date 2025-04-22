@@ -336,7 +336,7 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]string))
+	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]interface{}))
 	if err != nil {
 		zap.L().Warn("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
 		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
@@ -438,7 +438,7 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]string))
+	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]interface{}))
 	if err != nil {
 		zap.L().Error("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
 		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
@@ -564,7 +564,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var data *reader.WidgetData
-	placeholders := make(map[string]string)
+	placeholders := make(map[string]interface{})
 
 	if f.IsTemplate {
 		idSituationStr := r.URL.Query().Get("situationId")
@@ -640,7 +640,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 
 // FactToESQuery godoc
 // @Summary Execute a fact with a given timestamp
-// @Description Execute a fact with a given timestamp
+// @Description Execute a fact with a given timestamp (This route is deprecated. Please use POST /engine/facts/{id}/es instead.)
 // @Tags Facts
 // @Produce json
 // @Param id path string true "Fact ID"
@@ -656,6 +656,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
+// @Deprecated true
 // @Router /engine/facts/{id}/es [get]
 func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 
@@ -686,7 +687,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]string))
+	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]interface{}))
 	if err != nil {
 		zap.L().Warn("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
 		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
@@ -720,7 +721,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parameters := make(map[string]string)
+	parameters := make(map[string]interface{})
 	if situationid != 0 {
 		s, found, err := situation.R().Get(int64(situationid))
 		if err != nil {
@@ -761,7 +762,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add context to fact, replace params and evaluate queries
-	f.ContextualizeDimensions(t, parameters)
+	f.ContextualizeDimensions(t)
 	err = f.ContextualizeCondition(t, parameters)
 	if err != nil {
 		render.Error(w, r, apiError, err)

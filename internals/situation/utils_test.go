@@ -7,19 +7,19 @@ import (
 
 func TestGetTranslateValue(t *testing.T) {
 
-	if shouldParseGlobalVariables() != true {
+	if shouldParseForEvaluation() != true {
 		t.Error("Expected true for empty input, got true")
 	}
 
-	if shouldParseGlobalVariables(false) != false {
+	if shouldParseForEvaluation(false) != false {
 		t.Error("Expected false for input of false, got true")
 	}
 
-	if shouldParseGlobalVariables(true) != true {
+	if shouldParseForEvaluation(true) != true {
 		t.Error("Expected true for input of true, got false")
 	}
 
-	if shouldParseGlobalVariables(true, false) != true {
+	if shouldParseForEvaluation(true, false) != true {
 		t.Error("Expected true for multiple input values, but function should only consider the first")
 	}
 }

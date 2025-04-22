@@ -133,16 +133,16 @@ func buildFactHistoryRecord(factId int64, mapFacts map[int64]HistoryFactsV4) sea
 	return factHistoryRecord
 }
 
-func ExtractSituationData(situationID int64, situationInstanceID int64) (situation.Situation, map[string]string, error) {
-	parameters := make(map[string]string)
+func ExtractSituationData(situationID int64, situationInstanceID int64) (situation.Situation, map[string]interface{}, error) {
+	parameters := make(map[string]interface{})
 
 	s, found, err := situation.R().Get(situationID)
 	if err != nil {
-		return situation.Situation{}, make(map[string]string), err
+		return situation.Situation{}, make(map[string]interface{}), err
 	}
 
 	if !found {
-		return situation.Situation{}, make(map[string]string), errors.New("situation not found")
+		return situation.Situation{}, make(map[string]interface{}), errors.New("situation not found")
 	}
 
 	for k, v := range s.Parameters {
@@ -152,11 +152,11 @@ func ExtractSituationData(situationID int64, situationInstanceID int64) (situati
 	if s.IsTemplate {
 		si, found, err := situation.R().GetTemplateInstance(situationInstanceID)
 		if err != nil {
-			return situation.Situation{}, make(map[string]string), err
+			return situation.Situation{}, make(map[string]interface{}), err
 		}
 
 		if !found {
-			return situation.Situation{}, make(map[string]string), errors.New("situation instance not found")
+			return situation.Situation{}, make(map[string]interface{}), errors.New("situation instance not found")
 		}
 
 		for k, v := range si.Parameters {

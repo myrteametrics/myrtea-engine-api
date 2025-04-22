@@ -22,7 +22,7 @@ type HistorySituationsV4 struct {
 	SituationInstanceID   int64
 	SituationInstanceName string
 	Ts                    time.Time
-	Parameters            map[string]string
+	Parameters            map[string]interface{}
 	ExpressionFacts       map[string]interface{}
 	Metadatas             []models.MetaData
 	Calendar              *calendar.Calendar
@@ -34,14 +34,14 @@ type HistoryRecordV4 struct {
 	SituationInstanceID int64
 	Ts                  time.Time
 	HistoryFacts        []HistoryFactsV4
-	Parameters          map[string]string
+	Parameters          map[string]interface{}
 	ExpressionFacts     map[string]interface{}
 	EnableDependsOn     bool
 	DependsOnParameters map[string]string
 }
 
 // OverrideParameters overrides the parameters of the History Record.
-func (hr HistoryRecordV4) OverrideParameters(p map[string]string) {
+func (hr HistoryRecordV4) OverrideParameters(p map[string]interface{}) {
 	for key, value := range p {
 		hr.Parameters[key] = value
 	}

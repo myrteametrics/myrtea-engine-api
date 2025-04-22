@@ -143,7 +143,7 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 		defer close(streamedExport.Data)
 
 		for _, f := range facts {
-			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, request.Limit, make(map[string]string))
+			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, request.Limit, make(map[string]interface{}))
 			if writerErr != nil {
 				zap.L().Error("Error during export (StreamedExportFactHitsFull)", zap.Error(err))
 				break // break here when error occurs?
