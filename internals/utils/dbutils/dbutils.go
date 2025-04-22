@@ -1,8 +1,10 @@
 package dbutils
 
 import (
+	"database/sql"
 	"errors"
 	"github.com/lib/pq"
+	"go.uber.org/zap"
 	"time"
 )
 
@@ -23,4 +25,28 @@ func UniqueViolation(err error) *pq.Error {
 		return pqerr
 	}
 	return nil
+}
+
+// ScanFirst scans the first row of a sql.Rows and returns the result
+func ScanFirst[T any](rows *sql.Rows, scan func(rows *sql.Rows) (T, error)) (T, bool, error) {
+	if rows.Next() {
+		obj, err := scan(rows)
+		return obj, err == nil, err
+	}
+	var a T
+	return a, false, nil
+}
+
+// ScanAll scans all the rows of the given rows and returns a slice of DataSource
+func ScanAll[T any](rows *sql.Rows, scan func(rows *sql.Rows) (T, error)) ([]T, error) {
+	objs := make([]T, 0)
+	for rows.Next() {
+		obj, err := scan(rows)
+		if err != nil {
+			zap.L().Warn("scan error", zap.Error(err))
+			return []T{}, err
+		}
+		objs = append(objs, obj)
+	}
+	return objs, nil
 }
