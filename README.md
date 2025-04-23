@@ -28,6 +28,17 @@ docker run -d --name myrtea-elasticsearch -p 9200:9200 -p 9300:9300 -e "discover
 docker run -d --name myrtea-postgres -p 5432:5432 -e POSTGRES_DB="postgres" -e POSTGRES_USER="postgres" -e POSTGRES_PASSWORD="postgres"  postgres:16-alpine
 ```
 
+### Migrations
+
+You can either run the migrations manually or let the executable do it for you.
+If you want to run them manually, you can do so setting the environment variable `MYRTEA_POSTGRESQL_MIGRATION_ON_STARTUP` to `false` before running the executable.
+
+```bash
+go install github.com/pressly/goose/v3/cmd/goose@latest
+cd migrations
+goose postgres "user=postgres dbname=postgres password=postgres host=localhost sslmode=disable" up
+```
+
 ### From Source
 
 Myrtea Engine-API requires Go version 1.23 or newer, the Makefile requires GNU make.
