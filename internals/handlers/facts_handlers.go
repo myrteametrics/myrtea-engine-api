@@ -602,7 +602,7 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 
 	time := time.Now().Truncate(1 * time.Second).UTC()
 
-	data, err = fact.ExecuteFact(time, f, 0, 0, placeholders, request.Nhit, request.Offset, request.Debug == true)
+	data, err = fact.ExecuteFact(time, f, 0, 0, placeholders, request.Nhit, request.Offset, !request.Debug)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err))
 		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
