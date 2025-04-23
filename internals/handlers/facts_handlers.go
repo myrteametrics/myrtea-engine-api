@@ -600,9 +600,9 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 		f.Intent.Operator = engine.Select
 	}
 
-	time := time.Now().Truncate(1 * time.Second).UTC()
+	t := time.Now().Truncate(1 * time.Second).UTC()
 
-	data, err = fact.ExecuteFact(time, f, 0, 0, placeholders, request.Nhit, request.Offset, !request.Debug)
+	data, err = fact.ExecuteFact(t, f, 0, 0, placeholders, request.Nhit, request.Offset, !request.Debug)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err))
 		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
@@ -612,7 +612,7 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 	if !request.HitsOnly && data.Aggregates != nil {
 		pluginBaseline, err := baseline.P()
 		if err == nil {
-			values, err := pluginBaseline.BaselineService.GetBaselineValues(-1, f.ID, 0, 0, time)
+			values, err := pluginBaseline.BaselineService.GetBaselineValues(-1, f.ID, 0, 0, t)
 			if err != nil {
 				zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
 			}
