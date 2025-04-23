@@ -3,6 +3,7 @@ package baseline
 import (
 	"errors"
 	"fmt"
+	pluginutils2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/pluginutils"
 	"net/http"
 	"os"
 	"os/exec"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-plugin"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
 	"go.uber.org/zap"
 )
 
@@ -50,13 +50,13 @@ var Handshake = plugin.HandshakeConfig{
 }
 
 type BaselinePlugin struct {
-	Config          pluginutils.PluginConfig
+	Config          pluginutils2.PluginConfig
 	ClientConfig    *plugin.ClientConfig
 	Client          *plugin.Client
 	BaselineService BaselineService
 }
 
-func NewBaselinePlugin(config pluginutils.PluginConfig) *BaselinePlugin {
+func NewBaselinePlugin(config pluginutils2.PluginConfig) *BaselinePlugin {
 	pluginPath := fmt.Sprintf("plugin/myrtea-%s.plugin", config.Name)
 
 	stat, err := os.Stat(pluginPath)
@@ -88,7 +88,7 @@ func (p *BaselinePlugin) init() {
 	}
 
 	p.ClientConfig = &plugin.ClientConfig{
-		Logger:           pluginutils.ZapWrap(zap.L()),
+		Logger:           pluginutils2.ZapWrap(zap.L()),
 		HandshakeConfig:  Handshake,
 		Plugins:          pluginMap,
 		Cmd:              cmd,

@@ -1,10 +1,10 @@
 package search
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
 )
 
 // QueryResult is a struct used to represent a query result

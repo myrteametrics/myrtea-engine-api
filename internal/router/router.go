@@ -10,7 +10,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internal/router/oidc"
-	plugin "github.com/myrteametrics/myrtea-engine-api/v5/plugins"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 	sdkrouter "github.com/myrteametrics/myrtea-sdk/v5/router"
 	sdksecurity "github.com/myrteametrics/myrtea-sdk/v5/security"

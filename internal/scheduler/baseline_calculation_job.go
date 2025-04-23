@@ -3,8 +3,8 @@ package scheduler
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
 	"go.uber.org/zap"
 )
 

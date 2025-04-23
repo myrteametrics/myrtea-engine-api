@@ -1,10 +1,10 @@
 package fact
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
 	"go.uber.org/zap"
 )
 

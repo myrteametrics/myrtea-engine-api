@@ -1,11 +1,11 @@
 package baseline
 
 import (
+	proto2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"time"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline/proto"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -21,24 +21,24 @@ type BaselineGRPCPlugin struct {
 }
 
 func (p *BaselineGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
-	proto.RegisterBaselineServer(s, &GRPCServer{Impl: p.Impl})
+	proto2.RegisterBaselineServer(s, &GRPCServer{Impl: p.Impl})
 	return nil
 }
 
 func (p *BaselineGRPCPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	return &GRPCClient{client: proto.NewBaselineClient(c)}, nil
+	return &GRPCClient{client: proto2.NewBaselineClient(c)}, nil
 }
 
 // GRPCClient is an implementation of Baseline that talks over RPC.
 type GRPCClient struct {
-	client proto.BaselineClient
+	client proto2.BaselineClient
 }
 
 func (m *GRPCClient) GetBaselineValues(id int64, factID int64, situationID int64, situationInstanceID int64, ti time.Time) (map[string]BaselineValue, error) {
 
 	baselineValues := make(map[string]BaselineValue, 0)
 
-	resp, err := m.client.GetBaselineValues(context.Background(), &proto.BaselineValueRequest{
+	resp, err := m.client.GetBaselineValues(context.Background(), &proto2.BaselineValueRequest{
 		Id:                  id,
 		FactId:              factID,
 		SituationId:         situationID,
@@ -72,7 +72,7 @@ func (m *GRPCClient) GetBaselineValues(id int64, factID int64, situationID int64
 
 func (m *GRPCClient) BuildBaselineValues(baselineID int64) error {
 
-	_, err := m.client.BuildBaselineValues(context.Background(), &proto.BuildBaselineRequest{
+	_, err := m.client.BuildBaselineValues(context.Background(), &proto2.BuildBaselineRequest{
 		Id: baselineID,
 	})
 	if err != nil {
@@ -84,10 +84,10 @@ func (m *GRPCClient) BuildBaselineValues(baselineID int64) error {
 type GRPCServer struct {
 	// This is the real implementation
 	Impl BaselineService
-	proto.UnimplementedBaselineServer
+	proto2.UnimplementedBaselineServer
 }
 
-func (m *GRPCServer) GetBaselineValues(ctx context.Context, req *proto.BaselineValueRequest) (*proto.BaselineValues, error) {
+func (m *GRPCServer) GetBaselineValues(ctx context.Context, req *proto2.BaselineValueRequest) (*proto2.BaselineValues, error) {
 	ti, err := time.Parse(timeLayout, req.Time)
 	if err != nil {
 		return nil, err
@@ -95,9 +95,9 @@ func (m *GRPCServer) GetBaselineValues(ctx context.Context, req *proto.BaselineV
 
 	values, err := m.Impl.GetBaselineValues(req.Id, req.FactId, req.SituationId, req.SituationInstanceId, ti)
 
-	baselineValues := make(map[string]*proto.BaselineValue, 0)
+	baselineValues := make(map[string]*proto2.BaselineValue, 0)
 	for k, v := range values {
-		baselineValues[k] = &proto.BaselineValue{
+		baselineValues[k] = &proto2.BaselineValue{
 			Time:       v.Time.Format(timeLayout),
 			Value:      v.Value,
 			ValueLower: v.ValueLower,
@@ -108,10 +108,10 @@ func (m *GRPCServer) GetBaselineValues(ctx context.Context, req *proto.BaselineV
 		}
 	}
 
-	return &proto.BaselineValues{Values: baselineValues}, err
+	return &proto2.BaselineValues{Values: baselineValues}, err
 }
 
-func (m *GRPCServer) BuildBaselineValues(ctx context.Context, req *proto.BuildBaselineRequest) (*emptypb.Empty, error) {
+func (m *GRPCServer) BuildBaselineValues(ctx context.Context, req *proto2.BuildBaselineRequest) (*emptypb.Empty, error) {
 	err := m.Impl.BuildBaselineValues(req.Id)
 	return &emptypb.Empty{}, err
 }

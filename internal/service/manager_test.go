@@ -1,8 +1,8 @@
 package service
 
 import (
-	plugin "github.com/myrteametrics/myrtea-engine-api/v5/plugins"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/pluginutils"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"github.com/spf13/viper"
 	"os"

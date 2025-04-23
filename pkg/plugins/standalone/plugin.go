@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/go-plugin"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
+	pluginutils2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/pluginutils"
 	"go.uber.org/zap"
 	"net/http"
 	"net/rpc"
@@ -23,13 +23,13 @@ var Handshake = plugin.HandshakeConfig{
 }
 
 type Plugin struct {
-	Config       pluginutils.PluginConfig
+	Config       pluginutils2.PluginConfig
 	ClientConfig *plugin.ClientConfig
 	client       *plugin.Client
 	Impl         StandaloneService
 }
 
-func NewPlugin(config pluginutils.PluginConfig) *Plugin {
+func NewPlugin(config pluginutils2.PluginConfig) *Plugin {
 	pluginPath := fmt.Sprintf("plugin/myrtea-%s.plugin", config.Name)
 
 	stat, err := os.Stat(pluginPath)
@@ -56,7 +56,7 @@ func (p *Plugin) init() {
 	// cmd.Env = append(cmd.Env, "MYRTEA_component_DEBUG_MODE=true")
 
 	p.ClientConfig = &plugin.ClientConfig{
-		Logger:          pluginutils.ZapWrap(zap.L()),
+		Logger:          pluginutils2.ZapWrap(zap.L()),
 		HandshakeConfig: Handshake,
 		Plugins: map[string]plugin.Plugin{
 			p.Config.Name: &Plugin{},

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
 	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"net/http"
 	"sort"
@@ -16,7 +17,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
 )

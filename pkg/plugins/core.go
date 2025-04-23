@@ -2,9 +2,9 @@ package plugin
 
 import (
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/baseline"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/pluginutils"
-	"github.com/myrteametrics/myrtea-engine-api/v5/plugins/standalone"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/pluginutils"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/standalone"
 	"go.uber.org/zap"
 	"net/http"
 )
