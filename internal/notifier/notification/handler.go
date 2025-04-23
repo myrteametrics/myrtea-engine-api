@@ -70,7 +70,8 @@ func (h *Handler) GetNotificationByType(notificationType string) (notif Notifica
 // startCleaner start a ticker to clean expired notifications in database every 24 hours
 func (h *Handler) startCleaner(context context.Context) {
 	cleanRate := time.Hour * 24
-	zap.L().Info("Starting notification cleaner", zap.Duration("cleanRate", cleanRate), zap.Duration("notificationLifetime", h.notificationLifetime))
+	zap.L().Info("Starting notification cleaner", zap.String("cleanRate", cleanRate.String()),
+		zap.String("notificationLifetime", h.notificationLifetime.String()))
 	ticker := time.NewTicker(cleanRate)
 	defer ticker.Stop()
 	for {

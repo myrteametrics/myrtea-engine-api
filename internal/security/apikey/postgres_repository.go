@@ -11,7 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-const table = "api_keys"
+const table = "api_keys_v1"
 
 var fields = []string{"id", "key_hash", "key_prefix", "name", "role_id", "created_at", "expires_at", "last_used_at", "is_active", "created_by"}
 
