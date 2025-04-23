@@ -2,11 +2,13 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"time"
 )
 
-//FactValue the current value of a fact
+// FactValue the current value of a fact
 type FactValue interface {
 	String() string
 	SetCurrent(bool)
@@ -16,7 +18,7 @@ type FactValue interface {
 
 //*****************************************************************************
 
-//SingleValue represents a fact with a single value
+// SingleValue represents a fact with a single value
 type SingleValue struct {
 	Key       string      `json:"key"`
 	Value     interface{} `json:"value"`
@@ -67,7 +69,7 @@ func (factValue *ObjectValue) GetDeepness() int32 {
 	return 0
 }
 
-//NotSupportedValue value for not supported history facts
+// NotSupportedValue value for not supported history facts
 type NotSupportedValue struct {
 	IsCurrent bool
 }
@@ -93,7 +95,7 @@ func (factValue *NotSupportedValue) GetDeepness() int32 {
 
 //*****************************************************************************
 
-//FrontFactHistory represents the current fact value and its history
+// FrontFactHistory represents the current fact value and its history
 type FrontFactHistory struct {
 	ID           int64                   `json:"id"`
 	Name         string                  `json:"name"`
@@ -101,4 +103,64 @@ type FrontFactHistory struct {
 	Deepness     int32                   `json:"deepness"`
 	CurrentValue FactValue               `json:"currentValue"`
 	History      map[time.Time]FactValue `json:"history"`
+}
+
+type FactHitsRequest struct {
+	FactId              int64                  `json:"factId"`
+	Nhit                int                    `json:"nhit,omitempty"`
+	Offset              int                    `json:"offset,omitempty"`
+	SituationId         int64                  `json:"situationId,omitempty"`
+	SituationInstanceId int64                  `json:"situationInstanceId,omitempty"`
+	Debug               bool                   `json:"debug,omitempty"`
+	FactParameters      map[string]interface{} `json:"factParameters,omitempty"`
+	HitsOnly            bool                   `json:"hitsOnly,omitempty"` // If true, forces f.Intent.Operator = engine.Select
+}
+
+// Validate checks if the FactHitsRequest is valid
+func (r *FactHitsRequest) Validate() error {
+
+	if r.FactId <= 0 {
+		return errors.New("factId parameter is required and must be a positive integer")
+	}
+
+	if r.Nhit < 0 {
+		return errors.New("nhit cannot be negative")
+	}
+
+	if r.Offset < 0 {
+		return errors.New("offset cannot be negative")
+	}
+
+	for key, value := range r.FactParameters {
+		const maxSliceSize = 500
+		parsed, err := expression.Process(expression.LangEval, value.(string), map[string]interface{}{})
+		if err != nil {
+			return fmt.Errorf("parameters: the value of the key %s could not be evaluated: %s", key, err.Error())
+		}
+
+		switch parsedVal := parsed.(type) {
+		case []interface{}:
+			if len(parsedVal) > maxSliceSize {
+				return fmt.Errorf("parameters: the slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
+			}
+		case []string:
+			if len(parsedVal) > maxSliceSize {
+				return fmt.Errorf("parameters: the string slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
+			}
+		case []int:
+			if len(parsedVal) > maxSliceSize {
+				return fmt.Errorf("parameters: the int slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
+			}
+		case []float64:
+			if len(parsedVal) > maxSliceSize {
+				return fmt.Errorf("parameters: the float slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
+			}
+		case map[string]interface{}:
+			if len(parsedVal) > maxSliceSize {
+				return fmt.Errorf("parameters: the map for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
+			}
+		}
+		r.FactParameters[key] = parsed
+	}
+	return nil
 }
