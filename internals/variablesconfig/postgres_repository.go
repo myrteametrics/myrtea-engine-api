@@ -201,7 +201,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 
 // GetAll method used to get all Variables Config
 func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
-	return r.GetAllByScope("")
+	return r.GetAllByScope(globalVariablesScope)
 }
 
 // GetAll method used to get all Variables Config filtered on a specified scope value
@@ -247,7 +247,7 @@ func (r *PostgresRepository) GetAllByScope(scope string) ([]models.VariablesConf
 
 // GetAllAsMap method used to get all Variables Config as map[string]interface{}
 func (r *PostgresRepository) GetAllAsMap() (map[string]interface{}, error) {
-	return r.GetAllAsMapByScope("")
+	return r.GetAllAsMapByScope(globalVariablesScope)
 }
 
 // GetAllAsMap method used to get all Variables Config as map[string]interface{} filtered on a specified scope value
