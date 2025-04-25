@@ -133,34 +133,65 @@ func (r *FactHitsRequest) Validate() error {
 
 	for key, value := range r.FactParameters {
 		const maxSliceSize = 500
-		parsed, err := expression.Process(expression.LangEval, value.(string), map[string]interface{}{})
-		if err != nil {
-			return fmt.Errorf("parameters: the value of the key %s could not be evaluated: %s", key, err.Error())
+
+		strVal, ok := value.(string)
+		if ok {
+			parsed, err := expression.Process(expression.LangEval, strVal, map[string]interface{}{})
+			if err != nil {
+				return fmt.Errorf("parameters: the value of the key %s could not be evaluated: %s", key, err.Error())
+			}
+
+			switch parsedVal := parsed.(type) {
+			case []interface{}:
+				if len(parsedVal) > maxSliceSize {
+					return fmt.Errorf("parameters: the slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
+				}
+			case []string:
+				if len(parsedVal) > maxSliceSize {
+					return fmt.Errorf("parameters: the string slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
+				}
+			case []int:
+				if len(parsedVal) > maxSliceSize {
+					return fmt.Errorf("parameters: the int slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
+				}
+			case []float64:
+				if len(parsedVal) > maxSliceSize {
+					return fmt.Errorf("parameters: the float slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
+				}
+			case map[string]interface{}:
+				if len(parsedVal) > maxSliceSize {
+					return fmt.Errorf("parameters: the map for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
+				}
+			}
+
+			r.FactParameters[key] = parsed
+			continue
 		}
 
-		switch parsedVal := parsed.(type) {
+		switch val := value.(type) {
 		case []interface{}:
-			if len(parsedVal) > maxSliceSize {
+			if len(val) > maxSliceSize {
 				return fmt.Errorf("parameters: the slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
 			}
 		case []string:
-			if len(parsedVal) > maxSliceSize {
+			if len(val) > maxSliceSize {
 				return fmt.Errorf("parameters: the string slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
 			}
 		case []int:
-			if len(parsedVal) > maxSliceSize {
+			if len(val) > maxSliceSize {
 				return fmt.Errorf("parameters: the int slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
 			}
 		case []float64:
-			if len(parsedVal) > maxSliceSize {
+			if len(val) > maxSliceSize {
 				return fmt.Errorf("parameters: the float slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
 			}
 		case map[string]interface{}:
-			if len(parsedVal) > maxSliceSize {
+			if len(val) > maxSliceSize {
 				return fmt.Errorf("parameters: the map for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
 			}
 		}
-		r.FactParameters[key] = parsed
+
 	}
+
 	return nil
 }
