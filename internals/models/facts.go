@@ -136,6 +136,10 @@ func (r *FactHitsRequest) Validate() error {
 
 		strVal, ok := value.(string)
 		if ok {
+			_, err := time.Parse(time.RFC3339, strVal)
+			if err == nil {
+				continue
+			}
 			parsed, err := expression.Process(expression.LangEval, strVal, map[string]interface{}{})
 			if err != nil {
 				return fmt.Errorf("parameters: the value of the key %s could not be evaluated: %s", key, err.Error())
