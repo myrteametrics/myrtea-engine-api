@@ -12,7 +12,7 @@ type HistorySituationsBuilder struct{}
 type GetHistorySituationsOptions struct {
 	SituationID         int64
 	SituationInstanceID int64
-	ParameterFilters    map[string]string
+	ParameterFilters    map[string]interface{}
 	DeleteBeforeTs      time.Time
 	FromTS              time.Time
 	ToTS                time.Time

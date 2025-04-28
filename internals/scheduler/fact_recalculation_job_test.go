@@ -34,7 +34,7 @@ func loadConfiguration() {
 }
 
 func testInsertSituationHistory(t *testing.T, situationID int64, instanceID int64) []int64 {
-	parameters := map[string]string{
+	parameters := map[string]interface{}{
 		"heure_deadline":              "12",
 		"label":                       "Export",
 		"seuil_alerte_apres_deadline": "0.6",
