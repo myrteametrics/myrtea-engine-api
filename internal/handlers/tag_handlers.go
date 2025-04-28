@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tag"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"go.uber.org/zap"
 	"net/http"
 	"sort"
@@ -27,14 +27,14 @@ import (
 func GetTags(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeTag, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	tags, err := tag.R().GetAll()
 	if err != nil {
 		zap.L().Error("Error getting tags", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -42,7 +42,7 @@ func GetTags(w http.ResponseWriter, r *http.Request) {
 		return tags[i].Id < tags[j].Id
 	})
 
-	render.JSON(w, r, tags)
+	httputil.JSON(w, r, tags)
 }
 
 // GetTag godoc
@@ -62,29 +62,29 @@ func GetTag(w http.ResponseWriter, r *http.Request) {
 	idTag, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing tag id", zap.String("tagID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeTag, strconv.FormatInt(idTag, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	t, found, err := tag.R().Get(idTag)
 	if err != nil {
 		zap.L().Error("Cannot get tag", zap.Int64("tagId", idTag), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Tag does not exist", zap.Int64("tagId", idTag))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, t)
+	httputil.JSON(w, r, t)
 }
 
 // ValidateTag godoc
@@ -106,17 +106,17 @@ func ValidateTag(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newTag)
 	if err != nil {
 		zap.L().Warn("Tag json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newTag.IsValid(); !ok {
 		zap.L().Warn("Tag is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
-	render.JSON(w, r, newTag)
+	httputil.JSON(w, r, newTag)
 }
 
 // PostTag godoc
@@ -136,7 +136,7 @@ func ValidateTag(w http.ResponseWriter, r *http.Request) {
 func PostTag(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeTag, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -144,36 +144,36 @@ func PostTag(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newTag)
 	if err != nil {
 		zap.L().Warn("Tag json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newTag.IsValid(); !ok {
 		zap.L().Warn("Tag is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	newTagID, err := tag.R().Create(newTag)
 	if err != nil {
 		zap.L().Error("Error while creating the Tag", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
 	newTagGet, found, err := tag.R().Get(newTagID)
 	if err != nil {
 		zap.L().Error("Cannot get tag", zap.Int64("tagId", newTagID), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Tag does not exist after creation", zap.Int64("tagId", newTagID))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, newTagGet)
+	httputil.JSON(w, r, newTagGet)
 }
 
 // PutTag godoc
@@ -196,13 +196,13 @@ func PutTag(w http.ResponseWriter, r *http.Request) {
 	idTag, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing tag id", zap.String("tagID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeTag, strconv.FormatInt(idTag, 10), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -210,37 +210,37 @@ func PutTag(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&updatedTag)
 	if err != nil {
 		zap.L().Warn("Tag json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	updatedTag.Id = idTag
 
 	if ok, err := updatedTag.IsValid(); !ok {
 		zap.L().Warn("Tag is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	err = tag.R().Update(updatedTag)
 	if err != nil {
 		zap.L().Error("Error while updating the Tag", zap.Int64("idTag", idTag), zap.Any("tag", updatedTag), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	updatedTagGet, found, err := tag.R().Get(idTag)
 	if err != nil {
 		zap.L().Error("Cannot get tag", zap.Int64("tagId", idTag), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Tag does not exist after update", zap.Int64("tagId", idTag))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, updatedTagGet)
+	httputil.JSON(w, r, updatedTagGet)
 }
 
 // DeleteTag godoc
@@ -260,24 +260,24 @@ func DeleteTag(w http.ResponseWriter, r *http.Request) {
 	idTag, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing tag id", zap.String("tagID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeTag, strconv.FormatInt(idTag, 10), permissions.ActionDelete)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	err = tag.R().Delete(idTag)
 	if err != nil {
 		zap.L().Error("Error while deleting the Tag", zap.String("Tag ID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // GetTagsBySituation godoc
@@ -298,24 +298,24 @@ func GetTagsBySituation(w http.ResponseWriter, r *http.Request) {
 	idSituation, err := strconv.ParseInt(situationId, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing situation id", zap.String("situationID", situationId), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeTagSituation, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	tags, err := tag.R().GetTagsBySituationId(idSituation)
 	if err != nil {
 		zap.L().Error("Error getting tags for situation", zap.Int64("situationId", idSituation), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	render.JSON(w, r, tags)
+	httputil.JSON(w, r, tags)
 }
 
 // AddTagToSituation godoc
@@ -337,7 +337,7 @@ func AddTagToSituation(w http.ResponseWriter, r *http.Request) {
 	idSituation, err := strconv.ParseInt(situationId, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing situation id", zap.String("situationID", situationId), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -345,13 +345,13 @@ func AddTagToSituation(w http.ResponseWriter, r *http.Request) {
 	idTag, err := strconv.ParseInt(tagId, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing tag id", zap.String("tagID", tagId), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeTagSituation, strconv.FormatInt(idSituation, 10), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -359,12 +359,12 @@ func AddTagToSituation(w http.ResponseWriter, r *http.Request) {
 	_, found, err := tag.R().Get(idTag)
 	if err != nil {
 		zap.L().Error("Cannot get tag", zap.Int64("tagId", idTag), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Tag does not exist", zap.Int64("tagId", idTag))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("tag not found"))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("tag not found"))
 		return
 	}
 
@@ -374,11 +374,11 @@ func AddTagToSituation(w http.ResponseWriter, r *http.Request) {
 			zap.Int64("tagId", idTag),
 			zap.Int64("situationId", idSituation),
 			zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // RemoveTagFromSituation godoc
@@ -400,7 +400,7 @@ func RemoveTagFromSituation(w http.ResponseWriter, r *http.Request) {
 	idSituation, err := strconv.ParseInt(situationId, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing situation id", zap.String("situationID", situationId), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -408,13 +408,13 @@ func RemoveTagFromSituation(w http.ResponseWriter, r *http.Request) {
 	idTag, err := strconv.ParseInt(tagId, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing tag id", zap.String("tagID", tagId), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeTagSituation, strconv.FormatInt(idSituation, 10), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -424,11 +424,11 @@ func RemoveTagFromSituation(w http.ResponseWriter, r *http.Request) {
 			zap.Int64("tagId", idTag),
 			zap.Int64("situationId", idSituation),
 			zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // GetTagsByTemplateInstance godoc
@@ -449,25 +449,25 @@ func GetTagsByTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	idTemplateInstance, err := strconv.ParseInt(instanceId, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing template instance id", zap.String("templateInstanceID", instanceId), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	// Assuming you have a permission type for template instances
 	if !userCtx.HasPermission(permissions.New(permissions.TypeTagSituationInstance, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	tags, err := tag.R().GetTagsByTemplateInstanceId(idTemplateInstance)
 	if err != nil {
 		zap.L().Error("Error getting tags for template instance", zap.Int64("instanceId", idTemplateInstance), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	render.JSON(w, r, tags)
+	httputil.JSON(w, r, tags)
 }
 
 // AddTagToTemplateInstance godoc
@@ -489,7 +489,7 @@ func AddTagToTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	idTemplateInstance, err := strconv.ParseInt(instanceId, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing template instance id", zap.String("templateInstanceID", instanceId), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -497,13 +497,13 @@ func AddTagToTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	idTag, err := strconv.ParseInt(tagId, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing tag id", zap.String("tagID", tagId), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeTagSituationInstance, strconv.FormatInt(idTemplateInstance, 10), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -511,12 +511,12 @@ func AddTagToTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	_, found, err := tag.R().Get(idTag)
 	if err != nil {
 		zap.L().Error("Cannot get tag", zap.Int64("tagId", idTag), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Tag does not exist", zap.Int64("tagId", idTag))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("tag not found"))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("tag not found"))
 		return
 	}
 
@@ -526,11 +526,11 @@ func AddTagToTemplateInstance(w http.ResponseWriter, r *http.Request) {
 			zap.Int64("tagId", idTag),
 			zap.Int64("instanceId", idTemplateInstance),
 			zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // RemoveTagFromTemplateInstance godoc
@@ -552,7 +552,7 @@ func RemoveTagFromTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	idTemplateInstance, err := strconv.ParseInt(instanceId, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing template instance id", zap.String("templateInstanceID", instanceId), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -560,13 +560,13 @@ func RemoveTagFromTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	idTag, err := strconv.ParseInt(tagId, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing tag id", zap.String("tagID", tagId), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeTagSituationInstance, strconv.FormatInt(idTemplateInstance, 10), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -576,11 +576,11 @@ func RemoveTagFromTemplateInstance(w http.ResponseWriter, r *http.Request) {
 			zap.Int64("tagId", idTag),
 			zap.Int64("instanceId", idTemplateInstance),
 			zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // GetAllSituationsTags godoc
@@ -597,14 +597,14 @@ func RemoveTagFromTemplateInstance(w http.ResponseWriter, r *http.Request) {
 func GetAllSituationsTags(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeTag, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	situationsTags, err := tag.R().GetSituationsTags()
 	if err != nil {
 		zap.L().Error("Error getting all situations tags", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -614,5 +614,5 @@ func GetAllSituationsTags(w http.ResponseWriter, r *http.Request) {
 		result[strconv.FormatInt(situationID, 10)] = tags
 	}
 
-	render.JSON(w, r, result)
+	httputil.JSON(w, r, result)
 }

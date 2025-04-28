@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"net/http"
 	"sort"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
@@ -35,7 +35,7 @@ import (
 func GetFacts(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -49,7 +49,7 @@ func GetFacts(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		zap.L().Error("Error getting facts", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -62,7 +62,7 @@ func GetFacts(w http.ResponseWriter, r *http.Request) {
 		return factsSlice[i].ID < factsSlice[j].ID
 	})
 
-	render.JSON(w, r, factsSlice)
+	httputil.JSON(w, r, factsSlice)
 }
 
 // GetFact godoc
@@ -82,29 +82,29 @@ func GetFact(w http.ResponseWriter, r *http.Request) {
 	idFact, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing fact id", zap.String("factID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(idFact, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	f, found, err := fact.R().Get(idFact)
 	if err != nil {
 		zap.L().Error("Cannot retrieve fact", zap.Int64("factID", idFact), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("fact does not exists", zap.Int64("factID", idFact))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, f)
+	httputil.JSON(w, r, f)
 }
 
 // ValidateFact godoc
@@ -127,17 +127,17 @@ func ValidateFact(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newFact)
 	if err != nil {
 		zap.L().Warn("Fact definition json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newFact.IsValid(); !ok {
 		zap.L().Warn("Fact definition json is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
-	render.JSON(w, r, newFact)
+	httputil.JSON(w, r, newFact)
 }
 
 // PostFact godoc
@@ -158,7 +158,7 @@ func PostFact(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -166,36 +166,36 @@ func PostFact(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newFact)
 	if err != nil {
 		zap.L().Warn("Fact definition json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newFact.IsValid(); !ok {
 		zap.L().Warn("Fact definition json is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	newFactID, err := fact.R().Create(newFact)
 	if err != nil {
 		zap.L().Error("Error while creating the Fact", zap.Any("fact", newFact), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
 	f, found, err := fact.R().Get(newFactID)
 	if err != nil {
 		zap.L().Error("Error while fetch the created fact", zap.Any("newfactID", newFactID), zap.Any("newfact", newFact), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Error("Fact cannot be found after creation", zap.Any("newfactID", newFactID), zap.Any("newfact", newFact), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, fmt.Errorf("Resouce with id %d not found after creation", newFactID))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, fmt.Errorf("Resouce with id %d not found after creation", newFactID))
 		return
 	}
 
-	render.JSON(w, r, f)
+	httputil.JSON(w, r, f)
 }
 
 // PutFact godoc
@@ -218,13 +218,13 @@ func PutFact(w http.ResponseWriter, r *http.Request) {
 	idFact, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing fact id", zap.String("factID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(idFact, 10), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -232,37 +232,37 @@ func PutFact(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newFact)
 	if err != nil {
 		zap.L().Warn("Fact definition json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	newFact.ID = idFact
 
 	if ok, err := newFact.IsValid(); !ok {
 		zap.L().Warn("Fact definition json is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	err = fact.R().Update(idFact, newFact)
 	if err != nil {
 		zap.L().Error("Error while updating the Fact", zap.Int64("idFact", idFact), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	f, found, err := fact.R().Get(idFact)
 	if err != nil {
 		zap.L().Error("Error while fetch the created fact", zap.Any("factID", idFact), zap.Any("newfact", newFact), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Error("Error while creating the Fact", zap.Any("factID", idFact), zap.Any("newfact", newFact), zap.Error(errors.New("fact not properly created")))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, fmt.Errorf("Resouce with id %d not found after update", idFact))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, fmt.Errorf("Resouce with id %d not found after update", idFact))
 		return
 	}
 
-	render.JSON(w, r, f)
+	httputil.JSON(w, r, f)
 }
 
 // DeleteFact godoc
@@ -282,24 +282,24 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 	idFact, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing fact id", zap.String("factID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(idFact, 10), permissions.ActionDelete)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	err = fact.R().Delete(idFact)
 	if err != nil {
 		zap.L().Error("Error while deleting the Fact", zap.Int64("factID", idFact), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // ExecuteFact godoc
@@ -325,28 +325,28 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 	t, err := QueryParamToOptionalTime(r, "time", time.Now())
 	if err != nil {
 		zap.L().Warn("Parse input time", zap.Error(err), zap.String("rawTime", r.URL.Query().Get("time")))
-		render.Error(w, r, render.ErrAPIParsingDateTime, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingDateTime, err)
 		return
 	}
 
 	nhit, err := QueryParamToOptionalInt(r, "nhit", 0)
 	if err != nil {
 		zap.L().Warn("Parse input nhit", zap.Error(err), zap.String("rawNhit", r.URL.Query().Get("nhit")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	offset, err := QueryParamToOptionalInt(r, "offset", 0)
 	if err != nil {
 		zap.L().Warn("Parse input offset", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("offset")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]string))
 	if err != nil {
 		zap.L().Warn("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
-		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingKeyValue, err)
 		return
 	}
 
@@ -359,7 +359,7 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	f, apiError, err := lookupFact(byName, id)
 	if err != nil {
-		render.Error(w, r, apiError, err)
+		httputil.Error(w, r, apiError, err)
 		return
 	}
 
@@ -367,14 +367,14 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 	// Should be better to just remove the "lookup by name" feature (which is not used anymore, and has no sense in this API)
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(f.ID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	data, err := fact.ExecuteFact(t, f, 0, 0, placeholders, nhit, offset, false)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err))
-		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIElasticSelectFailed, err)
 		return
 	}
 
@@ -390,7 +390,7 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	render.JSON(w, r, data)
+	httputil.JSON(w, r, data)
 }
 
 // ExecuteFactFromSource godoc
@@ -415,7 +415,7 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -428,28 +428,28 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 	t, err := ParseTime(r.URL.Query().Get("time"))
 	if err != nil {
 		zap.L().Error("Parse input time", zap.Error(err), zap.String("rawTime", r.URL.Query().Get("time")))
-		render.Error(w, r, render.ErrAPIParsingDateTime, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingDateTime, err)
 		return
 	}
 
 	nhit, err := ParseInt(r.URL.Query().Get("nhit"))
 	if err != nil {
 		zap.L().Error("Parse input nhit", zap.Error(err), zap.String("rawNhit", r.URL.Query().Get("nhit")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	offset, err := ParseInt(r.URL.Query().Get("offset"))
 	if err != nil {
 		zap.L().Error("Parse input offset", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("offset")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]string))
 	if err != nil {
 		zap.L().Error("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
-		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingKeyValue, err)
 		return
 	}
 
@@ -457,13 +457,13 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newFact)
 	if err != nil {
 		zap.L().Warn("Fact definition json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newFact.IsValid(); !ok {
 		zap.L().Warn("Fact definition json is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
@@ -474,11 +474,11 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 	item, err := fact.ExecuteFact(t, newFact, 0, 0, placeholders, nhit, offset, false)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err))
-		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIElasticSelectFailed, err)
 		return
 	}
 
-	render.JSON(w, r, item)
+	httputil.JSON(w, r, item)
 }
 
 // GetFactHits godoc
@@ -504,28 +504,28 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 	t, err := ParseTime(r.URL.Query().Get("time"))
 	if err != nil {
 		zap.L().Error("Parse input time", zap.Error(err), zap.String("rawTime", r.URL.Query().Get("time")))
-		render.Error(w, r, render.ErrAPIParsingDateTime, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingDateTime, err)
 		return
 	}
 
 	nhit, err := ParseInt(r.URL.Query().Get("nhit"))
 	if err != nil {
 		zap.L().Error("Parse input nhit", zap.Error(err), zap.String("rawNhit", r.URL.Query().Get("nhit")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	offset, err := ParseInt(r.URL.Query().Get("offset"))
 	if err != nil {
 		zap.L().Error("Parse input offset", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("offset")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	factParameters, err := ParseFactParameters(r.URL.Query().Get("factParameters"))
 	if err != nil {
 		zap.L().Error("Parse input FactParameters", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("factParameters")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -536,31 +536,31 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 	idFact, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing fact id", zap.String("factID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	f, found, err = fact.R().Get(idFact)
 	if err != nil {
 		zap.L().Error("Error while fetching fact", zap.String("factid", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Fact does not exists", zap.String("factid", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
 	if f.Dimensions != nil {
 		zap.L().Warn("Fact does have dimensions", zap.String("factid", id))
-		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("service not supported on fact with dimensions"))
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, fmt.Errorf("service not supported on fact with dimensions"))
 		return
 	}
 
 	if f.IsObject {
 		zap.L().Warn("Fact is an object fact", zap.String("factid", id))
-		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("service not supported on fact object"))
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, fmt.Errorf("service not supported on fact object"))
 		return
 	}
 
@@ -568,7 +568,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 	// Should be better to just remove the "lookup by name" feature (which is not used anymore, and has no sense in this API)
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(idFact, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -580,19 +580,19 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 		idSituation, err := strconv.ParseInt(idSituationStr, 10, 64)
 		if err != nil {
 			zap.L().Warn("Parse input situationId", zap.Error(err), zap.String("rawsituationId", r.URL.Query().Get("situationId")))
-			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 			return
 		}
 
 		situationn, found, err := situation.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
 		if err != nil {
 			zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
-			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+			httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 			return
 		}
 		if !found {
 			zap.L().Warn("Situation does not exists", zap.Int64("situationID", idSituation))
-			render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+			httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 			return
 		}
 
@@ -602,19 +602,19 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 			situationInstanceID, err := strconv.ParseInt(situationInstanceIDStr, 10, 64)
 			if err != nil {
 				zap.L().Warn("Parse input situationInstanceId", zap.Error(err), zap.String("rawSituationInstanceId", r.URL.Query().Get("situationInstanceId")))
-				render.Error(w, r, render.ErrAPIParsingInteger, err)
+				httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 				return
 			}
 
 			situationInstance, found, err = situation.R().GetTemplateInstance(situationInstanceID)
 			if err != nil {
 				zap.L().Error("Cannot retrieve situation Instance", zap.Int64("situationInstanceID", situationInstanceID), zap.Error(err))
-				render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+				httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 				return
 			}
 			if !found {
 				zap.L().Warn("Situation Instance does not exists", zap.Int64("situationInstanceID", situationInstanceID))
-				render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+				httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 				return
 			}
 		}
@@ -640,11 +640,11 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 	data, err = fact.ExecuteFact(t, f, 0, 0, placeholders, nhit, offset, false)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err))
-		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIElasticSelectFailed, err)
 		return
 	}
 
-	render.JSON(w, r, data)
+	httputil.JSON(w, r, data)
 }
 
 // FactToESQuery godoc
@@ -678,42 +678,42 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 	t, err := ParseTime(r.URL.Query().Get("time"))
 	if err != nil {
 		zap.L().Error("Parse input time", zap.Error(err), zap.String("rawTime", r.URL.Query().Get("time")))
-		render.Error(w, r, render.ErrAPIParsingDateTime, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingDateTime, err)
 		return
 	}
 
 	nhit, err := ParseInt(r.URL.Query().Get("nhit"))
 	if err != nil {
 		zap.L().Error("Parse input nhit", zap.Error(err), zap.String("rawNhit", r.URL.Query().Get("nhit")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	offset, err := ParseInt(r.URL.Query().Get("offset"))
 	if err != nil {
 		zap.L().Error("Parse input offset", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("offset")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]string))
 	if err != nil {
 		zap.L().Warn("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
-		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingKeyValue, err)
 		return
 	}
 
 	situationid, err := ParseInt(r.URL.Query().Get("situationid"))
 	if err != nil {
 		zap.L().Error("Parse input situationid", zap.Error(err), zap.String("rawsituationid", r.URL.Query().Get("situationid")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	instanceid, err := ParseInt(r.URL.Query().Get("instanceid"))
 	if err != nil {
 		zap.L().Error("Parse input instanceid", zap.Error(err), zap.String("rawinstanceid", r.URL.Query().Get("instanceid")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -726,7 +726,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	f, apiError, err := lookupFact(byName, id)
 	if err != nil {
-		render.Error(w, r, apiError, err)
+		httputil.Error(w, r, apiError, err)
 		return
 	}
 
@@ -734,11 +734,11 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 	if situationid != 0 {
 		s, found, err := situation.R().Get(int64(situationid))
 		if err != nil {
-			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+			httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 			return
 		}
 		if !found {
-			render.Error(w, r, render.ErrAPIDBResourceNotFound, nil)
+			httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, nil)
 			return
 		}
 		for k, v := range s.Parameters {
@@ -748,11 +748,11 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		if s.IsTemplate && instanceid != 0 {
 			template, found, err := situation.R().GetTemplateInstance(int64(instanceid))
 			if err != nil {
-				render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+				httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 				return
 			}
 			if !found {
-				render.Error(w, r, render.ErrAPIDBResourceNotFound, nil)
+				httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, nil)
 				return
 			}
 			for k, v := range template.Parameters {
@@ -774,14 +774,14 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 	f.ContextualizeDimensions(t, parameters)
 	err = f.ContextualizeCondition(t, parameters)
 	if err != nil {
-		render.Error(w, r, apiError, err)
+		httputil.Error(w, r, apiError, err)
 		return
 	}
 
 	source, err := elasticsearch.ConvertFactToSearchRequestV8(f, t, parameters)
 	if err != nil {
 		zap.L().Error("Cannot convert fact to search request", zap.Error(err), zap.Any("fact", f))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
@@ -790,10 +790,10 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 
 	zap.L().Info("Debugging final elastic query", zap.Any("query", source))
 
-	render.JSON(w, r, source)
+	httputil.JSON(w, r, source)
 }
 
-func lookupFact(byName bool, id string) (engine.Fact, render.APIError, error) {
+func lookupFact(byName bool, id string) (engine.Fact, httputil.APIError, error) {
 	var f engine.Fact
 	var err error
 	var found bool
@@ -801,27 +801,27 @@ func lookupFact(byName bool, id string) (engine.Fact, render.APIError, error) {
 		f, found, err = fact.R().GetByName(id)
 		if err != nil {
 			zap.L().Error("Error while fetching fact", zap.String("factid", id), zap.Error(err))
-			return engine.Fact{}, render.ErrAPIDBSelectFailed, err
+			return engine.Fact{}, httputil.ErrAPIDBSelectFailed, err
 		}
 		if !found {
 			zap.L().Warn("Fact does not exists", zap.String("factid", id))
-			return engine.Fact{}, render.ErrAPIDBResourceNotFound, fmt.Errorf("fact not found with name %s", id)
+			return engine.Fact{}, httputil.ErrAPIDBResourceNotFound, fmt.Errorf("fact not found with name %s", id)
 		}
 	} else {
 		idFact, err := strconv.ParseInt(id, 10, 64)
 		if err != nil {
 			zap.L().Warn("Error on parsing fact id", zap.String("factID", id), zap.Error(err))
-			return engine.Fact{}, render.ErrAPIParsingInteger, err
+			return engine.Fact{}, httputil.ErrAPIParsingInteger, err
 		}
 		f, found, err = fact.R().Get(idFact)
 		if err != nil {
 			zap.L().Error("Error while fetching fact", zap.Int64("factid", idFact), zap.Error(err))
-			return engine.Fact{}, render.ErrAPIDBSelectFailed, err
+			return engine.Fact{}, httputil.ErrAPIDBSelectFailed, err
 		}
 		if !found {
 			zap.L().Warn("Fact does not exists", zap.String("factid", id))
-			return engine.Fact{}, render.ErrAPIDBResourceNotFound, fmt.Errorf("fact not found with id %d", idFact)
+			return engine.Fact{}, httputil.ErrAPIDBResourceNotFound, fmt.Errorf("fact not found with id %d", idFact)
 		}
 	}
-	return f, render.APIError{}, nil
+	return f, httputil.APIError{}, nil
 }

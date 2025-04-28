@@ -1,12 +1,12 @@
 package issues
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"sync"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend

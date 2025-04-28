@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -11,7 +12,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/rootcause"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 )
 

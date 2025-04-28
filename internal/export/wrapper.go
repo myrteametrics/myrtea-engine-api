@@ -3,6 +3,7 @@ package export
 import (
 	"context"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	sdksecurity "github.com/myrteametrics/myrtea-sdk/v5/security"
 	"os"
 	"path/filepath"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
 )

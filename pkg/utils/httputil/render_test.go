@@ -1,4 +1,4 @@
-package render
+package httputil
 
 import (
 	"net/http"

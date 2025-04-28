@@ -1,7 +1,7 @@
 package notifier
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"sync"
 	"time"
 

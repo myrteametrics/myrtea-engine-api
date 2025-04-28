@@ -3,10 +3,10 @@ package notifier
 import (
 	"errors"
 	"github.com/google/uuid"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"net/http"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 	"go.uber.org/zap"
 
 	"github.com/gorilla/websocket"

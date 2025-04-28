@@ -6,6 +6,8 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"io"
 	"regexp"
 	"strconv"
@@ -19,9 +21,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 	"go.uber.org/zap"
 )
 
@@ -226,9 +226,9 @@ func GetUserFromContext(r *http.Request) (users.UserWithPermissions, bool) {
 }
 
 // handleError is a helper function that logs the error and sends a response.
-func handleError(w http.ResponseWriter, r *http.Request, message string, err error, apiError render.APIError) {
+func handleError(w http.ResponseWriter, r *http.Request, message string, err error, apiError httputil.APIError) {
 	zap.L().Error(message, zap.Error(err))
-	render.Error(w, r, apiError, err)
+	httputil.Error(w, r, apiError, err)
 }
 
 // generateRandomState Generate a State used by OIDC authentication

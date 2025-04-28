@@ -3,14 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	users2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 	"go.uber.org/zap"
 )
 
@@ -30,11 +30,11 @@ func GetUserSelf(w http.ResponseWriter, r *http.Request) {
 	userCtx, found := GetUserFromContext(r)
 	if !found {
 		zap.L().Warn("No context user provided")
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("no context user provided"))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("no context user provided"))
 		return
 	}
 
-	render.JSON(w, r, userCtx)
+	httputil.JSON(w, r, userCtx)
 }
 
 // GetUsers godoc
@@ -51,14 +51,14 @@ func GetUserSelf(w http.ResponseWriter, r *http.Request) {
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
-	usersSlice, err := users.R().GetAll()
+	usersSlice, err := users2.R().GetAll()
 	if err != nil {
 		zap.L().Error("GetUsers", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -66,7 +66,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 		return usersSlice[i].LastName < usersSlice[j].LastName
 	})
 
-	render.JSON(w, r, usersSlice)
+	httputil.JSON(w, r, usersSlice)
 }
 
 // GetUser godoc
@@ -88,29 +88,29 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		zap.L().Warn("Parse user id", zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, userID.String(), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
-	user, found, err := users.R().Get(userID)
+	user, found, err := users2.R().Get(userID)
 	if err != nil {
 		zap.L().Error("Cannot get user", zap.String("uuid", userID.String()), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("User not found", zap.String("uuid", userID.String()))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, user)
+	httputil.JSON(w, r, user)
 }
 
 // ValidateUser godoc
@@ -128,21 +128,21 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500	{string}	string		"Internal Server Error"
 //	@Router			/admin/security/users/validate [post]
 func ValidateUser(w http.ResponseWriter, r *http.Request) {
-	var newUser users.UserWithPassword
+	var newUser users2.UserWithPassword
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
 		zap.L().Warn("User json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newUser.IsValid(); !ok {
 		zap.L().Warn("User is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
-	render.JSON(w, r, newUser)
+	httputil.JSON(w, r, newUser)
 }
 
 // PostUser godoc
@@ -162,44 +162,44 @@ func ValidateUser(w http.ResponseWriter, r *http.Request) {
 func PostUser(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
-	var user users.UserWithPassword
+	var user users2.UserWithPassword
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		zap.L().Warn("User json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := user.IsValid(); !ok {
 		zap.L().Warn("User is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
-	userID, err := users.R().Create(user)
+	userID, err := users2.R().Create(user)
 	if err != nil {
 		zap.L().Error("PostUser.Create", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	newUser, found, err := users.R().Get(userID)
+	newUser, found, err := users2.R().Get(userID)
 	if err != nil {
 		zap.L().Error("Cannot get user", zap.String("uuid", userID.String()), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Error("User not found after creation", zap.String("uuid", userID.String()))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, newUser)
+	httputil.JSON(w, r, newUser)
 }
 
 // PutUser godoc
@@ -222,51 +222,51 @@ func PutUser(w http.ResponseWriter, r *http.Request) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		zap.L().Warn("Parse user id", zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, userID.String(), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
-	var user users.User
+	var user users2.User
 	err = json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		zap.L().Warn("User json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	user.ID = userID
 
 	if ok, err := user.IsValid(); !ok {
 		zap.L().Warn("User is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
-	err = users.R().Update(user)
+	err = users2.R().Update(user)
 	if err != nil {
 		zap.L().Error("PutUser.Update", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	user, found, err := users.R().Get(userID)
+	user, found, err := users2.R().Get(userID)
 	if err != nil {
 		zap.L().Error("Cannot get user", zap.String("uuid", userID.String()), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Error("User not found after creation", zap.String("uuid", userID.String()))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, user)
+	httputil.JSON(w, r, user)
 }
 
 // DeleteUser godoc
@@ -287,24 +287,24 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		zap.L().Warn("Parse user id", zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, userID.String(), permissions.ActionDelete)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
-	err = users.R().Delete(userID)
+	err = users2.R().Delete(userID)
 	if err != nil {
 		zap.L().Error("Cannot delete user", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // SetUserRoles godoc
@@ -327,13 +327,13 @@ func SetUserRoles(w http.ResponseWriter, r *http.Request) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		zap.L().Warn("Parse user id", zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, userID.String(), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -341,7 +341,7 @@ func SetUserRoles(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&rawRoleUUIDs)
 	if err != nil {
 		zap.L().Warn("Invalid UUID", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
@@ -351,18 +351,18 @@ func SetUserRoles(w http.ResponseWriter, r *http.Request) {
 		roleUUID, err := uuid.Parse(rawRoleUUID)
 		if err != nil {
 			zap.L().Warn("Invalid UUID", zap.Error(err))
-			render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+			httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 			return
 		}
 		roleUUIDs = append(roleUUIDs, roleUUID)
 	}
 
-	err = users.R().SetUserRoles(userID, roleUUIDs)
+	err = users2.R().SetUserRoles(userID, roleUUIDs)
 	if err != nil {
 		zap.L().Error("PutUser.Update", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }

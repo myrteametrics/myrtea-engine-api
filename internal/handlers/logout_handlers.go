@@ -2,9 +2,9 @@ package handlers
 
 import (
 	routerauth "github.com/myrteametrics/myrtea-engine-api/v5/internal/router/auth"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"go.uber.org/zap"
 )
 
@@ -48,9 +48,9 @@ func GetAuthenticationMode(w http.ResponseWriter, r *http.Request) {
 	mode, err := routerauth.GetMode()
 	if err != nil {
 		zap.L().Error("Error querying authentication mode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIProcessError, err)
+		httputil.Error(w, r, httputil.ErrAPIProcessError, err)
 		return
 	}
 
-	render.JSON(w, r, mode)
+	httputil.JSON(w, r, mode)
 }

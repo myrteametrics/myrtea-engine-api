@@ -4,16 +4,18 @@ import (
 	"errors"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/connectorconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/externalconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/apikey"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tag"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/email"
+	externalconfig2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/externalconfig"
+	roles2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
+	users2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"strings"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/connector"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/coordinator"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/email"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/action"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/draft"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/issues"
@@ -31,8 +33,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/scheduler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/search"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/roles"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tasker"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
@@ -43,8 +43,8 @@ import (
 // InitializeRepositories initialize all myrtea Postgresql repositories
 func initRepositories() {
 	dbClient := postgres.DB()
-	users.ReplaceGlobals(users.NewPostgresRepository(dbClient))
-	roles.ReplaceGlobals(roles.NewPostgresRepository(dbClient))
+	users2.ReplaceGlobals(users2.NewPostgresRepository(dbClient))
+	roles2.ReplaceGlobals(roles2.NewPostgresRepository(dbClient))
 	permissions.ReplaceGlobals(permissions.NewPostgresRepository(dbClient))
 	fact.ReplaceGlobals(fact.NewPostgresRepository(dbClient))
 	situation.ReplaceGlobals(situation.NewPostgresRepository(dbClient))
@@ -62,7 +62,7 @@ func initRepositories() {
 	tag.ReplaceGlobals(tag.NewPostgresRepository(dbClient))
 
 	// Configs
-	externalconfig.ReplaceGlobals(externalconfig.NewPostgresRepository(dbClient))
+	externalconfig2.ReplaceGlobals(externalconfig2.NewPostgresRepository(dbClient))
 	connectorconfig.ReplaceGlobals(connectorconfig.NewPostgresRepository(dbClient))
 	esconfig.ReplaceGlobals(esconfig.NewPostgresRepository(dbClient))
 	history.ReplaceGlobals(history.New(dbClient))

@@ -3,12 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/connectorconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"go.uber.org/zap"
 )
@@ -28,7 +28,7 @@ func GetConnectorConfigs(w http.ResponseWriter, r *http.Request) {
 	connectorConfigs, err := connectorconfig.R().GetAll()
 	if err != nil {
 		zap.L().Error("Error getting connectorConfigs", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -41,7 +41,7 @@ func GetConnectorConfigs(w http.ResponseWriter, r *http.Request) {
 		return connectorConfigsSlice[i].Name < connectorConfigsSlice[j].Name
 	})
 
-	render.JSON(w, r, connectorConfigsSlice)
+	httputil.JSON(w, r, connectorConfigsSlice)
 }
 
 // GetConnectorConfig godoc
@@ -62,24 +62,24 @@ func GetConnectorConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing connector config id", zap.String("idConnectorConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	a, found, err := connectorconfig.R().Get(idConnectorConfig)
 	if err != nil {
 		zap.L().Error("Cannot get connectorConfig", zap.String("externalConfigId", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
 	if !found {
 		zap.L().Warn("ConnectorConfig does not exists", zap.String("externalConfigId", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, a)
+	httputil.JSON(w, r, a)
 }
 
 // PostConnectorConfig godoc
@@ -101,30 +101,30 @@ func PostConnectorConfig(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newExternalConfig)
 	if err != nil {
 		zap.L().Warn("ConnectorConfig json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	id, err := connectorconfig.R().Create(nil, newExternalConfig)
 	if err != nil {
 		zap.L().Error("Error while creating the ConnectorConfig", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
 	newExternalConfigGet, found, err := connectorconfig.R().Get(id)
 	if err != nil {
 		zap.L().Error("Cannot get connectorConfig", zap.String("externalConfigname", newExternalConfig.Name), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("ConnectorConfig does not exists after creation", zap.String("externalConfigname", newExternalConfig.Name))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, newExternalConfigGet)
+	httputil.JSON(w, r, newExternalConfigGet)
 }
 
 // PutConnectorConfig godoc
@@ -148,7 +148,7 @@ func PutConnectorConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing connector config id", zap.String("idConnectorConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -156,7 +156,7 @@ func PutConnectorConfig(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newExternalConfig)
 	if err != nil {
 		zap.L().Warn("ConnectorConfig json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	newExternalConfig.Id = idConnectorConfig
@@ -164,23 +164,23 @@ func PutConnectorConfig(w http.ResponseWriter, r *http.Request) {
 	err = connectorconfig.R().Update(nil, idConnectorConfig, newExternalConfig)
 	if err != nil {
 		zap.L().Error("Error while updating the ConnectorConfig", zap.String("idConnectorConfig", id), zap.Any("connectorConfig", newExternalConfig), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	newExternalConfigGet, found, err := connectorconfig.R().Get(idConnectorConfig)
 	if err != nil {
 		zap.L().Error("Cannot get connectorConfig", zap.String("externalConfigId", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("ConnectorConfig does not exists after update", zap.String("externalConfigId", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, newExternalConfigGet)
+	httputil.JSON(w, r, newExternalConfigGet)
 }
 
 // DeleteConnectorConfig godoc
@@ -201,7 +201,7 @@ func DeleteConnectorConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing connector config id", zap.String("idConnectorConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -209,9 +209,9 @@ func DeleteConnectorConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Error("Error while deleting the ConnectorConfig", zap.String("ConnectorConfig ID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }

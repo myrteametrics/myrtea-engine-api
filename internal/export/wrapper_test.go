@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 )

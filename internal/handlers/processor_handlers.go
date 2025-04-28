@@ -3,10 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/ingester"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/processor"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/scheduler"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/myrteametrics/myrtea-sdk/v5/models"
 	"go.uber.org/zap"
 	"net/http"
@@ -42,7 +42,7 @@ func PostObjects(w http.ResponseWriter, r *http.Request) {
 	factObjectName := r.URL.Query().Get("fact")
 	if factObjectName == "" {
 		zap.L().Warn("fact object name missing")
-		render.Error(w, r, render.ErrAPIMissingParam, errors.New(`parameter "fact" is missing`))
+		httputil.Error(w, r, httputil.ErrAPIMissingParam, errors.New(`parameter "fact" is missing`))
 		return
 	}
 
@@ -50,18 +50,18 @@ func PostObjects(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&objects)
 	if err != nil {
 		zap.L().Warn("PostObjects.Unmarshal", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	err = processor.ReceiveObjects(factObjectName, objects)
 	if err != nil {
 		zap.L().Error("PostObjects.ReceiveObjects", zap.Error(err))
-		render.Error(w, r, render.ErrAPIProcessError, err)
+		httputil.Error(w, r, httputil.ErrAPIProcessError, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // PostAggregates godoc

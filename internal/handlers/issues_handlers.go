@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,7 +11,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
@@ -33,7 +33,7 @@ var allowedSortByFields = []string{"id", "created_at", "last_modified"}
 func GetIssues(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -47,11 +47,11 @@ func GetIssues(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		zap.L().Error("Cannot retrieve issues", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	render.JSON(w, r, issueList)
+	httputil.JSON(w, r, issueList)
 }
 
 // GetIssuesByStatesByPageUnProtected godoc
@@ -82,7 +82,7 @@ func GetIssuesByStatesByPageUnProtected(w http.ResponseWriter, r *http.Request) 
 		limit, err = ParseInt(rawSize)
 		if err != nil {
 			zap.L().Warn("Parse input limit", zap.Error(err), zap.String("rawNhit", rawSize))
-			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 			return
 		}
 	}
@@ -91,7 +91,7 @@ func GetIssuesByStatesByPageUnProtected(w http.ResponseWriter, r *http.Request) 
 		offset, err = ParseInt(rawOffset)
 		if err != nil {
 			zap.L().Warn("Parse input offset", zap.Error(err), zap.String("raw offset", rawOffset))
-			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 			return
 		}
 	}
@@ -100,7 +100,7 @@ func GetIssuesByStatesByPageUnProtected(w http.ResponseWriter, r *http.Request) 
 		sortOptions, err = ParseSortBy(rawSortBy, allowedSortByFields)
 		if err != nil {
 			zap.L().Warn("Parse input sort_by", zap.Error(err), zap.String("raw sort_by", rawSortBy))
-			render.Error(w, r, render.ErrAPIParsingSortBy, err)
+			httputil.Error(w, r, httputil.ErrAPIParsingSortBy, err)
 			return
 		}
 	}
@@ -117,7 +117,7 @@ func GetIssuesByStatesByPageUnProtected(w http.ResponseWriter, r *http.Request) 
 
 	if err != nil {
 		zap.L().Error("Error on getting issues", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -126,7 +126,7 @@ func GetIssuesByStatesByPageUnProtected(w http.ResponseWriter, r *http.Request) 
 		Items: issuesSlice,
 	}
 
-	render.JSON(w, r, paginatedResource)
+	httputil.JSON(w, r, paginatedResource)
 }
 
 // GetIssuesByStatesByPage godoc
@@ -157,7 +157,7 @@ func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 		limit, err = ParseInt(rawSize)
 		if err != nil {
 			zap.L().Warn("Parse input limit", zap.Error(err), zap.String("rawNhit", rawSize))
-			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 			return
 		}
 	}
@@ -166,7 +166,7 @@ func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 		offset, err = ParseInt(rawOffset)
 		if err != nil {
 			zap.L().Warn("Parse input offset", zap.Error(err), zap.String("raw offset", rawOffset))
-			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 			return
 		}
 	}
@@ -175,7 +175,7 @@ func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 		sortOptions, err = ParseSortBy(rawSortBy, allowedSortByFields)
 		if err != nil {
 			zap.L().Warn("Parse input sort_by", zap.Error(err), zap.String("raw sort_by", rawSortBy))
-			render.Error(w, r, render.ErrAPIParsingSortBy, err)
+			httputil.Error(w, r, httputil.ErrAPIParsingSortBy, err)
 			return
 		}
 	}
@@ -188,7 +188,7 @@ func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -202,7 +202,7 @@ func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		zap.L().Error("Error on getting issues", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -211,7 +211,7 @@ func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 		Items: issuesSlice,
 	}
 
-	render.JSON(w, r, paginatedResource)
+	httputil.JSON(w, r, paginatedResource)
 }
 
 // GetIssue godoc
@@ -231,29 +231,29 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	issue, found, err := issues.R().Get(idIssue)
 	if err != nil {
 		zap.L().Error("Cannot retrieve issue", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("issue does not exists", zap.String("issueID", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
-	render.JSON(w, r, issue)
+	httputil.JSON(w, r, issue)
 }
 
 // GetIssueHistory godoc
@@ -279,7 +279,7 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -287,7 +287,7 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 		limit, err = ParseInt(rawSize)
 		if err != nil {
 			zap.L().Warn("Parse input limit", zap.Error(err), zap.String("rawNhit", rawSize))
-			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 			return
 		}
 	}
@@ -296,7 +296,7 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 		offset, err = ParseInt(rawOffset)
 		if err != nil {
 			zap.L().Warn("Parse input offset", zap.Error(err), zap.String("raw offset", rawOffset))
-			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 			return
 		}
 	}
@@ -305,7 +305,7 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 		sortOptions, err = ParseSortBy(rawSortBy, allowedSortByFields)
 		if err != nil {
 			zap.L().Warn("Parse input sort_by", zap.Error(err), zap.String("raw sort_by", rawSortBy))
-			render.Error(w, r, render.ErrAPIParsingSortBy, err)
+			httputil.Error(w, r, httputil.ErrAPIParsingSortBy, err)
 			return
 		}
 	}
@@ -318,26 +318,26 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	issue, found, err := issues.R().Get(idIssue)
 	if err != nil {
 		zap.L().Error("Cannot retrieve issue", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("issue does not exists", zap.String("issueID", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
 	issuesSlice, total, err := issues.R().GetByKeyByPage(issue.Key, searchOptions)
 	if err != nil {
 		zap.L().Error("Error on getting issues", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -346,7 +346,7 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 		Items: issuesSlice,
 	}
 
-	render.JSON(w, r, paginatedResource)
+	httputil.JSON(w, r, paginatedResource)
 }
 
 // GetIssueFactsHistory godoc
@@ -368,41 +368,41 @@ func GetIssueFactsHistory(w http.ResponseWriter, r *http.Request) {
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	issue, found, err := issues.R().Get(idIssue)
 	if err != nil {
 		zap.L().Error("Cannot retrieve issue", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("issue does not exists", zap.String("issueID", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	history, found, err := explainer.GetFactsHistory(issue)
 	if err != nil {
 		zap.L().Error("An error has occurred", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Not found", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, history)
+	httputil.JSON(w, r, history)
 }
 
 // PostIssue godoc
@@ -424,13 +424,13 @@ func PostIssue(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newIssue)
 	if err != nil {
 		zap.L().Warn("Invalid issue json defined", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(newIssue.SituationID, 10), permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -438,11 +438,11 @@ func PostIssue(w http.ResponseWriter, r *http.Request) {
 	_, err = issues.R().Create(newIssue)
 	if err != nil {
 		zap.L().Error("Error while creating the issue", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // GetIssueFeedbackTree godoc
@@ -464,36 +464,36 @@ func GetIssueFeedbackTree(w http.ResponseWriter, r *http.Request) {
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	issue, found, err := issues.R().Get(idIssue)
 	if err != nil {
 		zap.L().Error("Cannot retrieve issue", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("issue does not exists", zap.String("issueID", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	tree, err := explainer.GetRecommendationTree(issue)
 	if err != nil {
 		zap.L().Error("Generating rootcauses / actions tree", zap.Int64("id", issue.ID), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	render.JSON(w, r, tree)
+	httputil.JSON(w, r, tree)
 }
 
 // PostIssueDraft godoc
@@ -516,25 +516,25 @@ func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	issue, found, err := issues.R().Get(idIssue)
 	if err != nil {
 		zap.L().Error("Cannot retrieve issue", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("issue does not exists", zap.String("issueID", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -542,18 +542,18 @@ func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newDraft)
 	if err != nil {
 		zap.L().Warn("Body decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	err = explainer.SaveIssueDraft(nil, issue, newDraft, userCtx.User)
 	if err != nil {
 		zap.L().Error("SaveIssueDraft", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // PostIssuesDraft godoc
@@ -575,7 +575,7 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&issueIdsToDraft)
 	if err != nil {
 		zap.L().Warn("Body decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
@@ -587,16 +587,16 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 		issue, found, err := issues.R().Get(idIssue)
 		if err != nil {
 			zap.L().Error("Cannot retrieve issue", zap.Error(err), zap.Int64("Id Issues ", idIssue))
-			explainer.DrafHandleError(status, idIssue, err, render.ErrAPIDBSelectFailed)
+			explainer.DrafHandleError(status, idIssue, err, httputil.ErrAPIDBSelectFailed)
 			continue
 		}
 		if !found {
 			zap.L().Warn("issue does not exist", zap.Int64("issueID", idIssue), zap.Int64("Id Issues ", idIssue))
-			explainer.DrafHandleError(status, idIssue, errors.New("issue not found"), render.ErrAPIDBResourceNotFound)
+			explainer.DrafHandleError(status, idIssue, errors.New("issue not found"), httputil.ErrAPIDBResourceNotFound)
 			continue
 		}
 		if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-			explainer.DrafHandleError(status, idIssue, errors.New("missing permission"), render.ErrAPISecurityNoPermissions)
+			explainer.DrafHandleError(status, idIssue, errors.New("missing permission"), httputil.ErrAPISecurityNoPermissions)
 			continue
 		}
 		idIssuesOk = append(idIssuesOk, idIssue)
@@ -606,14 +606,14 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 	explainer.DraftIssues(idIssuesOk, userCtx.User, status)
 
 	if status.AllOk {
-		render.OK(w, r)
+		httputil.OK(w, r)
 		return
 	}
 	if status.SuccessCount == 0 {
-		render.Error(w, r, render.ErrAPIProcessError, errors.New(status.ErrorMessages))
+		httputil.Error(w, r, httputil.ErrAPIProcessError, errors.New(status.ErrorMessages))
 		return
 	}
-	render.Error(w, r, render.ErrAPIPartialSuccess, errors.New(status.ErrorMessages))
+	httputil.Error(w, r, httputil.ErrAPIPartialSuccess, errors.New(status.ErrorMessages))
 }
 
 // PostIssueCloseWithFeedback godoc
@@ -637,7 +637,7 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -645,25 +645,25 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 	isFakeAlert, err := strconv.ParseBool(isFakeAlertParam)
 	if err != nil {
 		zap.L().Warn("Error on parsing isFakeAlert parameter", zap.String("issueID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	issue, found, err := issues.R().Get(idIssue)
 	if err != nil {
 		zap.L().Error("Cannot retrieve issue", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("issue does not exists", zap.String("issueID", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -671,18 +671,18 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newFeedback)
 	if err != nil {
 		zap.L().Warn("Body decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	err = explainer.CloseIssueWithFeedback(postgres.DB(), issue, newFeedback, userCtx.User, isFakeAlert)
 	if err != nil {
 		zap.L().Error("CloseIssueWithFeedback", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // PostIssueCloseWithoutFeedback godoc
@@ -706,7 +706,7 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -720,7 +720,7 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 		isFakeAlert, parseErr := strconv.ParseBool(isFakeAlertParam)
 		if parseErr != nil {
 			zap.L().Warn("Error on parsing isFakeAlert parameter", zap.String("issueID", id), zap.Error(parseErr))
-			render.Error(w, r, render.ErrAPIParsingInteger, parseErr)
+			httputil.Error(w, r, httputil.ErrAPIParsingInteger, parseErr)
 			return
 		}
 
@@ -734,35 +734,35 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 	issue, found, err := issues.R().Get(idIssue)
 	if err != nil {
 		zap.L().Error("Cannot retrieve issue", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("issue does not exists", zap.String("issueID", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
 	if issue.State.IsClosed() {
 		zap.L().Warn("Issue with id is already in a closed state", zap.String("issueID", id))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	err = explainer.CloseIssueWithoutFeedback(postgres.DB(), issue, userCtx.User, targetState)
 	if err != nil {
 		zap.L().Error("CloseIssueWithoutFeedback", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // PostIssueDetectionFeedback godoc
@@ -785,25 +785,25 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	issue, found, err := issues.R().Get(idIssue)
 	if err != nil {
 		zap.L().Error("Cannot retrieve issue", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("issue does not exists", zap.String("issueID", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, strconv.FormatInt(issue.SituationID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -816,18 +816,18 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&feedback)
 	if err != nil {
 		zap.L().Warn("Body decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	err = explainer.AddIssueDetectionFeedback(postgres.DB(), issue, userCtx.User, feedback.Rating)
 	if err != nil {
 		zap.L().Warn("AddIssueDetectionFeedback", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // UpdateIssueComment godoc
@@ -862,7 +862,7 @@ func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
 	idIssue, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing issue id", zap.String("issueID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -874,7 +874,7 @@ func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&comment)
 	if err != nil {
 		zap.L().Warn("Body decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
@@ -883,9 +883,9 @@ func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
 	err = issues.R().UpdateComment(postgres.DB(), idIssue, comment.Comment)
 	if err != nil {
 		zap.L().Error("Cannot update issue comment", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }

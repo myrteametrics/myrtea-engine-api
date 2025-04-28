@@ -3,11 +3,11 @@ package explainer
 import (
 	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/draft"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 )
 
 // SaveIssueDraft generate and persist an issue draft

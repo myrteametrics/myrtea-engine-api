@@ -3,12 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/scheduler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"go.uber.org/zap"
@@ -26,12 +26,12 @@ import (
 func StartScheduler(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.All)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	scheduler.S().C.Start()
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // TriggerJobSchedule godoc
@@ -53,7 +53,7 @@ func TriggerJobSchedule(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -61,19 +61,19 @@ func TriggerJobSchedule(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newSchedule)
 	if err != nil {
 		zap.L().Warn("Job schedule json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newSchedule.IsValid(); !ok {
 		zap.L().Warn("Schedule is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	newSchedule.Job.Run()
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // GetJobSchedules godoc
@@ -90,14 +90,14 @@ func TriggerJobSchedule(w http.ResponseWriter, r *http.Request) {
 func GetJobSchedules(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	schedules, err := scheduler.R().GetAll()
 	if err != nil {
 		zap.L().Error("Cannot get schedules", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -110,7 +110,7 @@ func GetJobSchedules(w http.ResponseWriter, r *http.Request) {
 		return schedulesSlice[i].ID < schedulesSlice[j].ID
 	})
 
-	render.JSON(w, r, schedulesSlice)
+	httputil.JSON(w, r, schedulesSlice)
 }
 
 // GetJobSchedule godoc
@@ -130,29 +130,29 @@ func GetJobSchedule(w http.ResponseWriter, r *http.Request) {
 	idJob, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Parsing JobSchedule id", zap.String("JobScheduleID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, strconv.FormatInt(idJob, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	jobSchedule, found, err := scheduler.R().Get(idJob)
 	if err != nil {
 		zap.L().Error("Get JobSchedule from repository", zap.Int64("id", idJob), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Job not found", zap.Int64("id", idJob))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, jobSchedule)
+	httputil.JSON(w, r, jobSchedule)
 }
 
 // ValidateJobSchedule godoc
@@ -173,17 +173,17 @@ func ValidateJobSchedule(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newSchedule)
 	if err != nil {
 		zap.L().Warn("Job schedule json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newSchedule.IsValid(); !ok {
 		zap.L().Warn("Schedule is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
-	render.JSON(w, r, newSchedule)
+	httputil.JSON(w, r, newSchedule)
 }
 
 // PostJobSchedule godoc
@@ -203,7 +203,7 @@ func ValidateJobSchedule(w http.ResponseWriter, r *http.Request) {
 func PostJobSchedule(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -211,32 +211,32 @@ func PostJobSchedule(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newSchedule)
 	if err != nil {
 		zap.L().Warn("Job schedule json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newSchedule.IsValid(); !ok {
 		zap.L().Warn("Schedule is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	idJob, err := scheduler.R().Create(newSchedule)
 	if err != nil {
 		zap.L().Error("Error while creating JobSchedule", zap.Int64("JobSchedule.ID", newSchedule.ID), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
 	jobSchedule, found, err := scheduler.R().Get(idJob)
 	if err != nil {
 		zap.L().Error("Get JobSchedule from repository", zap.Int64("id", idJob), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Job not found after creation", zap.Int64("id", idJob))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
@@ -249,11 +249,11 @@ func PostJobSchedule(w http.ResponseWriter, r *http.Request) {
 			zap.L().Error("Error while rollbacking JobSchedule creation", zap.Int64("JobSchedule.ID", jobSchedule.ID), zap.Error(err))
 		}
 
-		render.Error(w, r, render.ErrAPIProcessError, err)
+		httputil.Error(w, r, httputil.ErrAPIProcessError, err)
 		return
 	}
 
-	render.JSON(w, r, jobSchedule)
+	httputil.JSON(w, r, jobSchedule)
 }
 
 // PutJobSchedule godoc
@@ -276,13 +276,13 @@ func PutJobSchedule(w http.ResponseWriter, r *http.Request) {
 	idJob, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Parsing JobSchedule id", zap.String("JobScheduleID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, strconv.FormatInt(idJob, 10), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -290,44 +290,44 @@ func PutJobSchedule(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newSchedule)
 	if err != nil {
 		zap.L().Warn("Job schedule json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	newSchedule.ID = idJob
 
 	if ok, err := newSchedule.IsValid(); !ok {
 		zap.L().Warn("Schedule is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	err = scheduler.R().Update(newSchedule)
 	if err != nil {
 		zap.L().Error("Error while updating JobSchedule ", zap.Int64("ID", newSchedule.ID), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	jobSchedule, found, err := scheduler.R().Get(idJob)
 	if err != nil {
 		zap.L().Error("Get JobSchedule from repository", zap.Int64("id", idJob), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Job not found after creation", zap.Int64("id", idJob))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
 	err = scheduler.S().AddJobSchedule(jobSchedule)
 	if err != nil {
 		zap.L().Error("Error while updating JobSchedule", zap.Int64("ID", jobSchedule.ID), zap.Error(err))
-		render.Error(w, r, render.ErrAPIProcessError, err)
+		httputil.Error(w, r, httputil.ErrAPIProcessError, err)
 		return
 	}
 
-	render.JSON(w, r, jobSchedule)
+	httputil.JSON(w, r, jobSchedule)
 }
 
 // DeleteJobSchedule godoc
@@ -348,24 +348,24 @@ func DeleteJobSchedule(w http.ResponseWriter, r *http.Request) {
 	idJob, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Parsing JobSchedule id", zap.String("JobScheduleID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, strconv.FormatInt(idJob, 10), permissions.ActionDelete)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	err = scheduler.R().Delete(idJob)
 	if err != nil {
 		zap.L().Error("Delete DeleteJobSchedule", zap.String("ID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
 	scheduler.S().RemoveJobSchedule(idJob)
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }

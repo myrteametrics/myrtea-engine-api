@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	email2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/email"
 	"html/template"
 	"strconv"
 	"strings"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/email"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
 	"go.uber.org/zap"
@@ -199,7 +199,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 	}
 	zap.L().Debug("BuildMessageBody()", zap.Any("situationData", situationData))
 
-	attachments := make([]email.MessageAttachment, 0)
+	attachments := make([]email2.MessageAttachment, 0)
 	for i, attachmentFactID := range task.AttachmentFactIDs {
 		f, found, err := fact.R().Get(attachmentFactID)
 		if err != nil {
@@ -220,7 +220,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 		}
 
 		var attachmentFileName = task.AttachmentFileNames[i]
-		attachments = append(attachments, email.MessageAttachment{
+		attachments = append(attachments, email2.MessageAttachment{
 			FileName: attachmentFileName,
 			Mime:     "application/octet-stream",
 			Content:  csvAttachment,
@@ -229,14 +229,14 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 		zap.L().Debug("Attachments Added", zap.Any("factID", attachmentFactID))
 	}
 
-	message := email.NewMessage(task.Subject, "text/html", string(body))
+	message := email2.NewMessage(task.Subject, "text/html", string(body))
 	message.To = task.To
 	message.Attachments = attachments
 	zap.L().Debug("Message ready to be sent")
 
 	zap.L().Debug("Email sender ready")
 
-	err = email.S().Send(message)
+	err = email2.S().Send(message)
 	if err != nil {
 		return err
 	}

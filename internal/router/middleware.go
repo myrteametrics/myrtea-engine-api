@@ -5,16 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/apikey"
+	roles2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
+	users2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/google/uuid"
 	gorillacontext "github.com/gorilla/context"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/roles"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 	"go.uber.org/zap"
 )
 
@@ -24,42 +24,42 @@ func ContextMiddleware(next http.Handler) http.Handler {
 		_, claims, err := jwtauth.FromContext(r.Context())
 		if err != nil {
 			zap.L().Warn("Get JWT infos from context", zap.Error(err))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
 			return
 		}
 
 		rawUserID := claims["id"]
 		if rawUserID == nil {
 			zap.L().Warn("Token found without user ID", zap.Any("claims", claims))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
 			return
 		}
 
 		rawUserIDStr, ok := rawUserID.(string)
 		if !ok {
 			zap.L().Warn("Cannot parse user ID", zap.Any("claims", claims))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
 			return
 		}
 
 		userID, _ := uuid.Parse(rawUserIDStr)
 
-		user, found, err := users.R().Get(userID)
+		user, found, err := users2.R().Get(userID)
 		if err != nil {
 			zap.L().Error("Cannot get user", zap.Error(err))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal Error"))
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("internal Error"))
 			return
 		}
 		if !found {
 			zap.L().Error("User not found", zap.String("userID", rawUserID.(string)))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("invalid JWT"))
 			return
 		}
 
-		roles, err := roles.R().GetAllForUser(user.ID)
+		roles, err := roles2.R().GetAllForUser(user.ID)
 		if err != nil {
 			zap.L().Error("Find Roles", zap.Error(err))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal Error"))
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("internal Error"))
 			return
 		}
 
@@ -71,11 +71,11 @@ func ContextMiddleware(next http.Handler) http.Handler {
 		userPermissions, err := permissions.R().GetAllForRoles(userRoleUUIDs)
 		if err != nil {
 			zap.L().Error("Cannot get permissions", zap.Error(err))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal Error"))
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("internal Error"))
 			return
 		}
 
-		up := users.UserWithPermissions{
+		up := users2.UserWithPermissions{
 			User:        user,
 			Roles:       roles,
 			Permissions: userPermissions,
@@ -100,13 +100,13 @@ func CustomAuthenticator(next http.Handler) http.Handler {
 		token, _, err := jwtauth.FromContext(r.Context())
 
 		if err != nil {
-			render.Error(w, r, render.ErrAPISecurityMissingContext, nil)
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, nil)
 			return
 		}
 
 		// if token == nil || !token.Valid {
 		if token == nil {
-			render.Error(w, r, render.ErrAPISecurityMissingContext, nil)
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, nil)
 			return
 		}
 
@@ -138,34 +138,34 @@ func ContextMiddlewareApiKey(next http.Handler) http.Handler {
 			return
 		}
 
-		role, found, err := roles.R().Get(apikey.RoleID)
+		role, found, err := roles2.R().Get(apikey.RoleID)
 		if err != nil {
 			zap.L().Error("Error retrieving role", zap.Error(err), zap.Any("roleID", apikey.RoleID))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal error"))
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("internal error"))
 			return
 		}
 		if !found {
 			zap.L().Debug("Role not found", zap.Any("roleID", apikey.RoleID))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("role not found"))
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("role not found"))
 			return
 		}
 
 		userPermissions, err := permissions.R().GetAllForRole(role.ID)
 		if err != nil {
 			zap.L().Error("Error retrieving permissions", zap.Error(err), zap.Any("roleID", role.ID))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal error"))
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("internal error"))
 			return
 		}
 
-		up := users.UserWithPermissions{
-			User: users.User{
+		up := users2.UserWithPermissions{
+			User: users2.User{
 				ID:        apikey.ID,
 				Login:     "apikey-" + apikey.Name,
 				Created:   apikey.CreatedAt,
 				LastName:  "API Service",
 				FirstName: apikey.Name,
 			},
-			Roles:       []roles.Role{role},
+			Roles:       []roles2.Role{role},
 			Permissions: userPermissions,
 		}
 

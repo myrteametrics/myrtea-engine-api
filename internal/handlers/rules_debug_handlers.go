@@ -1,15 +1,14 @@
 package handlers
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
-
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 )
 
 // TODO: Add handler annotation on TestRuleHandler
 func TestRule(w http.ResponseWriter, r *http.Request) {
 	// TODO: Rule testing not implemented
-	render.NotImplemented(w, r)
+	httputil.NotImplemented(w, r)
 
 	// id := chi.URLParam(r, "id")
 	// idRule, err := strconv.ParseInt(id, 10, 64)

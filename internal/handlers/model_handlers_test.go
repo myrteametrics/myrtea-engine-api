@@ -3,12 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"net/http"
 	"testing"
 
 	model "github.com/myrteametrics/myrtea-engine-api/v5/internal/modeler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
 )

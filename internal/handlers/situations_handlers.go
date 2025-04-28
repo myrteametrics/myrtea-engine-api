@@ -3,13 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"go.uber.org/zap"
@@ -29,7 +29,7 @@ import (
 func GetSituations(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -43,7 +43,7 @@ func GetSituations(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		zap.L().Warn("Cannot retrieve situations", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	situationsSlice := make([]situation.Situation, 0)
@@ -55,7 +55,7 @@ func GetSituations(w http.ResponseWriter, r *http.Request) {
 		return situationsSlice[i].ID < situationsSlice[j].ID
 	})
 
-	render.JSON(w, r, situationsSlice)
+	httputil.JSON(w, r, situationsSlice)
 }
 
 // GetSituation godoc
@@ -75,29 +75,29 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 	idSituation, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing situation id", zap.String("situationID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	situation, found, err := situation.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Situation does not exists", zap.Int64("situationID", idSituation))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, situation)
+	httputil.JSON(w, r, situation)
 }
 
 // ValidateSituation godoc
@@ -119,17 +119,17 @@ func ValidateSituation(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newSituation)
 	if err != nil {
 		zap.L().Warn("Situation json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newSituation.IsValid(); !ok {
 		zap.L().Warn("Situation is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
-	render.JSON(w, r, newSituation)
+	httputil.JSON(w, r, newSituation)
 }
 
 // PostSituation godoc
@@ -151,7 +151,7 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -177,7 +177,7 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(&s)
 		if err != nil {
 			zap.L().Warn("Situation json decode", zap.Error(err))
-			render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+			httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 			return
 		}
 		factIDs := make([]int64, 0)
@@ -185,12 +185,12 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 			f, found, err := fact.R().GetByName(name)
 			if err != nil {
 				zap.L().Error("Get fact by name", zap.String("name", name), zap.Error(err))
-				render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+				httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 				return
 			}
 			if !found {
 				zap.L().Error("fact not found", zap.String("name", name))
-				render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+				httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 				return
 			}
 			factIDs = append(factIDs, f.ID)
@@ -208,37 +208,37 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(&newSituation)
 		if err != nil {
 			zap.L().Warn("Situation json decode", zap.Error(err))
-			render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+			httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 			return
 		}
 	}
 
 	if ok, err := newSituation.IsValid(); !ok {
 		zap.L().Warn("Situation is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	idSituation, err := situation.R().Create(newSituation)
 	if err != nil {
 		zap.L().Error("Error while creating the situation", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
 	situation, found, err := situation.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Situation does not exists after creation", zap.Int64("situationID", idSituation))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, situation)
+	httputil.JSON(w, r, situation)
 }
 
 // PutSituation godoc
@@ -261,13 +261,13 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 	idSituation, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing situation id", zap.String("situationID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -275,37 +275,37 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newSituation)
 	if err != nil {
 		zap.L().Warn("Situation json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	newSituation.ID = idSituation
 
 	if ok, err := newSituation.IsValid(); !ok {
 		zap.L().Warn("Situation is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	err = situation.R().Update(idSituation, newSituation)
 	if err != nil {
 		zap.L().Info("Error while updating the situation", zap.String("situation ID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	situation, found, err := situation.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Situation does not exists after update", zap.Int64("situationID", idSituation))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, situation)
+	httputil.JSON(w, r, situation)
 }
 
 // DeleteSituation godoc
@@ -324,22 +324,22 @@ func DeleteSituation(w http.ResponseWriter, r *http.Request) {
 	idSituation, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing situation id", zap.String("situationID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, strconv.FormatInt(idSituation, 10), permissions.ActionDelete)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	err = situation.R().Delete(idSituation)
 	if err != nil {
 		zap.L().Error("Error while deleting the situation", zap.String("Situation ID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }

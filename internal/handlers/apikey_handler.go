@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/apikey"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"go.uber.org/zap"
 )
@@ -28,14 +28,14 @@ import (
 func GetAPIKeys(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeAPIKey, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	apiKeys, err := apikey.R().GetAll()
 	if err != nil {
 		zap.L().Error("GetAPIKeys", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -43,7 +43,7 @@ func GetAPIKeys(w http.ResponseWriter, r *http.Request) {
 		return apiKeys[i].Name < apiKeys[j].Name
 	})
 
-	render.JSON(w, r, apiKeys)
+	httputil.JSON(w, r, apiKeys)
 }
 
 // GetAPIKey godoc
@@ -65,29 +65,29 @@ func GetAPIKey(w http.ResponseWriter, r *http.Request) {
 	keyID, err := uuid.Parse(id)
 	if err != nil {
 		zap.L().Warn("Parse API key id", zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeAPIKey, keyID.String(), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	key, found, err := apikey.R().Get(keyID)
 	if err != nil {
 		zap.L().Error("Cannot get API key", zap.String("uuid", keyID.String()), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("API key not found", zap.String("uuid", keyID.String()))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, key)
+	httputil.JSON(w, r, key)
 }
 
 // ValidateAPIKey godoc
@@ -107,24 +107,24 @@ func ValidateAPIKey(w http.ResponseWriter, r *http.Request) {
 
 	if apiKeyValue == "" {
 		zap.L().Warn("No API key provided")
-		render.Error(w, r, render.ErrAPIProcessError, errors.New("no API key provided"))
+		httputil.Error(w, r, httputil.ErrAPIProcessError, errors.New("no API key provided"))
 		return
 	}
 
 	key, valid, err := apikey.R().Validate(apiKeyValue)
 	if err != nil {
 		zap.L().Error("Error validating API key", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
 	if !valid {
 		zap.L().Warn("Invalid API key")
-		render.Error(w, r, render.ErrAPIProcessError, errors.New("invalid API key"))
+		httputil.Error(w, r, httputil.ErrAPIProcessError, errors.New("invalid API key"))
 		return
 	}
 
-	render.JSON(w, r, key)
+	httputil.JSON(w, r, key)
 }
 
 // PostAPIKey godoc
@@ -144,7 +144,7 @@ func ValidateAPIKey(w http.ResponseWriter, r *http.Request) {
 func CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeAPIKey, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -152,14 +152,14 @@ func CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&key)
 	if err != nil {
 		zap.L().Warn("API key json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	key.CreatedBy = userCtx.Login
 	if err := key.IsValidForCreate(); err != nil {
 		zap.L().Warn("API key is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
@@ -168,11 +168,11 @@ func CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 	apiKey, err := apikey.R().Create(key)
 	if err != nil {
 		zap.L().Error("PostAPIKey.Create", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	render.JSON(w, r, apiKey)
+	httputil.JSON(w, r, apiKey)
 }
 
 // PutAPIKey godoc
@@ -195,13 +195,13 @@ func PutAPIKey(w http.ResponseWriter, r *http.Request) {
 	keyID, err := uuid.Parse(id)
 	if err != nil {
 		zap.L().Warn("Parse API key id", zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeAPIKey, keyID.String(), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -209,7 +209,7 @@ func PutAPIKey(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&key)
 	if err != nil {
 		zap.L().Warn("API key json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	key.ID = keyID
@@ -217,30 +217,30 @@ func PutAPIKey(w http.ResponseWriter, r *http.Request) {
 
 	if err := key.IsValidForUpdate(); err != nil {
 		zap.L().Warn("API key is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	err = apikey.R().Update(key)
 	if err != nil {
 		zap.L().Error("PutAPIKey.Update", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	key, found, err := apikey.R().Get(keyID)
 	if err != nil {
 		zap.L().Error("Cannot get API key", zap.String("uuid", keyID.String()), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Error("API key not found after update", zap.String("uuid", keyID.String()))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, key)
+	httputil.JSON(w, r, key)
 }
 
 // DeleteAPIKey godoc
@@ -261,24 +261,24 @@ func DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
 	keyID, err := uuid.Parse(id)
 	if err != nil {
 		zap.L().Warn("Parse API key id", zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeAPIKey, keyID.String(), permissions.ActionDelete)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	err = apikey.R().Delete(keyID)
 	if err != nil {
 		zap.L().Error("Cannot delete API key", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // DeactivateAPIKey godoc
@@ -299,24 +299,24 @@ func DeactivateAPIKey(w http.ResponseWriter, r *http.Request) {
 	keyID, err := uuid.Parse(id)
 	if err != nil {
 		zap.L().Warn("Parse API key id", zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeAPIKey, keyID.String(), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	err = apikey.R().Deactivate(keyID)
 	if err != nil {
 		zap.L().Error("Cannot deactivate API key", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // GetAPIKeysForRole godoc
@@ -337,20 +337,20 @@ func GetAPIKeysForRole(w http.ResponseWriter, r *http.Request) {
 	roleUUID, err := uuid.Parse(roleID)
 	if err != nil {
 		zap.L().Warn("Parse role id", zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeAPIKey, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	apiKeys, err := apikey.R().GetAllForRole(roleUUID)
 	if err != nil {
 		zap.L().Error("GetAPIKeysForRole", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -358,5 +358,5 @@ func GetAPIKeysForRole(w http.ResponseWriter, r *http.Request) {
 		return apiKeys[i].Name < apiKeys[j].Name
 	})
 
-	render.JSON(w, r, apiKeys)
+	httputil.JSON(w, r, apiKeys)
 }

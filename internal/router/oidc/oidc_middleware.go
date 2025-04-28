@@ -3,6 +3,9 @@ package routeroidc
 import (
 	"context"
 	"errors"
+	roles2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"strings"
 	"time"
@@ -10,11 +13,8 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/google/uuid"
 	gorillacontext "github.com/gorilla/context"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/roles"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils"
 	"go.uber.org/zap"
 )
@@ -31,7 +31,7 @@ func OIDCMiddleware(next http.Handler) http.Handler {
 			tokenStr = r.URL.Query().Get(tokenKey)
 		} else {
 			zap.L().Warn("No token string found in request")
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("missing token"))
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("missing token"))
 			return
 		}
 
@@ -39,20 +39,20 @@ func OIDCMiddleware(next http.Handler) http.Handler {
 		instanceOidc, err := GetOidcInstance()
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
-			render.Error(w, r, render.ErrAPIProcessError, err)
+			httputil.Error(w, r, httputil.ErrAPIProcessError, err)
 			return
 		}
 		idToken, err := instanceOidc.Provider.Verifier(&oidc.Config{ClientID: instanceOidc.OidcConfig.ClientID}).Verify(r.Context(), tokenStr)
 		if err != nil {
 			zap.L().Error("Invalid OIDC auth Token", zap.Error(err))
-			render.Error(w, r, render.ErrAPIInvalidAuthToken, err)
+			httputil.Error(w, r, httputil.ErrAPIInvalidAuthToken, err)
 			return
 		}
 
 		// Check if the token has expired
 		if idToken.Expiry.Before(time.Now()) {
 			zap.L().Error("OIDC auth Token expired")
-			render.Error(w, r, render.ErrAPIExpiredAuthToken, errors.New("expired auth token"))
+			httputil.Error(w, r, httputil.ErrAPIExpiredAuthToken, errors.New("expired auth token"))
 			return
 		}
 
@@ -68,7 +68,7 @@ func ContextMiddleware(next http.Handler) http.Handler {
 		idToken, ok := r.Context().Value("idToken").(*oidc.IDToken)
 		if !ok {
 			zap.L().Error("OIDC auth Missing idToken from context")
-			render.Error(w, r, render.ErrAPIMissingIDTokenFromContext, errors.New("Missing idToken from context"))
+			httputil.Error(w, r, httputil.ErrAPIMissingIDTokenFromContext, errors.New("Missing idToken from context"))
 			return
 		}
 
@@ -84,7 +84,7 @@ func ContextMiddleware(next http.Handler) http.Handler {
 
 		if err := idToken.Claims(&claims); err != nil {
 			zap.L().Error("OIDC failed to get User clams", zap.Error(err))
-			render.Error(w, r, render.ErrAPIFailedToGetUserClaims, err)
+			httputil.Error(w, r, httputil.ErrAPIFailedToGetUserClaims, err)
 			return
 		}
 
@@ -92,12 +92,12 @@ func ContextMiddleware(next http.Handler) http.Handler {
 		// and for now assuming all are admin
 		userGroups := claims.Roles
 		userGroups = utils.RemoveDuplicates(userGroups)
-		userRoles := make([]roles.Role, 0)
+		userRoles := make([]roles2.Role, 0)
 		for _, userGroupName := range userGroups {
-			role, found, err := roles.R().GetByName(userGroupName)
+			role, found, err := roles2.R().GetByName(userGroupName)
 			if err != nil {
 				zap.L().Error("Cannot get roles", zap.Error(err), zap.String("groupName", userGroupName))
-				render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal Error"))
+				httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("internal Error"))
 				return
 			}
 			if !found {
@@ -115,7 +115,7 @@ func ContextMiddleware(next http.Handler) http.Handler {
 		userPermissions, err := permissions.R().GetAllForRoles(userRoleUUIDs)
 		if err != nil {
 			zap.L().Error("Cannot get permissions", zap.Error(err))
-			render.Error(w, r, render.ErrAPISecurityMissingContext, errors.New("internal Error"))
+			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("internal Error"))
 			return
 		}
 

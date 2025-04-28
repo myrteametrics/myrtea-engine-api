@@ -1,9 +1,8 @@
 package handlers
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
-
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 )
 
 // IsAlive godoc
@@ -14,10 +13,10 @@ import (
 //	@Success		200	"Status OK"
 //	@Router			/isalive [get]
 func IsAlive(w http.ResponseWriter, r *http.Request) {
-	render.JSON(w, r, map[string]interface{}{"alive": true})
+	httputil.JSON(w, r, map[string]interface{}{"alive": true})
 }
 
 // NotImplemented returns a basic message "Not Implemented" when called, and should be use a filler for future handler
 func NotImplemented(w http.ResponseWriter, r *http.Request) {
-	render.NotImplemented(w, r)
+	httputil.NotImplemented(w, r)
 }

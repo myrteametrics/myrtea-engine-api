@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 )
 
@@ -145,7 +145,7 @@ func TestHandleError(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 
 	err := errors.New("test error expected")
-	handleError(w, r, "test message", err, render.ErrAPIProcessError)
+	handleError(w, r, "test message", err, httputil.ErrAPIProcessError)
 
 	if err == nil {
 		t.Error(err)

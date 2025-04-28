@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"net/url"
 	"sort"
@@ -12,7 +13,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"go.uber.org/zap"
 )
@@ -32,14 +32,14 @@ func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	elasticSearchConfigs, err := esconfig.R().GetAll()
 	if err != nil {
 		zap.L().Error("Error getting elasticSearchConfigs", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -52,7 +52,7 @@ func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
 		return elasticSearchConfigsSlice[i].Name < elasticSearchConfigsSlice[j].Name
 	})
 
-	render.JSON(w, r, elasticSearchConfigsSlice)
+	httputil.JSON(w, r, elasticSearchConfigsSlice)
 }
 
 // GetElasticSearchConfig godoc
@@ -70,7 +70,7 @@ func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
 func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -79,24 +79,24 @@ func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing external config id", zap.String("idElasticSearchConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	a, found, err := esconfig.R().Get(idElasticSearchConfig)
 	if err != nil {
 		zap.L().Error("Cannot get elasticSearchConfig", zap.String("elasticSearchConfigId", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
 	if !found {
 		zap.L().Warn("ElasticSearchConfig does not exists", zap.String("elasticSearchConfigId", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, a)
+	httputil.JSON(w, r, a)
 }
 
 // GetElasticSearchConfigByName godoc
@@ -115,7 +115,7 @@ func GetElasticSearchConfigByName(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -123,24 +123,24 @@ func GetElasticSearchConfigByName(w http.ResponseWriter, r *http.Request) {
 	name, err := url.QueryUnescape(escapedName)
 	if err != nil {
 		zap.L().Error("Cannot unescape external config name", zap.String("name", escapedName), zap.Error(err))
-		render.Error(w, r, render.ErrAPIProcessError, err)
+		httputil.Error(w, r, httputil.ErrAPIProcessError, err)
 		return
 	}
 
 	a, found, err := esconfig.R().GetByName(name)
 	if err != nil {
 		zap.L().Error("Cannot get elasticSearchConfig", zap.String("elasticSearchConfigName", name), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
 	if !found {
 		zap.L().Warn("ElasticSearchConfig does not exists", zap.String("elasticSearchConfigName", name))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, a)
+	httputil.JSON(w, r, a)
 }
 
 // GetDefaultElasticSearchConfig godoc
@@ -158,24 +158,24 @@ func GetDefaultElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	a, found, err := esconfig.R().GetDefault()
 	if err != nil {
 		zap.L().Error("Cannot get default elasticSearchConfig", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
 	if !found {
 		zap.L().Warn("Default ElasticSearchConfig does not exists")
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, a)
+	httputil.JSON(w, r, a)
 }
 
 // PostElasticSearchConfig godoc
@@ -196,7 +196,7 @@ func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -204,30 +204,30 @@ func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newElasticSearchConfig)
 	if err != nil {
 		zap.L().Warn("ElasticSearchConfig json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	id, err := esconfig.R().Create(newElasticSearchConfig)
 	if err != nil {
 		zap.L().Error("Error while creating the ElasticSearchConfig", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
 	newElasticSearchConfigGet, found, err := esconfig.R().Get(id)
 	if err != nil {
 		zap.L().Error("Cannot get elasticSearchConfig", zap.String("elasticSearchConfigName", newElasticSearchConfig.Name), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("ElasticSearchConfig does not exists after creation", zap.String("elasticSearchConfigName", newElasticSearchConfig.Name))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, newElasticSearchConfigGet)
+	httputil.JSON(w, r, newElasticSearchConfigGet)
 }
 
 // PutElasticSearchConfig godoc
@@ -249,7 +249,7 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -258,7 +258,7 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing external config id", zap.String("idElasticSearchConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -266,7 +266,7 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newElasticSearchConfig)
 	if err != nil {
 		zap.L().Warn("ElasticSearchConfig json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	newElasticSearchConfig.Id = idElasticSearchConfig
@@ -274,23 +274,23 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	err = esconfig.R().Update(idElasticSearchConfig, newElasticSearchConfig)
 	if err != nil {
 		zap.L().Error("Error while updating the ElasticSearchConfig", zap.String("idElasticSearchConfig", id), zap.Any("elasticSearchConfig", newElasticSearchConfig), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	newEsConfig, found, err := esconfig.R().Get(idElasticSearchConfig)
 	if err != nil {
 		zap.L().Error("Cannot get elasticSearchConfig", zap.String("elasticSearchConfigId", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("ElasticSearchConfig does not exists after update", zap.String("elasticSearchConfigId", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, newEsConfig)
+	httputil.JSON(w, r, newEsConfig)
 }
 
 // DeleteElasticSearchConfig godoc
@@ -309,7 +309,7 @@ func DeleteElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionDelete)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -318,16 +318,16 @@ func DeleteElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing external config id", zap.String("idElasticSearchConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	err = esconfig.R().Delete(idElasticSearchConfig)
 	if err != nil {
 		zap.L().Error("Error while deleting the ElasticSearchConfig", zap.String("ElasticSearchConfig ID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }

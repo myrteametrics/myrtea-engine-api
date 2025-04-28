@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
 	"go.uber.org/zap"
 )
@@ -27,13 +27,13 @@ func GetFactResultForTodayByCriteria(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&param)
 	if err != nil {
 		zap.L().Warn("Get Fact History json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if err := param.IsValid(); err != nil {
 		zap.L().Warn("parameter of Get Fact History  json is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
@@ -41,11 +41,11 @@ func GetFactResultForTodayByCriteria(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("error getting fact history by date", zap.Error(err))
-		render.Error(w, r, render.ErrAPIProcessError, err)
+		httputil.Error(w, r, httputil.ErrAPIProcessError, err)
 		return
 	}
 
-	render.JSON(w, r, resulat)
+	httputil.JSON(w, r, resulat)
 }
 
 //	@Summary		Get Fact Result by Date Criteria
@@ -69,22 +69,22 @@ func GetFactResultByDateCriteria(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&param)
 	if err != nil {
 		zap.L().Warn("Get Fact History By Date json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if err := param.IsValid(); err != nil {
 		zap.L().Warn("parameter of Get Fact History By Date json is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	result, err := history.S().HistoryFactsQuerier.GetFactResultByDate(param)
 	if err != nil {
 		zap.L().Warn("error getting fact history by date", zap.Error(err))
-		render.Error(w, r, render.ErrAPIProcessError, err)
+		httputil.Error(w, r, httputil.ErrAPIProcessError, err)
 		return
 	}
 
-	render.JSON(w, r, result)
+	httputil.JSON(w, r, result)
 }

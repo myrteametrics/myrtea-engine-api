@@ -3,12 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 
@@ -29,7 +29,7 @@ import (
 func GetRules(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -47,7 +47,7 @@ func GetRules(w http.ResponseWriter, r *http.Request) {
 	rulesMap, err := rule.R().GetAll()
 	if err != nil {
 		zap.L().Error("Get rules", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -60,7 +60,7 @@ func GetRules(w http.ResponseWriter, r *http.Request) {
 		return rulesSlice[i].ID < rulesSlice[j].ID
 	})
 
-	render.JSON(w, r, rulesSlice)
+	httputil.JSON(w, r, rulesSlice)
 }
 
 // GetRule godoc
@@ -80,29 +80,29 @@ func GetRule(w http.ResponseWriter, r *http.Request) {
 	idRule, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Parsing rule id", zap.String("RuleID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	rule, found, err := rule.R().Get(idRule)
 	if err != nil {
 		zap.L().Error("Get rule from repository", zap.Int64("id", idRule), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Rule does not exists", zap.String("ruleid", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, rule)
+	httputil.JSON(w, r, rule)
 }
 
 // GetRuleByVersion godoc
@@ -122,13 +122,13 @@ func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {
 	idRule, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Parsing rule id", zap.String("RuleID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -136,23 +136,23 @@ func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {
 	idVersion, err := strconv.ParseInt(versionID, 10, 64)
 	if err != nil {
 		zap.L().Warn("Parsing rule id", zap.String("RuleID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	rule, found, err := rule.R().GetByVersion(idRule, idVersion)
 	if err != nil {
 		zap.L().Error("Get rule from repository", zap.Int64("id", idRule), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Rule does not exists", zap.String("ruleid", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, rule)
+	httputil.JSON(w, r, rule)
 }
 
 // ValidateRule godoc
@@ -174,17 +174,17 @@ func ValidateRule(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newRule)
 	if err != nil {
 		zap.L().Warn("Decode rule json", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newRule.IsValid(); !ok {
 		zap.L().Warn("Rule is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
-	render.JSON(w, r, newRule)
+	httputil.JSON(w, r, newRule)
 }
 
 // PostRule godoc
@@ -204,7 +204,7 @@ func ValidateRule(w http.ResponseWriter, r *http.Request) {
 func PostRule(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -212,48 +212,48 @@ func PostRule(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newRule)
 	if err != nil {
 		zap.L().Warn("Decode rule json", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newRule.IsValid(); !ok {
 		zap.L().Warn("Rule is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	exists, err := rule.R().CheckByName(newRule.Name)
 	if err != nil {
 		zap.L().Error("Cannot retrieve rule", zap.String("Rule.Name", newRule.Name), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if exists {
 		zap.L().Info("Rule name already exists", zap.String("Rule.Name", newRule.Name))
-		render.Error(w, r, render.ErrAPIResourceDuplicate, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceDuplicate, err)
 		return
 	}
 
 	idRule, err := rule.R().Create(newRule)
 	if err != nil {
 		zap.L().Error("Error while creating Rule", zap.String("Rule.Name", newRule.Name), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
 	rule, found, err := rule.R().Get(idRule)
 	if err != nil {
 		zap.L().Error("Get rule from repository", zap.Int64("id", idRule), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Rule does not exists after creation", zap.Int64("ruleid", idRule))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, rule)
+	httputil.JSON(w, r, rule)
 }
 
 // PutRule godoc
@@ -276,13 +276,13 @@ func PutRule(w http.ResponseWriter, r *http.Request) {
 	idRule, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing rule id", zap.String("RuleID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -290,37 +290,37 @@ func PutRule(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newRule)
 	if err != nil {
 		zap.L().Warn("Decode rule json", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	newRule.ID = idRule
 
 	if ok, err := newRule.IsValid(); !ok {
 		zap.L().Warn("Rule is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	err = rule.R().Update(newRule)
 	if err != nil {
 		zap.L().Error("Error while updating Rule", zap.String("Name", newRule.Name), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	rule, found, err := rule.R().Get(idRule)
 	if err != nil {
 		zap.L().Error("Get rule from repository", zap.Int64("id", idRule), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Rule does not exists after update", zap.Int64("ruleid", idRule))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, rule)
+	httputil.JSON(w, r, rule)
 }
 
 // DeleteRule godoc
@@ -341,22 +341,22 @@ func DeleteRule(w http.ResponseWriter, r *http.Request) {
 	idRule, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing rule id", zap.String("RuleID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, strconv.FormatInt(idRule, 10), permissions.ActionDelete)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	err = rule.R().Delete(idRule)
 	if err != nil {
 		zap.L().Error("Delete rule", zap.String("ID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }

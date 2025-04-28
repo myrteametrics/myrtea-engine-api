@@ -29,7 +29,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	return ifm
 }
 
-//Get search and returns an User from the repository by its id
+// Get search and returns an User from the repository by its id
 func (r *PostgresRepository) Get(userUUID uuid.UUID) (User, bool, error) {
 	rows, err := r.newStatement().
 		Select(fields...).

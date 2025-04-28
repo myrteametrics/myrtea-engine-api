@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 
@@ -32,14 +32,14 @@ func GetRuleSituations(w http.ResponseWriter, r *http.Request) {
 	idRule, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing rule id", zap.String("RuleID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	situationsMap, err := situation.R().GetAllByRuleID(idRule, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Error on getting rule situations", zap.String("situationID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -52,7 +52,7 @@ func GetRuleSituations(w http.ResponseWriter, r *http.Request) {
 		return situationSlice[i].ID < situationSlice[j].ID
 	})
 
-	render.JSON(w, r, situationSlice)
+	httputil.JSON(w, r, situationSlice)
 }
 
 // PostRuleSituations godoc
@@ -74,7 +74,7 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 	idRule, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing rule id", zap.String("RuleID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -82,21 +82,21 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&situationIDs)
 	if err != nil {
 		zap.L().Warn("SituationsIds json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	situationsMap, err := situation.R().GetAllByRuleID(idRule, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Warn("Error getting situations by rulesID", zap.Int64("ruleID", idRule), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
 	tx, err := postgres.DB().Beginx()
 	if err != nil {
 		zap.L().Warn("Error beginning DB transaction")
-		render.Error(w, r, render.ErrAPIDBTransactionBegin, err)
+		httputil.Error(w, r, httputil.ErrAPIDBTransactionBegin, err)
 		return
 	}
 
@@ -108,7 +108,7 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				tx.Rollback()
 				zap.L().Warn("Error adding the rule to the situation", zap.Int64("situationID", situationID), zap.Error(err))
-				render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+				httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 				return
 			}
 
@@ -120,7 +120,7 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			tx.Rollback()
 			zap.L().Warn("Error removing the rule from the situation", zap.Int64("situationID", situationID), zap.Error(err))
-			render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+			httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 			return
 		}
 	}
@@ -128,9 +128,9 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 	err = tx.Commit()
 	if err != nil {
 		tx.Rollback()
-		render.Error(w, r, render.ErrAPIDBTransactionCommit, err)
+		httputil.Error(w, r, httputil.ErrAPIDBTransactionCommit, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }

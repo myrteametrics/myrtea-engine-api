@@ -3,13 +3,13 @@ package handlers
 import (
 	"errors"
 	"github.com/go-chi/chi/v5"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 
 	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/roles"
 	"go.uber.org/zap"
 )
 
@@ -32,32 +32,32 @@ func GetRolePermissions(w http.ResponseWriter, r *http.Request) {
 	roleID, err := uuid.Parse(id)
 	if err != nil {
 		zap.L().Warn("Parse role id", zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeRole, roleID.String(), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	role, found, err := roles.R().Get(roleID)
 	if err != nil {
 		zap.L().Error("Cannot get role", zap.String("uuid", roleID.String()), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("Role not found", zap.String("uuid", roleID.String()))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
 	permissionsSlice, err := permissions.R().GetAllForRole(role.ID)
 	if err != nil {
 		zap.L().Error("GetPermissions", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -65,5 +65,5 @@ func GetRolePermissions(w http.ResponseWriter, r *http.Request) {
 		return permissionsSlice[i].ResourceType < permissionsSlice[j].ResourceType
 	})
 
-	render.JSON(w, r, permissionsSlice)
+	httputil.JSON(w, r, permissionsSlice)
 }

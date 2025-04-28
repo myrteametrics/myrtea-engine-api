@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/connector"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"go.uber.org/zap"
 )
 
@@ -30,14 +30,14 @@ func GetLastConnectorExecutionDateTime(w http.ResponseWriter, r *http.Request) {
 	successOnly, err := QueryParamToOptionalBool(r, "successOnly", false)
 	if err != nil {
 		zap.L().Error("Parse input boolean", zap.Error(err), zap.String("successOnly", r.URL.Query().Get("successOnly")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	maxAgeDays, err := QueryParamToOptionalInt64(r, "maxage", 10)
 	if err != nil {
 		zap.L().Error("Parse input duration", zap.Error(err), zap.String("maxage", r.URL.Query().Get("maxage")))
-		render.Error(w, r, render.ErrAPIParsingDuration, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingDuration, err)
 		return
 	}
 	if maxAgeDays > 31 {
@@ -47,9 +47,9 @@ func GetLastConnectorExecutionDateTime(w http.ResponseWriter, r *http.Request) {
 	lastReading, err := connector.R().GetLastConnectionReading(id, successOnly, maxAgeDays)
 	if err != nil {
 		zap.L().Warn("Error reading last connections reading", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	render.JSON(w, r, lastReading)
+	httputil.JSON(w, r, lastReading)
 }

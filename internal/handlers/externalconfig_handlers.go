@@ -3,16 +3,16 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/externalconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/externalconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"go.uber.org/zap"
 )
@@ -32,14 +32,14 @@ func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	externalConfigs, err := externalconfig.R().GetAll()
 	if err != nil {
 		zap.L().Error("Error getting externalConfigs", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -52,7 +52,7 @@ func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 		return externalConfigsSlice[i].Name < externalConfigsSlice[j].Name
 	})
 
-	render.JSON(w, r, externalConfigsSlice)
+	httputil.JSON(w, r, externalConfigsSlice)
 }
 
 // GetExternalConfig godoc
@@ -74,24 +74,24 @@ func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing external config id", zap.String("idExternalConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	a, found, err := externalconfig.R().Get(idExternalConfig)
 	if err != nil {
 		zap.L().Error("Cannot get externalConfig", zap.String("externalConfigId", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
 	if !found {
 		zap.L().Warn("ExternalConfig does not exists", zap.String("externalConfigId", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, a)
+	httputil.JSON(w, r, a)
 }
 
 // GetExternalConfigByName godoc
@@ -112,24 +112,24 @@ func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
 	name, err := url.QueryUnescape(escapedName)
 	if err != nil {
 		zap.L().Error("Cannot unescape external config name", zap.String("name", escapedName), zap.Error(err))
-		render.Error(w, r, render.ErrAPIProcessError, err)
+		httputil.Error(w, r, httputil.ErrAPIProcessError, err)
 		return
 	}
 
 	a, found, err := externalconfig.R().GetByName(name)
 	if err != nil {
 		zap.L().Error("Cannot get externalConfig", zap.String("externalConfigname", name), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
 	if !found {
 		zap.L().Warn("ExternalConfig does not exists", zap.String("externalConfigname", name))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, a)
+	httputil.JSON(w, r, a)
 }
 
 // PostExternalConfig godoc
@@ -150,7 +150,7 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -158,30 +158,30 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newExternalConfig)
 	if err != nil {
 		zap.L().Warn("ExternalConfig json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	id, err := externalconfig.R().Create(newExternalConfig)
 	if err != nil {
 		zap.L().Error("Error while creating the ExternalConfig", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
 	newExternalConfigGet, found, err := externalconfig.R().Get(id)
 	if err != nil {
 		zap.L().Error("Cannot get externalConfig", zap.String("externalConfigname", newExternalConfig.Name), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("ExternalConfig does not exists after creation", zap.String("externalConfigname", newExternalConfig.Name))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, newExternalConfigGet)
+	httputil.JSON(w, r, newExternalConfigGet)
 }
 
 // PutExternalConfig godoc
@@ -203,7 +203,7 @@ func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -212,7 +212,7 @@ func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing external config id", zap.String("idExternalConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -220,7 +220,7 @@ func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newExternalConfig)
 	if err != nil {
 		zap.L().Warn("ExternalConfig json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	newExternalConfig.Id = idExternalConfig
@@ -228,23 +228,23 @@ func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 	err = externalconfig.R().Update(idExternalConfig, newExternalConfig)
 	if err != nil {
 		zap.L().Error("Error while updating the ExternalConfig", zap.String("idExternalConfig", id), zap.Any("externalConfig", newExternalConfig), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	newExternalConfigGet, found, err := externalconfig.R().Get(idExternalConfig)
 	if err != nil {
 		zap.L().Error("Cannot get externalConfig", zap.String("externalConfigId", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("ExternalConfig does not exists after update", zap.String("externalConfigId", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, newExternalConfigGet)
+	httputil.JSON(w, r, newExternalConfigGet)
 }
 
 // DeleteExternalConfig godoc
@@ -263,7 +263,7 @@ func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionDelete)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -272,7 +272,7 @@ func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing external config id", zap.String("idExternalConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -280,11 +280,11 @@ func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Error("Error while deleting the ExternalConfig", zap.String("ExternalConfig ID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
 
 // GetAllOldVersions godoc
@@ -304,7 +304,7 @@ func GetAllOldVersions(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -313,20 +313,20 @@ func GetAllOldVersions(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing external config id", zap.String("idExternalConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	oldVersions, err := externalconfig.R().GetAllOldVersions(idExternalConfig)
 	if err != nil {
 		zap.L().Error("Error getting old versions of externalConfig", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
 	if oldVersions == nil {
-		render.JSON(w, r, []models.ExternalConfig{})
+		httputil.JSON(w, r, []models.ExternalConfig{})
 		return
 	}
-	render.JSON(w, r, oldVersions)
+	httputil.JSON(w, r, oldVersions)
 }

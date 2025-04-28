@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier/notification"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
@@ -31,21 +31,21 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 	maxAge, err := ParseDuration(r.URL.Query().Get("maxage"))
 	if err != nil {
 		zap.L().Warn("Parse duration input maxage", zap.Error(err), zap.String("rawMaxAge", r.URL.Query().Get("maxage")))
-		render.Error(w, r, render.ErrAPIParsingDuration, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingDuration, err)
 		return
 	}
 
 	nhit, err := ParseInt(r.URL.Query().Get("nhit"))
 	if err != nil {
 		zap.L().Warn("Parse input nhit", zap.Error(err), zap.String("rawNhit", r.URL.Query().Get("nhit")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	offset, err := ParseInt(r.URL.Query().Get("offset"))
 	if err != nil {
 		zap.L().Warn("Parse input offset", zap.Error(err), zap.String("rawPage", r.URL.Query().Get("offset")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -64,11 +64,11 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 	notifications, err := notification.R().GetAll(queryOptional, user.Login)
 	if err != nil {
 		zap.L().Error("Error getting notifications", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	render.JSON(w, r, notifications)
+	httputil.JSON(w, r, notifications)
 }
 
 // UpdateRead godoc
@@ -90,7 +90,7 @@ func UpdateRead(w http.ResponseWriter, r *http.Request) {
 	idNotif, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error while Parsing notification id", zap.String("notification", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 	_status := r.URL.Query().Get("status")
@@ -110,9 +110,9 @@ func UpdateRead(w http.ResponseWriter, r *http.Request) {
 	err = notification.R().UpdateRead(idNotif, status, user.Login)
 	if err != nil {
 		zap.L().Error("Error while updating notifications", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }

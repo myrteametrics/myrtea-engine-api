@@ -3,11 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/variablesconfig"
@@ -29,18 +29,18 @@ func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	VariablesConfig, err := variablesconfig.R().GetAll()
 	if err != nil {
 		zap.L().Error("Error getting VariableConfigs", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	render.JSON(w, r, VariablesConfig)
+	httputil.JSON(w, r, VariablesConfig)
 }
 
 // GetVariableConfig godoc
@@ -59,7 +59,7 @@ func GetVariableConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -68,24 +68,24 @@ func GetVariableConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing variable config id", zap.String("idVariableConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	a, found, err := variablesconfig.R().Get(idVariableConfig)
 	if err != nil {
 		zap.L().Error("Cannot get Variable Config", zap.String("Variable Config Id", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
 	if !found {
 		zap.L().Warn("VariableConfig does not exists", zap.String("VariableConfigId", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, a)
+	httputil.JSON(w, r, a)
 }
 
 // GetVariableConfigByKey godoc
@@ -104,7 +104,7 @@ func GetVariableConfigByKey(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -113,17 +113,17 @@ func GetVariableConfigByKey(w http.ResponseWriter, r *http.Request) {
 	a, found, err := variablesconfig.R().GetByKey(key)
 	if err != nil {
 		zap.L().Error("Cannot get VariableConfig", zap.String("Variable Config key", key), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
 	if !found {
 		zap.L().Warn("VariableConfig does not exists", zap.String("Variable Config key", key))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, a)
+	httputil.JSON(w, r, a)
 }
 
 // PostVariableConfig godoc
@@ -144,7 +144,7 @@ func PostVariableConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -152,30 +152,30 @@ func PostVariableConfig(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newVariableConfig)
 	if err != nil {
 		zap.L().Warn("Variable Config json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	id, err := variablesconfig.R().Create(newVariableConfig)
 	if err != nil {
 		zap.L().Error("Error while creating the VariableConfig", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
 	newVariableConfigGet, found, err := variablesconfig.R().Get(id)
 	if err != nil {
 		zap.L().Error("Cannot get Variable Config", zap.String("VariableConfig key ", newVariableConfig.Key), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("VariableConfig does not exists after creation", zap.String("VariableConfig key ", newVariableConfig.Key))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, newVariableConfigGet)
+	httputil.JSON(w, r, newVariableConfigGet)
 }
 
 // PutVariableConfig godoc
@@ -197,7 +197,7 @@ func PutVariableConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -206,7 +206,7 @@ func PutVariableConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing variable config id", zap.String("idVariableConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -214,7 +214,7 @@ func PutVariableConfig(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newVariableConfig)
 	if err != nil {
 		zap.L().Warn("VariableConfig json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	newVariableConfig.Id = idVariableConfig
@@ -222,23 +222,23 @@ func PutVariableConfig(w http.ResponseWriter, r *http.Request) {
 	err = variablesconfig.R().Update(idVariableConfig, newVariableConfig)
 	if err != nil {
 		zap.L().Error("Error while updating the Variable Config", zap.String("idVariableConfig", id), zap.Any("Variable Config", newVariableConfig), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	newVariableConfigGet, found, err := variablesconfig.R().Get(idVariableConfig)
 	if err != nil {
 		zap.L().Error("Cannot get VariableConfig", zap.String("VariableConfigId", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Warn("VariableConfig does not exists after update", zap.String("VariableConfigId", id))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, newVariableConfigGet)
+	httputil.JSON(w, r, newVariableConfigGet)
 }
 
 // DeleteVariableConfig godoc
@@ -257,7 +257,7 @@ func DeleteVariableConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -266,7 +266,7 @@ func DeleteVariableConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Warn("Error on parsing variable config id", zap.String("idVariableConfig", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -274,9 +274,9 @@ func DeleteVariableConfig(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		zap.L().Error("Error while deleting the VariableConfig", zap.String("VariableConfig ID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }

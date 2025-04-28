@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"go.uber.org/zap"
 )
@@ -28,7 +28,7 @@ func GetRootCauses(w http.ResponseWriter, r *http.Request) {
 	rootcauses, err := rootcause.R().GetAll()
 	if err != nil {
 		zap.L().Error("Error getting rootcauses", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -41,7 +41,7 @@ func GetRootCauses(w http.ResponseWriter, r *http.Request) {
 		return rootcausesSlice[i].ID < rootcausesSlice[j].ID
 	})
 
-	render.JSON(w, r, rootcausesSlice)
+	httputil.JSON(w, r, rootcausesSlice)
 }
 
 // GetRootCause godoc
@@ -61,23 +61,23 @@ func GetRootCause(w http.ResponseWriter, r *http.Request) {
 	idRootCause, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing rootcause id", zap.String("rootcauseID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	rc, found, err := rootcause.R().Get(idRootCause)
 	if err != nil {
 		zap.L().Error("Get Rootcause by ID", zap.Int64("rootcauseid", idRootCause), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Error("RootCause does not exists", zap.Int64("rootcauseid", idRootCause))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
 
-	render.JSON(w, r, rc)
+	httputil.JSON(w, r, rc)
 }
 
 // ValidateRootCause godoc
@@ -99,17 +99,17 @@ func ValidateRootCause(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newRootCause)
 	if err != nil {
 		zap.L().Warn("Rootcause json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newRootCause.IsValid(); !ok {
 		zap.L().Warn("Rootcause is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
-	render.JSON(w, r, newRootCause)
+	httputil.JSON(w, r, newRootCause)
 }
 
 // PostRootCause godoc
@@ -131,36 +131,36 @@ func PostRootCause(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newRootCause)
 	if err != nil {
 		zap.L().Warn("Rootcause json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newRootCause.IsValid(); !ok {
 		zap.L().Warn("Rootcause is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	idRootCause, err := rootcause.R().Create(nil, newRootCause)
 	if err != nil {
 		zap.L().Error("Error while creating the RootCause", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
 	rc, found, err := rootcause.R().Get(idRootCause)
 	if err != nil {
 		zap.L().Error("Get Rootcause by ID", zap.Int64("rootcauseid", idRootCause), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Error("RootCause does not exists", zap.Int64("rootcauseid", idRootCause))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, rc)
+	httputil.JSON(w, r, rc)
 }
 
 // PutRootCause godoc
@@ -183,7 +183,7 @@ func PutRootCause(w http.ResponseWriter, r *http.Request) {
 	idRootCause, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing rootcause id", zap.String("rootcauseID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
@@ -191,37 +191,37 @@ func PutRootCause(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newRootCause)
 	if err != nil {
 		zap.L().Warn("Rootcause json decoding", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	newRootCause.ID = idRootCause
 
 	if ok, err := newRootCause.IsValid(); !ok {
 		zap.L().Warn("Rootcause is not valid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	err = rootcause.R().Update(nil, idRootCause, newRootCause)
 	if err != nil {
 		zap.L().Error("Error while updating the RootCause", zap.Int64("idRootCause", idRootCause), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	rc, found, err := rootcause.R().Get(idRootCause)
 	if err != nil {
 		zap.L().Error("Get Rootcause by ID", zap.Int64("rootcauseid", idRootCause), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Error("RootCause does not exists", zap.Int64("rootcauseid", idRootCause))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, rc)
+	httputil.JSON(w, r, rc)
 }
 
 // DeleteRootCause godoc
@@ -241,16 +241,16 @@ func DeleteRootCause(w http.ResponseWriter, r *http.Request) {
 	idRootCause, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Warn("Error on parsing rootcause id", zap.String("rootcauseID", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	err = rootcause.R().Delete(nil, idRootCause)
 	if err != nil {
 		zap.L().Error("Error while deleting the RootCause", zap.Int64("RootCause ID", idRootCause), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }

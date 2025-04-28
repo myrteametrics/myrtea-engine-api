@@ -42,11 +42,10 @@ var (
 //	@in							header
 //	@name						Authorization
 
-//	@securityDefinitions.apikey	ApiKeyAuth
-//	@in							header
-//	@name						X-API-Key
-//	@description				Authentification via une clé API dans le header X-API-Key
-
+// @securityDefinitions.apikey	ApiKeyAuth
+// @in							header
+// @name						X-API-Key
+// @description				Authentication using the X-API-Key header
 func main() {
 	hostname, _ := os.Hostname()
 	metrics.InitMetricLabels(hostname)

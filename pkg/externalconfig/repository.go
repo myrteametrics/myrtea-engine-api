@@ -2,21 +2,19 @@ package externalconfig
 
 import (
 	"sync"
-
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows standard CRUD operation on ExternalConfigs
 type Repository interface {
-	Get(id int64) (models.ExternalConfig, bool, error)
-	GetByName(name string) (models.ExternalConfig, bool, error)
-	Create(config models.ExternalConfig) (int64, error)
-	Update(id int64, config models.ExternalConfig) error
+	Get(id int64) (ExternalConfig, bool, error)
+	GetByName(name string) (ExternalConfig, bool, error)
+	Create(config ExternalConfig) (int64, error)
+	Update(id int64, config ExternalConfig) error
 	Delete(id int64) error
-	GetAll() (map[int64]models.ExternalConfig, error)
-	GetAllOldVersions(id int64) ([]models.ExternalConfig, error)
+	GetAll() (map[int64]ExternalConfig, error)
+	GetAllOldVersions(id int64) ([]ExternalConfig, error)
 }
 
 var (

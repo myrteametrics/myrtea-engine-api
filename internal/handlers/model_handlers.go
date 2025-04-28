@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	model "github.com/myrteametrics/myrtea-engine-api/v5/internal/modeler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
@@ -30,7 +30,7 @@ import (
 func GetModels(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeModel, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -44,7 +44,7 @@ func GetModels(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		zap.L().Error("Error getting models", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
@@ -57,7 +57,7 @@ func GetModels(w http.ResponseWriter, r *http.Request) {
 		return modelsSlice[i].ID < modelsSlice[j].ID
 	})
 
-	render.JSON(w, r, modelsSlice)
+	httputil.JSON(w, r, modelsSlice)
 }
 
 // GetModel godoc
@@ -88,30 +88,30 @@ func GetModel(w http.ResponseWriter, r *http.Request) {
 		m, found, err = model.R().GetByName(id)
 		if err != nil {
 			zap.L().Error("Error while fetching model", zap.String("modelid", id), zap.Error(err))
-			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+			httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 			return
 		}
 		if !found {
 			zap.L().Error("Model does not exists", zap.String("modelid", id))
-			render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+			httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 			return
 		}
 	} else {
 		idModel, err := strconv.ParseInt(id, 10, 64)
 		if err != nil {
 			zap.L().Error("Error on parsing model id", zap.String("modelID", id))
-			render.Error(w, r, render.ErrAPIParsingInteger, err)
+			httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 			return
 		}
 		m, found, err = model.R().Get(idModel)
 		if err != nil {
 			zap.L().Error("Error while fetching model", zap.String("modelid", id), zap.Error(err))
-			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+			httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 			return
 		}
 		if !found {
 			zap.L().Error("Model does not exists", zap.String("modelid", id))
-			render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+			httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 			return
 		}
 	}
@@ -120,11 +120,11 @@ func GetModel(w http.ResponseWriter, r *http.Request) {
 	// Should be better to just remove the "lookup by name" feature (which is not used anymore, and has no sense in this API)
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeModel, strconv.FormatInt(m.ID, 10), permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
-	render.JSON(w, r, m)
+	httputil.JSON(w, r, m)
 }
 
 // ValidateModel godoc
@@ -146,17 +146,17 @@ func ValidateModel(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newModel)
 	if err != nil {
 		zap.L().Warn("Model json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newModel.IsValid(); !ok {
 		zap.L().Error("Model is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
-	render.JSON(w, r, newModel)
+	httputil.JSON(w, r, newModel)
 }
 
 // PostModel godoc
@@ -176,7 +176,7 @@ func ValidateModel(w http.ResponseWriter, r *http.Request) {
 func PostModel(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeModel, permissions.All, permissions.ActionCreate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -184,40 +184,40 @@ func PostModel(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newModel)
 	if err != nil {
 		zap.L().Warn("Model json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	if ok, err := newModel.IsValid(); !ok {
 		zap.L().Error("Model is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	idModel, err := model.R().Create(newModel)
 	if err != nil {
 		if dbutils.UniqueViolation(err) != nil {
-			render.Error(w, r, render.ErrAPIResourceInvalid, errors.New("model with same name already exists"))
+			httputil.Error(w, r, httputil.ErrAPIResourceInvalid, errors.New("model with same name already exists"))
 			return
 		}
 		zap.L().Error("Error while creating the Model", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBInsertFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
 	newModelGet, found, err := model.R().Get(idModel)
 	if err != nil {
 		zap.L().Error("Get Model by ID", zap.Int64("modelID", idModel), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Error("Model does not exists", zap.Int64("modelID", idModel))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, newModelGet)
+	httputil.JSON(w, r, newModelGet)
 }
 
 // PutModel godoc
@@ -240,13 +240,13 @@ func PutModel(w http.ResponseWriter, r *http.Request) {
 	idModel, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Error("Error on parsing model id", zap.String("modelID", id))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeModel, strconv.FormatInt(idModel, 10), permissions.ActionUpdate)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -254,37 +254,37 @@ func PutModel(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&newModel)
 	if err != nil {
 		zap.L().Warn("Model json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 	newModel.ID = idModel
 
 	if ok, err := newModel.IsValid(); !ok {
 		zap.L().Error("Model is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
 	err = model.R().Update(idModel, newModel)
 	if err != nil {
 		zap.L().Error("Error while updating the Model:", zap.Int64("idModel", idModel), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBUpdateFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
 	newModelGet, found, err := model.R().Get(idModel)
 	if err != nil {
 		zap.L().Error("Get Model by ID", zap.Int64("modelID", idModel), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 	if !found {
 		zap.L().Error("Model does not exists", zap.Int64("modelID", idModel))
-		render.Error(w, r, render.ErrAPIDBResourceNotFoundAfterInsert, err)
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
 
-	render.JSON(w, r, newModelGet)
+	httputil.JSON(w, r, newModelGet)
 }
 
 // DeleteModel godoc
@@ -304,20 +304,20 @@ func DeleteModel(w http.ResponseWriter, r *http.Request) {
 	idModel, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		zap.L().Error("Error on parsing model id", zap.String("modelID", id))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return
 	}
 
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeModel, strconv.FormatInt(idModel, 10), permissions.ActionDelete)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
 	err = model.R().Delete(idModel)
 	if err != nil {
 		zap.L().Error("Error while deleting the Model:", zap.String("Model ID:", id), zap.Error(err))
-		render.Error(w, r, render.ErrAPIDBDeleteFailed, err)
+		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
 

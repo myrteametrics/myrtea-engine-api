@@ -3,11 +3,11 @@ package explainer
 import (
 	"database/sql"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
 	"go.uber.org/zap"
 )
 

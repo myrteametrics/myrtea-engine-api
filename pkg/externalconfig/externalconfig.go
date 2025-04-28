@@ -1,4 +1,4 @@
-package models
+package externalconfig
 
 import "time"
 

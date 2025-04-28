@@ -8,7 +8,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/spf13/viper"
 )
 
@@ -47,7 +46,7 @@ func (r *PostgresRepository) checkRowsAffected(res sql.Result, nbRows int64) err
 }
 
 // Get use to retrieve an externalConfig by id
-func (r *PostgresRepository) Get(id int64) (models.ExternalConfig, bool, error) {
+func (r *PostgresRepository) Get(id int64) (ExternalConfig, bool, error) {
 	rows, err := r.newStatement().
 		Select("c.name", "v.data", "v.current_version", "v.created_at").
 		From("external_generic_config_v1 AS c").
@@ -55,7 +54,7 @@ func (r *PostgresRepository) Get(id int64) (models.ExternalConfig, bool, error) 
 		Where(sq.Eq{"c.id": id, "v.current_version": true}).
 		Query()
 	if err != nil {
-		return models.ExternalConfig{}, false, err
+		return ExternalConfig{}, false, err
 	}
 	defer rows.Close()
 
@@ -65,13 +64,13 @@ func (r *PostgresRepository) Get(id int64) (models.ExternalConfig, bool, error) 
 	if rows.Next() {
 		err := rows.Scan(&name, &data, &current_version, &created_at)
 		if err != nil {
-			return models.ExternalConfig{}, false, fmt.Errorf("couldn't scan the action with id %d: %s", id, err.Error())
+			return ExternalConfig{}, false, fmt.Errorf("couldn't scan the action with id %d: %s", id, err.Error())
 		}
 	} else {
-		return models.ExternalConfig{}, false, nil
+		return ExternalConfig{}, false, nil
 	}
 
-	return models.ExternalConfig{
+	return ExternalConfig{
 		Id:             id,
 		Name:           name,
 		Data:           data,
@@ -81,7 +80,7 @@ func (r *PostgresRepository) Get(id int64) (models.ExternalConfig, bool, error) 
 }
 
 // GetByName use to retrieve an externalConfig by name
-func (r *PostgresRepository) GetByName(name string) (models.ExternalConfig, bool, error) {
+func (r *PostgresRepository) GetByName(name string) (ExternalConfig, bool, error) {
 	rows, err := r.newStatement().
 		Select("c.id", "v.data", "v.current_version", "v.created_at").
 		From("external_generic_config_v1 AS c").
@@ -89,7 +88,7 @@ func (r *PostgresRepository) GetByName(name string) (models.ExternalConfig, bool
 		Where(sq.Eq{"c.name": name, "v.current_version": true}).
 		Query()
 	if err != nil {
-		return models.ExternalConfig{}, false, err
+		return ExternalConfig{}, false, err
 	}
 	defer rows.Close()
 
@@ -101,13 +100,13 @@ func (r *PostgresRepository) GetByName(name string) (models.ExternalConfig, bool
 	if rows.Next() {
 		err := rows.Scan(&id, &data, &current_version, &created_at)
 		if err != nil {
-			return models.ExternalConfig{}, false, fmt.Errorf("couldn't scan the action with name %s: %s", name, err.Error())
+			return ExternalConfig{}, false, fmt.Errorf("couldn't scan the action with name %s: %s", name, err.Error())
 		}
 	} else {
-		return models.ExternalConfig{}, false, nil
+		return ExternalConfig{}, false, nil
 	}
 
-	return models.ExternalConfig{
+	return ExternalConfig{
 		Id:             id,
 		Name:           name,
 		Data:           data,
@@ -117,7 +116,7 @@ func (r *PostgresRepository) GetByName(name string) (models.ExternalConfig, bool
 }
 
 // Create method used to create an externalConfig
-func (r *PostgresRepository) Create(externalConfig models.ExternalConfig) (int64, error) {
+func (r *PostgresRepository) Create(externalConfig ExternalConfig) (int64, error) {
 	tx, err := r.conn.Begin() // Start a transaction
 	if err != nil {
 		return -1, err
@@ -157,7 +156,7 @@ func (r *PostgresRepository) Create(externalConfig models.ExternalConfig) (int64
 }
 
 // Update method used to update un externalConfig
-func (r *PostgresRepository) Update(id int64, externalConfig models.ExternalConfig) error {
+func (r *PostgresRepository) Update(id int64, externalConfig ExternalConfig) error {
 	tx, err := r.conn.Begin() // Start a transaction
 	if err != nil {
 		return err
@@ -262,8 +261,8 @@ func (r *PostgresRepository) Delete(id int64) error {
 }
 
 // GetAll method used to get all externalConfigs
-func (r *PostgresRepository) GetAll() (map[int64]models.ExternalConfig, error) {
-	externalConfigs := make(map[int64]models.ExternalConfig)
+func (r *PostgresRepository) GetAll() (map[int64]ExternalConfig, error) {
+	externalConfigs := make(map[int64]ExternalConfig)
 	rows, err := r.newStatement().
 		Select("c.id", "c.name", "v.data", "v.current_version", "v.created_at").
 		From("external_generic_config_v1 AS c").
@@ -287,7 +286,7 @@ func (r *PostgresRepository) GetAll() (map[int64]models.ExternalConfig, error) {
 			return nil, err
 		}
 
-		externalConfig := models.ExternalConfig{
+		externalConfig := ExternalConfig{
 			Id:             id,
 			Name:           name,
 			Data:           data,
@@ -301,7 +300,7 @@ func (r *PostgresRepository) GetAll() (map[int64]models.ExternalConfig, error) {
 }
 
 // GetAllOldVersions retrieves all non-current versions of an ExternalConfig by its id
-func (r *PostgresRepository) GetAllOldVersions(id int64) ([]models.ExternalConfig, error) {
+func (r *PostgresRepository) GetAllOldVersions(id int64) ([]ExternalConfig, error) {
 	rows, err := r.newStatement().
 		Select("c.name", "v.data", "v.current_version", "v.created_at").
 		From("external_generic_config_v1 AS c").
@@ -314,7 +313,7 @@ func (r *PostgresRepository) GetAllOldVersions(id int64) ([]models.ExternalConfi
 	}
 	defer rows.Close()
 
-	var oldVersions []models.ExternalConfig
+	var oldVersions []ExternalConfig
 
 	for rows.Next() {
 		var name, data string
@@ -325,7 +324,7 @@ func (r *PostgresRepository) GetAllOldVersions(id int64) ([]models.ExternalConfi
 			return nil, fmt.Errorf("couldn't scan the action with id %d: %s", id, err.Error())
 		}
 
-		oldVersions = append(oldVersions, models.ExternalConfig{
+		oldVersions = append(oldVersions, ExternalConfig{
 			Id:             id,
 			Name:           name,
 			Data:           data,

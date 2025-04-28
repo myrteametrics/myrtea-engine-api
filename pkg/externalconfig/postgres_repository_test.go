@@ -3,7 +3,6 @@ package externalconfig
 import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 	"testing"
 )
@@ -69,7 +68,7 @@ func TestPostgresGet(t *testing.T) {
 		t.Error("found a externalConfig from nowhere")
 	}
 
-	externalConfig := models.ExternalConfig{Name: "test_name", Data: "{\"test\": \"test\"}"}
+	externalConfig := ExternalConfig{Name: "test_name", Data: "{\"test\": \"test\"}"}
 	id, err := r.Create(externalConfig)
 	if err != nil {
 		t.Error(err)
@@ -109,7 +108,7 @@ func TestPostgresGetByName(t *testing.T) {
 		t.Error("found a externalConfig from nowhere")
 	}
 
-	externalConfig := models.ExternalConfig{Name: "test", Data: "{\"test\": \"test\"}"}
+	externalConfig := ExternalConfig{Name: "test", Data: "{\"test\": \"test\"}"}
 	id, err := r.Create(externalConfig)
 	if err != nil {
 		t.Error(err)
@@ -138,7 +137,7 @@ func TestPostgresCreate(t *testing.T) {
 	dbInitRepo(db, t)
 	r := NewPostgresRepository(db)
 
-	externalConfig := models.ExternalConfig{Name: "test_name", Data: "{\"test\": \"test\"}"}
+	externalConfig := ExternalConfig{Name: "test_name", Data: "{\"test\": \"test\"}"}
 	id, err := r.Create(externalConfig)
 	if err != nil {
 		t.Error(err)
@@ -169,7 +168,7 @@ func TestPostgresCreateMultiple(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	externalConfig := models.ExternalConfig{Name: "test1", Data: "{\"test1\": \"test1\"}"}
+	externalConfig := ExternalConfig{Name: "test1", Data: "{\"test1\": \"test1\"}"}
 	id1, err := r.Create(externalConfig)
 	if err != nil {
 		t.Error(err)
@@ -187,7 +186,7 @@ func TestPostgresCreateMultiple(t *testing.T) {
 		t.Error("invalid ID")
 	}
 
-	externalConfig2 := models.ExternalConfig{Name: "test2", Data: "{\"test2\": \"test2\"}"}
+	externalConfig2 := ExternalConfig{Name: "test2", Data: "{\"test2\": \"test2\"}"}
 	id2, err := r.Create(externalConfig2)
 	if err != nil {
 		t.Error(err)
@@ -217,12 +216,12 @@ func TestPostgresUpdate(t *testing.T) {
 
 	var err error
 
-	externalConfig := models.ExternalConfig{Name: "test1", Data: "{\"test1\": \"test1\"}"}
+	externalConfig := ExternalConfig{Name: "test1", Data: "{\"test1\": \"test1\"}"}
 	id, err := r.Create(externalConfig)
 	if err != nil {
 		t.Error(err)
 	}
-	externalConfig2 := models.ExternalConfig{Name: "test2", Data: "{\"test2\": \"test2\"}"}
+	externalConfig2 := ExternalConfig{Name: "test2", Data: "{\"test2\": \"test2\"}"}
 	err = r.Update(id, externalConfig2)
 	if err != nil {
 		t.Error(err)
@@ -251,7 +250,7 @@ func TestPostgresUpdateNotExists(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	externalConfig := models.ExternalConfig{Name: "test1", Data: "{\"test1\": \"test1\"}"}
+	externalConfig := ExternalConfig{Name: "test1", Data: "{\"test1\": \"test1\"}"}
 	err = r.Update(1, externalConfig)
 	if err == nil {
 		t.Error("updating a non-existing externalConfig should return an error")
@@ -269,7 +268,7 @@ func TestPostgresDelete(t *testing.T) {
 
 	var err error
 
-	externalConfig := models.ExternalConfig{Name: "test1", Data: "{\"test1\": \"test1\"}"}
+	externalConfig := ExternalConfig{Name: "test1", Data: "{\"test1\": \"test1\"}"}
 	id, err := r.Create(externalConfig)
 	if err != nil {
 		t.Error(err)
@@ -323,12 +322,12 @@ func TestPostgresGetAll(t *testing.T) {
 	dbInitRepo(db, t)
 	r := NewPostgresRepository(db)
 
-	externalConfig := models.ExternalConfig{Name: "test1", Data: "{\"test1\": \"test1\"}"}
+	externalConfig := ExternalConfig{Name: "test1", Data: "{\"test1\": \"test1\"}"}
 	e1ID, err := r.Create(externalConfig)
 	if err != nil {
 		t.Error(err)
 	}
-	externalConfig2 := models.ExternalConfig{Name: "test2", Data: "{\"test2\": \"test2\"}"}
+	externalConfig2 := ExternalConfig{Name: "test2", Data: "{\"test2\": \"test2\"}"}
 	e2ID, err := r.Create(externalConfig2)
 	if err != nil {
 		t.Error(err)

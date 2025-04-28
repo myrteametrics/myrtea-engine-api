@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/service"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -38,7 +38,7 @@ func NewServiceHandler(manager *service.Manager) *ServiceHandler {
 func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeService, permissions.All, permissions.ActionList)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -48,7 +48,7 @@ func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
 		services = append(services, *s.GetDefinition())
 	}
 
-	render.JSON(w, r, services)
+	httputil.JSON(w, r, services)
 }
 
 // Restart godoc
@@ -66,7 +66,7 @@ func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
 func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeService, permissions.All, "restart")) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -80,7 +80,7 @@ func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 	// compare LastRestart with now and if it's less than restartTimeout duration, return an error
 	if !def.LastRestart.IsZero() && time.Now().Sub(def.LastRestart) <= sh.restartTimeout {
 		zap.L().Info("restart too early", zap.String("service", def.Name))
-		render.Error(w, r, render.ErrAPITooManyRequests, errors.New("service has been restarted too recently"))
+		httputil.Error(w, r, httputil.ErrAPITooManyRequests, errors.New("service has been restarted too recently"))
 		return
 	}
 
@@ -92,11 +92,11 @@ func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 		// if an error occurs, set time to 0
 		def.LastRestart = time.Time{}
 		zap.L().Error("error happened during restart", zap.Error(err), zap.String("service", s.GetDefinition().Name))
-		render.Error(w, r, render.ErrAPIProcessError, err)
+		httputil.Error(w, r, httputil.ErrAPIProcessError, err)
 		return
 	}
 
-	render.JSON(w, r, *s.GetDefinition())
+	httputil.JSON(w, r, *s.GetDefinition())
 	w.WriteHeader(code)
 }
 
@@ -116,7 +116,7 @@ func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeService, permissions.All, "reload")) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -128,13 +128,13 @@ func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 
 	if !s.GetDefinition().HasComponent(component) {
 		zap.L().Warn("Component not found", zap.String("component", component))
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, fmt.Errorf("component '%s' not found", component))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, fmt.Errorf("component '%s' not found", component))
 		return
 	}
 
 	// compare LastReload with now and if it's less than reloadTimeout duration, return an error
 	if time.Now().Sub(s.GetDefinition().LastReload) <= sh.reloadTimeout {
-		render.Error(w, r, render.ErrAPITooManyRequests, errors.New("service has been reloaded too recently"))
+		httputil.Error(w, r, httputil.ErrAPITooManyRequests, errors.New("service has been reloaded too recently"))
 		return
 	}
 
@@ -147,11 +147,11 @@ func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 		// if an error occurs, set time to 0
 		def.LastReload = time.Time{}
 		zap.L().Error("error happened during reload", zap.Error(err), zap.String("service", s.GetDefinition().Name))
-		render.Error(w, r, render.ErrAPIProcessError, err)
+		httputil.Error(w, r, httputil.ErrAPIProcessError, err)
 		return
 	}
 
-	render.JSON(w, r, *s.GetDefinition())
+	httputil.JSON(w, r, *s.GetDefinition())
 	w.WriteHeader(code)
 }
 
@@ -169,7 +169,7 @@ func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 func (sh *ServiceHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeService, permissions.All, permissions.ActionGet)) {
-		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -178,7 +178,7 @@ func (sh *ServiceHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.JSON(w, r, s.GetStatus())
+	httputil.JSON(w, r, s.GetStatus())
 }
 
 // getComponent returns the component from the manager
@@ -187,13 +187,13 @@ func (sh *ServiceHandler) getComponent(w http.ResponseWriter, r *http.Request) s
 
 	uid, err := uuid.Parse(id)
 	if err != nil {
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 		return nil
 	}
 
 	s, ok := sh.Manager.Get(uid)
 	if !ok {
-		render.Error(w, r, render.ErrAPIDBResourceNotFound, errors.New("service not found"))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("service not found"))
 		return nil
 	}
 	return s

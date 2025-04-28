@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers/render"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -151,5 +151,5 @@ func TriggerNotification(w http.ResponseWriter, r *http.Request) {
 
 	// notifier.C().SendToRoles(cacheKey, 1*time.Second, notif, notif.Groups)
 
-	render.OK(w, r)
+	httputil.OK(w, r)
 }
