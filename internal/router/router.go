@@ -82,7 +82,7 @@ func (config *Config) Check() {
 }
 
 // New returns a new fully configured instance of chi.Mux
-// It instanciates all middlewares including the security ones, all routes and route groups
+// It instantiates all middlewares including the security ones, all routes and route groups
 func New(config Config, services Services) *chi.Mux {
 	config.Check()
 
@@ -96,7 +96,7 @@ func New(config Config, services Services) *chi.Mux {
 			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", HeaderKeyApiKey},
 			ExposedHeaders:   []string{"Link", "Authenticate-To", "Content-Disposition"},
 			AllowCredentials: true,
-			MaxAge:           300, // Maximum value not ignored by any of major browsers
+			MaxAge:           300, // Maximum value isn't ignored by any of the major browsers
 		})
 		r.Use(corsHandler.Handler)
 	}
@@ -126,7 +126,7 @@ func New(config Config, services Services) *chi.Mux {
 			rg.Get("/isalive", handlers.IsAlive)
 			rg.Get("/swagger/*", httpSwagger.WrapHandler)
 
-			// Routes spécifiques selon le mode d'authentification
+			// Auth mode specific routes
 			switch config.AuthenticationMode {
 			case AuthModeBasic:
 				securityMiddleware := sdksecurity.NewMiddlewareJWT(signingKey, sdksecurity.NewDatabaseAuth(postgres.DB()))
@@ -136,7 +136,7 @@ func New(config Config, services Services) *chi.Mux {
 				rg.Get("/auth/oidc/callback", handlers.HandleOIDCCallback)
 			}
 
-			// Routes publiques communes
+			// Public routes
 			rg.Get("/authmode", handlers.GetAuthenticationMode)
 			rg.Get("/engine/issues/unprotected", handlers.GetIssuesByStatesByPageUnProtected)
 			rg.Get("/engine/security/apikey/validate", handlers.ValidateAPIKey)
@@ -165,7 +165,7 @@ func New(config Config, services Services) *chi.Mux {
 		// Admin Protection routes
 		r.Group(func(rg chi.Router) {
 			if config.Security {
-				// Même middleware dynamique pour les routes admin
+				// Same dynamic middleware as admin routes
 				rg.Use(dynamicMiddleware)
 			}
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))

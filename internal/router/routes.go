@@ -212,6 +212,26 @@ func engineRouter(services Services) http.Handler {
 	r.Post("/services/{id}/restart", services.ServiceHandler.Restart)
 	r.Post("/services/{id}/reload/{component}", services.ServiceHandler.Reload)
 
+	// Tags routes
+	r.Route("/tags", func(r chi.Router) {
+		r.Get("/", handlers.GetTags)
+		r.Get("/{id}", handlers.GetTag)
+		r.Post("/", handlers.PostTag)
+		r.Put("/{id}", handlers.PutTag)
+		r.Delete("/{id}", handlers.DeleteTag)
+
+		// Tags for situations
+		r.Get("/situations", handlers.GetAllSituationsTags)
+		r.Get("/situations/{situationId}", handlers.GetTagsBySituation)
+		r.Post("/{tagId}/situations/{situationId}", handlers.AddTagToSituation)
+		r.Delete("/{tagId}/situations/{situationId}", handlers.RemoveTagFromSituation)
+
+		// Tags for template situation instances
+		r.Get("/situationinstances/{instanceId}", handlers.GetTagsByTemplateInstance)
+		r.Post("/{tagId}/situationinstances/{instanceId}", handlers.AddTagToTemplateInstance)
+		r.Delete("/{tagId}/situationinstances/{instanceId}", handlers.RemoveTagFromTemplateInstance)
+	})
+
 	return r
 }
 

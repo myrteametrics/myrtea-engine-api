@@ -15,7 +15,6 @@ import (
 
 // GetActions godoc
 //
-//	@Summary		Get all action definiti
 //	@Summary		Get all action definitions
 //	@Description	Get all action definitions
 //	@Tags			Actions
@@ -45,8 +44,8 @@ func GetActions(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, actionsSlice)
 }
 
-t a action definit
 // GetAction godoc
+//
 //	@Summary		Get a action definition
 //	@Description	Get a action definition
 //	@Tags			Actions
@@ -81,9 +80,8 @@ func GetAction(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, a)
 }
 
-w action definition
-//	
 // ValidateAction godoc
+//
 //	@Summary		Validate a new action definition
 //	@Description	Validate a new action definition
 //	@Tags			Actions
@@ -115,8 +113,8 @@ func ValidateAction(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, newAction)
 }
 
-
 // PostAction godoc
+//
 //	@Summary		Create a new action definition
 //	@Description	Create a new action definition
 //	@Tags			Actions
@@ -167,8 +165,8 @@ func PostAction(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, newActionGet)
 }
 
-
 // PutAction godoc
+//
 //	@Summary		Create or remplace a action definition
 //	@Description	Create or remplace a action definition
 //	@Tags			Actions
@@ -228,8 +226,8 @@ func PutAction(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, newActionGet)
 }
 
-
 // DeleteAction godoc
+//
 //	@Summary		Delete a action definition
 //	@Description	Delete a action definition
 //	@Tags			Actions
