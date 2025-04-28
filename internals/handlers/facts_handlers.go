@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
 	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"net/http"
 	"sort"
@@ -298,7 +299,7 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 
 // ExecuteFact godoc
 // @Summary Execute a fact with a given timestamp
-// @Description Execute a fact with a given timestamp
+// @Description Execute a fact with a given timestamp (This route is deprecated. Please use POST /engine/facts/execute instead.)
 // @Tags Facts
 // @Produce json
 // @Param id path string true "Fact ID"
@@ -312,7 +313,9 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
+// @Deprecated true
 // @Router /engine/facts/{id}/execute [get]
+// Deprecated: Use ExecuteFactOrGetHits instead.
 func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 
 	t, err := QueryParamToOptionalTime(r, "time", time.Now())
@@ -336,7 +339,7 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]string))
+	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]interface{}))
 	if err != nil {
 		zap.L().Warn("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
 		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
@@ -386,96 +389,156 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, data)
 }
 
-// ExecuteFactFromSource godoc
-// @Summary Execute a fact with a given timestamp
-// @Description Execute a fact with a given timestamp
+// ExecuteFactOrGetHits godoc
+// @Summary Execute a fact and restitue the hits
+// @Description Execute a fact and restitue the hits
 // @Tags Facts
-// @Consumme json
+// @Accept json
 // @Produce json
-// @Param fact body interface{} true "Fact definition (json)"
-// @Param time query string true "Timestamp used for the fact execution"
-// @Param nhit query int false "Hit per page"
-// @Param offset query int false "Offset number"
-// @Param placeholders query string false "Placeholders (format key1:value1,key2:value2)"
-// @Param debug query string false "Debug true/false"
+// @Param request body models.FactHitsRequest true "Request parameters"
 // @Security Bearer
 // @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
-// @Router /engine/facts/execute [post]
-func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
+// @Router /engine/facts/execute [POST]
+func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
+	var request models.FactHitsRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		zap.L().Error("Failed to decode request body", zap.Error(err))
+		render.Error(w, r, render.ErrAPIUnexpectedParamValue, err)
+		return
+	}
+
+	if err := request.ValidateParseParam(); err != nil {
+		zap.L().Error("Failed to validate request body", zap.Error(err))
+		render.Error(w, r, render.ErrAPIUnexpectedParamValue, err)
+		return
+	}
+
+	var f engine.Fact
+	var found bool
+
+	f, found, err := fact.R().Get(request.FactId)
+	if err != nil {
+		zap.L().Error("Error while fetching fact", zap.Int64("factid", request.FactId), zap.Error(err))
+		render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("Fact does not exists", zap.Int64("factid", request.FactId))
+		render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	if f.Dimensions != nil {
+		zap.L().Warn("Fact does have dimensions", zap.Int64("factid", request.FactId))
+		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("service not supported on fact with dimensions"))
+		return
+	}
+
+	if f.IsObject {
+		zap.L().Warn("Fact is an object fact", zap.Int64("factid", request.FactId))
+		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("service not supported on fact object"))
+		return
+	}
+
+	if f.Intent.Operator == engine.Delete {
+		zap.L().Warn("Fact is a delete fact", zap.Int64("factid", request.FactId))
+		render.Error(w, r, render.ErrAPIResourceInvalid, fmt.Errorf("service not supported on delete fact"))
+		return
+	}
 
 	userCtx, _ := GetUserFromContext(r)
-	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionCreate)) {
+	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, strconv.FormatInt(request.FactId, 10), permissions.ActionGet)) {
 		render.Error(w, r, render.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
-	debug := false
-	_debug := r.URL.Query().Get("debug")
-	if _debug == "true" {
-		debug = true
+	var data *reader.WidgetData
+	placeholders := make(map[string]interface{})
+
+	if f.IsTemplate {
+		if request.SituationId <= 0 {
+			zap.L().Warn("Missing situationId for template fact")
+			render.Error(w, r, render.ErrAPIParsingInteger, errors.New("missing situationId for template fact"))
+			return
+		}
+
+		situationn, found, err := situation.R().Get(request.SituationId, true)
+		if err != nil {
+			zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", request.SituationId), zap.Error(err))
+			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+			return
+		}
+		if !found {
+			zap.L().Warn("Situation does not exists", zap.Int64("situationID", request.SituationId))
+			render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+			return
+		}
+
+		var situationInstance situation.TemplateInstance
+		if request.SituationInstanceId <= 0 {
+			zap.L().Warn("Missing situationInstanceId for template fact")
+			render.Error(w, r, render.ErrAPIParsingInteger, errors.New("missing situationInstanceId for template fact"))
+			return
+		}
+		situationInstance, found, err = situation.R().GetTemplateInstance(request.SituationInstanceId, true)
+		if err != nil {
+			zap.L().Error("Cannot retrieve situation Instance", zap.Int64("situationInstanceID", request.SituationInstanceId), zap.Error(err))
+			render.Error(w, r, render.ErrAPIDBSelectFailed, err)
+			return
+		}
+		if !found {
+			zap.L().Warn("Situation Instance does not exists", zap.Int64("situationInstanceID", request.SituationInstanceId))
+			render.Error(w, r, render.ErrAPIDBResourceNotFound, err)
+			return
+		}
+
+		for key, param := range situationn.Parameters {
+			placeholders[key] = param
+		}
+
+		for key, param := range situationInstance.Parameters {
+			placeholders[key] = param
+		}
 	}
 
-	t, err := ParseTime(r.URL.Query().Get("time"))
-	if err != nil {
-		zap.L().Error("Parse input time", zap.Error(err), zap.String("rawTime", r.URL.Query().Get("time")))
-		render.Error(w, r, render.ErrAPIParsingDateTime, err)
-		return
+	if request.FactParameters != nil {
+		for key, param := range request.FactParameters {
+			placeholders[key] = param
+		}
 	}
 
-	nhit, err := ParseInt(r.URL.Query().Get("nhit"))
-	if err != nil {
-		zap.L().Error("Parse input nhit", zap.Error(err), zap.String("rawNhit", r.URL.Query().Get("nhit")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
-		return
+	if request.HitsOnly {
+		f.Intent.Operator = engine.Select
 	}
 
-	offset, err := ParseInt(r.URL.Query().Get("offset"))
-	if err != nil {
-		zap.L().Error("Parse input offset", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("offset")))
-		render.Error(w, r, render.ErrAPIParsingInteger, err)
-		return
-	}
+	t := time.Now().Truncate(1 * time.Second).UTC()
 
-	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]string))
-	if err != nil {
-		zap.L().Error("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
-		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
-		return
-	}
-
-	var newFact engine.Fact
-	err = json.NewDecoder(r.Body).Decode(&newFact)
-	if err != nil {
-		zap.L().Warn("Fact definition json decode", zap.Error(err))
-		render.Error(w, r, render.ErrAPIDecodeJSONBody, err)
-		return
-	}
-
-	if ok, err := newFact.IsValid(); !ok {
-		zap.L().Warn("Fact definition json is invalid", zap.Error(err))
-		render.Error(w, r, render.ErrAPIResourceInvalid, err)
-		return
-	}
-
-	if debug {
-		zap.L().Debug("Debugging fact", zap.Any("newFact", newFact))
-	}
-
-	item, err := fact.ExecuteFact(t, newFact, 0, 0, placeholders, nhit, offset, false)
+	data, err = fact.ExecuteFact(t, f, 0, 0, placeholders, request.Nhit, request.Offset, !request.Debug)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err))
 		render.Error(w, r, render.ErrAPIElasticSelectFailed, err)
 		return
 	}
 
-	render.JSON(w, r, item)
+	if !request.HitsOnly && data.Aggregates != nil {
+		pluginBaseline, err := baseline.P()
+		if err == nil {
+			values, err := pluginBaseline.BaselineService.GetBaselineValues(-1, f.ID, 0, 0, t)
+			if err != nil {
+				zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
+			}
+			data.Aggregates.Baselines = values
+		}
+	}
+
+	render.JSON(w, r, data)
 }
 
 // GetFactHits godoc
 // @Summary Execute a fact and restitue the hits
-// @Description Execute a fact and restitue the hits
+// @Description Execute a fact and restitue the hits (This route is deprecated. Please use POST /engine/facts/execute instead.)
 // @Tags Facts
 // @Produce json
 // @Param id path string true "Fact ID"
@@ -489,7 +552,9 @@ func ExecuteFactFromSource(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @Success 200 "Status OK"
 // @Failure 400 "Status Bad Request"
+// @Deprecated true
 // @Router /engine/facts/{id}/hits [get]
+// Deprecated: Use ExecuteFactOrGetHits instead.
 func GetFactHits(w http.ResponseWriter, r *http.Request) {
 
 	t, err := ParseTime(r.URL.Query().Get("time"))
@@ -564,7 +629,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var data *reader.WidgetData
-	placeholders := make(map[string]string)
+	placeholders := make(map[string]interface{})
 
 	if f.IsTemplate {
 		idSituationStr := r.URL.Query().Get("situationId")
@@ -686,7 +751,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]string))
+	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]interface{}))
 	if err != nil {
 		zap.L().Warn("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
 		render.Error(w, r, render.ErrAPIParsingKeyValue, err)
@@ -720,7 +785,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parameters := make(map[string]string)
+	parameters := make(map[string]interface{})
 	if situationid != 0 {
 		s, found, err := situation.R().Get(int64(situationid))
 		if err != nil {
@@ -761,7 +826,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add context to fact, replace params and evaluate queries
-	f.ContextualizeDimensions(t, parameters)
+	f.ContextualizeDimensions(t)
 	err = f.ContextualizeCondition(t, parameters)
 	if err != nil {
 		render.Error(w, r, apiError, err)

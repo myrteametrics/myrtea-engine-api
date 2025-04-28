@@ -229,7 +229,7 @@ func (job FactRecalculationJob) RecalculateAndUpdateFacts(factIDs []int64, facts
 			// historyFactID => historySituationFactID => historySituationID
 
 			// recalculate
-			parameters := make(map[string]string)
+			parameters := make(map[string]interface{})
 			if f.IsTemplate {
 				s := mapSituations[mapFactSituation[fh.ID]]
 				parameters = s.Parameters

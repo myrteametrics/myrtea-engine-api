@@ -75,9 +75,9 @@ func engineRouter(services Services) http.Handler {
 	r.Post("/facts", handlers.PostFact)
 	r.Put("/facts/{id}", handlers.PutFact)
 	r.Delete("/facts/{id}", handlers.DeleteFact)
-	r.Get("/facts/{id}/execute", handlers.ExecuteFact)       // ?time=2019-05-10T12:00:00.000+02:00 debug=<boolean>
-	r.Post("/facts/execute", handlers.ExecuteFactFromSource) // ?time=2019-05-10T12:00:00.000 debug=<boolean>
-	r.Get("/facts/{id}/hits", handlers.GetFactHits)          // ?time=2019-05-10T12:00:00.000 debug=<boolean>
+	r.Get("/facts/{id}/execute", handlers.ExecuteFact) // ?time=2019-05-10T12:00:00.000+02:00 debug=<boolean>
+	r.Post("/facts/execute", handlers.ExecuteFactOrGetHits)
+	r.Get("/facts/{id}/hits", handlers.GetFactHits) // ?time=2019-05-10T12:00:00.000 debug=<boolean>
 	r.Get("/facts/{id}/es", handlers.FactToESQuery)
 	r.Post("/facts/streamedexport", handlers.ExportFactStreamed)
 
