@@ -178,7 +178,7 @@ func TestPostgresCreate(t *testing.T) {
 	fact2 := engine.Fact{Name: "test_name2", Comment: "test comment"}
 	factID2, err := factR.Create(fact2)
 
-	params := map[string]string{"key": "value"}
+	params := map[string]interface{}{"key": "value"}
 
 	situation := Situation{Name: "test", Facts: []int64{factID1, factID2}, Parameters: params}
 	id, err := r.Create(situation)
@@ -386,7 +386,7 @@ func TestPostgresGetAll(t *testing.T) {
 	fact2 := engine.Fact{Name: "test_name2", Comment: "test comment"}
 	factID2, err := factR.Create(fact2)
 
-	params := map[string]string{"key": "value"}
+	params := map[string]interface{}{"key": "value"}
 
 	situation := Situation{Name: "test", Facts: []int64{factID1}, Parameters: params}
 	s1ID, err := r.Create(situation)
