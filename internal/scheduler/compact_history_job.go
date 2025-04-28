@@ -86,7 +86,7 @@ func (job CompactHistoryJob) Run() {
 		SituationInstanceID: -1,
 		FromTS:              time.Now().Add(-1 * fromOffsetDuration),
 		ToTS:                time.Now().Add(-1 * toOffsetDuration),
-		ParameterFilters:    make(map[string]string),
+		ParameterFilters:    make(map[string]interface{}),
 	}
 
 	interval := job.Interval

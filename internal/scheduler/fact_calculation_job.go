@@ -698,7 +698,7 @@ func GetLinkedSituations(fact engine.Fact) ([]history.HistoryRecordV4, error) {
 				sh := history.HistoryRecordV4{
 					SituationID:         s.ID,
 					SituationInstanceID: ti.ID,
-					Parameters:          map[string]string{},
+					Parameters:          map[string]interface{}{},
 				}
 				sh.OverrideParameters(s.Parameters)
 				sh.OverrideParameters(ti.Parameters)
@@ -756,7 +756,7 @@ func GetEnabledSituations(fact engine.Fact, t time.Time) ([]history.HistoryRecor
 					sh := history.HistoryRecordV4{
 						SituationID:         s.ID,
 						SituationInstanceID: ti.ID,
-						Parameters:          map[string]string{},
+						Parameters:          map[string]interface{}{},
 						EnableDependsOn:     ti.EnableDependsOn,
 						DependsOnParameters: ti.DependsOnParameters,
 					}

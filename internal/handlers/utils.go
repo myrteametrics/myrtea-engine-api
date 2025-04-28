@@ -119,10 +119,10 @@ func QueryParamToOptionalBool(r *http.Request, name string, orDefault bool) (boo
 }
 
 // QueryParamToOptionalKeyValues parse multiple key:value entries separated by commas from a string
-func QueryParamToOptionalKeyValues(r *http.Request, name string, orDefault map[string]string) (map[string]string, error) {
+func QueryParamToOptionalKeyValues(r *http.Request, name string, orDefault map[string]interface{}) (map[string]interface{}, error) {
 	param := r.URL.Query().Get(name)
 	if param != "" {
-		keyValues := make(map[string]string)
+		keyValues := make(map[string]interface{})
 		rawKeyValues := strings.Split(param, ",")
 		for _, rawKeyValue := range rawKeyValues {
 			keyValue := strings.Split(rawKeyValue, ":")
@@ -321,10 +321,10 @@ func gvalParsingEnabled(params url.Values) bool {
 }
 
 // ParsefactParameters takes a string of encoded parameters and returns a map of these decoded parameters.
-func ParseFactParameters(factParameters string) (map[string]string, error) {
+func ParseFactParameters(factParameters string) (map[string]interface{}, error) {
 
 	if factParameters == "" {
-		return make(map[string]string), nil
+		return make(map[string]interface{}), nil
 	}
 
 	decodedValue, err := url.QueryUnescape(factParameters)
@@ -333,7 +333,7 @@ func ParseFactParameters(factParameters string) (map[string]string, error) {
 		return nil, fmt.Errorf("cannot decode: %v", err)
 	}
 
-	paramsMap := make(map[string]string)
+	paramsMap := make(map[string]interface{})
 
 	//Separation of key pairs = value
 	pairs := strings.Split(decodedValue, "&")

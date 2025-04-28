@@ -20,11 +20,11 @@ import (
 
 func ExecuteFact(
 	ti time.Time,
-	f engine.Fact, situationID int64, situationInstanceID int64, parameters map[string]string,
+	f engine.Fact, situationID int64, situationInstanceID int64, parameters map[string]interface{},
 	nhit int, offset int, update bool,
 ) (*reader.WidgetData, error) {
 
-	f.ContextualizeDimensions(ti, parameters)
+	f.ContextualizeDimensions(ti)
 	err := f.ContextualizeCondition(ti, parameters)
 	if err != nil {
 		return nil, err
@@ -70,8 +70,8 @@ func ExecuteFactDeleteQuery(
 	f engine.Fact,
 ) (*deletebyquery.Response, error) {
 
-	parameters := make(map[string]string, 0)
-	f.ContextualizeDimensions(ti, parameters)
+	parameters := make(map[string]interface{})
+	f.ContextualizeDimensions(ti)
 	err := f.ContextualizeCondition(ti, parameters)
 	if err := f.ContextualizeCondition(ti, parameters); err != nil {
 		return nil, fmt.Errorf("failed to contextualize condition: %w", err)

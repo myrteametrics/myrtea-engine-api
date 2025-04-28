@@ -164,14 +164,14 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 	var newSituation situation.Situation
 	if factsByName {
 		type situationWithFactsName struct {
-			ID         int64             `json:"id,omitempty"`
-			Name       string            `json:"name"`
-			Facts      []string          `json:"facts"`
-			CalendarID int64             `json:"calendarId"`
-			Groups     []int64           `json:"groups"`
-			Parameters map[string]string `json:"parameters"`
-			IsTemplate bool              `json:"isTemplate"`
-			IsObject   bool              `json:"isObject"`
+			ID         int64                  `json:"id,omitempty"`
+			Name       string                 `json:"name"`
+			Facts      []string               `json:"facts"`
+			CalendarID int64                  `json:"calendarId"`
+			Groups     []int64                `json:"groups"`
+			Parameters map[string]interface{} `json:"parameters"`
+			IsTemplate bool                   `json:"isTemplate"`
+			IsObject   bool                   `json:"isObject"`
 		}
 		var s situationWithFactsName
 		err := json.NewDecoder(r.Body).Decode(&s)

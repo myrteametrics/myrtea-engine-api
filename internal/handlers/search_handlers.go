@@ -27,7 +27,7 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 		return history.GetHistorySituationsOptions{}, httputil.ErrAPIParsingInteger, err
 	}
 
-	parameterFilters, err := QueryParamToOptionalKeyValues(r, "parameterfilters", make(map[string]string))
+	parameterFilters, err := QueryParamToOptionalKeyValues(r, "parameterfilters", make(map[string]interface{}))
 	if err != nil {
 		zap.L().Warn("Parse input parameterfilters", zap.Error(err), zap.String("parameterfilters", r.URL.Query().Get("parameterfilters")))
 		return history.GetHistorySituationsOptions{}, httputil.ErrAPIParsingKeyValue, err

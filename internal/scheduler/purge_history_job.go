@@ -48,7 +48,7 @@ func (job PurgeHistoryJob) Run() {
 	options := history.GetHistorySituationsOptions{
 		SituationID:         -1,
 		SituationInstanceID: -1,
-		ParameterFilters:    make(map[string]string),
+		ParameterFilters:    make(map[string]interface{}),
 		DeleteBeforeTs:      time.Now().Add(-1 * DeleteBeforeTsDuration),
 	}
 

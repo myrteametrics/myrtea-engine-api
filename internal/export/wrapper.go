@@ -42,17 +42,17 @@ const (
 
 // WrapperItem represents an export demand
 type WrapperItem struct {
-	Id             string            `json:"id"`      // unique id that represents an export demand
-	FactIDs        []int64           `json:"factIds"` // list of fact ids that are part of the export (for archive and json)
-	Facts          []engine.Fact     `json:"-"`
-	Error          string            `json:"error"`
-	Status         int               `json:"status"`
-	FileName       string            `json:"fileName"`
-	Title          string            `json:"title"`
-	Date           time.Time         `json:"date"`
-	Users          []string          `json:"-"`
-	Params         CSVParameters     `json:"-"`
-	FactParameters map[string]string `json:"factParameters"`
+	Id             string                 `json:"id"`      // unique id that represents an export demand
+	FactIDs        []int64                `json:"factIds"` // list of fact ids that are part of the export (for archive and json)
+	Facts          []engine.Fact          `json:"-"`
+	Error          string                 `json:"error"`
+	Status         int                    `json:"status"`
+	FileName       string                 `json:"fileName"`
+	Title          string                 `json:"title"`
+	Date           time.Time              `json:"date"`
+	Users          []string               `json:"-"`
+	Params         CSVParameters          `json:"-"`
+	FactParameters map[string]interface{} `json:"factParameters"`
 
 	// For custom export requests
 	Custom            bool             `json:"custom"`
@@ -89,7 +89,7 @@ type Wrapper struct {
 // NewWrapperItem creates a new export wrapper item
 //
 // addHashPrefix adds a hash as prefix to resulting files, to avoid duplicates
-func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, user users.User, factParameters map[string]string, addHashPrefix bool) *WrapperItem {
+func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, user users.User, factParameters map[string]interface{}, addHashPrefix bool) *WrapperItem {
 	var factIDs []int64
 	for _, fact := range facts {
 		factIDs = append(factIDs, fact.ID)
@@ -201,7 +201,7 @@ func factsEquals(a, b []engine.Fact) bool {
 // AddToQueue Adds a new export to the export worker queue
 //
 // addHashPrefix adds a hash as prefix to resulting files, to avoid duplicates
-func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParameters, user users.User, factParameters map[string]string, addHashPrefix bool) (*WrapperItem, int) {
+func (ew *Wrapper) AddToQueue(facts []engine.Fact, title string, params CSVParameters, user users.User, factParameters map[string]interface{}, addHashPrefix bool) (*WrapperItem, int) {
 	ew.queueMutex.Lock()
 	defer ew.queueMutex.Unlock()
 
@@ -257,7 +257,7 @@ func (ew *Wrapper) AddToQueueCustom(title string, esParams ElasticParams, search
 		return nil, CodeQueueFull
 	}
 
-	item := NewWrapperItem([]engine.Fact{}, title, params, user, map[string]string{}, addHashPrefix)
+	item := NewWrapperItem([]engine.Fact{}, title, params, user, map[string]interface{}{}, addHashPrefix)
 	item.Custom = true
 	item.ElasticName = esParams.Client
 	item.SearchRequests = searchRequests
