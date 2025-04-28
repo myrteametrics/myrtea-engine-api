@@ -72,6 +72,7 @@ func (r *PostgresRepository) Get(id int64, parseParameters ...bool) (Situation, 
 }
 
 // GetByName retrieve the specified situation definition by it's name
+// If parseParameters is true, evaluates situation parameters using Gval.
 func (r *PostgresRepository) GetByName(name string, parseParameters ...bool) (Situation, bool, error) {
 
 	query := `SELECT id, definition,
@@ -331,6 +332,7 @@ func (r *PostgresRepository) deleteSituationFacts(id int64) error {
 }
 
 // GetSituationsByFactID returns the situations in which the fact is required
+// If parseParameters is true, evaluates situation parameters using Gval.
 func (r *PostgresRepository) GetSituationsByFactID(factID int64, ignoreIsObject bool, parseParameters ...bool) ([]Situation, error) {
 
 	query := `SELECT situation_definition_v1.id, situation_definition_v1.definition,
@@ -404,6 +406,7 @@ func (r *PostgresRepository) GetFacts(id int64) ([]int64, error) {
 }
 
 // GetAll returns all entities in the repository
+// If parseParameters is true, evaluates situation parameters using Gval.
 func (r *PostgresRepository) GetAll(parseParameters ...bool) (map[int64]Situation, error) {
 
 	query := `SELECT id, definition,
@@ -420,6 +423,7 @@ func (r *PostgresRepository) GetAll(parseParameters ...bool) (map[int64]Situatio
 }
 
 // GetAllByIDs returns all entities filtered by IDs in the repository
+// If parseParameters is true, evaluates situation parameters using Gval.
 func (r *PostgresRepository) GetAllByIDs(ids []int64, parseParameters ...bool) (map[int64]Situation, error) {
 
 	query := `SELECT id, definition,
@@ -438,6 +442,7 @@ func (r *PostgresRepository) GetAllByIDs(ids []int64, parseParameters ...bool) (
 }
 
 // GetAllByRuleID returns all entities in the repository based on a rule ID
+// If parseParameters is true, evaluates situation parameters using Gval.
 func (r *PostgresRepository) GetAllByRuleID(ruleID int64, parseParameters ...bool) (map[int64]Situation, error) {
 
 	query := `SELECT id, definition, ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = situation_definition_v1.id) as fact_ids
@@ -747,6 +752,7 @@ func (r *PostgresRepository) DeleteTemplateInstance(instanceID int64) error {
 }
 
 // GetTemplateInstance returns the situation template instance
+// If parseParameters is true, evaluates situation parameters using Gval.
 func (r *PostgresRepository) GetTemplateInstance(instanceID int64, parseParameters ...bool) (TemplateInstance, bool, error) {
 
 	query := `SELECT name, situation_id, parameters, calendar_id, enable_depends_on, depends_on_parameters
@@ -798,6 +804,7 @@ func (r *PostgresRepository) GetTemplateInstance(instanceID int64, parseParamete
 }
 
 // GetAllTemplateInstances returns the list of template instances of the situation
+// If parseParameters is true, the situation or situation instance parameters are evaluated using Gval.
 func (r *PostgresRepository) GetAllTemplateInstances(situationID int64, parseParameters ...bool) (map[int64]TemplateInstance, error) {
 
 	query := `SELECT id, name, parameters, calendar_id, enable_depends_on, depends_on_parameters 
