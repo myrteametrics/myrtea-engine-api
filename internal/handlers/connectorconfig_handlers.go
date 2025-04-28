@@ -14,15 +14,16 @@ import (
 )
 
 // GetConnectorConfigs godoc
-// @Summary Get all connectorConfig definitions
-// @Description Get all connectorConfig definitions
-// @Tags ConnectorConfigs
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} models.ConnectorConfig "list of all connectorConfigs"
-// @Failure 500 "internal server error"
-// @Router /engine/connectorconfigs [get]
+//
+//	@Summary		Get all connectorConfig definitions
+//	@Description	Get all connectorConfig definitions
+//	@Tags			ConnectorConfigs
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	models.ConnectorConfig	"list of all connectorConfigs"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/connectorconfigs [get]
 func GetConnectorConfigs(w http.ResponseWriter, r *http.Request) {
 	connectorConfigs, err := connectorconfig.R().GetAll()
 	if err != nil {
@@ -44,16 +45,17 @@ func GetConnectorConfigs(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetConnectorConfig godoc
-// @Summary Get an connectorConfig definition
-// @Description Get an connectorConfig definition
-// @Tags ConnectorConfigs
-// @Produce json
-// @Param id path string true "ConnectorConfig ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.ConnectorConfig "connectorConfig"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/connectorconfigs/{id} [get]
+//
+//	@Summary		Get an connectorConfig definition
+//	@Description	Get an connectorConfig definition
+//	@Tags			ConnectorConfigs
+//	@Produce		json
+//	@Param			id	path	string	true	"ConnectorConfig ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.ConnectorConfig	"connectorConfig"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/connectorconfigs/{id} [get]
 func GetConnectorConfig(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idConnectorConfig, err := strconv.ParseInt(id, 10, 64)
@@ -81,18 +83,19 @@ func GetConnectorConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostConnectorConfig godoc
-// @Summary Create a new connectorConfig definition
-// @Description Create a new connectorConfig definition
-// @Tags ConnectorConfigs
-// @Accept json
-// @Produce json
-// @Param connectorConfig body models.ConnectorConfig true "ConnectorConfig definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.ConnectorConfig "connectorConfig"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/connectorconfigs [post]
+//
+//	@Summary		Create a new connectorConfig definition
+//	@Description	Create a new connectorConfig definition
+//	@Tags			ConnectorConfigs
+//	@Accept			json
+//	@Produce		json
+//	@Param			connectorConfig	body	models.ConnectorConfig	true	"ConnectorConfig definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.ConnectorConfig	"connectorConfig"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/connectorconfigs [post]
 func PostConnectorConfig(w http.ResponseWriter, r *http.Request) {
 	var newExternalConfig models.ConnectorConfig
 	err := json.NewDecoder(r.Body).Decode(&newExternalConfig)
@@ -125,19 +128,20 @@ func PostConnectorConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutConnectorConfig godoc
-// @Summary Create or remplace an connectorConfig definition
-// @Description Create or remplace an connectorConfig definition
-// @Tags ConnectorConfigs
-// @Accept json
-// @Produce json
-// @Param name path string true "ConnectorConfig ID"
-// @Param connectorConfig body models.ConnectorConfig true "ConnectorConfig definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.ConnectorConfig "connectorConfig"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/connectorconfigs/{name} [put]
+//
+//	@Summary		Create or remplace an connectorConfig definition
+//	@Description	Create or remplace an connectorConfig definition
+//	@Tags			ConnectorConfigs
+//	@Accept			json
+//	@Produce		json
+//	@Param			name			path	string					true	"ConnectorConfig ID"
+//	@Param			connectorConfig	body	models.ConnectorConfig	true	"ConnectorConfig definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.ConnectorConfig	"connectorConfig"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/connectorconfigs/{name} [put]
 func PutConnectorConfig(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idConnectorConfig, err := strconv.ParseInt(id, 10, 64)
@@ -180,16 +184,17 @@ func PutConnectorConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteConnectorConfig godoc
-// @Summary Delete an connectorConfig definition
-// @Description Delete an connectorConfig definition
-// @Tags ConnectorConfigs
-// @Produce json
-// @Param name path string true "ConnectorConfig ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/connectorconfigs/{name} [delete]
+//
+//	@Summary		Delete an connectorConfig definition
+//	@Description	Delete an connectorConfig definition
+//	@Tags			ConnectorConfigs
+//	@Produce		json
+//	@Param			name	path	string	true	"ConnectorConfig ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/connectorconfigs/{name} [delete]
 func DeleteConnectorConfig(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idConnectorConfig, err := strconv.ParseInt(id, 10, 64)

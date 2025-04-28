@@ -18,15 +18,16 @@ import (
 )
 
 // GetElasticSearchConfigs godoc
-// @Summary Get all elasticSearchConfig definitions
-// @Description Get all elasticSearchConfig definitions
-// @Tags ElasticSearchConfigs
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} models.ElasticSearchConfig "list of all elasticSearchConfigs"
-// @Failure 500 "internal server error"
-// @Router /engine/esconfigs [get]
+//
+//	@Summary		Get all elasticSearchConfig definitions
+//	@Description	Get all elasticSearchConfig definitions
+//	@Tags			ElasticSearchConfigs
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	models.ElasticSearchConfig	"list of all elasticSearchConfigs"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/esconfigs [get]
 func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -55,16 +56,17 @@ func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetElasticSearchConfig godoc
-// @Summary Get an elasticSearchConfig definition
-// @Description Get an elasticSearchConfig definition
-// @Tags ElasticSearchConfigs
-// @Produce json
-// @Param id path string true "ElasticSearchConfig ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.ElasticSearchConfig "elasticSearchConfig"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/esconfigs/{id} [get]
+//
+//	@Summary		Get an elasticSearchConfig definition
+//	@Description	Get an elasticSearchConfig definition
+//	@Tags			ElasticSearchConfigs
+//	@Produce		json
+//	@Param			id	path	string	true	"ElasticSearchConfig ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.ElasticSearchConfig	"elasticSearchConfig"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/esconfigs/{id} [get]
 func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionGet)) {
@@ -98,16 +100,17 @@ func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetElasticSearchConfigByName godoc
-// @Summary Get an elasticSearchConfig definition
-// @Description Get an elasticSearchConfig definition
-// @Tags ElasticSearchConfigs
-// @Produce json
-// @Param name path string true "ElasticSearchConfig Name (escaped html accepted)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.ElasticSearchConfig "elasticSearchConfig"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/esconfigs/name/{name} [get]
+//
+//	@Summary		Get an elasticSearchConfig definition
+//	@Description	Get an elasticSearchConfig definition
+//	@Tags			ElasticSearchConfigs
+//	@Produce		json
+//	@Param			name	path	string	true	"ElasticSearchConfig Name (escaped html accepted)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.ElasticSearchConfig	"elasticSearchConfig"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/esconfigs/name/{name} [get]
 func GetElasticSearchConfigByName(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -141,15 +144,16 @@ func GetElasticSearchConfigByName(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetDefaultElasticSearchConfig godoc
-// @Summary Get the default elasticSearchConfig definition
-// @Description Get the default elasticSearchConfig definition
-// @Tags ElasticSearchConfigs
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.ElasticSearchConfig "elasticSearchConfig"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/esconfigs/default [get]
+//
+//	@Summary		Get the default elasticSearchConfig definition
+//	@Description	Get the default elasticSearchConfig definition
+//	@Tags			ElasticSearchConfigs
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.ElasticSearchConfig	"elasticSearchConfig"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/esconfigs/default [get]
 func GetDefaultElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -175,18 +179,19 @@ func GetDefaultElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostElasticSearchConfig godoc
-// @Summary Create a new elasticSearchConfig definition
-// @Description Create a new elasticSearchConfig definition
-// @Tags ElasticSearchConfigs
-// @Accept json
-// @Produce json
-// @Param elasticSearchConfig body models.ElasticSearchConfig true "ElasticSearchConfig definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.ElasticSearchConfig "elasticSearchConfig"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/esconfigs [post]
+//
+//	@Summary		Create a new elasticSearchConfig definition
+//	@Description	Create a new elasticSearchConfig definition
+//	@Tags			ElasticSearchConfigs
+//	@Accept			json
+//	@Produce		json
+//	@Param			elasticSearchConfig	body	models.ElasticSearchConfig	true	"ElasticSearchConfig definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.ElasticSearchConfig	"elasticSearchConfig"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/esconfigs [post]
 func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -226,19 +231,20 @@ func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutElasticSearchConfig godoc
-// @Summary Create or remplace an elasticSearchConfig definition
-// @Description Create or remplace an elasticSearchConfig definition
-// @Tags ElasticSearchConfigs
-// @Accept json
-// @Produce json
-// @Param id path string true "ElasticSearchConfig ID"
-// @Param elasticSearchConfig body models.ElasticSearchConfig true "ElasticSearchConfig definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.ElasticSearchConfig "elasticSearchConfig"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/esconfigs/{id} [put]
+//
+//	@Summary		Create or remplace an elasticSearchConfig definition
+//	@Description	Create or remplace an elasticSearchConfig definition
+//	@Tags			ElasticSearchConfigs
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path	string						true	"ElasticSearchConfig ID"
+//	@Param			elasticSearchConfig	body	models.ElasticSearchConfig	true	"ElasticSearchConfig definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.ElasticSearchConfig	"elasticSearchConfig"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/esconfigs/{id} [put]
 func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -288,16 +294,17 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteElasticSearchConfig godoc
-// @Summary Delete an elasticSearchConfig definition
-// @Description Delete an elasticSearchConfig definition
-// @Tags ElasticSearchConfigs
-// @Produce json
-// @Param id path string true "ElasticSearchConfig ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/esconfigs/{id} [delete]
+//
+//	@Summary		Delete an elasticSearchConfig definition
+//	@Description	Delete an elasticSearchConfig definition
+//	@Tags			ElasticSearchConfigs
+//	@Produce		json
+//	@Param			id	path	string	true	"ElasticSearchConfig ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/esconfigs/{id} [delete]
 func DeleteElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)

@@ -13,17 +13,18 @@ import (
 )
 
 // GetNotifications godoc
-// @Summary Get all notifications
-// @Description Get all notifications of the authentified user
-// @Tags Notifications
-// @Produce json
-// @Param maxage query string false "Notification maximum age (use duration format, ex: 48h)"
-// @Param nhit query int false "Hit per page"
-// @Param offset query int false "Offset number for pagination"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Failure 500 "internal server error"
-// @Router /engine/notifications [get]
+//
+//	@Summary		Get all notifications
+//	@Description	Get all notifications of the authentified user
+//	@Tags			Notifications
+//	@Produce		json
+//	@Param			maxage	query	string	false	"Notification maximum age (use duration format, ex: 48h)"
+//	@Param			nhit	query	int		false	"Hit per page"
+//	@Param			offset	query	int		false	"Offset number for pagination"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Failure		500	"internal server error"
+//	@Router			/engine/notifications [get]
 func GetNotifications(w http.ResponseWriter, r *http.Request) {
 
 	// FIXME: DON'T FORGET TO FIX THIS !
@@ -71,18 +72,19 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateRead godoc
-// @Summary Update the "read" status of the notification
-// @Description Mark a notification as "read"
-// @Tags Notifications
-// @Produce json
-// @Param id path int false "notification ID"
-// @Param status query boolean false "notification's read property given value"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 500 "internal server error"
-// @Failure 400 "Status bad request"
-// @Router /engine/notifications/{id}/read [put]
+//
+//	@Summary		Update the "read" status of the notification
+//	@Description	Mark a notification as "read"
+//	@Tags			Notifications
+//	@Produce		json
+//	@Param			id		path	int		false	"notification ID"
+//	@Param			status	query	boolean	false	"notification's read property given value"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		500	"internal server error"
+//	@Failure		400	"Status bad request"
+//	@Router			/engine/notifications/{id}/read [put]
 func UpdateRead(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idNotif, err := strconv.ParseInt(id, 10, 64)

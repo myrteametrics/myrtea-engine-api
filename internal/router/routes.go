@@ -190,7 +190,7 @@ func engineRouter(services Services) http.Handler {
 	r.Put("/calendars/{id}", handlers.PutCalendar)
 	r.Delete("/calendars/{id}", handlers.DeleteCalendar)
 
-	r.Get("/connector/{id}/executions/last", handlers.GetlastConnectorExecutionDateTime)
+	r.Get("/connector/{id}/executions/last", handlers.GetLastConnectorExecutionDateTime)
 
 	// exports
 	r.Get("/exports", services.ExportHandler.GetExports)

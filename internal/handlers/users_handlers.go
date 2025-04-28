@@ -15,16 +15,17 @@ import (
 )
 
 // GetUserSelf godoc
-// @Summary Get an user
-// @Description Gets un user with the specified id.
-// @Tags Users
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {string} string "status OK"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /engine/security/myself [get]
+//
+//	@Summary		Get an user
+//	@Description	Gets un user with the specified id.
+//	@Tags			Users
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{string}	string	"status OK"
+//	@Failure		400	{string}	string	"Bad Request"
+//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Router			/engine/security/myself [get]
 func GetUserSelf(w http.ResponseWriter, r *http.Request) {
 	userCtx, found := GetUserFromContext(r)
 	if !found {
@@ -37,15 +38,16 @@ func GetUserSelf(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUsers godoc
-// @Summary Get all user users
-// @Description Gets a list of all user users.
-// @Tags Users
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} users.User "list of users"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/users [get]
+//
+//	@Summary		Get all user users
+//	@Description	Gets a list of all user users.
+//	@Tags			Users
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}		users.User	"list of users"
+//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Router			/admin/security/users [get]
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, permissions.All, permissions.ActionList)) {
@@ -68,18 +70,19 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUser godoc
-// @Summary Get an user user
-// @Description Gets an user user with the specified id
-// @Tags Users
-// @Produce json
-// @Param id path string true "user ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} users.User "user"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 404 {string} string "Not Found"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/users/{id} [get]
+//
+//	@Summary		Get an user user
+//	@Description	Gets an user user with the specified id
+//	@Tags			Users
+//	@Produce		json
+//	@Param			id	path	string	true	"user ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	users.User	"user"
+//	@Failure		400	{string}	string		"Bad Request"
+//	@Failure		404	{string}	string		"Not Found"
+//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Router			/admin/security/users/{id} [get]
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	userID, err := uuid.Parse(id)
@@ -111,18 +114,19 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // ValidateUser godoc
-// @Summary Validate a new user definition
-// @Description Validate a new user definition
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param user body users.User true "user (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} users.User "user"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/users/validate [post]
+//
+//	@Summary		Validate a new user definition
+//	@Description	Validate a new user definition
+//	@Tags			Users
+//	@Accept			json
+//	@Produce		json
+//	@Param			user	body	users.User	true	"user (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	users.User	"user"
+//	@Failure		400	{string}	string		"Bad Request"
+//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Router			/admin/security/users/validate [post]
 func ValidateUser(w http.ResponseWriter, r *http.Request) {
 	var newUser users.UserWithPassword
 	err := json.NewDecoder(r.Body).Decode(&newUser)
@@ -142,18 +146,19 @@ func ValidateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostUser godoc
-// @Summary Create a new user
-// @Description Add an user user to the user users
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param user body users.User true "user (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} users.User "user"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/users [post]
+//
+//	@Summary		Create a new user
+//	@Description	Add an user user to the user users
+//	@Tags			Users
+//	@Accept			json
+//	@Produce		json
+//	@Param			user	body	users.User	true	"user (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	users.User	"user"
+//	@Failure		400	{string}	string		"Bad Request"
+//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Router			/admin/security/users [post]
 func PostUser(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeUser, permissions.All, permissions.ActionCreate)) {
@@ -198,19 +203,20 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutUser godoc
-// @Summary Update user
-// @Description Updates the user user information concerning the user user with id
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param id path string true "user ID"
-// @Param user body users.User true "user (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} users.User "user"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/users/{id} [put]
+//
+//	@Summary		Update user
+//	@Description	Updates the user user information concerning the user user with id
+//	@Tags			Users
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path	string		true	"user ID"
+//	@Param			user	body	users.User	true	"user (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	users.User	"user"
+//	@Failure		400	{string}	string		"Bad Request"
+//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Router			/admin/security/users/{id} [put]
 func PutUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	userID, err := uuid.Parse(id)
@@ -264,17 +270,18 @@ func PutUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteUser godoc
-// @Summary Delete user
-// @Description Deletes an user user
-// @Tags Users
-// @Produce json
-// @Param id path string true "user ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {string} string "status OK"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/users/{id} [delete]
+//
+//	@Summary		Delete user
+//	@Description	Deletes an user user
+//	@Tags			Users
+//	@Produce		json
+//	@Param			id	path	string	true	"user ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{string}	string	"status OK"
+//	@Failure		400	{string}	string	"Bad Request"
+//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Router			/admin/security/users/{id} [delete]
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	userID, err := uuid.Parse(id)
@@ -301,19 +308,20 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetUserRoles godoc
-// @Summary Set roles on a user
-// @Description Set roles on a user
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param id path string true "user ID"
-// @Param user body []string true "List of roles UUIDs"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} users.User "user"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/users/{id}/roles [put]
+//
+//	@Summary		Set roles on a user
+//	@Description	Set roles on a user
+//	@Tags			Users
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path	string		true	"user ID"
+//	@Param			user	body	[]string	true	"List of roles UUIDs"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	users.User	"user"
+//	@Failure		400	{string}	string		"Bad Request"
+//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Router			/admin/security/users/{id}/roles [put]
 func SetUserRoles(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	userID, err := uuid.Parse(id)

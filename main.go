@@ -30,22 +30,22 @@ var (
 	BuildDate string
 )
 
-// @version 1.0
-// @description Myrtea Engine-API Swagger
-// @termsOfService http://swagger.io/terms/
+//	@version		1.0
+//	@description	Myrtea Engine-API Swagger
+//	@termsOfService	http://swagger.io/terms/
 
-// @contact.name Myrtea Metrics
-// @contact.url https://myrteametrics.ai/en/
-// @contact.email contact@myrteametrics.com
+//	@contact.name	Myrtea Metrics
+//	@contact.url	https://myrteametrics.ai/en/
+//	@contact.email	contact@myrteametrics.com
 
-// @securityDefinitions.apikey Bearer
-// @in header
-// @name Authorization
+//	@securityDefinitions.apikey	Bearer
+//	@in							header
+//	@name						Authorization
 
-// @securityDefinitions.apikey ApiKeyAuth
-// @in header
-// @name X-API-Key
-// @description Authentification via une clé API dans le header X-API-Key
+//	@securityDefinitions.apikey	ApiKeyAuth
+//	@in							header
+//	@name						X-API-Key
+//	@description				Authentification via une clé API dans le header X-API-Key
 
 func main() {
 	hostname, _ := os.Hostname()

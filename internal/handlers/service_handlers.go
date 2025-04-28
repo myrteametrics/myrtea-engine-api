@@ -24,16 +24,17 @@ func NewServiceHandler(manager *service.Manager) *ServiceHandler {
 }
 
 // GetServices godoc
-// @Summary Get all services
-// @Description Get all services
-// @Tags Services
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} service.Definition
-// @Failure 401 "missing permission"
-// @Failure 500 "internal server error"
-// @Router /engine/services [get]
+//
+//	@Summary		Get all services
+//	@Description	Get all services
+//	@Tags			Services
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	service.Definition
+//	@Failure		401	"missing permission"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/services [get]
 func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeService, permissions.All, permissions.ActionList)) {
@@ -51,16 +52,17 @@ func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
 }
 
 // Restart godoc
-// @Summary Restart the service
-// @Description Restart the service
-// @Tags Service
-// @Produce json
-// @Param id query string false "Service to restart"
-// @Success 200 "service was restarted successfully"
-// @Failure 401 "missing permission"
-// @Failure 429 "too recently"
-// @Failure 500 "internal server error"
-// @Router /engine/services/{id}/restart [post]
+//
+//	@Summary		Restart the service
+//	@Description	Restart the service
+//	@Tags			Service
+//	@Produce		json
+//	@Param			id	query	string	false	"Service to restart"
+//	@Success		200	"service was restarted successfully"
+//	@Failure		401	"missing permission"
+//	@Failure		429	"too recently"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/services/{id}/restart [post]
 func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeService, permissions.All, "restart")) {
@@ -99,17 +101,18 @@ func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 }
 
 // Reload godoc
-// @Summary Reload the service
-// @Description Reload the service
-// @Tags Service
-// @Produce json
-// @Param id query string false "Service to reload"
-// @Param component query string false "Component to reload"
-// @Success 200 "component reloaded"
-// @Failure 401 "missing permission"
-// @Failure 429 "too recently"
-// @Failure 500 "internal server error"
-// @Router /engine/services/{id}/reload/{component} [post]
+//
+//	@Summary		Reload the service
+//	@Description	Reload the service
+//	@Tags			Service
+//	@Produce		json
+//	@Param			id			query	string	false	"Service to reload"
+//	@Param			component	query	string	false	"Component to reload"
+//	@Success		200			"component reloaded"
+//	@Failure		401			"missing permission"
+//	@Failure		429			"too recently"
+//	@Failure		500			"internal server error"
+//	@Router			/engine/services/{id}/reload/{component} [post]
 func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeService, permissions.All, "reload")) {
@@ -153,15 +156,16 @@ func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetStatus godoc
-// @Summary GetStatus of a service
-// @Description GetStatus of a service
-// @Tags Service
-// @Produce json
-// @Param id query string false "Component to get status from"
-// @Success 200 {object} service.Status
-// @Failure 401 "missing permission"
-// @Failure 500 "internal server error"
-// @Router /engine/services/{id}/status [get]
+//
+//	@Summary		GetStatus of a service
+//	@Description	GetStatus of a service
+//	@Tags			Service
+//	@Produce		json
+//	@Param			id	query		string	false	"Component to get status from"
+//	@Success		200	{object}	service.Status
+//	@Failure		401	"missing permission"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/services/{id}/status [get]
 func (sh *ServiceHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeService, permissions.All, permissions.ActionGet)) {

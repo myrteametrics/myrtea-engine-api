@@ -15,13 +15,14 @@ import (
 )
 
 // StartScheduler godoc
-// @Summary Start the scheduler
-// @Description Start the fact scheduler
-// @Tags Scheduler
-// @Success 200 "Status OK"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Router /engine/scheduler/start [POST]
+//
+//	@Summary		Start the scheduler
+//	@Description	Start the fact scheduler
+//	@Tags			Scheduler
+//	@Success		200	"Status OK"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Router			/engine/scheduler/start [POST]
 func StartScheduler(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.All)) {
@@ -34,19 +35,20 @@ func StartScheduler(w http.ResponseWriter, r *http.Request) {
 }
 
 // TriggerJobSchedule godoc
-// @Summary Force facts calculation pipeline
-// @Description <b>Force facts calculation pipeline</b>
-// @Description Example :
-// @Description <pre>{"jobtype":"fact","job":{"facts_ids":["fact_1","fact_2"]}}
-// @Description {"jobtype":"baseline","job":{"baselines":{"3":["by_day","by_day_week"]}}}</pre>
-// @Tags Scheduler
-// @Produce json
-// @Param job body scheduler.InternalSchedule true "JobSchedule definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/scheduler/trigger [post]
+//
+//	@Summary		Force facts calculation pipeline
+//	@Description	<b>Force facts calculation pipeline</b>
+//	@Description	Example :
+//	@Description	<pre>{"jobtype":"fact","job":{"facts_ids":["fact_1","fact_2"]}}
+//	@Description	{"jobtype":"baseline","job":{"baselines":{"3":["by_day","by_day_week"]}}}</pre>
+//	@Tags			Scheduler
+//	@Produce		json
+//	@Param			job	body	scheduler.InternalSchedule	true	"JobSchedule definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/scheduler/trigger [post]
 func TriggerJobSchedule(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -75,15 +77,16 @@ func TriggerJobSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetJobSchedules godoc
-// @Summary Get all JobSchedules
-// @Description Get all JobSchedules from scheduler repository
-// @Tags Scheduler
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} scheduler.InternalSchedule "list of schedules"
-// @Failure 500 "internal server error"
-// @Router /engine/scheduler/jobs [get]
+//
+//	@Summary		Get all JobSchedules
+//	@Description	Get all JobSchedules from scheduler repository
+//	@Tags			Scheduler
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	scheduler.InternalSchedule	"list of schedules"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/scheduler/jobs [get]
 func GetJobSchedules(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionList)) {
@@ -111,16 +114,17 @@ func GetJobSchedules(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetJobSchedule godoc
-// @Summary Get a JobSchedule
-// @Description Get a specific JobSchedule by it's ID
-// @Tags Scheduler
-// @Produce json
-// @Param id path string true "job ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} scheduler.InternalSchedule "schedule"
-// @Failure 500 "internal server error"
-// @Router /engine/scheduler/jobs/{id} [get]
+//
+//	@Summary		Get a JobSchedule
+//	@Description	Get a specific JobSchedule by it's ID
+//	@Tags			Scheduler
+//	@Produce		json
+//	@Param			id	path	string	true	"job ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	scheduler.InternalSchedule	"schedule"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/scheduler/jobs/{id} [get]
 func GetJobSchedule(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idJob, err := strconv.ParseInt(id, 10, 64)
@@ -152,17 +156,18 @@ func GetJobSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 // ValidateJobSchedule godoc
-// @Summary validate a new JobSchedule definition
-// @Description validate a new JobSchedule definition
-// @Tags Scheduler
-// @Accept json
-// @Produce json
-// @Param job body scheduler.InternalSchedule true "JobSchedule definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} scheduler.InternalSchedule "schedule"
-// @Failure 400	"Status Bad Request"
-// @Router /engine/scheduler/jobs/validate [post]
+//
+//	@Summary		validate a new JobSchedule definition
+//	@Description	validate a new JobSchedule definition
+//	@Tags			Scheduler
+//	@Accept			json
+//	@Produce		json
+//	@Param			job	body	scheduler.InternalSchedule	true	"JobSchedule definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	scheduler.InternalSchedule	"schedule"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/scheduler/jobs/validate [post]
 func ValidateJobSchedule(w http.ResponseWriter, r *http.Request) {
 	var newSchedule scheduler.InternalSchedule
 	err := json.NewDecoder(r.Body).Decode(&newSchedule)
@@ -182,18 +187,19 @@ func ValidateJobSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostJobSchedule godoc
-// @Summary create JobSchedule
-// @Description creates new JobSchedule
-// @Tags Scheduler
-// @Accept json
-// @Produce json
-// @Param job body scheduler.InternalSchedule true "JobSchedule definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} scheduler.InternalSchedule "schedule"
-// @Failure 400	"Status Bad Request"
-// @Failure 500	"Status Internal Server Error"
-// @Router /engine/scheduler/jobs [post]
+//
+//	@Summary		create JobSchedule
+//	@Description	creates new JobSchedule
+//	@Tags			Scheduler
+//	@Accept			json
+//	@Produce		json
+//	@Param			job	body	scheduler.InternalSchedule	true	"JobSchedule definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	scheduler.InternalSchedule	"schedule"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status Internal Server Error"
+//	@Router			/engine/scheduler/jobs [post]
 func PostJobSchedule(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeScheduler, permissions.All, permissions.ActionCreate)) {
@@ -251,19 +257,20 @@ func PostJobSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutJobSchedule godoc
-// @Summary Create or remplace a JobSchedule
-// @Description Create or remplace a JobSchedule
-// @Tags Scheduler
-// @Accept json
-// @Produce json
-// @Param id path string true "JobSchedule ID"
-// @Param rule body interface{} true "JobSchedule (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} scheduler.InternalSchedule "schedule"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/scheduler/jobs/{id} [put]
+//
+//	@Summary		Create or remplace a JobSchedule
+//	@Description	Create or remplace a JobSchedule
+//	@Tags			Scheduler
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path	string		true	"JobSchedule ID"
+//	@Param			rule	body	interface{}	true	"JobSchedule (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	scheduler.InternalSchedule	"schedule"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/scheduler/jobs/{id} [put]
 func PutJobSchedule(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idJob, err := strconv.ParseInt(id, 10, 64)
@@ -324,17 +331,18 @@ func PutJobSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteJobSchedule godoc
-// @Summary delete JobSchedule
-// @Description delete JobSchedule
-// @Tags Scheduler
-// @Produce json
-// @Param id path string true "JobSchedule ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400	"Status Bad Request"
-// @Failure 500	"Status Internal Server Error"
-// @Router /engine/scheduler/jobs/{id} [delete]
+//
+//	@Summary		delete JobSchedule
+//	@Description	delete JobSchedule
+//	@Tags			Scheduler
+//	@Produce		json
+//	@Param			id	path	string	true	"JobSchedule ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status Internal Server Error"
+//	@Router			/engine/scheduler/jobs/{id} [delete]
 func DeleteJobSchedule(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idJob, err := strconv.ParseInt(id, 10, 64)

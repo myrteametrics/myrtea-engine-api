@@ -9,18 +9,18 @@ import (
 	"go.uber.org/zap"
 )
 
-// @Summary Get Today's Fact Result by Criteria
-// @Description Fetches the result of a historical fact based on provided criteria for today's date.
-// @Tags Facts_history
-// @Accept json
-// @Produce json
-// @Param factHistory body history.ParamGetFactHistory  true "JSON payload containing criteria for fetching today's history fact result."
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} history.FactResult "Successfully fetched result"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/history/facts/today/result [post]
+// @Summary		Get Today's Fact Result by Criteria
+// @Description	Fetches the result of a historical fact based on provided criteria for today's date.
+// @Tags			Facts_history
+// @Accept			json
+// @Produce		json
+// @Param			factHistory	body	history.ParamGetFactHistory	true	"JSON payload containing criteria for fetching today's history fact result."
+// @Security		Bearer
+// @Security		ApiKeyAuth
+// @Success		200	{object}	history.FactResult	"Successfully fetched result"
+// @Failure		400	"Status Bad Request"
+// @Failure		500	"Status"	internal	server	error"
+// @Router			/engine/history/facts/today/result [post]
 func GetFactResultForTodayByCriteria(w http.ResponseWriter, r *http.Request) {
 
 	var param history.ParamGetFactHistory
@@ -48,19 +48,21 @@ func GetFactResultForTodayByCriteria(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, resulat)
 }
 
-// @Summary Get Fact Result by Date Criteria
-// @Description Fetches the result of a historical fact based on provided criteria within specified date range.
+//	@Summary		Get Fact Result by Date Criteria
+//	@Description	Fetches the result of a historical fact based on provided criteria within specified date range.
+//
 // The dates should be in the format "2006-01-02 15:04:05".
-// @Tags Facts_history
-// @Accept json
-// @Produce json
-// @Param factHistory body history.ParamGetFactHistoryByDate true "JSON payload containing criteria and date range for fetching history fact result, with dates in '2006-01-02 15:04:05' format."
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} history.FactResult "Successfully fetched result"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status Internal Server Error"
-// @Router /engine/history/facts/date/result [post]
+//
+//	@Tags			Facts_history
+//	@Accept			json
+//	@Produce		json
+//	@Param			factHistory	body	history.ParamGetFactHistoryByDate	true	"JSON payload containing criteria and date range for fetching history fact result, with dates in '2006-01-02 15:04:05' format."
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	history.FactResult	"Successfully fetched result"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status Internal Server Error"
+//	@Router			/engine/history/facts/date/result [post]
 func GetFactResultByDateCriteria(w http.ResponseWriter, r *http.Request) {
 
 	var param history.ParamGetFactHistoryByDate

@@ -60,21 +60,22 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 	return options, render.APIError{}, nil
 }
 
-// Search godoc
-// @Summary query situation history data
-// @Description query situation history data
-// @Tags Search
-// @Accept json
-// @Produce json
-// @Param situationid 			query	int		false    "situationid"
-// @Param situationinstanceid 	query	int		false    "situationinstanceid"
-// @Param maxdate				query 	string 	false	"time.Time"
-// @Param mindate				query 	string 	false	"time.Time"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} search.QueryResult "query result"
-// @Failure 500 "internal server error"
-// @Router /engine/search/last [get]
+// SearchLast Search godoc
+//
+//	@Summary		query situation history data
+//	@Description	query situation history data
+//	@Tags			Search
+//	@Accept			json
+//	@Produce		json
+//	@Param			situationid			query	int		false	"situationid"
+//	@Param			situationinstanceid	query	int		false	"situationinstanceid"
+//	@Param			maxdate				query	string	false	"time.Time"
+//	@Param			mindate				query	string	false	"time.Time"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	search.QueryResult	"query result"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/search/last [get]
 func SearchLast(w http.ResponseWriter, r *http.Request) {
 
 	options, apiError, err := baseSearchOptions(w, r)
@@ -107,21 +108,22 @@ func SearchLast(w http.ResponseWriter, r *http.Request) {
 }
 
 // SearchLastByInterval godoc
-// @Summary query situation history data
-// @Description query situation history data
-// @Tags Search
-// @Accept json
-// @Produce json
-// @Param situationid 			query	int		false	"situationid"
-// @Param situationinstanceid 	query	int		false	"situationinstanceid"
-// @Param maxdate				query 	string 	false	"time.Time"
-// @Param mindate				query 	string 	false	"time.Time"
-// @Param interval				query 	string 	true	"year | quarter | month | week | day | hour | minute"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} search.QueryResult "query result"
-// @Failure 500 "internal server error"
-// @Router /engine/search/last/byinterval [get]
+//
+//	@Summary		query situation history data
+//	@Description	query situation history data
+//	@Tags			Search
+//	@Accept			json
+//	@Produce		json
+//	@Param			situationid			query	int		false	"situationid"
+//	@Param			situationinstanceid	query	int		false	"situationinstanceid"
+//	@Param			maxdate				query	string	false	"time.Time"
+//	@Param			mindate				query	string	false	"time.Time"
+//	@Param			interval			query	string	true	"year | quarter | month | week | day | hour | minute"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	search.QueryResult	"query result"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/search/last/byinterval [get]
 func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 
 	options, apiError, err := baseSearchOptions(w, r)
@@ -161,22 +163,23 @@ func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 }
 
 // SearchLastByCustomInterval godoc
-// @Summary query situation history data
-// @Description query situation history data
-// @Tags Search
-// @Accept json
-// @Produce json
-// @Param situationid 			query	int		false	"situationid"
-// @Param situationinstanceid 	query	int		false	"situationinstanceid"
-// @Param maxdate				query 	string 	false	"time.Time"
-// @Param mindate				query 	string 	false	"time.Time"
-// @Param referencedate			query 	string 	true	"time.Time"
-// @Param interval				query 	string 	true	"time.Duration"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} search.QueryResult "query result"
-// @Failure 500 "internal server error"
-// @Router /engine/search/last/bycustominterval [get]
+//
+//	@Summary		query situation history data
+//	@Description	query situation history data
+//	@Tags			Search
+//	@Accept			json
+//	@Produce		json
+//	@Param			situationid			query	int		false	"situationid"
+//	@Param			situationinstanceid	query	int		false	"situationinstanceid"
+//	@Param			maxdate				query	string	false	"time.Time"
+//	@Param			mindate				query	string	false	"time.Time"
+//	@Param			referencedate		query	string	true	"time.Time"
+//	@Param			interval			query	string	true	"time.Duration"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	search.QueryResult	"query result"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/search/last/bycustominterval [get]
 func SearchLastByCustomInterval(w http.ResponseWriter, r *http.Request) {
 
 	options, apiError, err := baseSearchOptions(w, r)

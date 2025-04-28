@@ -15,15 +15,16 @@ import (
 )
 
 // GetRoles godoc
-// @Summary Get all user roles
-// @Description Gets a list of all user roles.
-// @Tags Roles
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} roles.Role "list of roles"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/roles [get]
+//
+//	@Summary		Get all user roles
+//	@Description	Gets a list of all user roles.
+//	@Tags			Roles
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}		roles.Role	"list of roles"
+//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Router			/admin/security/roles [get]
 func GetRoles(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeRole, permissions.All, permissions.ActionList)) {
@@ -46,18 +47,19 @@ func GetRoles(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetRole godoc
-// @Summary Get an user role
-// @Description Gets an user role with the specified id
-// @Tags Roles
-// @Produce json
-// @Param id path string true "role ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} roles.Role "role"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 404 {string} string "Not Found"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/roles/{id} [get]
+//
+//	@Summary		Get an user role
+//	@Description	Gets an user role with the specified id
+//	@Tags			Roles
+//	@Produce		json
+//	@Param			id	path	string	true	"role ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	roles.Role	"role"
+//	@Failure		400	{string}	string		"Bad Request"
+//	@Failure		404	{string}	string		"Not Found"
+//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Router			/admin/security/roles/{id} [get]
 func GetRole(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	roleID, err := uuid.Parse(id)
@@ -89,18 +91,19 @@ func GetRole(w http.ResponseWriter, r *http.Request) {
 }
 
 // ValidateRole godoc
-// @Summary Validate a new role definition
-// @Description Validate a new role definition
-// @Tags Roles
-// @Accept json
-// @Produce json
-// @Param role body roles.Role true "role (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} roles.Role "role"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/roles/validate [post]
+//
+//	@Summary		Validate a new role definition
+//	@Description	Validate a new role definition
+//	@Tags			Roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			role	body	roles.Role	true	"role (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	roles.Role	"role"
+//	@Failure		400	{string}	string		"Bad Request"
+//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Router			/admin/security/roles/validate [post]
 func ValidateRole(w http.ResponseWriter, r *http.Request) {
 	var newRole roles.Role
 	err := json.NewDecoder(r.Body).Decode(&newRole)
@@ -120,18 +123,19 @@ func ValidateRole(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostRole godoc
-// @Summary Create a new role
-// @Description Add an user role to the user roles
-// @Tags Roles
-// @Accept json
-// @Produce json
-// @Param role body roles.Role true "role (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} roles.Role "role"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/roles [post]
+//
+//	@Summary		Create a new role
+//	@Description	Add an user role to the user roles
+//	@Tags			Roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			role	body	roles.Role	true	"role (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	roles.Role	"role"
+//	@Failure		400	{string}	string		"Bad Request"
+//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Router			/admin/security/roles [post]
 func PostRole(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeRole, permissions.All, permissions.ActionCreate)) {
@@ -176,19 +180,20 @@ func PostRole(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutRole godoc
-// @Summary Update role
-// @Description Updates the user role information concerning the user role with id
-// @Tags Roles
-// @Accept json
-// @Produce json
-// @Param id path string true "role ID"
-// @Param role body roles.Role true "role (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} roles.Role "role"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/roles/{id} [put]
+//
+//	@Summary		Update role
+//	@Description	Updates the user role information concerning the user role with id
+//	@Tags			Roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path	string		true	"role ID"
+//	@Param			role	body	roles.Role	true	"role (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	roles.Role	"role"
+//	@Failure		400	{string}	string		"Bad Request"
+//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Router			/admin/security/roles/{id} [put]
 func PutRole(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	roleID, err := uuid.Parse(id)
@@ -242,17 +247,18 @@ func PutRole(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteRole godoc
-// @Summary Delete role
-// @Description Deletes an user role
-// @Tags Roles
-// @Produce json
-// @Param id path string true "role ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {string} string "status OK"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/roles/{id} [delete]
+//
+//	@Summary		Delete role
+//	@Description	Deletes an user role
+//	@Tags			Roles
+//	@Produce		json
+//	@Param			id	path	string	true	"role ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{string}	string	"status OK"
+//	@Failure		400	{string}	string	"Bad Request"
+//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Router			/admin/security/roles/{id} [delete]
 func DeleteRole(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	roleID, err := uuid.Parse(id)
@@ -279,19 +285,20 @@ func DeleteRole(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetRolePermissions godoc
-// @Summary Set permissions on a role
-// @Description Set permissions on a role
-// @Tags Roles
-// @Accept json
-// @Produce json
-// @Param id path string true "role ID"
-// @Param role body []string true "List of permissions UUIDs"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} roles.Role "role"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/roles/{id}/permissions [put]
+//
+//	@Summary		Set permissions on a role
+//	@Description	Set permissions on a role
+//	@Tags			Roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path	string		true	"role ID"
+//	@Param			role	body	[]string	true	"List of permissions UUIDs"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	roles.Role	"role"
+//	@Failure		400	{string}	string		"Bad Request"
+//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Router			/admin/security/roles/{id}/permissions [put]
 func SetRolePermissions(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	roleID, err := uuid.Parse(id)

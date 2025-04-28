@@ -15,17 +15,18 @@ import (
 )
 
 // GetRuleSituations godoc
-// @Summary Get the list of situatons associated to a rule
-// @Description Get the list of situatons associated to a rule
-// @Tags Rules
-// @Produce json
-// @Param id path string true "Rule ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "list of situations"
-// @Failure 400 "Status Bad Request"
-// @Failure 401 "Status Unauthorized"
-// @Router /engine/rules/{id}/situations [get]
+//
+//	@Summary		Get the list of situatons associated to a rule
+//	@Description	Get the list of situatons associated to a rule
+//	@Tags			Rules
+//	@Produce		json
+//	@Param			id	path	string	true	"Rule ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"list of situations"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		401	"Status Unauthorized"
+//	@Router			/engine/rules/{id}/situations [get]
 func GetRuleSituations(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idRule, err := strconv.ParseInt(id, 10, 64)
@@ -55,18 +56,19 @@ func GetRuleSituations(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostRuleSituations godoc
-// @Summary Add the rule at the end of the rules list of each situation
-// @Description Add the rule at the end of the rules list of each situation
-// @Tags Rules
-// @Produce json
-// @Param id path string true "Rule ID"
-// @Param situationIds body []int64 true "Situation association"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Failure 401 "Status Unauthorized"
-// @Router /engine/rules/{id}/situations [post]
+//
+//	@Summary		Add the rule at the end of the rules list of each situation
+//	@Description	Add the rule at the end of the rules list of each situation
+//	@Tags			Rules
+//	@Produce		json
+//	@Param			id				path	string	true	"Rule ID"
+//	@Param			situationIds	body	[]int64	true	"Situation association"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		401	"Status Unauthorized"
+//	@Router			/engine/rules/{id}/situations [post]
 func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idRule, err := strconv.ParseInt(id, 10, 64)

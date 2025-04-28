@@ -14,15 +14,16 @@ import (
 )
 
 // GetPermissions godoc
-// @Summary Get all user permissions
-// @Description Gets a list of all user permissions.
-// @Tags Permissions
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} permissions.Permission "list of permissions"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/permissions [get]
+//
+//	@Summary		Get all user permissions
+//	@Description	Gets a list of all user permissions.
+//	@Tags			Permissions
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}		permissions.Permission	"list of permissions"
+//	@Failure		500	{string}	string					"Internal Server Error"
+//	@Router			/admin/security/permissions [get]
 func GetPermissions(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypePermission, permissions.All, permissions.ActionList)) {
@@ -45,18 +46,19 @@ func GetPermissions(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetPermission godoc
-// @Summary Get an user permission
-// @Description Gets an user permission with the specified id
-// @Tags Permissions
-// @Produce json
-// @Param id path string true "permission ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} permissions.Permission "permission"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 404 {string} string "Not Found"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/permissions/{id} [get]
+//
+//	@Summary		Get an user permission
+//	@Description	Gets an user permission with the specified id
+//	@Tags			Permissions
+//	@Produce		json
+//	@Param			id	path	string	true	"permission ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	permissions.Permission	"permission"
+//	@Failure		400	{string}	string					"Bad Request"
+//	@Failure		404	{string}	string					"Not Found"
+//	@Failure		500	{string}	string					"Internal Server Error"
+//	@Router			/admin/security/permissions/{id} [get]
 func GetPermission(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	permissionID, err := uuid.Parse(id)
@@ -88,18 +90,19 @@ func GetPermission(w http.ResponseWriter, r *http.Request) {
 }
 
 // ValidatePermission godoc
-// @Summary Validate a new permission definition
-// @Description Validate a new permission definition
-// @Tags Permissions
-// @Accept json
-// @Produce json
-// @Param permission body permissions.Permission true "permission (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} permissions.Permission "permission"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/permissions/validate [post]
+//
+//	@Summary		Validate a new permission definition
+//	@Description	Validate a new permission definition
+//	@Tags			Permissions
+//	@Accept			json
+//	@Produce		json
+//	@Param			permission	body	permissions.Permission	true	"permission (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	permissions.Permission	"permission"
+//	@Failure		400	{string}	string					"Bad Request"
+//	@Failure		500	{string}	string					"Internal Server Error"
+//	@Router			/admin/security/permissions/validate [post]
 func ValidatePermission(w http.ResponseWriter, r *http.Request) {
 	var newPermission permissions.Permission
 	err := json.NewDecoder(r.Body).Decode(&newPermission)
@@ -119,18 +122,19 @@ func ValidatePermission(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostPermission godoc
-// @Summary Create a new permission
-// @Description Add an user permission to the user permissions
-// @Tags Permissions
-// @Accept json
-// @Produce json
-// @Param permission body permissions.Permission true "permission (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} permissions.Permission "permission"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/permissions [post]
+//
+//	@Summary		Create a new permission
+//	@Description	Add an user permission to the user permissions
+//	@Tags			Permissions
+//	@Accept			json
+//	@Produce		json
+//	@Param			permission	body	permissions.Permission	true	"permission (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	permissions.Permission	"permission"
+//	@Failure		400	{string}	string					"Bad Request"
+//	@Failure		500	{string}	string					"Internal Server Error"
+//	@Router			/admin/security/permissions [post]
 func PostPermission(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypePermission, permissions.All, permissions.ActionList)) {
@@ -175,19 +179,20 @@ func PostPermission(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutPermission godoc
-// @Summary Update permission
-// @Description Updates the user permission information concerning the user permission with id
-// @Tags Permissions
-// @Accept json
-// @Produce json
-// @Param id path string true "permission ID"
-// @Param permission body permissions.Permission true "permission (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} permissions.Permission "permission"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/permissions/{id} [put]
+//
+//	@Summary		Update permission
+//	@Description	Updates the user permission information concerning the user permission with id
+//	@Tags			Permissions
+//	@Accept			json
+//	@Produce		json
+//	@Param			id			path	string					true	"permission ID"
+//	@Param			permission	body	permissions.Permission	true	"permission (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	permissions.Permission	"permission"
+//	@Failure		400	{string}	string					"Bad Request"
+//	@Failure		500	{string}	string					"Internal Server Error"
+//	@Router			/admin/security/permissions/{id} [put]
 func PutPermission(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	permissionID, err := uuid.Parse(id)
@@ -241,17 +246,18 @@ func PutPermission(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeletePermission godoc
-// @Summary Delete permission
-// @Description Deletes an user permission
-// @Tags Permissions
-// @Produce json
-// @Param id path string true "permission ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {string} string "status OK"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/permissions/{id} [delete]
+//
+//	@Summary		Delete permission
+//	@Description	Deletes an user permission
+//	@Tags			Permissions
+//	@Produce		json
+//	@Param			id	path	string	true	"permission ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{string}	string	"status OK"
+//	@Failure		400	{string}	string	"Bad Request"
+//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Router			/admin/security/permissions/{id} [delete]
 func DeletePermission(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	permissionID, err := uuid.Parse(id)

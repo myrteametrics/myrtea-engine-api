@@ -14,18 +14,19 @@ import (
 )
 
 // GetRolePermissions godoc
-// @Summary Get all permissions associated with a role
-// @Description Get all permissions associated with a specified role id
-// @Tags Roles
-// @Produce json
-// @Param id path string true "role ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} permissions.Permission "permission"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 404 {string} string "Not Found"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /admin/security/roles/{id}/permissions [get]
+//
+//	@Summary		Get all permissions associated with a role
+//	@Description	Get all permissions associated with a specified role id
+//	@Tags			Roles
+//	@Produce		json
+//	@Param			id	path	string	true	"role ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}		permissions.Permission	"permission"
+//	@Failure		400	{string}	string					"Bad Request"
+//	@Failure		404	{string}	string					"Not Found"
+//	@Failure		500	{string}	string					"Internal Server Error"
+//	@Router			/admin/security/roles/{id}/permissions [get]
 func GetRolePermissions(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	roleID, err := uuid.Parse(id)

@@ -16,15 +16,16 @@ import (
 )
 
 // GetSituations godoc
-// @Summary Get all situation definitions
-// @Description Get all situation definitions
-// @Tags Situations
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} situation.Situation "list of situations"
-// @Failure 500 "internal server error"
-// @Router /engine/situations [get]
+//
+//	@Summary		Get all situation definitions
+//	@Description	Get all situation definitions
+//	@Tags			Situations
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	situation.Situation	"list of situations"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/situations [get]
 func GetSituations(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionList)) {
@@ -58,16 +59,17 @@ func GetSituations(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSituation godoc
-// @Summary Get a situation definition
-// @Description Get a situation definition
-// @Tags Situations
-// @Produce json
-// @Param id path string true "Situation ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} situation.Situation "situation"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/situations/{id} [get]
+//
+//	@Summary		Get a situation definition
+//	@Description	Get a situation definition
+//	@Tags			Situations
+//	@Produce		json
+//	@Param			id	path	string	true	"Situation ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	situation.Situation	"situation"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/situations/{id} [get]
 func GetSituation(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idSituation, err := strconv.ParseInt(id, 10, 64)
@@ -99,18 +101,19 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 }
 
 // ValidateSituation godoc
-// @Summary Validate a new situation definition
-// @Description Validate a new situation definition
-// @Tags Situations
-// @Accept json
-// @Produce json
-// @Param situation body situation.Situation true "Situation definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} situation.Situation "situation"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/situations/validate [post]
+//
+//	@Summary		Validate a new situation definition
+//	@Description	Validate a new situation definition
+//	@Tags			Situations
+//	@Accept			json
+//	@Produce		json
+//	@Param			situation	body	situation.Situation	true	"Situation definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	situation.Situation	"situation"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/situations/validate [post]
 func ValidateSituation(w http.ResponseWriter, r *http.Request) {
 	var newSituation situation.Situation
 	err := json.NewDecoder(r.Body).Decode(&newSituation)
@@ -130,19 +133,20 @@ func ValidateSituation(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostSituation godoc
-// @Summary Creates a situation definition
-// @Description Creates a situation definition
-// @Tags Situations
-// @Accept json
-// @Produce json
-// @Param factsByName query string false "Find fact by it's name"
-// @Param situation body situation.Situation true "Situation definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} situation.Situation "situation"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/situations [post]
+//
+//	@Summary		Creates a situation definition
+//	@Description	Creates a situation definition
+//	@Tags			Situations
+//	@Accept			json
+//	@Produce		json
+//	@Param			factsByName	query	string				false	"Find fact by it's name"
+//	@Param			situation	body	situation.Situation	true	"Situation definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	situation.Situation	"situation"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/situations [post]
 func PostSituation(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -238,19 +242,20 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutSituation godoc
-// @Summary replace a situation definition
-// @Description replace a situation definition
-// @Tags Situations
-// @Accept json
-// @Produce json
-// @Param id path string true "Situation ID"
-// @Param situation body situation.Situation true "Situation definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} situation.Situation "situation"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/situations/{id} [put]
+//
+//	@Summary		replace a situation definition
+//	@Description	replace a situation definition
+//	@Tags			Situations
+//	@Accept			json
+//	@Produce		json
+//	@Param			id			path	string				true	"Situation ID"
+//	@Param			situation	body	situation.Situation	true	"Situation definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	situation.Situation	"situation"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/situations/{id} [put]
 func PutSituation(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idSituation, err := strconv.ParseInt(id, 10, 64)
@@ -304,15 +309,16 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteSituation godoc
-// @Summary Delete a situation definition
-// @Description Delete a situation definition
-// @Tags Situations
-// @Param id path string true "Situation ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/situations/{id} [delete]
+//
+//	@Summary		Delete a situation definition
+//	@Description	Delete a situation definition
+//	@Tags			Situations
+//	@Param			id	path	string	true	"Situation ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/situations/{id} [delete]
 func DeleteSituation(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idSituation, err := strconv.ParseInt(id, 10, 64)

@@ -10,16 +10,17 @@ import (
 )
 
 // NotificationsWSRegister godoc
-// @Summary Register a new client to the notifications system using WS
-// @Description Register a new client to the notifications system using WS
-// @Tags Notifications
-// @Produce json
-// @Param jwt query string false "Json Web Token"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/notifications/ws [get]
+//
+//	@Summary		Register a new client to the notifications system using WS
+//	@Description	Register a new client to the notifications system using WS
+//	@Tags			Notifications
+//	@Produce		json
+//	@Param			jwt	query	string	false	"Json Web Token"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/notifications/ws [get]
 func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 
 	zap.L().Info("New connection on /ws")
@@ -62,16 +63,17 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 // NotificationsSSERegister godoc
-// @Summary Register a new client to the notifications system using SSE
-// @Description Register a new client to the notifications system using SSE
-// @Tags Notifications
-// @Produce json
-// @Param jwt query string false "Json Web Token"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/notifications/sse [get]
+//
+//	@Summary		Register a new client to the notifications system using SSE
+//	@Description	Register a new client to the notifications system using SSE
+//	@Tags			Notifications
+//	@Produce		json
+//	@Param			jwt	query	string	false	"Json Web Token"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/notifications/sse [get]
 func NotificationsSSERegister(w http.ResponseWriter, r *http.Request) {
 
 	zap.L().Info("New connection on /sse")
@@ -121,18 +123,19 @@ func NotificationsSSERegister(w http.ResponseWriter, r *http.Request) {
 }
 
 // TriggerNotification godoc
-// @Summary Send a notification
-// @Description Generate a new NotifyTask with a default message for testing
-// @Tags Notifications
-// @Accept json
-// @Param key query string true "Notifier cache key"
-// @Param notification body interface{} true "Notify task definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/notifications/trigger [post]
+//
+//	@Summary		Send a notification
+//	@Description	Generate a new NotifyTask with a default message for testing
+//	@Tags			Notifications
+//	@Accept			json
+//	@Param			key				query	string		true	"Notifier cache key"
+//	@Param			notification	body	interface{}	true	"Notify task definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/notifications/trigger [post]
 func TriggerNotification(w http.ResponseWriter, r *http.Request) {
 
 	// cacheKey := r.URL.Query().Get("key")

@@ -15,15 +15,16 @@ import (
 )
 
 // GetCalendars godoc
-// @Summary Get all calendars
-// @Description Get all calendars
-// @Tags Calendars
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} calendar.Calendar "list of calendars"
-// @Failure 500 "internal server error"
-// @Router /engine/calendars [get]
+//
+//	@Summary		Get all calendars
+//	@Description	Get all calendars
+//	@Tags			Calendars
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	calendar.Calendar	"list of calendars"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/calendars [get]
 func GetCalendars(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, permissions.All, permissions.ActionList)) {
@@ -51,16 +52,17 @@ func GetCalendars(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetCalendar godoc
-// @Summary Get a Calendar
-// @Description Get an calendar
-// @Tags Calendars
-// @Produce json
-// @Param id path string true "Calendar ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} calendar.Calendar "calendar"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/calendars/{id} [get]
+//
+//	@Summary		Get a Calendar
+//	@Description	Get an calendar
+//	@Tags			Calendars
+//	@Produce		json
+//	@Param			id	path	string	true	"Calendar ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	calendar.Calendar	"calendar"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/calendars/{id} [get]
 func GetCalendar(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idCalendar, err := strconv.ParseInt(id, 10, 64)
@@ -92,16 +94,17 @@ func GetCalendar(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetResolvedCalendar godoc
-// @Summary Get a resolved Calendar
-// @Description Get a resolved Calendar
-// @Tags Calendars
-// @Produce json
-// @Param id path string true "Calendar ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} calendar.Calendar "calendar"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/calendars/resolved/{id} [get]
+//
+//	@Summary		Get a resolved Calendar
+//	@Description	Get a resolved Calendar
+//	@Tags			Calendars
+//	@Produce		json
+//	@Param			id	path	string	true	"Calendar ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	calendar.Calendar	"calendar"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/calendars/resolved/{id} [get]
 func GetResolvedCalendar(w http.ResponseWriter, r *http.Request) {
 	calendar.CBase().Update()
 
@@ -135,17 +138,18 @@ func GetResolvedCalendar(w http.ResponseWriter, r *http.Request) {
 }
 
 // IsInCalendarPeriod godoc
-// @Summary Determines wether a timestamp is within a valid calendar period
-// @Description Determines wether a timestamp is within a valid calendar period
-// @Tags Calendars
-// @Produce json
-// @Param id path string true "Calendar ID"
-// @Param time query string true "Timestamp to be found within a calendar period"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} calendar.InPeriodContains "InPeriodContains"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/calendars/{id}/contains [get]
+//
+//	@Summary		Determines wether a timestamp is within a valid calendar period
+//	@Description	Determines wether a timestamp is within a valid calendar period
+//	@Tags			Calendars
+//	@Produce		json
+//	@Param			id		path	string	true	"Calendar ID"
+//	@Param			time	query	string	true	"Timestamp to be found within a calendar period"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	calendar.InPeriodContains	"InPeriodContains"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/calendars/{id}/contains [get]
 func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
 	calendar.CBase().Update()
 
@@ -186,18 +190,19 @@ func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostCalendar godoc
-// @Summary Creates a Calendar
-// @Description Creates a Calendar
-// @Tags Calendars
-// @Accept json
-// @Produce json
-// @Param calendar body interface{} true "Calendar (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} calendar.Calendar "calendar"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/calendars [post]
+//
+//	@Summary		Creates a Calendar
+//	@Description	Creates a Calendar
+//	@Tags			Calendars
+//	@Accept			json
+//	@Produce		json
+//	@Param			calendar	body	interface{}	true	"Calendar (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	calendar.Calendar	"calendar"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/calendars [post]
 func PostCalendar(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeCalendar, permissions.All, permissions.ActionCreate)) {
@@ -236,19 +241,20 @@ func PostCalendar(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutCalendar godoc
-// @Summary Update a calendar
-// @Description Updates the calendar
-// @Tags Calendars
-// @Accept json
-// @Produce json
-// @Param id path string true "Calendar ID"
-// @Param user body interface{} true "calendar (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} calendar.Calendar "calendar"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /engine/calendars/{id} [put]
+//
+//	@Summary		Update a calendar
+//	@Description	Updates the calendar
+//	@Tags			Calendars
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path	string		true	"Calendar ID"
+//	@Param			user	body	interface{}	true	"calendar (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	calendar.Calendar	"calendar"
+//	@Failure		400	{string}	string				"Bad Request"
+//	@Failure		500	{string}	string				"Internal Server Error"
+//	@Router			/engine/calendars/{id} [put]
 func PutCalendar(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idCalendar, err := strconv.ParseInt(id, 10, 64)
@@ -295,17 +301,18 @@ func PutCalendar(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteCalendar godoc
-// @Summary Delete calendar
-// @Description Delete calendar
-// @Tags Calendars
-// @Produce json
-// @Param id path string true "Calendar ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400	"Status Bad Request"
-// @Failure 500	"Status Internal Server Error"
-// @Router /engine/calendars/{id} [delete]
+//
+//	@Summary		Delete calendar
+//	@Description	Delete calendar
+//	@Tags			Calendars
+//	@Produce		json
+//	@Param			id	path	string	true	"Calendar ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status Internal Server Error"
+//	@Router			/engine/calendars/{id} [delete]
 func DeleteCalendar(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idCalendar, err := strconv.ParseInt(id, 10, 64)

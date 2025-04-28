@@ -16,15 +16,16 @@ import (
 )
 
 // GetRules godoc
-// @Summary Get all rules
-// @Description Get all rules from rules repository
-// @Tags Rules
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} rule.Rule "list of rules"
-// @Failure 500 "internal server error"
-// @Router /engine/rules [get]
+//
+//	@Summary		Get all rules
+//	@Description	Get all rules from rules repository
+//	@Tags			Rules
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	rule.Rule	"list of rules"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/rules [get]
 func GetRules(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionList)) {
@@ -63,16 +64,17 @@ func GetRules(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetRule godoc
-// @Summary Get a rule
-// @Description Get a specific rule by it's ID
-// @Tags Rules
-// @Produce json
-// @Param id path string true "Rule ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} rule.Rule "rule"
-// @Failure 500 "internal server error"
-// @Router /engine/rules/{id} [get]
+//
+//	@Summary		Get a rule
+//	@Description	Get a specific rule by it's ID
+//	@Tags			Rules
+//	@Produce		json
+//	@Param			id	path	string	true	"Rule ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	rule.Rule	"rule"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/rules/{id} [get]
 func GetRule(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idRule, err := strconv.ParseInt(id, 10, 64)
@@ -104,16 +106,17 @@ func GetRule(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetRuleByVersion godoc
-// @Summary Get a rule
-// @Description Get a specific rule by it's ID
-// @Tags Rules
-// @Produce json
-// @Param id path string true "Rule ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} rule.Rule "rule"
-// @Failure 500 "internal server error"
-// @Router /engine/rules/{id}/versions/{versionid} [get]
+//
+//	@Summary		Get a rule
+//	@Description	Get a specific rule by it's ID
+//	@Tags			Rules
+//	@Produce		json
+//	@Param			id	path	string	true	"Rule ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	rule.Rule	"rule"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/rules/{id}/versions/{versionid} [get]
 func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idRule, err := strconv.ParseInt(id, 10, 64)
@@ -153,18 +156,19 @@ func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 // ValidateRule godoc
-// @Summary validate a new rule definition
-// @Description validate a new rule definition
-// @Tags Rules
-// @Accept json
-// @Produce json
-// @Param rule body rule.Rule true "Rule definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} rule.Rule "rule"
-// @Failure 400	"Status Bad Request"
-// @Failure 500	"Status Internal Server Error"
-// @Router /engine/rules/validate [post]
+//
+//	@Summary		validate a new rule definition
+//	@Description	validate a new rule definition
+//	@Tags			Rules
+//	@Accept			json
+//	@Produce		json
+//	@Param			rule	body	rule.Rule	true	"Rule definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	rule.Rule	"rule"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status Internal Server Error"
+//	@Router			/engine/rules/validate [post]
 func ValidateRule(w http.ResponseWriter, r *http.Request) {
 	var newRule rule.Rule
 	err := json.NewDecoder(r.Body).Decode(&newRule)
@@ -184,18 +188,19 @@ func ValidateRule(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostRule godoc
-// @Summary create rule
-// @Description creates new rule
-// @Tags Rules
-// @Accept json
-// @Produce json
-// @Param rule body rule.Rule true "Rule definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} rule.Rule "rule"
-// @Failure 400	"Status Bad Request"
-// @Failure 500	"Status Internal Server Error"
-// @Router /engine/rules [post]
+//
+//	@Summary		create rule
+//	@Description	creates new rule
+//	@Tags			Rules
+//	@Accept			json
+//	@Produce		json
+//	@Param			rule	body	rule.Rule	true	"Rule definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	rule.Rule	"rule"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status Internal Server Error"
+//	@Router			/engine/rules [post]
 func PostRule(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionCreate)) {
@@ -252,19 +257,20 @@ func PostRule(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutRule godoc
-// @Summary Create or remplace a rule definition
-// @Description Create or remplace a rule definition
-// @Tags Rules
-// @Accept json
-// @Produce json
-// @Param id path string true "Rule ID"
-// @Param rule body rule.Rule true "Rule definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} rule.Rule "rule"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/rules/{id} [put]
+//
+//	@Summary		Create or remplace a rule definition
+//	@Description	Create or remplace a rule definition
+//	@Tags			Rules
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path	string		true	"Rule ID"
+//	@Param			rule	body	rule.Rule	true	"Rule definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	rule.Rule	"rule"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/rules/{id} [put]
 func PutRule(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idRule, err := strconv.ParseInt(id, 10, 64)
@@ -318,17 +324,18 @@ func PutRule(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteRule godoc
-// @Summary delete rule
-// @Description delete rule
-// @Tags Rules
-// @Produce json
-// @Param id path string true "Rule ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400	"Status Bad Request"
-// @Failure 500	"Status Internal Server Error"
-// @Router /engine/rules/{id} [delete]
+//
+//	@Summary		delete rule
+//	@Description	delete rule
+//	@Tags			Rules
+//	@Produce		json
+//	@Param			id	path	string	true	"Rule ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status Internal Server Error"
+//	@Router			/engine/rules/{id} [delete]
 func DeleteRule(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idRule, err := strconv.ParseInt(id, 10, 64)

@@ -55,16 +55,17 @@ type CustomExportRequest struct {
 }
 
 // ExportFactStreamed godoc
-// @Summary CSV streamed export facts in chunks
-// @Description CSV Streamed export for facts in chunks
-// @Tags ExportFactStreamed
-// @Produce octet-stream
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Param request body handlers.ExportRequest true "request (json)"
-// @Success 200 {file} Returns data to be saved into a file
-// @Failure 500 "internal server error"
-// @Router /engine/facts/streamedexport [post]
+//
+//	@Summary		CSV streamed export facts in chunks
+//	@Description	CSV Streamed export for facts in chunks
+//	@Tags			ExportFactStreamed
+//	@Produce		octet-stream
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Param			request	body	handlers.ExportRequest	true	"request (json)"
+//	@Success		200		{file}	Returns					data	to	be	saved	into	a	file
+//	@Failure		500		"internal server error"
+//	@Router			/engine/facts/streamedexport [post]
 func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionGet)) {
@@ -206,15 +207,16 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 }
 
 // GetExports godoc
-// @Summary Get user exports
-// @Description Get in memory user exports
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} export.WrapperItem "Returns a list of exports"
-// @Failure 403 "Status Forbidden: missing permission"
-// @Failure 500 "internal server error"
-// @Router /engine/exports [get]
+//
+//	@Summary		Get user exports
+//	@Description	Get in memory user exports
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	export.WrapperItem	"Returns a list of exports"
+//	@Failure		403	"Status Forbidden: missing permission"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/exports [get]
 func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionList)) {
@@ -225,18 +227,19 @@ func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetExport godoc
-// @Summary Get single export from user
-// @Description Get single export from user
-// @Tags Exports
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} export.WrapperItem "Status OK"
-// @Failure 400 "Bad Request: missing export id"
-// @Failure 403 "Status Forbidden: missing permission"
-// @Failure 404 "Status Not Found: export not found"
-// @Failure 500 "internal server error"
-// @Router /engine/exports/{id} [get]
+//
+//	@Summary		Get single export from user
+//	@Description	Get single export from user
+//	@Tags			Exports
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	export.WrapperItem	"Status OK"
+//	@Failure		400	"Bad Request: missing export id"
+//	@Failure		403	"Status Forbidden: missing permission"
+//	@Failure		404	"Status Not Found: export not found"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/exports/{id} [get]
 func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
@@ -260,19 +263,20 @@ func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteExport godoc
-// @Summary Deletes a single export
-// @Description Deletes a single export, when running it is canceled
-// @Tags Exports
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 202 "Status Accepted: export found & cancellation request has been taken into account & will be processed"
-// @Success 204 "Status OK: export was found and deleted"
-// @Failure 400 "Bad Request: missing export id"
-// @Failure 403 "Status Forbidden: missing permission"
-// @Failure 404 "Status Not Found: export not found"
-// @Failure 500 "internal server error"
-// @Router /engine/exports/{id} [delete]
+//
+//	@Summary		Deletes a single export
+//	@Description	Deletes a single export, when running it is canceled
+//	@Tags			Exports
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		202	"Status Accepted: export found & cancellation request has been taken into account & will be processed"
+//	@Success		204	"Status OK: export was found and deleted"
+//	@Failure		400	"Bad Request: missing export id"
+//	@Failure		403	"Status Forbidden: missing permission"
+//	@Failure		404	"Status Not Found: export not found"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/exports/{id} [delete]
 func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
@@ -302,21 +306,22 @@ func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 }
 
 // ExportFact godoc
-// @Summary Creates a new export request for a fact (or multiple facts)
-// @Description Creates a new export request for a fact (or multiple facts)
-// @Tags Exports
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Param request body handlers.ExportRequest true "request (json)"
-// @Success 200 {object} export.WrapperItem "Status OK: user was added to existing export in queue"
-// @Success 201 {object} export.WrapperItem "Status Created: new export was added in queue"
-// @Failure 400 "Bad Request: missing fact id / fact id is not an integer"
-// @Failure 403 "Status Forbidden: missing permission"
-// @Failure 409 {object} export.WrapperItem "Status Conflict: user already exists in export queue"
-// @Failure 429 "Status Too Many Requests: export queue is full"
-// @Failure 500 "internal server error"
-// @Router /engine/exports/fact [post]
+//
+//	@Summary		Creates a new export request for a fact (or multiple facts)
+//	@Description	Creates a new export request for a fact (or multiple facts)
+//	@Tags			Exports
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Param			request	body		handlers.ExportRequest	true	"request (json)"
+//	@Success		200		{object}	export.WrapperItem		"Status OK: user was added to existing export in queue"
+//	@Success		201		{object}	export.WrapperItem		"Status Created: new export was added in queue"
+//	@Failure		400		"Bad Request: missing fact id / fact id is not an integer"
+//	@Failure		403		"Status Forbidden: missing permission"
+//	@Failure		409		{object}	export.WrapperItem	"Status Conflict: user already exists in export queue"
+//	@Failure		429		"Status Too Many Requests: export queue is full"
+//	@Failure		500		"internal server error"
+//	@Router			/engine/exports/fact [post]
 func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionCreate)) {
@@ -389,21 +394,22 @@ func (e *ExportHandler) handleAddToQueueResponse(w http.ResponseWriter, r *http.
 }
 
 // ExportCustom godoc
-// @Summary Creates a new custom export request
-// @Description Creates a new custom export request
-// @Tags Exports
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Param request body handlers.ExportRequest true "request (json)"
-// @Success 200 {object} export.WrapperItem "Status OK: user was added to existing export in queue"
-// @Success 201 {object} export.WrapperItem "Status Created: new export was added in queue"
-// @Failure 400 "Bad Request: missing fact id / fact id is not an integer"
-// @Failure 403 "Status Forbidden: missing permission"
-// @Failure 409 {object} export.WrapperItem "Status Conflict: user already exists in export queue"
-// @Failure 429 "Status Too Many Requests: export queue is full"
-// @Failure 500 "internal server error"
-// @Router /engine/exports/custom [post]
+//
+//	@Summary		Creates a new custom export request
+//	@Description	Creates a new custom export request
+//	@Tags			Exports
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Param			request	body		handlers.ExportRequest	true	"request (json)"
+//	@Success		200		{object}	export.WrapperItem		"Status OK: user was added to existing export in queue"
+//	@Success		201		{object}	export.WrapperItem		"Status Created: new export was added in queue"
+//	@Failure		400		"Bad Request: missing fact id / fact id is not an integer"
+//	@Failure		403		"Status Forbidden: missing permission"
+//	@Failure		409		{object}	export.WrapperItem	"Status Conflict: user already exists in export queue"
+//	@Failure		429		"Status Too Many Requests: export queue is full"
+//	@Failure		500		"internal server error"
+//	@Router			/engine/exports/custom [post]
 func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeExport, permissions.All, permissions.ActionCreate)) {
@@ -477,19 +483,20 @@ func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 }
 
 // DownloadExport godoc
-// @Summary Download export
-// @Description Download export
-// @Tags Exports
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {file} Returns data to be saved into a file
-// @Success 308 Redirects to the export file location
-// @Failure 400 "Bad Request: missing export id"
-// @Failure 403 "Status Forbidden: missing permission"
-// @Failure 404 "Status Not Found: export not found"
-// @Failure 500 "internal server error"
-// @Router /engine/exports/{id}/download [get]
+//
+//	@Summary		Download export
+//	@Description	Download export
+//	@Tags			Exports
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{file}		Returns	data	to		be		saved	into	a	file
+//	@Success		308	Redirects	to		the		export	file	location
+//	@Failure		400	"Bad Request: missing export id"
+//	@Failure		403	"Status Forbidden: missing permission"
+//	@Failure		404	"Status Not Found: export not found"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/exports/{id}/download [get]
 func (e *ExportHandler) DownloadExport(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {

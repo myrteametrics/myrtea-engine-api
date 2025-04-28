@@ -14,15 +14,17 @@ import (
 )
 
 // GetActions godoc
-// @Summary Get all action definitions
-// @Description Get all action definitions
-// @Tags Actions
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} models.Action "list of all actions"
-// @Failure 500 "internal server error"
-// @Router /engine/actions [get]
+//
+//	@Summary		Get all action definiti
+//	@Summary		Get all action definitions
+//	@Description	Get all action definitions
+//	@Tags			Actions
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	models.Action	"list of all actions"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/actions [get]
 func GetActions(w http.ResponseWriter, r *http.Request) {
 	actions, err := action.R().GetAll()
 	if err != nil {
@@ -43,17 +45,18 @@ func GetActions(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, actionsSlice)
 }
 
+t a action definit
 // GetAction godoc
-// @Summary Get a action definition
-// @Description Get a action definition
-// @Tags Actions
-// @Produce json
-// @Param id path string true "Action ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Action "action"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/actions/{id} [get]
+//	@Summary		Get a action definition
+//	@Description	Get a action definition
+//	@Tags			Actions
+//	@Produce		json
+//	@Param			id	path	string	true	"Action ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.Action	"action"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/actions/{id} [get]
 func GetAction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idAction, err := strconv.ParseInt(id, 10, 64)
@@ -78,19 +81,21 @@ func GetAction(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, a)
 }
 
+w action definition
+//	
 // ValidateAction godoc
-// @Summary Validate a new action definition
-// @Description Validate a new action definition
-// @Tags Actions
-// @Accept json
-// @Produce json
-// @Param action body models.Action true "Action definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Action "action"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/actions/validate [post]
+//	@Summary		Validate a new action definition
+//	@Description	Validate a new action definition
+//	@Tags			Actions
+//	@Accept			json
+//	@Produce		json
+//	@Param			action	body	models.Action	true	"Action definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.Action	"action"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/actions/validate [post]
 func ValidateAction(w http.ResponseWriter, r *http.Request) {
 
 	var newAction models.Action
@@ -110,19 +115,20 @@ func ValidateAction(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, newAction)
 }
 
+
 // PostAction godoc
-// @Summary Create a new action definition
-// @Description Create a new action definition
-// @Tags Actions
-// @Accept json
-// @Produce json
-// @Param action body models.Action true "Action definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Action "action"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/actions [post]
+//	@Summary		Create a new action definition
+//	@Description	Create a new action definition
+//	@Tags			Actions
+//	@Accept			json
+//	@Produce		json
+//	@Param			action	body	models.Action	true	"Action definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.Action	"action"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/actions [post]
 func PostAction(w http.ResponseWriter, r *http.Request) {
 
 	var newAction models.Action
@@ -161,20 +167,21 @@ func PostAction(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, newActionGet)
 }
 
+
 // PutAction godoc
-// @Summary Create or remplace a action definition
-// @Description Create or remplace a action definition
-// @Tags Actions
-// @Accept json
-// @Produce json
-// @Param id path string true "Action ID"
-// @Param action body models.Action true "Action definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.Action "action"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/actions/{id} [put]
+//	@Summary		Create or remplace a action definition
+//	@Description	Create or remplace a action definition
+//	@Tags			Actions
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path	string			true	"Action ID"
+//	@Param			action	body	models.Action	true	"Action definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.Action	"action"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/actions/{id} [put]
 func PutAction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idAction, err := strconv.ParseInt(id, 10, 64)
@@ -221,17 +228,18 @@ func PutAction(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, newActionGet)
 }
 
+
 // DeleteAction godoc
-// @Summary Delete a action definition
-// @Description Delete a action definition
-// @Tags Actions
-// @Produce json
-// @Param id path string true "Action ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/actions/{id} [delete]
+//	@Summary		Delete a action definition
+//	@Description	Delete a action definition
+//	@Tags			Actions
+//	@Produce		json
+//	@Param			id	path	string	true	"Action ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/actions/{id} [delete]
 func DeleteAction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idAction, err := strconv.ParseInt(id, 10, 64)

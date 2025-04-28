@@ -17,17 +17,18 @@ import (
 )
 
 // GetSituationEvaluation godoc
-// @Summary Get the last evaluation of a situation
-// @Description Get the last evaluation of a situation
-// @Tags Situations
-// @Produce json
-// @Param id path string true "Situation ID"
-// @Param instanceid path string true "Situation Template Instance ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/situations/{id}/evaluation/{instanceid} [get]
+//
+//	@Summary		Get the last evaluation of a situation
+//	@Description	Get the last evaluation of a situation
+//	@Tags			Situations
+//	@Produce		json
+//	@Param			id			path	string	true	"Situation ID"
+//	@Param			instanceid	path	string	true	"Situation Template Instance ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/situations/{id}/evaluation/{instanceid} [get]
 func GetSituationEvaluation(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Fixme or remove handler to get one specific situation evaluation (is it even usefull ?)
@@ -61,17 +62,18 @@ func GetSituationEvaluation(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSituationFacts godoc
-// @Summary Get the list of facts for the evaluation of a situation
-// @Description Get the list of facts for the evaluation of a situation
-// @Tags Situations
-// @Produce json
-// @Param id path string true "Situation ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Failure 401 "Status Unauthorized"
-// @Router /engine/situations/{id}/facts [get]
+//
+//	@Summary		Get the list of facts for the evaluation of a situation
+//	@Description	Get the list of facts for the evaluation of a situation
+//	@Tags			Situations
+//	@Produce		json
+//	@Param			id	path	string	true	"Situation ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		401	"Status Unauthorized"
+//	@Router			/engine/situations/{id}/facts [get]
 func GetSituationFacts(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idSituation, err := strconv.ParseInt(id, 10, 64)
@@ -124,17 +126,18 @@ func GetSituationFacts(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSituationRules godoc
-// @Summary Get the list of rules for the evaluation of a situation
-// @Description Get the list of rules for the evaluation of a situation
-// @Tags Situations
-// @Produce json
-// @Param id path string true "Situation ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} rule.Rule
-// @Failure 400 "Status Bad Request"
-// @Failure 401 "Status Unauthorized"
-// @Router /engine/situations/{id}/rules [get]
+//
+//	@Summary		Get the list of rules for the evaluation of a situation
+//	@Description	Get the list of rules for the evaluation of a situation
+//	@Tags			Situations
+//	@Produce		json
+//	@Param			id	path	string	true	"Situation ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	rule.Rule
+//	@Failure		400	"Status Bad Request"
+//	@Failure		401	"Status Unauthorized"
+//	@Router			/engine/situations/{id}/rules [get]
 func GetSituationRules(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idSituation, err := strconv.ParseInt(id, 10, 64)
@@ -188,17 +191,18 @@ func GetSituationRules(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetSituationRules godoc
-// @Summary Set the list of rules for the evaluation of a situation
-// @Description Set the list of rules for the evaluation of a situation
-// @Tags Situations
-// @Param id path string true "Situation ID"
-// @Param ruleIds body []int64 true "Situation Rules"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Failure 401 "Status Unauthorized"
-// @Router /engine/situations/{id}/rules [put]
+//
+//	@Summary		Set the list of rules for the evaluation of a situation
+//	@Description	Set the list of rules for the evaluation of a situation
+//	@Tags			Situations
+//	@Param			id		path	string	true	"Situation ID"
+//	@Param			ruleIds	body	[]int64	true	"Situation Rules"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		401	"Status Unauthorized"
+//	@Router			/engine/situations/{id}/rules [put]
 func SetSituationRules(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idSituation, err := strconv.ParseInt(id, 10, 64)
@@ -242,19 +246,20 @@ func SetSituationRules(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostSituationTemplateInstance godoc
-// @Summary Creates a situation template instance
-// @Description Creates a situation template instance
-// @Tags Situations
-// @Accept json
-// @Produce json
-// @Param id path string true "Situation ID"
-// @Param templateInstance body situation.TemplateInstance true "Situation template instance (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} situation.TemplateInstance "situation template instance"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/situations/{id}/instances [post]
+//
+//	@Summary		Creates a situation template instance
+//	@Description	Creates a situation template instance
+//	@Tags			Situations
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path	string						true	"Situation ID"
+//	@Param			templateInstance	body	situation.TemplateInstance	true	"Situation template instance (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	situation.TemplateInstance	"situation template instance"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/situations/{id}/instances [post]
 func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idSituation, err := strconv.ParseInt(id, 10, 64)
@@ -321,18 +326,19 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 // ValidateSituationTemplateInstance godoc
-// @Summary Validate a new situation template instance definition
-// @Description Validate a new  situation template instance definition
-// @Tags Situations
-// @Accept json
-// @Produce json
-// @Param templateInstance body situation.TemplateInstance true "Situation template instance (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} situation.TemplateInstance "Situation template instance"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/situations/{id}/instances/validate [post]
+//
+//	@Summary		Validate a new situation template instance definition
+//	@Description	Validate a new  situation template instance definition
+//	@Tags			Situations
+//	@Accept			json
+//	@Produce		json
+//	@Param			templateInstance	body	situation.TemplateInstance	true	"Situation template instance (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	situation.TemplateInstance	"Situation template instance"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/situations/{id}/instances/validate [post]
 func ValidateSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	var newInstance situation.TemplateInstance
 	err := json.NewDecoder(r.Body).Decode(&newInstance)
@@ -352,20 +358,21 @@ func ValidateSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutSituationTemplateInstance godoc
-// @Summary replace a situation template instance
-// @Description replace a situation template instance
-// @Tags Situations
-// @Accept json
-// @Produce json
-// @Param id path string true "Situation ID"
-// @Param instanceid path string true "Situation Template Instance ID"
-// @Param templateInstance body situation.TemplateInstance true "Situation template instance (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} situation.TemplateInstance "situation template instance"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/situations/{id}/instances/{instanceid} [put]
+//
+//	@Summary		replace a situation template instance
+//	@Description	replace a situation template instance
+//	@Tags			Situations
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path	string						true	"Situation ID"
+//	@Param			instanceid			path	string						true	"Situation Template Instance ID"
+//	@Param			templateInstance	body	situation.TemplateInstance	true	"Situation template instance (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	situation.TemplateInstance	"situation template instance"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/situations/{id}/instances/{instanceid} [put]
 func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idSituation, err := strconv.ParseInt(id, 10, 64)
@@ -440,19 +447,20 @@ func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutSituationTemplateInstances godoc
-// @Summary set the template instances of the situation
-// @Description set the template instances of the situation
-// @Tags Situations
-// @Accept json
-// @Produce json
-// @Param id path string true "Situation ID"
-// @Param templateInstances body []situation.TemplateInstance true "Situation template instance list (json array)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/situations/{id}/instances [put]
+//
+//	@Summary		set the template instances of the situation
+//	@Description	set the template instances of the situation
+//	@Tags			Situations
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path	string							true	"Situation ID"
+//	@Param			templateInstances	body	[]situation.TemplateInstance	true	"Situation template instance list (json array)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/situations/{id}/instances [put]
 func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idSituation, err := strconv.ParseInt(id, 10, 64)
@@ -549,16 +557,17 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteSituationTemplateInstance godoc
-// @Summary Delete a situation template instance
-// @Description Delete a situation template instance
-// @Tags Situations
-// @Param id path string true "Situation ID"
-// @Param instanceid path string true "Situation Template Instance ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/situations/{id}/instances/{instanceid} [delete]
+//
+//	@Summary		Delete a situation template instance
+//	@Description	Delete a situation template instance
+//	@Tags			Situations
+//	@Param			id			path	string	true	"Situation ID"
+//	@Param			instanceid	path	string	true	"Situation Template Instance ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/situations/{id}/instances/{instanceid} [delete]
 func DeleteSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idSituation, err := strconv.ParseInt(id, 10, 64)
@@ -603,17 +612,18 @@ func DeleteSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSituationTemplateInstances godoc
-// @Summary Get the list of situation template instances
-// @Description Get the list of situation template instances
-// @Tags Situations
-// @Produce json
-// @Param id path string true "Situation ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} situation.TemplateInstance
-// @Failure 400 "Status Bad Request"
-// @Failure 401 "Status Unauthorized"
-// @Router /engine/situations/{id}/instances [get]
+//
+//	@Summary		Get the list of situation template instances
+//	@Description	Get the list of situation template instances
+//	@Tags			Situations
+//	@Produce		json
+//	@Param			id	path	string	true	"Situation ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	situation.TemplateInstance
+//	@Failure		400	"Status Bad Request"
+//	@Failure		401	"Status Unauthorized"
+//	@Router			/engine/situations/{id}/instances [get]
 func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idSituation, err := strconv.ParseInt(id, 10, 64)
@@ -658,17 +668,18 @@ func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSituationTemplateInstancesUnprotected godoc
-// @Summary Get the list of situation template instances
-// @Description Get the list of situation template instances
-// @Tags Situations
-// @Produce json
-// @Param id path string true "Situation ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} situation.TemplateInstance
-// @Failure 400 "Status Bad Request"
-// @Failure 401 "Status Unauthorized"
-// @Router /engine/situations/{id}/instances/unprotected [get]
+//
+//	@Summary		Get the list of situation template instances
+//	@Description	Get the list of situation template instances
+//	@Tags			Situations
+//	@Produce		json
+//	@Param			id	path	string	true	"Situation ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	situation.TemplateInstance
+//	@Failure		400	"Status Bad Request"
+//	@Failure		401	"Status Unauthorized"
+//	@Router			/engine/situations/{id}/instances/unprotected [get]
 func GetSituationTemplateInstancesUnprotected(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idSituation, err := strconv.ParseInt(id, 10, 64)

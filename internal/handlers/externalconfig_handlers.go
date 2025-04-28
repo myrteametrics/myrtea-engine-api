@@ -18,15 +18,16 @@ import (
 )
 
 // GetExternalConfigs godoc
-// @Summary Get all externalConfig definitions
-// @Description Get all externalConfig definitions
-// @Tags ExternalConfigs
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {array} models.ExternalConfig "list of all externalConfigs"
-// @Failure 500 "internal server error"
-// @Router /engine/externalconfigs [get]
+//
+//	@Summary		Get all externalConfig definitions
+//	@Description	Get all externalConfig definitions
+//	@Tags			ExternalConfigs
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	models.ExternalConfig	"list of all externalConfigs"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/externalconfigs [get]
 func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -55,16 +56,17 @@ func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetExternalConfig godoc
-// @Summary Get an externalConfig definition
-// @Description Get an externalConfig definition
-// @Tags ExternalConfigs
-// @Produce json
-// @Param id path string true "ExternalConfig ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.ExternalConfig "externalConfig"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/externalconfigs/{id} [get]
+//
+//	@Summary		Get an externalConfig definition
+//	@Description	Get an externalConfig definition
+//	@Tags			ExternalConfigs
+//	@Produce		json
+//	@Param			id	path	string	true	"ExternalConfig ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.ExternalConfig	"externalConfig"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/externalconfigs/{id} [get]
 func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 	id := chi.URLParam(r, "id")
@@ -93,16 +95,17 @@ func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetExternalConfigByName godoc
-// @Summary Get an externalConfig definition
-// @Description Get an externalConfig definition
-// @Tags ExternalConfigs
-// @Produce json
-// @Param name path string true "ExternalConfig Name (escaped html accepted)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.ExternalConfig "externalConfig"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/externalconfigs/name/{name} [get]
+//
+//	@Summary		Get an externalConfig definition
+//	@Description	Get an externalConfig definition
+//	@Tags			ExternalConfigs
+//	@Produce		json
+//	@Param			name	path	string	true	"ExternalConfig Name (escaped html accepted)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.ExternalConfig	"externalConfig"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/externalconfigs/name/{name} [get]
 func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
 
 	escapedName := chi.URLParam(r, "name")
@@ -130,18 +133,19 @@ func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostExternalConfig godoc
-// @Summary Create a new externalConfig definition
-// @Description Create a new externalConfig definition
-// @Tags ExternalConfigs
-// @Accept json
-// @Produce json
-// @Param externalConfig body models.ExternalConfig true "ExternalConfig definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.ExternalConfig "externalConfig"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/externalconfigs [post]
+//
+//	@Summary		Create a new externalConfig definition
+//	@Description	Create a new externalConfig definition
+//	@Tags			ExternalConfigs
+//	@Accept			json
+//	@Produce		json
+//	@Param			externalConfig	body	models.ExternalConfig	true	"ExternalConfig definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.ExternalConfig	"externalConfig"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/externalconfigs [post]
 func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -181,19 +185,20 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutExternalConfig godoc
-// @Summary Create or remplace an externalConfig definition
-// @Description Create or remplace an externalConfig definition
-// @Tags ExternalConfigs
-// @Accept json
-// @Produce json
-// @Param name path string true "ExternalConfig ID"
-// @Param externalConfig body models.ExternalConfig true "ExternalConfig definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {object} models.ExternalConfig "externalConfig"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/externalconfigs/{name} [put]
+//
+//	@Summary		Create or remplace an externalConfig definition
+//	@Description	Create or remplace an externalConfig definition
+//	@Tags			ExternalConfigs
+//	@Accept			json
+//	@Produce		json
+//	@Param			name			path	string					true	"ExternalConfig ID"
+//	@Param			externalConfig	body	models.ExternalConfig	true	"ExternalConfig definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	models.ExternalConfig	"externalConfig"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/externalconfigs/{name} [put]
 func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -243,16 +248,17 @@ func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteExternalConfig godoc
-// @Summary Delete an externalConfig definition
-// @Description Delete an externalConfig definition
-// @Tags ExternalConfigs
-// @Produce json
-// @Param name path string true "ExternalConfig ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/externalconfigs/{name} [delete]
+//
+//	@Summary		Delete an externalConfig definition
+//	@Description	Delete an externalConfig definition
+//	@Tags			ExternalConfigs
+//	@Produce		json
+//	@Param			name	path	string	true	"ExternalConfig ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/externalconfigs/{name} [delete]
 func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -282,17 +288,18 @@ func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetAllOldVersions godoc
-// @Summary Get all old versions of a specific externalConfig
-// @Description Get all old versions of a specific externalConfig by id
-// @Tags ExternalConfigs
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Param id path int true "ExternalConfig ID"
-// @Success 200 {array} models.ExternalConfig "list of all old versions of the externalConfig"
-// @Failure 400 "bad request"
-// @Failure 500 "internal server error"
-// @Router /engine/externalconfigs/{id}/alloldversions [get]
+//
+//	@Summary		Get all old versions of a specific externalConfig
+//	@Description	Get all old versions of a specific externalConfig by id
+//	@Tags			ExternalConfigs
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Param			id	path	int						true	"ExternalConfig ID"
+//	@Success		200	{array}	models.ExternalConfig	"list of all old versions of the externalConfig"
+//	@Failure		400	"bad request"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/externalconfigs/{id}/alloldversions [get]
 func GetAllOldVersions(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)

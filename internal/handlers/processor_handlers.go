@@ -25,16 +25,17 @@ func NewProcessorHandler() *ProcessorHandler {
 }
 
 // PostObjects godoc
-// @Summary Receive objects to be evaluated
-// @Description Receive objects to be evaluated
-// @Tags Service
-// @Produce json
-// @Param fact query string true "Fact object name"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 500 "internal server error"
-// @Router /service/objects [post]
+//
+//	@Summary		Receive objects to be evaluated
+//	@Description	Receive objects to be evaluated
+//	@Tags			Service
+//	@Produce		json
+//	@Param			fact	query	string	true	"Fact object name"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		500	"internal server error"
+//	@Router			/service/objects [post]
 func PostObjects(w http.ResponseWriter, r *http.Request) {
 	//TODO: What to do from groups ?
 	//groups := GetUserGroupsFromContext(r)
@@ -64,18 +65,19 @@ func PostObjects(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostAggregates godoc
-// @Summary Receive ingester to be evaluated
-// @Description Receive ingester to be evaluated
-// @Tags Service
-// @Consume json
-// @Produce json
-// @Param query body []scheduler.ExternalAggregate true "query (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 429 "Processing queue is full please retry later"
-// @Failure 500 "internal server error"
-// @Router /service/aggregates [post]
+//
+//	@Summary		Receive ingester to be evaluated
+//	@Description	Receive ingester to be evaluated
+//	@Tags			Service
+//	@Consume		json
+//	@Produce		json
+//	@Param			query	body	[]scheduler.ExternalAggregate	true	"query (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		429	"Processing queue is full please retry later"
+//	@Failure		500	"internal server error"
+//	@Router			/service/aggregates [post]
 func (handler *ProcessorHandler) PostAggregates(w http.ResponseWriter, r *http.Request) {
 	var aggregates []scheduler.ExternalAggregate
 	err := json.NewDecoder(r.Body).Decode(&aggregates)

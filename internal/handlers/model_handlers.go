@@ -17,15 +17,16 @@ import (
 )
 
 // GetModels godoc
-// @Summary Get all model definitions
-// @Description Get all model definitions
-// @Tags Models
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 500 "internal server error"
-// @Router /engine/models [get]
+//
+//	@Summary		Get all model definitions
+//	@Description	Get all model definitions
+//	@Tags			Models
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/models [get]
 func GetModels(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeModel, permissions.All, permissions.ActionList)) {
@@ -60,17 +61,18 @@ func GetModels(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetModel godoc
-// @Summary Get a model definition
-// @Description Get a model definition
-// @Tags Models
-// @Produce json
-// @Param id path string true "Model ID"
-// @Param byName query string false "Find model by it's name"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/models/{id} [get]
+//
+//	@Summary		Get a model definition
+//	@Description	Get a model definition
+//	@Tags			Models
+//	@Produce		json
+//	@Param			id		path	string	true	"Model ID"
+//	@Param			byName	query	string	false	"Find model by it's name"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/models/{id} [get]
 func GetModel(w http.ResponseWriter, r *http.Request) {
 	byName := false
 	_byName := r.URL.Query().Get("byName")
@@ -126,18 +128,19 @@ func GetModel(w http.ResponseWriter, r *http.Request) {
 }
 
 // ValidateModel godoc
-// @Summary Validate a new model definition
-// @Description Validate a new model definition
-// @Tags Models
-// @Accept json
-// @Produce json
-// @Param model body interface{} true "Model definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/models/validate [post]
+//
+//	@Summary		Validate a new model definition
+//	@Description	Validate a new model definition
+//	@Tags			Models
+//	@Accept			json
+//	@Produce		json
+//	@Param			model	body	interface{}	true	"Model definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/models/validate [post]
 func ValidateModel(w http.ResponseWriter, r *http.Request) {
 	var newModel modeler.Model
 	err := json.NewDecoder(r.Body).Decode(&newModel)
@@ -157,18 +160,19 @@ func ValidateModel(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostModel godoc
-// @Summary Create a new model definition
-// @Description Create a new model definition
-// @Tags Models
-// @Accept json
-// @Produce json
-// @Param model body interface{} true "Model definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/models [post]
+//
+//	@Summary		Create a new model definition
+//	@Description	Create a new model definition
+//	@Tags			Models
+//	@Accept			json
+//	@Produce		json
+//	@Param			model	body	interface{}	true	"Model definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/models [post]
 func PostModel(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeModel, permissions.All, permissions.ActionCreate)) {
@@ -217,19 +221,20 @@ func PostModel(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutModel godoc
-// @Summary Create or remplace a model definition
-// @Description Create or remplace a model definition
-// @Tags Models
-// @Accept json
-// @Produce json
-// @Param id path string true "Model ID"
-// @Param model body interface{} true "Model definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/models/{id} [put]
+//
+//	@Summary		Create or remplace a model definition
+//	@Description	Create or remplace a model definition
+//	@Tags			Models
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path	string		true	"Model ID"
+//	@Param			model	body	interface{}	true	"Model definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/models/{id} [put]
 func PutModel(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idModel, err := strconv.ParseInt(id, 10, 64)
@@ -283,16 +288,17 @@ func PutModel(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteModel godoc
-// @Summary Delete a model definition
-// @Description Delete a model definition
-// @Tags Models
-// @Produce json
-// @Param id path string true "Model ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/models/{id} [delete]
+//
+//	@Summary		Delete a model definition
+//	@Description	Delete a model definition
+//	@Tags			Models
+//	@Produce		json
+//	@Param			id	path	string	true	"Model ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/models/{id} [delete]
 func DeleteModel(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idModel, err := strconv.ParseInt(id, 10, 64)

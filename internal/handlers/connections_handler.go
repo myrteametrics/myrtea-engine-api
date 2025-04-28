@@ -9,21 +9,22 @@ import (
 	"go.uber.org/zap"
 )
 
-// GetlastConnectorExecutionDateTime godoc
-// @Summary Get the DateTime of the last connections readings
-// @Description Gets the DateTime of the last connections readings.
-// @Tags Admin
-// @Produce json
-// @Param id path string true "Connector ID"
-// @Param successOnly query string false "true to ignore failed connector executions"
-// @Param maxage query string false "maximum age of data (duration)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 {string} string "Status OK"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /engine/connector/{id}/executions/last [get]
-func GetlastConnectorExecutionDateTime(w http.ResponseWriter, r *http.Request) {
+// GetLastConnectorExecutionDateTime godoc
+//
+//	@Summary		Get the DateTime of the last connections readings
+//	@Description	Gets the DateTime of the last connections readings.
+//	@Tags			Admin
+//	@Produce		json
+//	@Param			id			path	string	true	"Connector ID"
+//	@Param			successOnly	query	string	false	"true to ignore failed connector executions"
+//	@Param			maxage		query	string	false	"maximum age of data (duration)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{string}	string	"Status OK"
+//	@Failure		400	{string}	string	"Bad Request"
+//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Router			/engine/connector/{id}/executions/last [get]
+func GetLastConnectorExecutionDateTime(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	successOnly, err := QueryParamToOptionalBool(r, "successOnly", false)
