@@ -1,11 +1,11 @@
 package roles
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 )
 

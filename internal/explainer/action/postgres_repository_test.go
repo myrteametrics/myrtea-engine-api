@@ -1,13 +1,13 @@
 package action
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/rootcause"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 )
 

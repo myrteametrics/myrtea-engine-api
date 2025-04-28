@@ -216,7 +216,7 @@ func ParseSortBy(rawSortByStr string, allowedFields []string) ([]models.SortOpti
 // GetUserFromContext extract the logged user from the request context
 func GetUserFromContext(r *http.Request) (users.UserWithPermissions, bool) {
 	c := r.Context()
-	_user := c.Value(models.ContextKeyUser)
+	_user := c.Value(httputil.ContextKeyUser)
 	if _user == nil {
 		zap.L().Warn("No context user provided")
 		return users.UserWithPermissions{}, false

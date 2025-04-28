@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"strconv"
@@ -12,7 +13,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 	"go.uber.org/zap"
 )

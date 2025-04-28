@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/go-chi/chi/v5"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	roles2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 
 	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"go.uber.org/zap"
 )
 

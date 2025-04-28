@@ -9,7 +9,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 )
 
 const table = "variables_config_v1"
@@ -56,14 +55,14 @@ func (r *PostgresRepository) checkRowsAffected(res sql.Result, nbRows int64) err
 }
 
 // Get use to retrieve an variableConfig by id
-func (r *PostgresRepository) Get(id int64) (models.VariablesConfig, bool, error) {
+func (r *PostgresRepository) Get(id int64) (VariablesConfig, bool, error) {
 	rows, err := r.newStatement().
 		Select("key", "value").
 		From(table).
 		Where(sq.Eq{"id": id}).
 		Query()
 	if err != nil {
-		return models.VariablesConfig{}, false, err
+		return VariablesConfig{}, false, err
 	}
 	defer rows.Close()
 
@@ -71,13 +70,13 @@ func (r *PostgresRepository) Get(id int64) (models.VariablesConfig, bool, error)
 	if rows.Next() {
 		err := rows.Scan(&key, &value)
 		if err != nil {
-			return models.VariablesConfig{}, false, fmt.Errorf("couldn't scan the action with id %d: %s", id, err.Error())
+			return VariablesConfig{}, false, fmt.Errorf("couldn't scan the action with id %d: %s", id, err.Error())
 		}
 	} else {
-		return models.VariablesConfig{}, false, nil
+		return VariablesConfig{}, false, nil
 	}
 
-	return models.VariablesConfig{
+	return VariablesConfig{
 		Id:    id,
 		Key:   key,
 		Value: value,
@@ -85,14 +84,14 @@ func (r *PostgresRepository) Get(id int64) (models.VariablesConfig, bool, error)
 }
 
 // GetByName use to retrieve an variableConfig by name
-func (r *PostgresRepository) GetByKey(key string) (models.VariablesConfig, bool, error) {
+func (r *PostgresRepository) GetByKey(key string) (VariablesConfig, bool, error) {
 	rows, err := r.newStatement().
 		Select("id", "value").
 		From(table).
 		Where(sq.Eq{"key": key}).
 		Query()
 	if err != nil {
-		return models.VariablesConfig{}, false, err
+		return VariablesConfig{}, false, err
 	}
 	defer rows.Close()
 
@@ -101,13 +100,13 @@ func (r *PostgresRepository) GetByKey(key string) (models.VariablesConfig, bool,
 	if rows.Next() {
 		err := rows.Scan(&id, &value)
 		if err != nil {
-			return models.VariablesConfig{}, false, fmt.Errorf("couldn't scan the action with name %s: %s", key, err.Error())
+			return VariablesConfig{}, false, fmt.Errorf("couldn't scan the action with name %s: %s", key, err.Error())
 		}
 	} else {
-		return models.VariablesConfig{}, false, nil
+		return VariablesConfig{}, false, nil
 	}
 
-	return models.VariablesConfig{
+	return VariablesConfig{
 		Id:    id,
 		Key:   key,
 		Value: value,
@@ -115,7 +114,7 @@ func (r *PostgresRepository) GetByKey(key string) (models.VariablesConfig, bool,
 }
 
 // Create method used to create an Variable Config
-func (r *PostgresRepository) Create(variable models.VariablesConfig) (int64, error) {
+func (r *PostgresRepository) Create(variable VariablesConfig) (int64, error) {
 	var id int64
 	err := r.newStatement().
 		Insert(table).
@@ -134,7 +133,7 @@ func (r *PostgresRepository) Create(variable models.VariablesConfig) (int64, err
 }
 
 // Update method used to update un Variable Config
-func (r *PostgresRepository) Update(id int64, variable models.VariablesConfig) error {
+func (r *PostgresRepository) Update(id int64, variable VariablesConfig) error {
 	res, err := r.newStatement().
 		Update(table).
 		Set("key", variable.Key).
@@ -190,8 +189,8 @@ func (r *PostgresRepository) Delete(id int64) error {
 }
 
 // GetAll method used to get all Variables Config
-func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
-	variablesConfig := make([]models.VariablesConfig, 0)
+func (r *PostgresRepository) GetAll() ([]VariablesConfig, error) {
+	variablesConfig := make([]VariablesConfig, 0)
 
 	rows, err := r.newStatement().
 		Select("id", "key", "value").
@@ -212,7 +211,7 @@ func (r *PostgresRepository) GetAll() ([]models.VariablesConfig, error) {
 			return nil, err
 		}
 
-		variable := models.VariablesConfig{
+		variable := VariablesConfig{
 			Id:    id,
 			Key:   key,
 			Value: value,

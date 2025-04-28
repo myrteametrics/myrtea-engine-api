@@ -3,14 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/variablesconfig"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/variablesconfig"
 	"go.uber.org/zap"
 )
 
@@ -22,7 +21,7 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	models.VariablesConfig	"list of all Variables with it's config"
+//	@Success		200	{array}	variablesconfig.VariablesConfig	"list of all Variables with it's config"
 //	@Failure		500	"internal server error"
 //	@Router			/engine/variablesconfig [get]
 func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +51,7 @@ func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path	string	true	"Variable Config ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	models.VariablesConfig	"One Variable Config getted by id"
+//	@Success		200	{object}	variablesconfig.VariablesConfig	"One Variable Config getted by id"
 //	@Failure		400	"Status Bad Request"
 //	@Router			/engine/variablesconfig/{id} [get]
 func GetVariableConfig(w http.ResponseWriter, r *http.Request) {
@@ -97,7 +96,7 @@ func GetVariableConfig(w http.ResponseWriter, r *http.Request) {
 //	@Param			key	path	string	true	"Variable Config key"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	models.VariablesConfig	" One Variable Config getted by key"
+//	@Success		200	{object}	variablesconfig.VariablesConfig	" One Variable Config getted by key"
 //	@Failure		400	"Status Bad Request"
 //	@Router			/engine/variablesconfig/key/{key} [get]
 func GetVariableConfigByKey(w http.ResponseWriter, r *http.Request) {
@@ -133,10 +132,10 @@ func GetVariableConfigByKey(w http.ResponseWriter, r *http.Request) {
 //	@Tags			VariablesConfig
 //	@Accept			json
 //	@Produce		json
-//	@Param			VariableConfig	body	models.VariablesConfig	true	"VariableConfig definition (json)"
+//	@Param			VariableConfig	body	variablesconfig.VariablesConfig	true	"VariableConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	models.VariablesConfig	"Ppost VariableConfig"
+//	@Success		200	{object}	variablesconfig.VariablesConfig	"Ppost VariableConfig"
 //	@Failure		400	"Status Bad Request"
 //	@Failure		500	"Status"	internal	server	error"
 //	@Router			/engine/variablesconfig [post]
@@ -148,7 +147,7 @@ func PostVariableConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newVariableConfig models.VariablesConfig
+	var newVariableConfig variablesconfig.VariablesConfig
 	err := json.NewDecoder(r.Body).Decode(&newVariableConfig)
 	if err != nil {
 		zap.L().Warn("Variable Config json decoding", zap.Error(err))
@@ -186,10 +185,10 @@ func PostVariableConfig(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id				path	string					true	"VariableConfig ID"
-//	@Param			VariableConfig	body	models.VariablesConfig	true	"VariableConfig definition (json)"
+//	@Param			VariableConfig	body	variablesconfig.VariablesConfig	true	"VariableConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	models.VariablesConfig	"VariableConfig"
+//	@Success		200	{object}	variablesconfig.VariablesConfig	"VariableConfig"
 //	@Failure		400	"Status Bad Request"
 //	@Failure		500	"Status"	internal	server	error"
 //	@Router			/engine/variablesconfig/{id} [put]
@@ -210,7 +209,7 @@ func PutVariableConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newVariableConfig models.VariablesConfig
+	var newVariableConfig variablesconfig.VariablesConfig
 	err = json.NewDecoder(r.Body).Decode(&newVariableConfig)
 	if err != nil {
 		zap.L().Warn("VariableConfig json decoding", zap.Error(err))

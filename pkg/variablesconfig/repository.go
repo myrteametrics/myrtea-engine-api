@@ -2,20 +2,18 @@ package variablesconfig
 
 import (
 	"sync"
-
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows standard CRUD operation on VariablesConfig
 type Repository interface {
-	Get(id int64) (models.VariablesConfig, bool, error)
-	GetByKey(key string) (models.VariablesConfig, bool, error)
-	Create(variable models.VariablesConfig) (int64, error)
-	Update(id int64, variable models.VariablesConfig) error
+	Get(id int64) (VariablesConfig, bool, error)
+	GetByKey(key string) (VariablesConfig, bool, error)
+	Create(variable VariablesConfig) (int64, error)
+	Update(id int64, variable VariablesConfig) error
 	Delete(id int64) error
-	GetAll() ([]models.VariablesConfig, error)
+	GetAll() ([]VariablesConfig, error)
 	GetAllAsMap() (map[string]interface{}, error)
 }
 

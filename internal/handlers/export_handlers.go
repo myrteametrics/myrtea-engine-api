@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/spf13/viper"
 	"net/http"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"go.uber.org/zap"
 )
 
@@ -234,6 +234,7 @@ func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
+//	@Param			id	path	string	true	"Export ID"
 //	@Success		200	{object}	export.WrapperItem	"Status OK"
 //	@Failure		400	{object} render.APIError "Bad Request: missing export id"
 //	@Failure		403	{object} render.APIError "Status Forbidden: missing permission"
@@ -270,8 +271,9 @@ func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		202	{string} "Status Accepted: export found & cancellation request has been taken into account & will be processed"
-//	@Success		204	{string} "Status OK: export was found and deleted"
+//	@Param			id	path	string	true	"Export ID"
+//	@Success		202	{string}	string					"Status Accepted: export found, cancellation request has been taken into account and will be processed"
+//	@Success		204	{string} string "Status OK: export was found and deleted"
 //	@Failure		400	{object} render.APIError "Bad Request: missing export id"
 //	@Failure		403	{object} render.APIError "Status Forbidden: missing permission"
 //	@Failure		404	{object} render.APIError "Status Not Found: export not found"
@@ -490,6 +492,7 @@ func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 //	@Produce		octet-stream
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
+//	@Param			id	path	string	true	"Export ID"
 //	@Success		200	{file}		result					file
 //	@Success		308	{object} render.APIError "Redirects	to		the		export	file	location
 //	@Failure		400	{object} render.APIError "Bad Request: missing export id"

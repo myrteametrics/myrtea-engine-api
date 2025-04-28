@@ -4,16 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/externalconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
-
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"go.uber.org/zap"
 )
 
@@ -25,7 +23,7 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	models.ExternalConfig	"list of all externalConfigs"
+//	@Success		200	{array}	externalconfig.ExternalConfig	"list of all externalConfigs"
 //	@Failure		500	"internal server error"
 //	@Router			/engine/externalconfigs [get]
 func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +41,7 @@ func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	externalConfigsSlice := make([]models.ExternalConfig, 0)
+	externalConfigsSlice := make([]externalconfig.ExternalConfig, 0)
 	for _, externalConfig := range externalConfigs {
 		externalConfigsSlice = append(externalConfigsSlice, externalConfig)
 	}
@@ -64,7 +62,7 @@ func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path	string	true	"ExternalConfig ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	models.ExternalConfig	"externalConfig"
+//	@Success		200	{object}	externalconfig.ExternalConfig	"externalConfig"
 //	@Failure		400	"Status Bad Request"
 //	@Router			/engine/externalconfigs/{id} [get]
 func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +101,7 @@ func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
 //	@Param			name	path	string	true	"ExternalConfig Name (escaped html accepted)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	models.ExternalConfig	"externalConfig"
+//	@Success		200	{object}	externalconfig.ExternalConfig	"externalConfig"
 //	@Failure		400	"Status Bad Request"
 //	@Router			/engine/externalconfigs/name/{name} [get]
 func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
@@ -139,10 +137,10 @@ func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ExternalConfigs
 //	@Accept			json
 //	@Produce		json
-//	@Param			externalConfig	body	models.ExternalConfig	true	"ExternalConfig definition (json)"
+//	@Param			externalConfig	body	externalconfig.ExternalConfig	true	"ExternalConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	models.ExternalConfig	"externalConfig"
+//	@Success		200	{object}	externalconfig.ExternalConfig	"externalConfig"
 //	@Failure		400	"Status Bad Request"
 //	@Failure		500	"Status"	internal	server	error"
 //	@Router			/engine/externalconfigs [post]
@@ -154,7 +152,7 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newExternalConfig models.ExternalConfig
+	var newExternalConfig externalconfig.ExternalConfig
 	err := json.NewDecoder(r.Body).Decode(&newExternalConfig)
 	if err != nil {
 		zap.L().Warn("ExternalConfig json decoding", zap.Error(err))
@@ -192,10 +190,10 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			name			path	string					true	"ExternalConfig ID"
-//	@Param			externalConfig	body	models.ExternalConfig	true	"ExternalConfig definition (json)"
+//	@Param			externalConfig	body	externalconfig.ExternalConfig	true	"ExternalConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	models.ExternalConfig	"externalConfig"
+//	@Success		200	{object}	externalconfig.ExternalConfig	"externalConfig"
 //	@Failure		400	"Status Bad Request"
 //	@Failure		500	"Status"	internal	server	error"
 //	@Router			/engine/externalconfigs/{name} [put]
@@ -216,7 +214,7 @@ func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newExternalConfig models.ExternalConfig
+	var newExternalConfig externalconfig.ExternalConfig
 	err = json.NewDecoder(r.Body).Decode(&newExternalConfig)
 	if err != nil {
 		zap.L().Warn("ExternalConfig json decoding", zap.Error(err))
@@ -296,7 +294,7 @@ func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Param			id	path	int						true	"ExternalConfig ID"
-//	@Success		200	{array}	models.ExternalConfig	"list of all old versions of the externalConfig"
+//	@Success		200	{array}	externalconfig.ExternalConfig	"list of all old versions of the externalConfig"
 //	@Failure		400	"bad request"
 //	@Failure		500	"internal server error"
 //	@Router			/engine/externalconfigs/{id}/alloldversions [get]
@@ -325,7 +323,7 @@ func GetAllOldVersions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if oldVersions == nil {
-		httputil.JSON(w, r, []models.ExternalConfig{})
+		httputil.JSON(w, r, []externalconfig.ExternalConfig{})
 		return
 	}
 	httputil.JSON(w, r, oldVersions)

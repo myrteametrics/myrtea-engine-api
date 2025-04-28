@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
@@ -25,7 +24,7 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 
 	zap.L().Info("New connection on /ws")
 
-	_user := r.Context().Value(models.ContextKeyUser)
+	_user := r.Context().Value(httputil.ContextKeyUser)
 	if _user == nil {
 		zap.L().Warn("No context user provided")
 		return
@@ -78,7 +77,7 @@ func NotificationsSSERegister(w http.ResponseWriter, r *http.Request) {
 
 	zap.L().Info("New connection on /sse")
 
-	_user := r.Context().Value(models.ContextKeyUser)
+	_user := r.Context().Value(httputil.ContextKeyUser)
 	if _user == nil {
 		zap.L().Warn("No context user provided")
 		return

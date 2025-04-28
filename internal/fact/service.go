@@ -18,6 +18,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// ExecuteFact executes a fact and returns the result
 func ExecuteFact(
 	ti time.Time,
 	f engine.Fact, situationID int64, situationInstanceID int64, parameters map[string]interface{},
@@ -65,11 +66,8 @@ func ExecuteFact(
 	return widgetData, nil
 }
 
-func ExecuteFactDeleteQuery(
-	ti time.Time,
-	f engine.Fact,
-) (*deletebyquery.Response, error) {
-
+// ExecuteFactDeleteQuery executes a delete by query on the fact
+func ExecuteFactDeleteQuery(ti time.Time, f engine.Fact) (*deletebyquery.Response, error) {
 	parameters := make(map[string]interface{})
 	f.ContextualizeDimensions(ti)
 	err := f.ContextualizeCondition(ti, parameters)
@@ -121,13 +119,16 @@ func ExecuteFactDeleteQuery(
 	return response, nil
 }
 
+// FindIndices returns the list of indices to search for a fact
+// It will first try to find the indices for the fact
+// If no indices are found, it will fallback to the search-all index
 func FindIndices(f engine.Fact, ti time.Time, update bool) []string {
-
 	var indices []string
 	var err error
 
 	if update {
-		indices, err = coordinator.GetInstance().LogicalIndex(f.Model).FindIndices(time.Now(), f.CalculationDepth+int64(time.Now().Sub(ti).Hours()/24)+5)
+		indices, err = coordinator.GetInstance().LogicalIndex(f.Model).FindIndices(time.Now(),
+			f.CalculationDepth+int64(time.Now().Sub(ti).Hours()/24)+5)
 	} else {
 		indices, err = coordinator.GetInstance().LogicalIndex(f.Model).FindIndices(ti, f.CalculationDepth)
 	}
@@ -136,7 +137,8 @@ func FindIndices(f engine.Fact, ti time.Time, update bool) []string {
 	}
 
 	if len(indices) == 0 {
-		zap.L().Info("No indices found, fallback on search-all", zap.String("fact", f.Name), zap.String("model", f.Model), zap.Int64("depth", f.CalculationDepth))
+		zap.L().Info("No indices found, fallback on search-all", zap.String("fact", f.Name),
+			zap.String("model", f.Model), zap.Int64("depth", f.CalculationDepth))
 		indices = []string{index.BuildAliasName(viper.GetString("INSTANCE_NAME"), f.Model, index.All)}
 	}
 

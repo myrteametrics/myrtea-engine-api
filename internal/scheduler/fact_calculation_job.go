@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/calendar"
@@ -13,7 +14,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tasker"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"

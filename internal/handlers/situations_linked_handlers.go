@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
@@ -11,7 +12,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
 )
@@ -332,6 +332,7 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Situations
 //	@Accept			json
 //	@Produce		json
+//	@Param			id					path	string						true	"Situation ID"
 //	@Param			templateInstance	body	situation.TemplateInstance	true	"Situation template instance (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth

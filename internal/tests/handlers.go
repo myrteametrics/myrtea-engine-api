@@ -3,13 +3,13 @@ package tests
 import (
 	"bytes"
 	"context"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 )
 
 // BuildTestHandler build and call a testing handler and returns the resulting ResponseRecorder for validation
@@ -39,7 +39,7 @@ func BuildTestHandler(t *testing.T, method string, targetRoute string, body stri
 		t.FailNow()
 	}
 
-	ctx := context.WithValue(req.Context(), models.ContextKeyUser, user)
+	ctx := context.WithValue(req.Context(), httputil.ContextKeyUser, user)
 
 	r.ServeHTTP(rr, req.WithContext(ctx))
 

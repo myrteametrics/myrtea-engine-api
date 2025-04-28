@@ -3,13 +3,13 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"go.uber.org/zap"
 )
 

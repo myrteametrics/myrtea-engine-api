@@ -2,12 +2,12 @@ package users
 
 import (
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
 	"strconv"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 )
 
 // User is used as the main user struct

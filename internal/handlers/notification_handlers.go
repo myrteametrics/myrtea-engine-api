@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier/notification"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
@@ -49,7 +48,7 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_user := r.Context().Value(models.ContextKeyUser)
+	_user := r.Context().Value(httputil.ContextKeyUser)
 	if _user == nil {
 		zap.L().Warn("No context user provided")
 		return
@@ -96,7 +95,7 @@ func UpdateRead(w http.ResponseWriter, r *http.Request) {
 	_status := r.URL.Query().Get("status")
 	status := false
 
-	_user := r.Context().Value(models.ContextKeyUser)
+	_user := r.Context().Value(httputil.ContextKeyUser)
 	if _user == nil {
 		zap.L().Warn("No context user provided")
 		return

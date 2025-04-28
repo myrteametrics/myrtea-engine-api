@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// GetBaselineValues fetches the baseline values for a given fact ID and situation instance ID.
 func GetBaselineValues(widgetData *reader.WidgetData, factId int64, situationID int64, situationInstanceID int64, ti time.Time) {
 	pluginBaseline, err := baseline.P()
 	if err == nil {

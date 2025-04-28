@@ -31,6 +31,7 @@ var (
 )
 
 //	@version		1.0
+//	@title			Myrtea Engine-API
 //	@description	Myrtea Engine-API Swagger
 //	@termsOfService	http://swagger.io/terms/
 

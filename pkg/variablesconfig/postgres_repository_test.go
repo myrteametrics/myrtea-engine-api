@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 )
 
@@ -71,7 +70,7 @@ func TestPostgresGet(t *testing.T) {
 		t.Error("found a variable Config from nowhere")
 	}
 
-	variablesconfig := models.VariablesConfig{Key: "test_name", Value: "test_value"}
+	variablesconfig := VariablesConfig{Key: "test_name", Value: "test_value"}
 	id, err := r.Create(variablesconfig)
 	if err != nil {
 		t.Error(err)
@@ -111,7 +110,7 @@ func TestPostgresGetByKey(t *testing.T) {
 		t.Error("found a variableConfig from nowhere")
 	}
 
-	variableConfig := models.VariablesConfig{Key: "test_key", Value: "test_value"}
+	variableConfig := VariablesConfig{Key: "test_key", Value: "test_value"}
 	id, err := r.Create(variableConfig)
 	if err != nil {
 		t.Error(err)
@@ -140,7 +139,7 @@ func TestPostgresCreate(t *testing.T) {
 	dbInitRepo(db, t)
 	r := NewPostgresRepository(db)
 
-	variableConfig := models.VariablesConfig{Key: "test_key", Value: "test_value"}
+	variableConfig := VariablesConfig{Key: "test_key", Value: "test_value"}
 	id, err := r.Create(variableConfig)
 	if err != nil {
 		t.Error(err)
@@ -170,13 +169,13 @@ func TestPostgresCreateDuplicate(t *testing.T) {
 	dbInitRepo(db, t)
 	r := NewPostgresRepository(db)
 
-	variableConfig := models.VariablesConfig{Key: "test_key", Value: "test_value"}
+	variableConfig := VariablesConfig{Key: "test_key", Value: "test_value"}
 	_, err := r.Create(variableConfig)
 	if err != nil {
 		t.Error(err)
 	}
 
-	variableConfig2 := models.VariablesConfig{Key: "test_key", Value: "test_value2"}
+	variableConfig2 := VariablesConfig{Key: "test_key", Value: "test_value2"}
 	_, err = r.Create(variableConfig2)
 	if err != nil {
 		if !strings.Contains(err.Error(), "pq: duplicate key value violates unique constraint") {
@@ -195,7 +194,7 @@ func TestPostgresCreateMultiple(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	variableConfig := models.VariablesConfig{Key: "test1key", Value: "test_Value"}
+	variableConfig := VariablesConfig{Key: "test1key", Value: "test_Value"}
 	id1, err := r.Create(variableConfig)
 	if err != nil {
 		t.Error(err)
@@ -213,7 +212,7 @@ func TestPostgresCreateMultiple(t *testing.T) {
 		t.Error("invalid ID")
 	}
 
-	variableConfig2 := models.VariablesConfig{Key: "test2key", Value: "test_value"}
+	variableConfig2 := VariablesConfig{Key: "test2key", Value: "test_value"}
 	id2, err := r.Create(variableConfig2)
 	if err != nil {
 		t.Error(err)
@@ -243,12 +242,12 @@ func TestPostgresUpdate(t *testing.T) {
 
 	var err error
 
-	variableConfig := models.VariablesConfig{Key: "test1key", Value: "test1_value"}
+	variableConfig := VariablesConfig{Key: "test1key", Value: "test1_value"}
 	id, err := r.Create(variableConfig)
 	if err != nil {
 		t.Error(err)
 	}
-	variableConfig2 := models.VariablesConfig{Key: "test2key", Value: "test2_value"}
+	variableConfig2 := VariablesConfig{Key: "test2key", Value: "test2_value"}
 	err = r.Update(id, variableConfig2)
 	if err != nil {
 		t.Error(err)
@@ -277,7 +276,7 @@ func TestPostgresUpdateNotExists(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	variableConfig := models.VariablesConfig{Key: "test2key", Value: "test_value"}
+	variableConfig := VariablesConfig{Key: "test2key", Value: "test_value"}
 	err = r.Update(1, variableConfig)
 	if err == nil {
 		t.Error("updating a non-existing variable Config should return an error")
@@ -295,7 +294,7 @@ func TestPostgresDelete(t *testing.T) {
 
 	var err error
 
-	variableConfig := models.VariablesConfig{Key: "test2key", Value: "test_value"}
+	variableConfig := VariablesConfig{Key: "test2key", Value: "test_value"}
 	id, err := r.Create(variableConfig)
 	if err != nil {
 		t.Error(err)
@@ -349,12 +348,12 @@ func TestPostgresGetAll(t *testing.T) {
 	dbInitRepo(db, t)
 	r := NewPostgresRepository(db)
 
-	variableConfig := models.VariablesConfig{Key: "test1key", Value: "test1_value"}
+	variableConfig := VariablesConfig{Key: "test1key", Value: "test1_value"}
 	e1ID, err := r.Create(variableConfig)
 	if err != nil {
 		t.Error(err)
 	}
-	variableConfig2 := models.VariablesConfig{Key: "test2key", Value: "test2_value"}
+	variableConfig2 := VariablesConfig{Key: "test2key", Value: "test2_value"}
 	e2ID, err := r.Create(variableConfig2)
 	if err != nil {
 		t.Error(err)
@@ -407,12 +406,12 @@ func TestPostgresGetAllAsMap(t *testing.T) {
 	dbInitRepo(db, t)
 	r := NewPostgresRepository(db)
 
-	variableConfig := models.VariablesConfig{Key: "test1key", Value: "test1_value"}
+	variableConfig := VariablesConfig{Key: "test1key", Value: "test1_value"}
 	_, err := r.Create(variableConfig)
 	if err != nil {
 		t.Error(err)
 	}
-	variableConfig2 := models.VariablesConfig{Key: "test2key", Value: "test2_value"}
+	variableConfig2 := VariablesConfig{Key: "test2key", Value: "test2_value"}
 	_, err = r.Create(variableConfig2)
 	if err != nil {
 		t.Error(err)

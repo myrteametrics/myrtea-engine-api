@@ -3,6 +3,7 @@ package scheduler
 import (
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"log"
 	"testing"
@@ -13,7 +14,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 	"github.com/myrteametrics/myrtea-sdk/v5/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"

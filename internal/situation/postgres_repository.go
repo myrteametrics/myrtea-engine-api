@@ -63,7 +63,7 @@ func (r *PostgresRepository) Get(id int64, parseParameters ...bool) (Situation, 
 	situation.ID = id
 
 	if shouldParseForEvaluation(parseParameters...) {
-		EvalParameters(situation.Parameters)
+		evalParameters(situation.Parameters)
 	}
 	//Need to delete at any get of situation the universal token group
 	// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
@@ -109,7 +109,7 @@ func (r *PostgresRepository) GetByName(name string, parseParameters ...bool) (Si
 	situation.ID = id
 
 	if shouldParseForEvaluation(parseParameters...) {
-		EvalParameters(situation.Parameters)
+		evalParameters(situation.Parameters)
 	}
 
 	//Need to delete at any get of situation the universal token group
@@ -369,7 +369,7 @@ func (r *PostgresRepository) GetSituationsByFactID(factID int64, ignoreIsObject 
 		situation.ID = situationID
 
 		if shouldParseForEvaluation(parseParameters...) {
-			EvalParameters(situation.Parameters)
+			evalParameters(situation.Parameters)
 		}
 
 		//Need to delete at any get of situation the universal token group
@@ -480,7 +480,7 @@ func parseAllRows(rows *sqlx.Rows, parseParameters bool) (map[int64]Situation, e
 		situation.ID = situationID
 
 		if parseParameters {
-			EvalParameters(situation.Parameters)
+			evalParameters(situation.Parameters)
 		}
 
 		//Need to delete at any get of situation the universal token group
@@ -789,7 +789,7 @@ func (r *PostgresRepository) GetTemplateInstance(instanceID int64, parseParamete
 		}
 
 		if shouldParseForEvaluation(parseParameters...) {
-			EvalParameters(templateInstance.Parameters)
+			evalParameters(templateInstance.Parameters)
 		}
 
 		err = json.Unmarshal([]byte(dependsOnParamsData), &templateInstance.DependsOnParameters)
@@ -842,7 +842,7 @@ func (r *PostgresRepository) GetAllTemplateInstances(situationID int64, parsePar
 		}
 
 		if shouldParseForEvaluation(parseParameters...) {
-			EvalParameters(templateInstance.Parameters)
+			evalParameters(templateInstance.Parameters)
 		}
 
 		err = json.Unmarshal([]byte(dependsOnParamsData), &templateInstance.DependsOnParameters)

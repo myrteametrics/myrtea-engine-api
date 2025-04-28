@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -14,7 +15,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/rootcause"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 )
 

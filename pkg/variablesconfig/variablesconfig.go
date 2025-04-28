@@ -1,4 +1,4 @@
-package models
+package variablesconfig
 
 type VariablesConfig struct {
 	Id    int64  `json:"id"`

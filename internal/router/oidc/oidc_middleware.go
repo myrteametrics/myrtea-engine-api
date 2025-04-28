@@ -3,6 +3,7 @@ package routeroidc
 import (
 	"context"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	roles2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
@@ -13,8 +14,6 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/google/uuid"
 	gorillacontext "github.com/gorilla/context"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils"
 	"go.uber.org/zap"
 )
@@ -128,12 +127,12 @@ func ContextMiddleware(next http.Handler) http.Handler {
 			Permissions: userPermissions,
 		}
 
-		loggerR := r.Context().Value(models.ContextKeyLoggerR)
+		loggerR := r.Context().Value(httputil.ContextKeyLoggerR)
 		if loggerR != nil {
-			gorillacontext.Set(loggerR.(*http.Request), models.UserLogin, up.User.Login)
+			gorillacontext.Set(loggerR.(*http.Request), httputil.UserLogin, up.User.Login)
 		}
 
-		ctx := context.WithValue(r.Context(), models.ContextKeyUser, up)
+		ctx := context.WithValue(r.Context(), httputil.ContextKeyUser, up)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

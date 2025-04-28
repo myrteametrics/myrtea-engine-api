@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
@@ -10,8 +11,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
-
 	"go.uber.org/zap"
 )
 
@@ -112,11 +111,12 @@ func GetRule(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Rules
 //	@Produce		json
 //	@Param			id	path	string	true	"Rule ID"
+//	@Param			versionId	path	string	true	"Rule Version ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	rule.Rule	"rule"
 //	@Failure		500	"internal server error"
-//	@Router			/engine/rules/{id}/versions/{versionid} [get]
+//	@Router			/engine/rules/{id}/versions/{versionId} [get]
 func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idRule, err := strconv.ParseInt(id, 10, 64)
@@ -132,7 +132,7 @@ func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	versionID := chi.URLParam(r, "versionid")
+	versionID := chi.URLParam(r, "versionId")
 	idVersion, err := strconv.ParseInt(versionID, 10, 64)
 	if err != nil {
 		zap.L().Warn("Parsing rule id", zap.String("RuleID", id), zap.Error(err))

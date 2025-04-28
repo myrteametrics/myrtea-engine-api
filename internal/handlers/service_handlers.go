@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/service"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"go.uber.org/zap"
 	"net/http"
@@ -57,7 +57,7 @@ func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
 //	@Description	Restart the service
 //	@Tags			Service
 //	@Produce		json
-//	@Param			id	query	string	false	"Service to restart"
+//	@Param			id	path	string	true	"Service to restart"
 //	@Success		200	"service was restarted successfully"
 //	@Failure		401	"missing permission"
 //	@Failure		429	"too recently"
@@ -106,8 +106,8 @@ func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 //	@Description	Reload the service
 //	@Tags			Service
 //	@Produce		json
-//	@Param			id			query	string	false	"Service to reload"
-//	@Param			component	query	string	false	"Component to reload"
+//	@Param			id			path	string	true	"Service to reload"
+//	@Param			component	path	string	true	"Component to reload"
 //	@Success		200			"component reloaded"
 //	@Failure		401			"missing permission"
 //	@Failure		429			"too recently"
@@ -161,7 +161,7 @@ func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 //	@Description	GetStatus of a service
 //	@Tags			Service
 //	@Produce		json
-//	@Param			id	query		string	false	"Component to get status from"
+//	@Param			id	path		string	true	"Component to get status from"
 //	@Success		200	{object}	service.Status
 //	@Failure		401	"missing permission"
 //	@Failure		500	"internal server error"
