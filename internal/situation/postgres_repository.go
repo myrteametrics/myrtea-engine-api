@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	sq "github.com/Masterminds/squirrel"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -864,85 +862,4 @@ func (r *PostgresRepository) GetAllTemplateInstances(situationID int64, parseGlo
 	}
 
 	return templateInstances, nil
-}
-
-func (r *PostgresRepository) CreateTag(tag Tag) (int64, error) {
-	var id int64
-	err := r.newStatement().
-		Insert("situation_tags_v1").
-		Columns("name", "color").
-		Values(tag.Name, tag.Color).
-		Suffix("RETURNING \"id\"").
-		QueryRow().
-		Scan(&id)
-	if err != nil {
-		return -1, err
-	}
-
-	return id, nil
-}
-
-func (r *PostgresRepository) GetTag(id int64) (Tag, bool, error) {
-	rows, err := r.newStatement().
-		Select("id", "name", "color").
-		From("situation_tags_v1").
-		Where(sq.Eq{"id": id}).
-		Query()
-	if err != nil {
-		return Tag{}, false, err
-	}
-	defer rows.Close()
-	return dbutils.ScanFirst(rows, r.scanTag)
-}
-
-func (r *PostgresRepository) UpdateTag(tag Tag) error {
-	_, err := r.newStatement().
-		Update("situation_tags_v1").
-		Set("name", tag.Name).
-		Set("color", tag.Color).
-		Where(sq.Eq{"id": tag.Id}).
-		Exec()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *PostgresRepository) DeleteTag(id int64) error {
-	_, err := r.newStatement().
-		Delete("situation_tags_v1").
-		Where(sq.Eq{"id": id}).
-		Exec()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *PostgresRepository) GetAllTags() ([]Tag, error) {
-	rows, err := r.newStatement().
-		Select("id", "name", "color").
-		From("situation_tags_v1").
-		Query()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	return dbutils.ScanAll(rows, r.scanTag)
-}
-
-// scanTag scans a row into a Tag struct
-func (r *PostgresRepository) scanTag(rows *sql.Rows) (Tag, error) {
-	var tag Tag
-	err := rows.Scan(&tag.Id, &tag.Name, &tag.Color)
-	if err != nil {
-		return Tag{}, err
-	}
-	return tag, nil
-}
-
-// newStatement creates a new statement builder with Dollar format
-func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
-	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(r.conn.DB)
 }

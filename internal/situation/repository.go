@@ -31,12 +31,6 @@ type Repository interface {
 	DeleteTemplateInstance(instanceID int64) error
 	GetTemplateInstance(instanceID int64, parseGlobalVariables ...bool) (TemplateInstance, bool, error)
 	GetAllTemplateInstances(situationID int64, parseGlobalVariables ...bool) (map[int64]TemplateInstance, error)
-
-	CreateTag(tag Tag) (int64, error)
-	GetTag(id int64) (Tag, bool, error)
-	UpdateTag(tag Tag) error
-	DeleteTag(id int64) error
-	GetAllTags() ([]Tag, error)
 }
 
 var (
