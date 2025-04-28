@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
+	"reflect"
 	"time"
 )
 
@@ -116,9 +117,17 @@ type FactHitsRequest struct {
 	HitsOnly            bool                   `json:"hitsOnly,omitempty"` // If true, forces f.Intent.Operator = engine.Select
 }
 
-// Validate checks if the FactHitsRequest is valid
-func (r *FactHitsRequest) Validate() error {
+// Validate checks if the FactHitsRequest request is valid and transforms some parameters
+func (r *FactHitsRequest) ValidateParseParam() error {
+	if err := r.validateBasicFields(); err != nil {
+		return err
+	}
 
+	return r.validateAndTransformFactParameters()
+}
+
+// validateBasicFields validates the basic fields of the request
+func (r *FactHitsRequest) validateBasicFields() error {
 	if r.FactId <= 0 {
 		return errors.New("factId parameter is required and must be a positive integer")
 	}
@@ -131,70 +140,62 @@ func (r *FactHitsRequest) Validate() error {
 		return errors.New("offset cannot be negative")
 	}
 
+	return nil
+}
+
+// validateAndTransformFactParameters validates and transforms all fact parameters
+func (r *FactHitsRequest) validateAndTransformFactParameters() error {
 	for key, value := range r.FactParameters {
-		const maxSliceSize = 500
-
-		strVal, ok := value.(string)
-		if ok {
-			_, err := time.Parse(time.RFC3339, strVal)
-			if err == nil {
-				continue
-			}
-			parsed, err := expression.Process(expression.LangEval, strVal, map[string]interface{}{})
-			if err != nil {
-				return fmt.Errorf("parameters: the value of the key %s could not be evaluated: %s", key, err.Error())
-			}
-
-			switch parsedVal := parsed.(type) {
-			case []interface{}:
-				if len(parsedVal) > maxSliceSize {
-					return fmt.Errorf("parameters: the slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
-				}
-			case []string:
-				if len(parsedVal) > maxSliceSize {
-					return fmt.Errorf("parameters: the string slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
-				}
-			case []int:
-				if len(parsedVal) > maxSliceSize {
-					return fmt.Errorf("parameters: the int slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
-				}
-			case []float64:
-				if len(parsedVal) > maxSliceSize {
-					return fmt.Errorf("parameters: the float slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
-				}
-			case map[string]interface{}:
-				if len(parsedVal) > maxSliceSize {
-					return fmt.Errorf("parameters: the map for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
-				}
-			}
-
-			r.FactParameters[key] = parsed
-			continue
+		if err := r.validateAndTransformParameter(key, value); err != nil {
+			return err
 		}
+	}
+	return nil
+}
 
-		switch val := value.(type) {
-		case []interface{}:
-			if len(val) > maxSliceSize {
-				return fmt.Errorf("parameters: the slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
-			}
-		case []string:
-			if len(val) > maxSliceSize {
-				return fmt.Errorf("parameters: the string slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
-			}
-		case []int:
-			if len(val) > maxSliceSize {
-				return fmt.Errorf("parameters: the int slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
-			}
-		case []float64:
-			if len(val) > maxSliceSize {
-				return fmt.Errorf("parameters: the float slice for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
-			}
-		case map[string]interface{}:
-			if len(val) > maxSliceSize {
-				return fmt.Errorf("parameters: the map for key %s exceeds the maximum size of %d elements", key, maxSliceSize)
-			}
+// validateAndTransformParameter validates and transforms a specific parameter
+func (r *FactHitsRequest) validateAndTransformParameter(key string, value interface{}) error {
+	if strVal, ok := value.(string); ok {
+		return r.validateAndTransformStringParameter(key, strVal)
+	}
+
+	return r.checkCollectionSize(key, value)
+}
+
+// validateAndTransformStringParameter handles, validates and transforms a string parameter
+func (r *FactHitsRequest) validateAndTransformStringParameter(key, strVal string) error {
+	// Ignore if it's a valid date in RFC3339 format
+	if _, err := time.Parse(time.RFC3339, strVal); err == nil {
+		return nil
+	}
+
+	// Evaluate expression
+	parsed, err := expression.Process(expression.LangEval, strVal, map[string]interface{}{})
+	if err != nil {
+		return fmt.Errorf("parameters: the value of the key %s could not be evaluated: %s", key, err.Error())
+	}
+
+	if err := r.checkCollectionSize(key, parsed); err != nil {
+		return err
+	}
+
+	// Update parameter with evaluated value (transformation)
+	r.FactParameters[key] = parsed
+	return nil
+}
+
+// checkCollectionSize checks if the size of a collection exceeds the maximum limit
+func (r *FactHitsRequest) checkCollectionSize(key string, value interface{}) error {
+	const maxSliceSize = 500
+
+	v := reflect.ValueOf(value)
+	kind := v.Kind()
+
+	if kind == reflect.Slice || kind == reflect.Array || kind == reflect.Map {
+		if v.Len() > maxSliceSize {
+			return fmt.Errorf("parameters: the collection for key %s exceeds the maximum size of %d elements",
+				key, maxSliceSize)
 		}
-
 	}
 
 	return nil

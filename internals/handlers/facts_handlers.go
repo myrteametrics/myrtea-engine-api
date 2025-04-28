@@ -409,7 +409,7 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := request.Validate(); err != nil {
+	if err := request.ValidateParseParam(); err != nil {
 		zap.L().Error("Failed to validate request body", zap.Error(err))
 		render.Error(w, r, render.ErrAPIUnexpectedParamValue, err)
 		return
