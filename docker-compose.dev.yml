@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   elastic:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.28
     container_name: myrtea-elasticsearch
     restart: always
     ports:
@@ -10,7 +10,7 @@ services:
     environment:
       discovery.type: single-node
   pgsql:
-    image: postgres:11.0-alpine
+    image: postgres:16-alpine
     container_name: myrtea-postgres
     ports:
       - "5432:5432"
@@ -19,10 +19,8 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    volumes:
-      - "./resources/model.sql:/docker-entrypoint-initdb.d/1-init.sql"
   engine:
-    image: golang:1.19-alpine
+    image: golang:1.23-alpine
     container_name: myrtea-engine
     ports:
       - "9000:9000"

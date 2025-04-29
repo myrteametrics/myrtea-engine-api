@@ -14,12 +14,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.22'
+        go-version: '1.23'
 
     - name: Initialize Swag
       run: |
@@ -33,7 +33,7 @@ jobs:
       run: go test -short -v ./...
 
     - name: Coverage
-      uses: gwatts/go-coverage-action@v1
+      uses: gwatts/go-coverage-action@v2
     #  if: github.ref == 'refs/heads/master'
     #  continue-on-error: true
       with:
