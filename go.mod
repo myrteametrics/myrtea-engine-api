@@ -19,7 +19,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/json-iterator/go v1.1.12
 	github.com/lib/pq v1.10.9
-	github.com/myrteametrics/myrtea-sdk/v5 v5.2.4
+	github.com/myrteametrics/myrtea-sdk/v5 v5.2.5
 	github.com/pressly/goose/v3 v3.24.2
 	github.com/prometheus/client_golang v1.22.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -33,8 +33,6 @@ require (
 	google.golang.org/grpc v1.71.0
 	google.golang.org/protobuf v1.36.6
 )
-
-replace github.com/myrteametrics/myrtea-sdk/v5 => ../myrtea-sdk
 
 require (
 	github.com/IBM/sarama v1.45.1 // indirect

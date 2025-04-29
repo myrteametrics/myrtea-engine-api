@@ -1,12 +1,12 @@
 package calendar
 
-//Node ..
+// Node ..
 type Node struct {
 	ID    int64
 	Nodes []*Node
 }
 
-//Graph ..
+// Graph ..
 type Graph struct {
 	Nodes    map[int64]*Node
 	Visited  map[int64]bool

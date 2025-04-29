@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-//Calendar ..
+// Calendar ..
 type Calendar struct {
 	ID               int64    `json:"id,omitempty"`
 	Name             string   `json:"name"`
@@ -87,7 +87,8 @@ func setCalendar(calendar Calendar) {
 // ResolveCalendar resolve a calendar definition dynamically and recursively with its subcalendars
 // Resolution order :
 // - For each sub-calendar (with respect of order)
-//    - Sub-calendar Periods (with respect of order)
+//   - Sub-calendar Periods (with respect of order)
+//
 // - Calendar Periods (with respect of order)
 func (c Calendar) ResolveCalendar(enabledCalendars map[int64]Calendar, joinedCalendars []int64) Calendar {
 	joinedCalendars = append(joinedCalendars, c.ID)
