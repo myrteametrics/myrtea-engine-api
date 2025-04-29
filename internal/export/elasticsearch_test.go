@@ -2,7 +2,7 @@ package export
 
 import (
 	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"testing"
 
@@ -79,7 +79,7 @@ func TestExportFactHits(t *testing.T) {
 	postgres.ReplaceGlobals(db)
 	history.ReplaceGlobals(history.New(db))
 	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
-	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	situation2.ReplaceGlobals(situation2.NewPostgresRepository(db))
 	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
 	modeler.ReplaceGlobals(modeler.NewPostgresRepository(db))
 	instanceName := viper.GetString("INSTANCE_NAME")

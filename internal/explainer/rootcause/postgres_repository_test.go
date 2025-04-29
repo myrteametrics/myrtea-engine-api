@@ -1,7 +1,7 @@
 package rootcause
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -23,8 +23,8 @@ func dbInit(dbClient *sqlx.DB, t *testing.T) {
 
 	var err error
 
-	sr := situation.NewPostgresRepository(dbClient)
-	s := situation.Situation{
+	sr := situation2.NewPostgresRepository(dbClient)
+	s := situation2.Situation{
 		Name:  "situation_test_1",
 		Facts: []int64{},
 	}

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"strings"
 	"time"
 

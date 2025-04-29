@@ -1,7 +1,7 @@
 package history
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"testing"
 	"time"
 

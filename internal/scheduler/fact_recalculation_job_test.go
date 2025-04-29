@@ -3,16 +3,16 @@ package scheduler
 import (
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	calendar2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"log"
 	"testing"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 	"github.com/myrteametrics/myrtea-sdk/v5/helpers"
@@ -92,10 +92,10 @@ func TestFactRecalculationJobRun(t *testing.T) {
 	postgres.ReplaceGlobals(db)
 	history.ReplaceGlobals(history.New(db))
 	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
-	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	situation2.ReplaceGlobals(situation2.NewPostgresRepository(db))
 	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
-	calendar.ReplaceGlobals(calendar.NewPostgresRepository(db))
-	calendar.Init()
+	calendar2.ReplaceGlobals(calendar2.NewPostgresRepository(db))
+	calendar2.Init()
 	ReplaceGlobalRepository(NewPostgresRepository(db))
 	ReplaceGlobals(NewScheduler())
 	S().Init()

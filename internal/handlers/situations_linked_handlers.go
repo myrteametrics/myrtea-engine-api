@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
@@ -97,7 +97,7 @@ func GetSituationFacts(w http.ResponseWriter, r *http.Request) {
 	// }
 	// FIXME: security check !
 
-	factIDs, err := situation.R().GetFacts(idSituation)
+	factIDs, err := situation2.R().GetFacts(idSituation)
 	if err != nil {
 		zap.L().Error("Error on getting situation rules", zap.Int64("idSituation", idSituation), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -162,7 +162,7 @@ func GetSituationRules(w http.ResponseWriter, r *http.Request) {
 
 	// FIXME: security check !
 
-	ruleIDs, err := situation.R().GetRules(idSituation)
+	ruleIDs, err := situation2.R().GetRules(idSituation)
 	if err != nil {
 		zap.L().Error("Error on getting situation rules", zap.String("situationID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -235,7 +235,7 @@ func SetSituationRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = situation.R().SetRules(idSituation, ruleIDs)
+	err = situation2.R().SetRules(idSituation, ruleIDs)
 	if err != nil {
 		zap.L().Info("Error while setting the situation rules", zap.String("Situation ID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
@@ -284,7 +284,7 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 
 	// FIXME: security check !
 
-	var newInstance situation.TemplateInstance
+	var newInstance situation2.TemplateInstance
 	err = json.NewDecoder(r.Body).Decode(&newInstance)
 	if err != nil {
 		zap.L().Warn("TemplateInstance json decode", zap.Error(err))
@@ -303,14 +303,14 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instanceID, err := situation.R().CreateTemplateInstance(idSituation, newInstance)
+	instanceID, err := situation2.R().CreateTemplateInstance(idSituation, newInstance)
 	if err != nil {
 		zap.L().Info("Error while creating the situation template instance ", zap.String("Situation ID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	instance, found, err := situation.R().GetTemplateInstance(instanceID, gvalParsingEnabled(r.URL.Query()))
+	instance, found, err := situation2.R().GetTemplateInstance(instanceID, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation template instance", zap.Int64("situationID", idSituation), zap.Int64("instanceID", instanceID), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -341,7 +341,7 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500	"Status"	internal	server	error"
 //	@Router			/engine/situations/{id}/instances/validate [post]
 func ValidateSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
-	var newInstance situation.TemplateInstance
+	var newInstance situation2.TemplateInstance
 	err := json.NewDecoder(r.Body).Decode(&newInstance)
 	if err != nil {
 		zap.L().Warn("Template instance json decode", zap.Error(err))
@@ -406,7 +406,7 @@ func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newInstance situation.TemplateInstance
+	var newInstance situation2.TemplateInstance
 	err = json.NewDecoder(r.Body).Decode(&newInstance)
 	if err != nil {
 		zap.L().Warn("TemplateInstance json decode", zap.Error(err))
@@ -425,14 +425,14 @@ func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = situation.R().UpdateTemplateInstance(instanceID, newInstance)
+	err = situation2.R().UpdateTemplateInstance(instanceID, newInstance)
 	if err != nil {
 		zap.L().Info("Error while updating the situation template instance ", zap.Int64("SituationID", idSituation), zap.String("instanceID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	instance, found, err := situation.R().GetTemplateInstance(instanceID, gvalParsingEnabled(r.URL.Query()))
+	instance, found, err := situation2.R().GetTemplateInstance(instanceID, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation template instance", zap.Int64("situationID", idSituation), zap.Int64("instanceID", instanceID), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -486,7 +486,7 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 
 	// FIXME: security check !
 
-	var newInstances []situation.TemplateInstance
+	var newInstances []situation2.TemplateInstance
 	err = json.NewDecoder(r.Body).Decode(&newInstances)
 	if err != nil {
 		zap.L().Warn("TemplateInstances json decode", zap.Error(err))
@@ -494,7 +494,7 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var resolvedNewInstances []situation.TemplateInstance
+	var resolvedNewInstances []situation2.TemplateInstance
 	for _, instance := range newInstances {
 		instance.SituationID = idSituation
 
@@ -511,7 +511,7 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 		resolvedNewInstances = append(resolvedNewInstances, instance)
 	}
 
-	oldInstances, err := situation.R().GetAllTemplateInstances(idSituation, gvalParsingEnabled(r.URL.Query()))
+	oldInstances, err := situation2.R().GetAllTemplateInstances(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Error while getting existing situation template instances", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -521,7 +521,7 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 	for _, instance := range resolvedNewInstances {
 
 		if instance.ID == 0 {
-			_, err = situation.R().CreateTemplateInstance(idSituation, instance)
+			_, err = situation2.R().CreateTemplateInstance(idSituation, instance)
 			if err != nil {
 				zap.L().Error("Error while creating template instance", zap.Error(err))
 				httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
@@ -531,7 +531,7 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if _, found := oldInstances[instance.ID]; found {
-			err = situation.R().UpdateTemplateInstance(instance.ID, instance)
+			err = situation2.R().UpdateTemplateInstance(instance.ID, instance)
 			if err != nil {
 				zap.L().Error("Error while updating template instance", zap.Error(err))
 				httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
@@ -546,7 +546,7 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for instanceID := range oldInstances {
-		err = situation.R().DeleteTemplateInstance(instanceID)
+		err = situation2.R().DeleteTemplateInstance(instanceID)
 		if err != nil {
 			zap.L().Error("Error while deleting template instance", zap.Error(err))
 			httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
@@ -602,7 +602,7 @@ func DeleteSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = situation.R().DeleteTemplateInstance(instanceID)
+	err = situation2.R().DeleteTemplateInstance(instanceID)
 	if err != nil {
 		zap.L().Error("Error while deleting the situation template instance", zap.String("Situation ID", id), zap.String("instanceID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
@@ -649,14 +649,14 @@ func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 
 	// FIXME: security check !
 
-	instances, err := situation.R().GetAllTemplateInstances(idSituation, gvalParsingEnabled(r.URL.Query()))
+	instances, err := situation2.R().GetAllTemplateInstances(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Error on getting situation template instances", zap.String("situationID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	instancesSlice := make([]situation.TemplateInstance, 0)
+	instancesSlice := make([]situation2.TemplateInstance, 0)
 	for _, instance := range instances {
 		instancesSlice = append(instancesSlice, instance)
 	}
@@ -690,14 +690,14 @@ func GetSituationTemplateInstancesUnprotected(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	instances, err := situation.R().GetAllTemplateInstances(idSituation)
+	instances, err := situation2.R().GetAllTemplateInstances(idSituation)
 	if err != nil {
 		zap.L().Error("Error on getting situation template instances", zap.String("situationID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	instancesSlice := make([]situation.TemplateInstance, 0)
+	instancesSlice := make([]situation2.TemplateInstance, 0)
 	for _, instance := range instances {
 		instancesSlice = append(instancesSlice, instance)
 	}

@@ -1,13 +1,13 @@
 package history
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 )
 

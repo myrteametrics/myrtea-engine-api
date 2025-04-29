@@ -3,7 +3,7 @@ package scheduler
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
@@ -115,9 +115,9 @@ func (job FactRecalculationJob) Run() {
 		zap.L().Error("fact GetAllByIDs", zap.Error(err), zap.Int64s("ids", job.FactIds))
 	}
 
-	situations := make(map[int64]situation.Situation)
+	situations := make(map[int64]situation2.Situation)
 	for _, factID := range job.FactIds {
-		ss, _ := situation.R().GetSituationsByFactID(factID, true)
+		ss, _ := situation2.R().GetSituationsByFactID(factID, true)
 		for _, s := range ss {
 			situations[s.ID] = s
 		}
@@ -261,7 +261,7 @@ func (job FactRecalculationJob) RecalculateAndUpdateFacts(factIDs []int64, facts
 	return newFactHistory, nil
 }
 
-func (job FactRecalculationJob) RecalculateAndUpdateSituations(localRuleEngine *ruleeng.RuleEngine, s situation.Situation, mapSituationFact map[int64][]int64,
+func (job FactRecalculationJob) RecalculateAndUpdateSituations(localRuleEngine *ruleeng.RuleEngine, s situation2.Situation, mapSituationFact map[int64][]int64,
 	historySituations []history.HistorySituationsV4, newFactHistory map[int64]history.HistoryFactsV4) error {
 
 	for _, sh := range historySituations {

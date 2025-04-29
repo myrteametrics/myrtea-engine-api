@@ -2,7 +2,7 @@ package history
 
 import (
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"sort"
 	"time"
 
@@ -133,16 +133,16 @@ func buildFactHistoryRecord(factId int64, mapFacts map[int64]HistoryFactsV4) sea
 	return factHistoryRecord
 }
 
-func ExtractSituationData(situationID int64, situationInstanceID int64) (situation.Situation, map[string]interface{}, error) {
+func ExtractSituationData(situationID int64, situationInstanceID int64) (situation2.Situation, map[string]interface{}, error) {
 	parameters := make(map[string]interface{})
 
-	s, found, err := situation.R().Get(situationID)
+	s, found, err := situation2.R().Get(situationID)
 	if err != nil {
-		return situation.Situation{}, make(map[string]interface{}), err
+		return situation2.Situation{}, make(map[string]interface{}), err
 	}
 
 	if !found {
-		return situation.Situation{}, make(map[string]interface{}), errors.New("situation not found")
+		return situation2.Situation{}, make(map[string]interface{}), errors.New("situation not found")
 	}
 
 	for k, v := range s.Parameters {
@@ -150,13 +150,13 @@ func ExtractSituationData(situationID int64, situationInstanceID int64) (situati
 	}
 
 	if s.IsTemplate {
-		si, found, err := situation.R().GetTemplateInstance(situationInstanceID)
+		si, found, err := situation2.R().GetTemplateInstance(situationInstanceID)
 		if err != nil {
-			return situation.Situation{}, make(map[string]interface{}), err
+			return situation2.Situation{}, make(map[string]interface{}), err
 		}
 
 		if !found {
-			return situation.Situation{}, make(map[string]interface{}), errors.New("situation instance not found")
+			return situation2.Situation{}, make(map[string]interface{}), errors.New("situation instance not found")
 		}
 
 		for k, v := range si.Parameters {
@@ -167,7 +167,7 @@ func ExtractSituationData(situationID int64, situationInstanceID int64) (situati
 	return s, parameters, nil
 }
 
-func EvaluateExpressionFacts(expressionFacts []situation.ExpressionFact, data map[string]interface{}) map[string]interface{} {
+func EvaluateExpressionFacts(expressionFacts []situation2.ExpressionFact, data map[string]interface{}) map[string]interface{} {
 	expressionFactsEvaluated := make(map[string]interface{})
 
 	for _, expressionFact := range expressionFacts {

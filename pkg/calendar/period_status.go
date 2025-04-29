@@ -24,7 +24,7 @@ func (s PeriodStatus) String() string {
 	return ""
 }
 
-//ToPeriodStatus get the PeriodStatus from is string representation
+// ToPeriodStatus get the PeriodStatus from is string representation
 func ToPeriodStatus(s string) PeriodStatus {
 	if level, ok := periodStatusToID[s]; ok {
 		return level

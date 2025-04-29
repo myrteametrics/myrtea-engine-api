@@ -3,9 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"net/http"
 	"strconv"
 	"testing"
@@ -135,7 +135,7 @@ func TestPostRulesSituations(t *testing.T) {
 	dbInit(db, t)
 	postgres.ReplaceGlobals(db)
 	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
-	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	situation2.ReplaceGlobals(situation2.NewPostgresRepository(db))
 
 	///create rules
 	rule1 := rule.Rule{}
@@ -147,9 +147,9 @@ func TestPostRulesSituations(t *testing.T) {
 	r2ID, _ := rule.R().Create(rule2)
 
 	//create situations
-	s1ID, _ := situation.R().Create(situation.Situation{Name: "Situation1"})
-	s2ID, _ := situation.R().Create(situation.Situation{Name: "Situation2"})
-	s3ID, _ := situation.R().Create(situation.Situation{Name: "Situation3"})
+	s1ID, _ := situation2.R().Create(situation2.Situation{Name: "Situation1"})
+	s2ID, _ := situation2.R().Create(situation2.Situation{Name: "Situation2"})
+	s3ID, _ := situation2.R().Create(situation2.Situation{Name: "Situation3"})
 
 	//Post new situations to rules
 	situationIDs := []int64{s1ID, s2ID}
@@ -159,7 +159,7 @@ func TestPostRulesSituations(t *testing.T) {
 	rr := tests.BuildTestHandler(t, "POST", "/rules/"+fmt.Sprint(r1ID)+"/situations", string(data), "/rules/{id}/situations", PostRuleSituations, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getSituatations, _ := situation.R().GetAllByRuleID(int64(r1ID), false)
+	getSituatations, _ := situation2.R().GetAllByRuleID(int64(r1ID), false)
 	if _, ok := getSituatations[s1ID]; !ok {
 		t.Errorf("The rule %d was not added to the rule list of the situation %d", r1ID, s1ID)
 	}
@@ -170,7 +170,7 @@ func TestPostRulesSituations(t *testing.T) {
 	rr = tests.BuildTestHandler(t, "POST", "/rules/"+fmt.Sprint(r2ID)+"/situations", string(data), "/rules/{id}/situations", PostRuleSituations, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getSituatations, _ = situation.R().GetAllByRuleID(int64(r2ID), false)
+	getSituatations, _ = situation2.R().GetAllByRuleID(int64(r2ID), false)
 	if _, ok := getSituatations[s1ID]; !ok {
 		t.Errorf("The rule %d was not added to the rule list of the situation %d", r1ID, s1ID)
 	}
@@ -179,8 +179,8 @@ func TestPostRulesSituations(t *testing.T) {
 	}
 
 	//validate rules order
-	rulesS1, _ := situation.R().GetRules(s1ID)
-	rulesS2, _ := situation.R().GetRules(s1ID)
+	rulesS1, _ := situation2.R().GetRules(s1ID)
+	rulesS2, _ := situation2.R().GetRules(s1ID)
 
 	if rulesS1[0] != int64(r1ID) || rulesS1[1] != int64(r2ID) || rulesS2[0] != int64(r1ID) || rulesS2[1] != int64(r2ID) {
 		t.Errorf("The execution order of the rules is not as expected")
@@ -193,7 +193,7 @@ func TestPostRulesSituations(t *testing.T) {
 	rr = tests.BuildTestHandler(t, "POST", "/rules/"+fmt.Sprint(r1ID)+"/situations", string(data), "/rules/{id}/situations", PostRuleSituations, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getSituatations, _ = situation.R().GetAllByRuleID(int64(r1ID), false)
+	getSituatations, _ = situation2.R().GetAllByRuleID(int64(r1ID), false)
 	if _, ok := getSituatations[s1ID]; !ok {
 		t.Errorf("The rule %d was not added to the rule list of the situation %d", r1ID, s1ID)
 	}
@@ -211,7 +211,7 @@ func TestPostRulesSituations(t *testing.T) {
 	rr = tests.BuildTestHandler(t, "POST", "/rules/"+fmt.Sprint(r1ID)+"/situations", string(data), "/rules/{id}/situations", PostRuleSituations, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getSituatations, _ = situation.R().GetAllByRuleID(int64(r1ID), false)
+	getSituatations, _ = situation2.R().GetAllByRuleID(int64(r1ID), false)
 	if _, ok := getSituatations[s1ID]; !ok {
 		t.Errorf("The rule %d was not added to the rule list of the situation %d", r1ID, s1ID)
 	}

@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"net/http"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
@@ -464,7 +464,7 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		situationn, found, err := situation.R().Get(request.SituationId, true)
+		situationn, found, err := situation2.R().Get(request.SituationId, true)
 		if err != nil {
 			zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", request.SituationId), zap.Error(err))
 			httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -476,13 +476,13 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var situationInstance situation.TemplateInstance
+		var situationInstance situation2.TemplateInstance
 		if request.SituationInstanceId <= 0 {
 			zap.L().Warn("Missing situationInstanceId for template fact")
 			httputil.Error(w, r, httputil.ErrAPIParsingInteger, errors.New("missing situationInstanceId for template fact"))
 			return
 		}
-		situationInstance, found, err = situation.R().GetTemplateInstance(request.SituationInstanceId, true)
+		situationInstance, found, err = situation2.R().GetTemplateInstance(request.SituationInstanceId, true)
 		if err != nil {
 			zap.L().Error("Cannot retrieve situation Instance", zap.Int64("situationInstanceID", request.SituationInstanceId), zap.Error(err))
 			httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -640,7 +640,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		situationn, found, err := situation.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
+		situationn, found, err := situation2.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
 		if err != nil {
 			zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 			httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -652,7 +652,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var situationInstance situation.TemplateInstance
+		var situationInstance situation2.TemplateInstance
 		situationInstanceIDStr := r.URL.Query().Get("situationInstanceId")
 		if situationInstanceIDStr != "" {
 			situationInstanceID, err := strconv.ParseInt(situationInstanceIDStr, 10, 64)
@@ -662,7 +662,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			situationInstance, found, err = situation.R().GetTemplateInstance(situationInstanceID)
+			situationInstance, found, err = situation2.R().GetTemplateInstance(situationInstanceID)
 			if err != nil {
 				zap.L().Error("Cannot retrieve situation Instance", zap.Int64("situationInstanceID", situationInstanceID), zap.Error(err))
 				httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -787,7 +787,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 
 	parameters := make(map[string]interface{})
 	if situationid != 0 {
-		s, found, err := situation.R().Get(int64(situationid))
+		s, found, err := situation2.R().Get(int64(situationid))
 		if err != nil {
 			httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 			return
@@ -801,7 +801,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if s.IsTemplate && instanceid != 0 {
-			template, found, err := situation.R().GetTemplateInstance(int64(instanceid))
+			template, found, err := situation2.R().GetTemplateInstance(int64(instanceid))
 			if err != nil {
 				httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 				return

@@ -1,7 +1,7 @@
 package action
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -23,8 +23,8 @@ func dbInit(dbClient *sqlx.DB, t *testing.T) {
 	tests.DBExec(dbClient, tests.RefRootCauseTableV1, t, true)
 	tests.DBExec(dbClient, tests.RefActionTableV1, t, true)
 
-	sr := situation.NewPostgresRepository(dbClient)
-	s1 := situation.Situation{
+	sr := situation2.NewPostgresRepository(dbClient)
+	s1 := situation2.Situation{
 		Name:  "situation_test_1",
 		Facts: []int64{},
 	}
@@ -34,7 +34,7 @@ func dbInit(dbClient *sqlx.DB, t *testing.T) {
 		t.FailNow()
 	}
 
-	s2 := situation.Situation{
+	s2 := situation2.Situation{
 		Name:  "situation_test_2",
 		Facts: []int64{},
 	}

@@ -3,6 +3,7 @@ package export
 import (
 	"context"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"strings"
 	"time"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/closepointintime"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
 )

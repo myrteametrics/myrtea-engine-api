@@ -1,11 +1,10 @@
 package tasker
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
 )
 
 func TestBuildSituationReportingTask(t *testing.T) {

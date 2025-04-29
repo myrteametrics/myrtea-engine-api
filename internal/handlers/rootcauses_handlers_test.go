@@ -3,7 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -27,9 +27,9 @@ func rootCausesDBInit(dbClient *sqlx.DB, t *testing.T) {
 	tests.DBExec(dbClient, tests.RuleVersionsTableV1, t, true)
 	tests.DBExec(dbClient, tests.RefRootCauseTableV1, t, true)
 
-	situationR := situation.NewPostgresRepository(dbClient)
-	situation.ReplaceGlobals(situationR)
-	s := situation.Situation{
+	situationR := situation2.NewPostgresRepository(dbClient)
+	situation2.ReplaceGlobals(situationR)
+	s := situation2.Situation{
 		Name:  "situation_test_1",
 		Facts: []int64{},
 	}

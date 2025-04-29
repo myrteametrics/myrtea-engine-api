@@ -3,7 +3,7 @@ package search
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"sort"
 	"time"
 

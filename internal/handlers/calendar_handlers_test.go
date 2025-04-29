@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	calendar2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"net/http"
@@ -9,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 )
 
@@ -30,18 +30,18 @@ func TestGetCalendars(t *testing.T) {
 	}
 	db := tests.DBClient(t)
 
-	calendarR := calendar.NewPostgresRepository(db)
-	calendar.ReplaceGlobals(calendarR)
+	calendarR := calendar2.NewPostgresRepository(db)
+	calendar2.ReplaceGlobals(calendarR)
 	defer dbCalendarDestroy(db, t)
 	dbCalendarInit(db, t)
 
 	//Create
 	name := "my_calendar_test"
-	period := calendar.Period{}
-	calend := calendar.Calendar{
+	period := calendar2.Period{}
+	calend := calendar2.Calendar{
 		Name:        name,
 		Description: "this is my calendar",
-		Periods:     []calendar.Period{period},
+		Periods:     []calendar2.Period{period},
 		Enabled:     true,
 	}
 
@@ -53,7 +53,7 @@ func TestGetCalendars(t *testing.T) {
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeCalendar, permissions.All, permissions.ActionList)}}
 	rr := tests.BuildTestHandler(t, "GET", "/calendars", "", "/calendars", GetCalendars, user)
 
-	var calendars []calendar.Calendar
+	var calendars []calendar2.Calendar
 	err = json.Unmarshal(rr.Body.Bytes(), &calendars)
 	if err != nil {
 		t.Errorf("handler returned unexpected body")
@@ -70,18 +70,18 @@ func TestGetCalendar(t *testing.T) {
 	}
 	db := tests.DBClient(t)
 
-	calendarR := calendar.NewPostgresRepository(db)
-	calendar.ReplaceGlobals(calendarR)
+	calendarR := calendar2.NewPostgresRepository(db)
+	calendar2.ReplaceGlobals(calendarR)
 	defer dbCalendarDestroy(db, t)
 	dbCalendarInit(db, t)
 
 	//Create
 	name := "my_calendar_test"
-	period := calendar.Period{}
-	calend := calendar.Calendar{
+	period := calendar2.Period{}
+	calend := calendar2.Calendar{
 		Name:        name,
 		Description: "this is my calendar",
-		Periods:     []calendar.Period{period},
+		Periods:     []calendar2.Period{period},
 	}
 
 	id, err := calendarR.Create(calend)
@@ -92,7 +92,7 @@ func TestGetCalendar(t *testing.T) {
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeCalendar, "1", permissions.ActionGet)}}
 	rr := tests.BuildTestHandler(t, "GET", "/calendars/"+strconv.FormatInt(id, 10), "", "/calendars/{id}", GetCalendar, user)
 
-	var calendarGet *calendar.Calendar
+	var calendarGet *calendar2.Calendar
 	err = json.Unmarshal(rr.Body.Bytes(), &calendarGet)
 	if err != nil {
 		t.Errorf("handler returned unexpected body")
@@ -109,17 +109,17 @@ func TestPostCalendar(t *testing.T) {
 	}
 	db := tests.DBClient(t)
 
-	calendarR := calendar.NewPostgresRepository(db)
-	calendar.ReplaceGlobals(calendarR)
+	calendarR := calendar2.NewPostgresRepository(db)
+	calendar2.ReplaceGlobals(calendarR)
 	defer dbCalendarDestroy(db, t)
 	dbCalendarInit(db, t)
 
 	name := "my_calendar_test"
-	period := calendar.Period{}
-	calend := calendar.Calendar{
+	period := calendar2.Period{}
+	calend := calendar2.Calendar{
 		Name:        name,
 		Description: "this is my calendar",
-		Periods:     []calendar.Period{period},
+		Periods:     []calendar2.Period{period},
 	}
 
 	calendarData, _ := json.Marshal(calend)
@@ -127,7 +127,7 @@ func TestPostCalendar(t *testing.T) {
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeCalendar, permissions.All, permissions.ActionCreate)}}
 	rr := tests.BuildTestHandler(t, "POST", "/calendars", string(calendarData), "/calendars", PostCalendar, user)
 
-	var calendarPost *calendar.Calendar
+	var calendarPost *calendar2.Calendar
 	err := json.Unmarshal(rr.Body.Bytes(), &calendarPost)
 	if err != nil {
 		t.Errorf("handler returned unexpected body")
@@ -144,18 +144,18 @@ func TestPutCalendar(t *testing.T) {
 	}
 	db := tests.DBClient(t)
 
-	calendarR := calendar.NewPostgresRepository(db)
-	calendar.ReplaceGlobals(calendarR)
+	calendarR := calendar2.NewPostgresRepository(db)
+	calendar2.ReplaceGlobals(calendarR)
 	defer dbCalendarDestroy(db, t)
 	dbCalendarInit(db, t)
 
 	//Create
 	name := "my_calendar_test"
-	period := calendar.Period{}
-	calend := calendar.Calendar{
+	period := calendar2.Period{}
+	calend := calendar2.Calendar{
 		Name:        name,
 		Description: "this is my calendar",
-		Periods:     []calendar.Period{period},
+		Periods:     []calendar2.Period{period},
 	}
 
 	id, err := calendarR.Create(calend)
@@ -169,7 +169,7 @@ func TestPutCalendar(t *testing.T) {
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeCalendar, "1", permissions.ActionUpdate)}}
 	rr := tests.BuildTestHandler(t, "PUT", "/calendars/"+strconv.FormatInt(id, 10), string(calendarData), "/calendars/{id}", PutCalendar, user)
 
-	var calendarPut *calendar.Calendar
+	var calendarPut *calendar2.Calendar
 	err = json.Unmarshal(rr.Body.Bytes(), &calendarPut)
 	if err != nil {
 		t.Errorf("handler returned unexpected body")
@@ -186,18 +186,18 @@ func TestDeleteCalendar(t *testing.T) {
 	}
 	db := tests.DBClient(t)
 
-	calendarR := calendar.NewPostgresRepository(db)
-	calendar.ReplaceGlobals(calendarR)
+	calendarR := calendar2.NewPostgresRepository(db)
+	calendar2.ReplaceGlobals(calendarR)
 	defer dbCalendarDestroy(db, t)
 	dbCalendarInit(db, t)
 
 	//Create
 	name := "my_calendar_test"
-	period := calendar.Period{}
-	calend := calendar.Calendar{
+	period := calendar2.Period{}
+	calend := calendar2.Calendar{
 		Name:        name,
 		Description: "this is my calendar",
-		Periods:     []calendar.Period{period},
+		Periods:     []calendar2.Period{period},
 	}
 
 	id, err := calendarR.Create(calend)

@@ -3,9 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"net/http"
 	"testing"
 
@@ -41,12 +41,12 @@ func TestPostSituation(t *testing.T) {
 	defer situationDbDestroy(db, t)
 	situationDbInit(db, t)
 
-	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	situation2.ReplaceGlobals(situation2.NewPostgresRepository(db))
 	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
 
 	factID, err := fact.R().Create(engine.Fact{})
 
-	s := situation.Situation{
+	s := situation2.Situation{
 		Name:  "test_situation",
 		Facts: []int64{factID},
 	}
@@ -56,7 +56,7 @@ func TestPostSituation(t *testing.T) {
 	rr := tests.BuildTestHandler(t, "POST", "/situations", string(b), "/situations", PostSituation, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, `{"id":1,"name":"test_situation","facts":[1],"expressionFacts":null,"calendarId":0,"parameters":null,"isTemplate":false,"isObject":false}`+"\n")
 
-	situations, err := situation.R().GetAll()
+	situations, err := situation2.R().GetAll()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -74,24 +74,24 @@ func TestPutSituationTemplateInstances(t *testing.T) {
 	defer situationDbDestroy(db, t)
 	situationDbInit(db, t)
 
-	situation.ReplaceGlobals(situation.NewPostgresRepository(db))
+	situation2.ReplaceGlobals(situation2.NewPostgresRepository(db))
 
 	//create situations
-	s1ID, _ := situation.R().Create(situation.Situation{Name: "Situation1", IsTemplate: true})
+	s1ID, _ := situation2.R().Create(situation2.Situation{Name: "Situation1", IsTemplate: true})
 
 	//Situation template instances
-	instance1 := situation.TemplateInstance{Name: "Instance 1"}
-	instance2 := situation.TemplateInstance{Name: "Instance 2"}
-	instance3 := situation.TemplateInstance{Name: "Instance 3"}
+	instance1 := situation2.TemplateInstance{Name: "Instance 1"}
+	instance2 := situation2.TemplateInstance{Name: "Instance 2"}
+	instance3 := situation2.TemplateInstance{Name: "Instance 3"}
 
 	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeSituation, "*", permissions.ActionUpdate)}}
 
 	//Put situation template instances
-	data, _ := json.Marshal([]situation.TemplateInstance{instance1, instance2})
+	data, _ := json.Marshal([]situation2.TemplateInstance{instance1, instance2})
 	rr := tests.BuildTestHandler(t, "PUT", "/situations/"+fmt.Sprint(s1ID)+"/instances", string(data), "/situations/{id}/instances", PutSituationTemplateInstances, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getInstances1, _ := situation.R().GetAllTemplateInstances(s1ID)
+	getInstances1, _ := situation2.R().GetAllTemplateInstances(s1ID)
 	if _, ok := getInstances1[1]; !ok {
 		t.Errorf("The template instance %s was not added to the situation template instance", instance1.Name)
 	}
@@ -107,7 +107,7 @@ func TestPutSituationTemplateInstances(t *testing.T) {
 	rr = tests.BuildTestHandler(t, "POST", "/situations/"+fmt.Sprint(s1ID)+"/instances", string(data), "/situations/{id}/instances", PostSituationTemplateInstance, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, string(expectedData)+"\n")
 
-	getInstances2, _ := situation.R().GetAllTemplateInstances(s1ID)
+	getInstances2, _ := situation2.R().GetAllTemplateInstances(s1ID)
 	if _, ok := getInstances2[3]; !ok {
 		t.Errorf("The template instance %s was not added to the situation template instance", instance3.Name)
 	}
@@ -122,11 +122,11 @@ func TestPutSituationTemplateInstances(t *testing.T) {
 	//Put situation template instances (remove instancetemplate)
 	instance1.ID = 1
 	instance1.SituationID = 1
-	data, _ = json.Marshal([]situation.TemplateInstance{instance1, instance3})
+	data, _ = json.Marshal([]situation2.TemplateInstance{instance1, instance3})
 	rr = tests.BuildTestHandler(t, "PUT", "/situations/"+fmt.Sprint(s1ID)+"/instances", string(data), "/situations/{id}/instances", PutSituationTemplateInstances, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getInstances3, _ := situation.R().GetAllTemplateInstances(s1ID)
+	getInstances3, _ := situation2.R().GetAllTemplateInstances(s1ID)
 	if _, ok := getInstances3[1]; !ok {
 		t.Errorf("The template instance %s was removed from the situation template instance", instance1.Name)
 	}
@@ -138,12 +138,12 @@ func TestPutSituationTemplateInstances(t *testing.T) {
 	}
 
 	//Put situation template instances (remove and add instancetemplate)
-	instance4 := situation.TemplateInstance{Name: "Instance 4"}
-	data, _ = json.Marshal([]situation.TemplateInstance{instance4, instance3})
+	instance4 := situation2.TemplateInstance{Name: "Instance 4"}
+	data, _ = json.Marshal([]situation2.TemplateInstance{instance4, instance3})
 	rr = tests.BuildTestHandler(t, "PUT", "/situations/"+fmt.Sprint(s1ID)+"/instances", string(data), "/situations/{id}/instances", PutSituationTemplateInstances, user)
 	tests.CheckTestHandler(t, rr, http.StatusOK, ``)
 
-	getInstances4, _ := situation.R().GetAllTemplateInstances(s1ID)
+	getInstances4, _ := situation2.R().GetAllTemplateInstances(s1ID)
 	if _, ok := getInstances4[1]; ok {
 		t.Errorf("The template instance %s was not removed from the situation template instance", instance1.Name)
 	}

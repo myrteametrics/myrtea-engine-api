@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"strings"
 	"time"
 	"unicode/utf8"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
 	"go.uber.org/zap"
 )
 

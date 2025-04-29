@@ -3,8 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
@@ -33,20 +33,20 @@ func GetSituations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var situations map[int64]situation.Situation
+	var situations map[int64]situation2.Situation
 	var err error
 	if userCtx.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionGet)) {
-		situations, err = situation.R().GetAll(gvalParsingEnabled(r.URL.Query()))
+		situations, err = situation2.R().GetAll(gvalParsingEnabled(r.URL.Query()))
 	} else {
 		resourceIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionGet))
-		situations, err = situation.R().GetAllByIDs(resourceIDs, gvalParsingEnabled(r.URL.Query()))
+		situations, err = situation2.R().GetAllByIDs(resourceIDs, gvalParsingEnabled(r.URL.Query()))
 	}
 	if err != nil {
 		zap.L().Warn("Cannot retrieve situations", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
-	situationsSlice := make([]situation.Situation, 0)
+	situationsSlice := make([]situation2.Situation, 0)
 	for _, schedule := range situations {
 		situationsSlice = append(situationsSlice, schedule)
 	}
@@ -85,7 +85,7 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	situation, found, err := situation.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
+	situation, found, err := situation2.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -115,7 +115,7 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500	"Status"	internal	server	error"
 //	@Router			/engine/situations/validate [post]
 func ValidateSituation(w http.ResponseWriter, r *http.Request) {
-	var newSituation situation.Situation
+	var newSituation situation2.Situation
 	err := json.NewDecoder(r.Body).Decode(&newSituation)
 	if err != nil {
 		zap.L().Warn("Situation json decode", zap.Error(err))
@@ -161,7 +161,7 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 		factsByName = true
 	}
 
-	var newSituation situation.Situation
+	var newSituation situation2.Situation
 	if factsByName {
 		type situationWithFactsName struct {
 			ID         int64                  `json:"id,omitempty"`
@@ -195,7 +195,7 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 			}
 			factIDs = append(factIDs, f.ID)
 		}
-		newSituation = situation.Situation{
+		newSituation = situation2.Situation{
 			ID:         s.ID,
 			Name:       s.Name,
 			Facts:      factIDs,
@@ -219,14 +219,14 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idSituation, err := situation.R().Create(newSituation)
+	idSituation, err := situation2.R().Create(newSituation)
 	if err != nil {
 		zap.L().Error("Error while creating the situation", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	situation, found, err := situation.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
+	situation, found, err := situation2.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -271,7 +271,7 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newSituation situation.Situation
+	var newSituation situation2.Situation
 	err = json.NewDecoder(r.Body).Decode(&newSituation)
 	if err != nil {
 		zap.L().Warn("Situation json decode", zap.Error(err))
@@ -286,14 +286,14 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = situation.R().Update(idSituation, newSituation)
+	err = situation2.R().Update(idSituation, newSituation)
 	if err != nil {
 		zap.L().Info("Error while updating the situation", zap.String("situation ID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	situation, found, err := situation.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
+	situation, found, err := situation2.R().Get(idSituation, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", idSituation), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -334,7 +334,7 @@ func DeleteSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = situation.R().Delete(idSituation)
+	err = situation2.R().Delete(idSituation)
 	if err != nil {
 		zap.L().Error("Error while deleting the situation", zap.String("Situation ID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	calendar2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
@@ -10,7 +11,6 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/calendar"
 	"go.uber.org/zap"
 )
 
@@ -32,14 +32,14 @@ func GetCalendars(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	calendars, err := calendar.R().GetAll()
+	calendars, err := calendar2.R().GetAll()
 	if err != nil {
 		zap.L().Error("Cannot retrieve issues", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	calendarsSlice := make([]calendar.Calendar, 0)
+	calendarsSlice := make([]calendar2.Calendar, 0)
 	for _, calend := range calendars {
 		calendarsSlice = append(calendarsSlice, calend)
 	}
@@ -78,7 +78,7 @@ func GetCalendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	calendar, found, err := calendar.R().Get(idCalendar)
+	calendar, found, err := calendar2.R().Get(idCalendar)
 	if err != nil {
 		zap.L().Error("Cannot retrieve calendar", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -106,7 +106,7 @@ func GetCalendar(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400	"Status Bad Request"
 //	@Router			/engine/calendars/resolved/{id} [get]
 func GetResolvedCalendar(w http.ResponseWriter, r *http.Request) {
-	calendar.CBase().Update()
+	calendar2.CBase().Update()
 
 	id := chi.URLParam(r, "id")
 	idCalendar, err := strconv.ParseInt(id, 10, 64)
@@ -122,7 +122,7 @@ func GetResolvedCalendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	calendar, found, err := calendar.CBase().GetResolved(idCalendar)
+	calendar, found, err := calendar2.CBase().GetResolved(idCalendar)
 	if err != nil {
 		zap.L().Error("Cannot retrieve calendar", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -151,7 +151,7 @@ func GetResolvedCalendar(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400	"Status Bad Request"
 //	@Router			/engine/calendars/{id}/contains [get]
 func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
-	calendar.CBase().Update()
+	calendar2.CBase().Update()
 
 	id := chi.URLParam(r, "id")
 	idCalendar, err := strconv.ParseInt(id, 10, 64)
@@ -174,7 +174,7 @@ func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, valid, err := calendar.CBase().InPeriodFromCalendarID(idCalendar, t)
+	found, valid, err := calendar2.CBase().InPeriodFromCalendarID(idCalendar, t)
 	if err != nil {
 		zap.L().Error("Cannot retrieve the period with the date", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -186,7 +186,7 @@ func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, r, calendar.InPeriodContains{Contains: valid})
+	httputil.JSON(w, r, calendar2.InPeriodContains{Contains: valid})
 }
 
 // PostCalendar godoc
@@ -210,7 +210,7 @@ func PostCalendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newCalendar calendar.Calendar
+	var newCalendar calendar2.Calendar
 	err := json.NewDecoder(r.Body).Decode(&newCalendar)
 	if err != nil {
 		zap.L().Warn("Invalid calendar json defined", zap.Error(err))
@@ -218,14 +218,14 @@ func PostCalendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	calendarID, err := calendar.R().Create(newCalendar)
+	calendarID, err := calendar2.R().Create(newCalendar)
 	if err != nil {
 		zap.L().Error("Error while creating the calendar", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	newCalendar, found, err := calendar.R().Get(calendarID)
+	newCalendar, found, err := calendar2.R().Get(calendarID)
 	if err != nil {
 		zap.L().Error("Get calendar failed", zap.Int64("id", calendarID), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -269,7 +269,7 @@ func PutCalendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var calend calendar.Calendar
+	var calend calendar2.Calendar
 	err = json.NewDecoder(r.Body).Decode(&calend)
 	if err != nil {
 		zap.L().Warn("calendar decode json", zap.Error(err))
@@ -278,14 +278,14 @@ func PutCalendar(w http.ResponseWriter, r *http.Request) {
 	}
 	calend.ID = idCalendar
 
-	err = calendar.R().Update(calend)
+	err = calendar2.R().Update(calend)
 	if err != nil {
 		zap.L().Error("PutUser.Update", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	newCalendar, found, err := calendar.R().Get(idCalendar)
+	newCalendar, found, err := calendar2.R().Get(idCalendar)
 	if err != nil {
 		zap.L().Error("Get calendar failed", zap.Int64("id", idCalendar), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -328,7 +328,7 @@ func DeleteCalendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = calendar.R().Delete(idCalendar)
+	err = calendar2.R().Delete(idCalendar)
 	if err != nil {
 		zap.L().Error("Delete calendar", zap.String("ID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)

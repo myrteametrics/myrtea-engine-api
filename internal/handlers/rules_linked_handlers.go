@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
@@ -36,14 +36,14 @@ func GetRuleSituations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	situationsMap, err := situation.R().GetAllByRuleID(idRule, gvalParsingEnabled(r.URL.Query()))
+	situationsMap, err := situation2.R().GetAllByRuleID(idRule, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Error("Error on getting rule situations", zap.String("situationID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
 	}
 
-	situationSlice := make([]situation.Situation, 0)
+	situationSlice := make([]situation2.Situation, 0)
 	for _, v := range situationsMap {
 		situationSlice = append(situationSlice, v)
 	}
@@ -86,7 +86,7 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	situationsMap, err := situation.R().GetAllByRuleID(idRule, gvalParsingEnabled(r.URL.Query()))
+	situationsMap, err := situation2.R().GetAllByRuleID(idRule, gvalParsingEnabled(r.URL.Query()))
 	if err != nil {
 		zap.L().Warn("Error getting situations by rulesID", zap.Int64("ruleID", idRule), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -104,7 +104,7 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 		if _, ok := situationsMap[situationID]; ok {
 			delete(situationsMap, situationID)
 		} else {
-			err = situation.R().AddRule(tx, situationID, idRule)
+			err = situation2.R().AddRule(tx, situationID, idRule)
 			if err != nil {
 				tx.Rollback()
 				zap.L().Warn("Error adding the rule to the situation", zap.Int64("situationID", situationID), zap.Error(err))
@@ -116,7 +116,7 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for situationID := range situationsMap {
-		err = situation.R().RemoveRule(tx, situationID, idRule)
+		err = situation2.R().RemoveRule(tx, situationID, idRule)
 		if err != nil {
 			tx.Rollback()
 			zap.L().Warn("Error removing the rule from the situation", zap.Int64("situationID", situationID), zap.Error(err))

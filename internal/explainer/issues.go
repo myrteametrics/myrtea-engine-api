@@ -1,13 +1,13 @@
 package explainer
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/reader"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
 )

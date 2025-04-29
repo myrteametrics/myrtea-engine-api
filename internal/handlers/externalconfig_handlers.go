@@ -3,9 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/externalconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/externalconfig"
 	"net/http"
 	"net/url"
 	"sort"

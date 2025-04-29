@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/calendar"
 	"go.uber.org/zap"
 )
 
