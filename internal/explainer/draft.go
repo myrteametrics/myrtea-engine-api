@@ -7,11 +7,11 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/draft"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 // SaveIssueDraft generate and persist an issue draft
-func SaveIssueDraft(tx *sqlx.Tx, issue models.Issue, issueDraft models.FrontDraft, user users.User) error {
+func SaveIssueDraft(tx *sqlx.Tx, issue model.Issue, issueDraft model.FrontDraft, user users.User) error {
 
 	if issue.State.IsClosed() {
 		return fmt.Errorf("Issue with id %d is already in a closed state", issue.ID)
@@ -23,7 +23,7 @@ func SaveIssueDraft(tx *sqlx.Tx, issue models.Issue, issueDraft models.FrontDraf
 	}
 
 	switch issue.State {
-	case models.Open:
+	case model.Open:
 		if exists {
 			return fmt.Errorf("A draft has been found on an issue %d with state Open", issue.ID)
 		}
@@ -32,7 +32,7 @@ func SaveIssueDraft(tx *sqlx.Tx, issue models.Issue, issueDraft models.FrontDraf
 			return err
 		}
 
-	case models.Draft:
+	case model.Draft:
 		existsWithUUID, err := draft.R().CheckExistsWithUUID(nil, issue.ID, issueDraft.ConcurrencyUUID)
 		if err != nil {
 			return err
@@ -46,7 +46,7 @@ func SaveIssueDraft(tx *sqlx.Tx, issue models.Issue, issueDraft models.FrontDraf
 		}
 	}
 
-	err = updateIssueState(tx, issue, models.Draft, user)
+	err = updateIssueState(tx, issue, model.Draft, user)
 	if err != nil {
 		return err
 	}

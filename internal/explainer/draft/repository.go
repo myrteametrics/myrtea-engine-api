@@ -5,16 +5,16 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows standard CRUD operation on RootCauses
 type Repository interface {
-	Get(issueID int64) (models.FrontDraft, bool, error)
-	Create(tx *sqlx.Tx, issueID int64, draft models.FrontDraft) error
-	Update(tx *sqlx.Tx, issueID int64, draft models.FrontDraft) error
+	Get(issueID int64) (model.FrontDraft, bool, error)
+	Create(tx *sqlx.Tx, issueID int64, draft model.FrontDraft) error
+	Update(tx *sqlx.Tx, issueID int64, draft model.FrontDraft) error
 	// Delete(tx *sqlx.Tx, id int64) error)
 	CheckExists(tx *sqlx.Tx, issueID int64) (bool, error)
 	CheckExistsWithUUID(tx *sqlx.Tx, issueID int64, uuid string) (bool, error)

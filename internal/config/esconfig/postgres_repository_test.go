@@ -3,7 +3,7 @@ package esconfig
 import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 	"testing"
 )
@@ -69,7 +69,7 @@ func TestPostgresGet(t *testing.T) {
 		t.Error("found a elasticSearchConfig from nowhere")
 	}
 
-	elasticSearchConfig := models.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
+	elasticSearchConfig := model.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
 	id, err := r.Create(elasticSearchConfig)
 	if err != nil {
 		t.Error(err)
@@ -109,7 +109,7 @@ func TestPostgresGetByName(t *testing.T) {
 		t.Error("found a elasticSearchConfig from nowhere")
 	}
 
-	elasticSearchConfig := models.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
+	elasticSearchConfig := model.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
 	id, err := r.Create(elasticSearchConfig)
 	if err != nil {
 		t.Error(err)
@@ -147,7 +147,7 @@ func TestPostgresGetDefault(t *testing.T) {
 		t.Error("found a elasticSearchConfig from nowhere")
 	}
 
-	elasticSearchConfig := models.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: true}
+	elasticSearchConfig := model.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: true}
 	id, err := r.Create(elasticSearchConfig)
 	if err != nil {
 		t.Error(err)
@@ -177,7 +177,7 @@ func TestPostgresCreate(t *testing.T) {
 	dbInitRepo(db, t)
 	r := NewPostgresRepository(db)
 
-	elasticSearchConfig := models.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
+	elasticSearchConfig := model.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
 	id, err := r.Create(elasticSearchConfig)
 	if err != nil {
 		t.Error(err)
@@ -210,7 +210,7 @@ func TestPostgresCreateMultiple(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	elasticSearchConfig := models.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
+	elasticSearchConfig := model.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
 	id1, err := r.Create(elasticSearchConfig)
 	if err != nil {
 		t.Error(err)
@@ -228,7 +228,7 @@ func TestPostgresCreateMultiple(t *testing.T) {
 		t.Error("invalid ID")
 	}
 
-	elasticSearchConfig2 := models.ElasticSearchConfig{Name: "test_name2", URLs: []string{"http://localhost:9201"}, Default: false}
+	elasticSearchConfig2 := model.ElasticSearchConfig{Name: "test_name2", URLs: []string{"http://localhost:9201"}, Default: false}
 	id2, err := r.Create(elasticSearchConfig2)
 	if err != nil {
 		t.Error(err)
@@ -258,12 +258,12 @@ func TestPostgresUpdate(t *testing.T) {
 
 	var err error
 
-	elasticSearchConfig := models.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
+	elasticSearchConfig := model.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
 	id, err := r.Create(elasticSearchConfig)
 	if err != nil {
 		t.Error(err)
 	}
-	elasticSearchConfig2 := models.ElasticSearchConfig{Name: "test_name2", URLs: []string{"http://localhost:9200"}, Default: false}
+	elasticSearchConfig2 := model.ElasticSearchConfig{Name: "test_name2", URLs: []string{"http://localhost:9200"}, Default: false}
 	err = r.Update(id, elasticSearchConfig2)
 	if err != nil {
 		t.Error(err)
@@ -294,7 +294,7 @@ func TestPostgresUpdateNotExists(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	elasticSearchConfig := models.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
+	elasticSearchConfig := model.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
 	err = r.Update(1, elasticSearchConfig)
 	if err == nil {
 		t.Error("updating a non-existing elasticSearchConfig should return an error")
@@ -312,7 +312,7 @@ func TestPostgresDelete(t *testing.T) {
 
 	var err error
 
-	elasticSearchConfig := models.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
+	elasticSearchConfig := model.ElasticSearchConfig{Name: "test_name", URLs: []string{"http://localhost:9200"}, Default: false}
 	id, err := r.Create(elasticSearchConfig)
 	if err != nil {
 		t.Error(err)
@@ -366,12 +366,12 @@ func TestPostgresGetAll(t *testing.T) {
 	dbInitRepo(db, t)
 	r := NewPostgresRepository(db)
 
-	elasticSearchConfig := models.ElasticSearchConfig{Name: "test1", URLs: []string{"http://localhost:9200"}, Default: false}
+	elasticSearchConfig := model.ElasticSearchConfig{Name: "test1", URLs: []string{"http://localhost:9200"}, Default: false}
 	e1ID, err := r.Create(elasticSearchConfig)
 	if err != nil {
 		t.Error(err)
 	}
-	elasticSearchConfig2 := models.ElasticSearchConfig{Name: "test2", URLs: []string{"http://localhost:9201"}, Default: true}
+	elasticSearchConfig2 := model.ElasticSearchConfig{Name: "test2", URLs: []string{"http://localhost:9201"}, Default: true}
 	e2ID, err := r.Create(elasticSearchConfig2)
 	if err != nil {
 		t.Error(err)

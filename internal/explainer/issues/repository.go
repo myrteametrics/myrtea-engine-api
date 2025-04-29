@@ -6,31 +6,31 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows standard CRUD operation on Issues
 type Repository interface {
-	Get(id int64) (models.Issue, bool, error)
-	Create(issue models.Issue) (int64, error)
+	Get(id int64) (model.Issue, bool, error)
+	Create(issue model.Issue) (int64, error)
 
-	Update(tx *sqlx.Tx, id int64, issue models.Issue, user users.User) error
+	Update(tx *sqlx.Tx, id int64, issue model.Issue, user users.User) error
 	UpdateComment(dbClient *sqlx.DB, id int64, comment string) error
-	GetAll() (map[int64]models.Issue, error)
-	GetAllBySituationIDs(situationIDs []int64) (map[int64]models.Issue, error)
-	GetByStates(issueStates []string) (map[int64]models.Issue, error)
-	GetByStatesBySituationIDs(issueStates []string, situationIDs []int64) (map[int64]models.Issue, error)
-	GetByStateByPage(issuesStates []string, options models.SearchOptions) ([]models.Issue, int, error)
-	GetByStateByPageBySituationIDs(issuesStates []string, options models.SearchOptions, situationIDs []int64) ([]models.Issue, int, error)
-	GetByKeyByPage(key string, options models.SearchOptions) ([]models.Issue, int, error)
+	GetAll() (map[int64]model.Issue, error)
+	GetAllBySituationIDs(situationIDs []int64) (map[int64]model.Issue, error)
+	GetByStates(issueStates []string) (map[int64]model.Issue, error)
+	GetByStatesBySituationIDs(issueStates []string, situationIDs []int64) (map[int64]model.Issue, error)
+	GetByStateByPage(issuesStates []string, options model.SearchOptions) ([]model.Issue, int, error)
+	GetByStateByPageBySituationIDs(issuesStates []string, options model.SearchOptions, situationIDs []int64) ([]model.Issue, int, error)
+	GetByKeyByPage(key string, options model.SearchOptions) ([]model.Issue, int, error)
 
-	GetCloseToTimeoutByKey(key string, firstSituationTS time.Time) (map[int64]models.Issue, error)
-	GetOpenAndDraftIssuesByKey(key string) (map[int64]models.Issue, error)
+	GetCloseToTimeoutByKey(key string, firstSituationTS time.Time) (map[int64]model.Issue, error)
+	GetOpenAndDraftIssuesByKey(key string) (map[int64]model.Issue, error)
 
-	ChangeState(key string, fromStates []models.IssueState, toState models.IssueState) error
-	ChangeStateBetweenDates(key string, fromStates []models.IssueState, toState models.IssueState, from time.Time, to time.Time) error
+	ChangeState(key string, fromStates []model.IssueState, toState model.IssueState) error
+	ChangeStateBetweenDates(key string, fromStates []model.IssueState, toState model.IssueState, from time.Time, to time.Time) error
 
 	DeleteOldIssues(ts time.Time) error
 	DeleteOldIssueDetections(ts time.Time) error

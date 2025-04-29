@@ -5,7 +5,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"sort"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 func extractFactHistoryRecordValues(rawResults []byte, out *FactHistoryRecord, downSamplingOperation string) error {
@@ -82,7 +82,7 @@ func extractMetaData(rawMetadatas []byte, out map[string]interface{}, metaDataSo
 		keys = append(keys, value...)
 	}
 
-	var metadatas []models.MetaData
+	var metadatas []model.MetaData
 
 	if downSamplingOperation == "" || downSamplingOperation == "first" || downSamplingOperation == "latest" {
 		err := json.Unmarshal(rawMetadatas, &metadatas)
@@ -103,7 +103,7 @@ func extractMetaData(rawMetadatas []byte, out map[string]interface{}, metaDataSo
 			}
 		}
 	} else {
-		var metadatasList [][]models.MetaData
+		var metadatasList [][]model.MetaData
 		var dataList []map[string]interface{}
 		err := json.Unmarshal(rawMetadatas, &metadatasList)
 		if err != nil {

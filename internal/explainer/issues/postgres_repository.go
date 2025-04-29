@@ -11,7 +11,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"go.uber.org/zap"
 )
 
@@ -31,7 +31,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Get use to retrieve an issue by id
-func (r *PostgresRepository) Get(id int64) (models.Issue, bool, error) {
+func (r *PostgresRepository) Get(id int64) (model.Issue, bool, error) {
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
 			  i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
@@ -42,25 +42,25 @@ func (r *PostgresRepository) Get(id int64) (models.Issue, bool, error) {
 	})
 
 	if err != nil {
-		return models.Issue{}, false, err
+		return model.Issue{}, false, err
 	}
 	defer rows.Close()
 
-	var issue models.Issue
+	var issue model.Issue
 	if rows.Next() {
 		issue, err = scanIssue(rows)
 		if err != nil {
-			return models.Issue{}, false, err
+			return model.Issue{}, false, err
 		}
 	} else {
-		return models.Issue{}, false, nil
+		return model.Issue{}, false, nil
 	}
 
 	return issue, true, nil
 }
 
 // Create method used to create an issue
-func (r *PostgresRepository) Create(issue models.Issue) (int64, error) {
+func (r *PostgresRepository) Create(issue model.Issue) (int64, error) {
 	creationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 	lastModificationTS := creationTS
 
@@ -133,18 +133,18 @@ func (r *PostgresRepository) UpdateComment(dbClient *sqlx.DB, id int64, comment 
 }
 
 // Update method used to update an issue
-func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, user users.User) error {
+func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue model.Issue, user users.User) error {
 	lastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
 	// Here we exclude some fields that are not to be updated
 	query := `UPDATE issues_v1 SET name = :name, expiration_date = :expiration_date,
 	state = :state, last_modified = :last_modified, comment = :comment`
 
-	if issue.State == models.ClosedNoFeedback || issue.State == models.ClosedFeedbackConfirmed || issue.State == models.ClosedFeedbackRejected ||
-		issue.State == models.ClosedConfirmed || issue.State == models.ClosedRejected {
+	if issue.State == model.ClosedNoFeedback || issue.State == model.ClosedFeedbackConfirmed || issue.State == model.ClosedFeedbackRejected ||
+		issue.State == model.ClosedConfirmed || issue.State == model.ClosedRejected {
 		query = query + `, closed_at = :ts, closed_by = :user`
 	}
-	if issue.State == models.Draft && issue.AssignedAt == nil {
+	if issue.State == model.Draft && issue.AssignedAt == nil {
 		query = query + `, assigned_at = :ts, assigned_to = :user`
 	}
 	query = query + ` WHERE id = :id`
@@ -185,8 +185,8 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, issue models.Issue, u
 
 // GetOpenAndDraftIssuesByKey get all issues that belong to the same situation in 'open' or 'draft' states
 // if existed
-func (r *PostgresRepository) GetOpenAndDraftIssuesByKey(key string) (map[int64]models.Issue, error) {
-	issues := make(map[int64]models.Issue)
+func (r *PostgresRepository) GetOpenAndDraftIssuesByKey(key string) (map[int64]model.Issue, error) {
+	issues := make(map[int64]model.Issue)
 
 	query := `SELECT i.id, i.key, i.name, i.level,  i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
@@ -196,7 +196,7 @@ func (r *PostgresRepository) GetOpenAndDraftIssuesByKey(key string) (map[int64]m
 
 	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
 		"key":    key,
-		"states": pq.Array([]string{models.Open.String(), models.Draft.String()}),
+		"states": pq.Array([]string{model.Open.String(), model.Draft.String()}),
 	})
 	if err != nil {
 		return nil, errors.New("couldn't retrieve the issues with key and first situation date: " + err.Error())
@@ -215,8 +215,8 @@ func (r *PostgresRepository) GetOpenAndDraftIssuesByKey(key string) (map[int64]m
 
 // GetCloseToTimeoutByKey get all issues that belong to the same situation and their
 // creation time are within the timeout duration
-func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS time.Time) (map[int64]models.Issue, error) {
-	issues := make(map[int64]models.Issue, 0)
+func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS time.Time) (map[int64]model.Issue, error) {
+	issues := make(map[int64]model.Issue, 0)
 
 	query := `SELECT i.id, i.key, i.name, i.level,  i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
@@ -229,13 +229,13 @@ func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS
 		"key":                  key,
 		"first_situation_date": firstSituationTS,
 		"closed_states": pq.Array([]string{
-			models.ClosedFeedbackConfirmed.String(),
-			models.ClosedFeedbackRejected.String(),
-			models.ClosedNoFeedback.String(),
-			models.ClosedTimeout.String(),
-			models.ClosedDiscard.String(),
-			models.ClosedConfirmed.String(),
-			models.ClosedRejected.String(),
+			model.ClosedFeedbackConfirmed.String(),
+			model.ClosedFeedbackRejected.String(),
+			model.ClosedNoFeedback.String(),
+			model.ClosedTimeout.String(),
+			model.ClosedDiscard.String(),
+			model.ClosedConfirmed.String(),
+			model.ClosedRejected.String(),
 		}),
 	})
 	if err != nil {
@@ -254,8 +254,8 @@ func (r *PostgresRepository) GetCloseToTimeoutByKey(key string, firstSituationTS
 }
 
 // Get used to get issues by key
-func (r *PostgresRepository) GetByKeyByPage(key string, options models.SearchOptions) ([]models.Issue, int, error) {
-	issues := make([]models.Issue, 0)
+func (r *PostgresRepository) GetByKeyByPage(key string, options model.SearchOptions) ([]model.Issue, int, error) {
+	issues := make([]model.Issue, 0)
 
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id,
         i.situation_id, situation_instance_id, i.situation_date,
@@ -269,7 +269,7 @@ func (r *PostgresRepository) GetByKeyByPage(key string, options models.SearchOpt
 		"key": key,
 	}
 	if len(options.SortBy) == 0 {
-		options.SortBy = []models.SortOption{{Field: "id", Order: models.Asc}}
+		options.SortBy = []model.SortOption{{Field: "id", Order: model.Asc}}
 	}
 	var err error
 	query, params, err = queryutils.AppendSearchOptions(query, params, options, "i")
@@ -299,7 +299,7 @@ func (r *PostgresRepository) GetByKeyByPage(key string, options models.SearchOpt
 }
 
 // ChangeState method used to change the issues state with key and created_date between from and to
-func (r *PostgresRepository) ChangeState(key string, fromStates []models.IssueState, toState models.IssueState) error {
+func (r *PostgresRepository) ChangeState(key string, fromStates []model.IssueState, toState model.IssueState) error {
 	LastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
 	// Review 2023-02-10 : We are about to close all issues, there's no need to have "key" here
@@ -338,7 +338,7 @@ func (r *PostgresRepository) ChangeState(key string, fromStates []models.IssueSt
 }
 
 // ChangeStateBetweenDates method used to change the issues state with key and created_date between from and to
-func (r *PostgresRepository) ChangeStateBetweenDates(key string, fromStates []models.IssueState, toState models.IssueState, from time.Time, to time.Time) error {
+func (r *PostgresRepository) ChangeStateBetweenDates(key string, fromStates []model.IssueState, toState model.IssueState, from time.Time, to time.Time) error {
 	LastModificationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
 	// Here we exclude some fields that are not to be updated
@@ -375,8 +375,8 @@ func (r *PostgresRepository) ChangeStateBetweenDates(key string, fromStates []mo
 }
 
 // GetAll method used to get all issues
-func (r *PostgresRepository) GetAll() (map[int64]models.Issue, error) {
-	issues := make(map[int64]models.Issue, 0)
+func (r *PostgresRepository) GetAll() (map[int64]model.Issue, error) {
+	issues := make(map[int64]model.Issue, 0)
 
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
@@ -399,8 +399,8 @@ func (r *PostgresRepository) GetAll() (map[int64]models.Issue, error) {
 	return issues, nil
 }
 
-func (r *PostgresRepository) GetAllBySituationIDs(situationIDs []int64) (map[int64]models.Issue, error) {
-	issues := make(map[int64]models.Issue, 0)
+func (r *PostgresRepository) GetAllBySituationIDs(situationIDs []int64) (map[int64]model.Issue, error) {
+	issues := make(map[int64]model.Issue, 0)
 
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 		  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
@@ -428,8 +428,8 @@ func (r *PostgresRepository) GetAllBySituationIDs(situationIDs []int64) (map[int
 }
 
 // GetByStates method used to get all issues for an user
-func (r *PostgresRepository) GetByStates(issueStates []string) (map[int64]models.Issue, error) {
-	issues := make(map[int64]models.Issue, 0)
+func (r *PostgresRepository) GetByStates(issueStates []string) (map[int64]model.Issue, error) {
+	issues := make(map[int64]model.Issue, 0)
 
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
@@ -460,8 +460,8 @@ func (r *PostgresRepository) GetByStates(issueStates []string) (map[int64]models
 }
 
 // GetByStates method used to get all issues for an user
-func (r *PostgresRepository) GetByStatesBySituationIDs(issueStates []string, situationIDs []int64) (map[int64]models.Issue, error) {
-	issues := make(map[int64]models.Issue, 0)
+func (r *PostgresRepository) GetByStatesBySituationIDs(issueStates []string, situationIDs []int64) (map[int64]model.Issue, error) {
+	issues := make(map[int64]model.Issue, 0)
 
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id, i.situation_id, situation_instance_id, i.situation_date,
 			  i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified, i.detection_rating_avg,
@@ -496,8 +496,8 @@ func (r *PostgresRepository) GetByStatesBySituationIDs(issueStates []string, sit
 }
 
 // GetByStateByPage method used to get all issues
-func (r *PostgresRepository) GetByStateByPage(issueStates []string, options models.SearchOptions) ([]models.Issue, int, error) {
-	issues := make([]models.Issue, 0)
+func (r *PostgresRepository) GetByStateByPage(issueStates []string, options model.SearchOptions) ([]model.Issue, int, error) {
+	issues := make([]model.Issue, 0)
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id,
 		i.situation_id, situation_instance_id, i.situation_date,
 		i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
@@ -509,7 +509,7 @@ func (r *PostgresRepository) GetByStateByPage(issueStates []string, options mode
 		params["states"] = pq.Array(issueStates)
 	}
 	if len(options.SortBy) == 0 {
-		options.SortBy = []models.SortOption{{Field: "id", Order: models.Asc}}
+		options.SortBy = []model.SortOption{{Field: "id", Order: model.Asc}}
 	}
 
 	var err error
@@ -541,8 +541,8 @@ func (r *PostgresRepository) GetByStateByPage(issueStates []string, options mode
 }
 
 // GetByStateByPage method used to get all issues
-func (r *PostgresRepository) GetByStateByPageBySituationIDs(issueStates []string, options models.SearchOptions, situationIDs []int64) ([]models.Issue, int, error) {
-	issues := make([]models.Issue, 0)
+func (r *PostgresRepository) GetByStateByPageBySituationIDs(issueStates []string, options model.SearchOptions, situationIDs []int64) ([]model.Issue, int, error) {
+	issues := make([]model.Issue, 0)
 
 	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id,
 		i.situation_id, situation_instance_id, i.situation_date,
@@ -559,7 +559,7 @@ func (r *PostgresRepository) GetByStateByPageBySituationIDs(issueStates []string
 		params["states"] = pq.Array(issueStates)
 	}
 	if len(options.SortBy) == 0 {
-		options.SortBy = []models.SortOption{{Field: "id", Order: models.Asc}}
+		options.SortBy = []model.SortOption{{Field: "id", Order: model.Asc}}
 	}
 
 	var err error
@@ -672,11 +672,11 @@ func (r *PostgresRepository) CountByKeyByPage(key string) (int, error) {
 	return count, nil
 }
 
-func scanIssue(rows *sqlx.Rows) (models.Issue, error) {
+func scanIssue(rows *sqlx.Rows) (model.Issue, error) {
 	var ruleData string
 	var issueStateString string
 	var issueLevelString string
-	var issue models.Issue
+	var issue model.Issue
 
 	err := rows.Scan(
 		&issue.ID,
@@ -699,11 +699,11 @@ func scanIssue(rows *sqlx.Rows) (models.Issue, error) {
 		&issue.CloseBy,
 		&issue.Comment)
 	if err != nil {
-		return models.Issue{}, err
+		return model.Issue{}, err
 	}
 
-	issue.State = models.ToIssueState(issueStateString)
-	issue.Level = models.ToIssueLevel(issueLevelString)
+	issue.State = model.ToIssueState(issueStateString)
+	issue.Level = model.ToIssueLevel(issueLevelString)
 
 	ruleData = strings.ReplaceAll(ruleData, `"errors":[{}]`, `"errors":[]`)
 	ruleData = strings.ReplaceAll(ruleData, `"errors": [{}]`, `"errors": []`)
@@ -711,7 +711,7 @@ func scanIssue(rows *sqlx.Rows) (models.Issue, error) {
 	err = json.Unmarshal([]byte(ruleData), &issue.Rule)
 	if err != nil {
 		zap.L().Error("Couldn't unmarshall the issue rule:", zap.Error(err))
-		return models.Issue{}, err
+		return model.Issue{}, err
 	}
 	return issue, nil
 }

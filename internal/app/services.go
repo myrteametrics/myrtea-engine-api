@@ -117,7 +117,7 @@ func initCoordinator() {
 
 	models, err := modeler.R().GetAll()
 	if err != nil {
-		zap.L().Error("Fetching models", zap.Error(err))
+		zap.L().Error("Fetching model", zap.Error(err))
 		return
 	}
 

@@ -37,7 +37,7 @@ var (
 	ErrAPIParsingDuration = APIError{Status: http.StatusBadRequest, ErrType: "ParsingError", Code: 1004, Message: `Failed to parse a query param of type 'duration'. Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h". Multiple duration can be combined (example: "23s", "48h", "1h30m40s"`}
 	// ErrAPIParsingKeyValue must be used when a key-value type parsing error occurs (mainly for query parameters parsing, ie. placeholders)
 	ErrAPIParsingKeyValue = APIError{Status: http.StatusBadRequest, ErrType: "ParsingError", Code: 1005, Message: `Failed to parse a query param of type 'keyvalue'. Valid format is "key1:value1,key2:value2,...". (example: "country:france,category:export")`}
-	// ErrAPIParsingSortBy must be used when a models.SortOption type parsing error occurs (mainly for query parameters parsing)
+	// ErrAPIParsingSortBy must be used when a model.SortOption type parsing error occurs (mainly for query parameters parsing)
 	ErrAPIParsingSortBy = APIError{Status: http.StatusBadRequest, ErrType: "ParsingError", Code: 1006, Message: `Failed to parse a query param of type 'sort_by'. Valid format is "desc(field1),asc(field2),...". (example: "asc(date),desc(country),asc(category)`}
 	// ErrAPIParsingUUID must be used when a UUID parsing error occurs (mainly for query parameters parsing)
 	ErrAPIParsingUUID = APIError{Status: http.StatusBadRequest, ErrType: "ParsingError", Code: 1007, Message: `Failed to parse a query param of type 'uuid'. Valid format is "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx". (example: "123e4567-e89b-12d3-a456-426614174000")`}

@@ -3,13 +3,13 @@ package queryutils
 import (
 	"testing"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 func TestAppendSearchOptions(t *testing.T) {
 	query := "SELECT * FROM mytable"
 	params := map[string]interface{}{}
-	options := models.SearchOptions{Limit: 10, Offset: 50, SortBy: []models.SortOption{{Field: "field1", Order: models.Asc}}}
+	options := model.SearchOptions{Limit: 10, Offset: 50, SortBy: []model.SortOption{{Field: "field1", Order: model.Asc}}}
 	prefix := "mytable"
 
 	var err error

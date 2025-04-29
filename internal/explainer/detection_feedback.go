@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"go.uber.org/zap"
 )
 
 // AddIssueDetectionFeedback add a new feedback in the detection_feedback table (or update it if the user already posted a feedback)
 // Moreover, it updates the issue average rating for convenience
-func AddIssueDetectionFeedback(dbClient *sqlx.DB, issue models.Issue, user users.User, rating int) error {
+func AddIssueDetectionFeedback(dbClient *sqlx.DB, issue model.Issue, user users.User, rating int) error {
 	// FIXME: Alter detection feedback table to allow userID uuid.UUID instead of int64
 	// tx, err := dbClient.Beginx()
 	// if err != nil {

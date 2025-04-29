@@ -8,21 +8,21 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/action"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/draft"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 // GetRecommendationTree build a recommendation tree based on issue resolution stats table
-func GetRecommendationTree(issue models.Issue) (*models.FrontRecommendation, error) {
-	var recommendation *models.FrontRecommendation
+func GetRecommendationTree(issue model.Issue) (*model.FrontRecommendation, error) {
+	var recommendation *model.FrontRecommendation
 	var err error
 	switch {
-	case issue.State == models.Open:
+	case issue.State == model.Open:
 		recommendation, err = buildRecommendationTree(issue.SituationID, issue.Rule.RuleID)
 		if err != nil {
 			return nil, err
 		}
 
-	case issue.State == models.Draft:
+	case issue.State == model.Draft:
 		exists, err := draft.R().CheckExists(nil, issue.ID)
 		if err != nil {
 			return nil, err
@@ -64,9 +64,9 @@ func GetRecommendationTree(issue models.Issue) (*models.FrontRecommendation, err
 }
 
 // ExtractSelectedFromTree extracts and returns selected rootcause and actions from a recommendation
-func ExtractSelectedFromTree(recommendation models.FrontRecommendation) (*models.FrontRootCause, []*models.FrontAction, error) {
-	var selectedRootCause *models.FrontRootCause
-	selectedActions := make([]*models.FrontAction, 0)
+func ExtractSelectedFromTree(recommendation model.FrontRecommendation) (*model.FrontRootCause, []*model.FrontAction, error) {
+	var selectedRootCause *model.FrontRootCause
+	selectedActions := make([]*model.FrontAction, 0)
 
 	for _, rootCause := range recommendation.Tree {
 		if rootCause.Selected {
@@ -91,7 +91,7 @@ func ExtractSelectedFromTree(recommendation models.FrontRecommendation) (*models
 	return selectedRootCause, selectedActions, nil
 }
 
-func buildRecommendationTree(situationID int64, ruleID int64) (*models.FrontRecommendation, error) {
+func buildRecommendationTree(situationID int64, ruleID int64) (*model.FrontRecommendation, error) {
 	tree, err := buildRootCauseTree(situationID, ruleID)
 	if err != nil {
 		return nil, fmt.Errorf("buildRootCauseTree(): %s", err.Error())
@@ -104,15 +104,15 @@ func buildRecommendationTree(situationID int64, ruleID int64) (*models.FrontReco
 
 	sortRecommendationTree(tree)
 
-	return &models.FrontRecommendation{Tree: tree}, nil
+	return &model.FrontRecommendation{Tree: tree}, nil
 }
 
-func buildRootCauseTree(situationID int64, ruleID int64) ([]*models.FrontRootCause, error) {
+func buildRootCauseTree(situationID int64, ruleID int64) ([]*model.FrontRootCause, error) {
 	rootCauseStats, err := GetRootCauseStats(situationID)
 	if err != nil {
 		return nil, err
 	}
-	rootCauses := make([]*models.FrontRootCause, 0)
+	rootCauses := make([]*model.FrontRootCause, 0)
 	rootCausesDescs, err := rootcause.R().GetAllBySituationIDRuleID(situationID, ruleID)
 	if err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func buildRootCauseTree(situationID int64, ruleID int64) ([]*models.FrontRootCau
 		return nil, errors.New("nil rootcause map")
 	}
 	for rootCauseID, rootCauseDesc := range rootCausesDescs {
-		rootCause := models.FrontRootCause{
+		rootCause := model.FrontRootCause{
 			ID:              rootCauseID,
 			Name:            rootCauseDesc.Name,
 			Description:     rootCauseDesc.Description,
@@ -130,7 +130,7 @@ func buildRootCauseTree(situationID int64, ruleID int64) ([]*models.FrontRootCau
 			Occurrence:      0,
 			UsageRate:       0,
 			ClusteringScore: -1,
-			Actions:         make([]*models.FrontAction, 0),
+			Actions:         make([]*model.FrontAction, 0),
 		}
 		if stat, ok := rootCauseStats[rootCauseID]; ok {
 			rootCause.Occurrence = stat.Occurrences
@@ -141,14 +141,14 @@ func buildRootCauseTree(situationID int64, ruleID int64) ([]*models.FrontRootCau
 	return rootCauses, nil
 }
 
-func enrichTreeWithActions(situationID int64, rootCauses []*models.FrontRootCause) error {
+func enrichTreeWithActions(situationID int64, rootCauses []*model.FrontRootCause) error {
 	actionStats, err := GetActionStats(situationID)
 	if err != nil {
 		return err
 	}
 
 	for _, rootCause := range rootCauses {
-		actions := make([]*models.FrontAction, 0)
+		actions := make([]*model.FrontAction, 0)
 		actionDescs, err := action.R().GetAllByRootCauseID(rootCause.ID)
 		if err != nil {
 			return err
@@ -157,7 +157,7 @@ func enrichTreeWithActions(situationID int64, rootCauses []*models.FrontRootCaus
 			return errors.New("nil rootcause map")
 		}
 		for actionID, actionDesc := range actionDescs {
-			action := models.FrontAction{
+			action := model.FrontAction{
 				ID:          actionID,
 				Name:        actionDesc.Name,
 				Description: actionDesc.Description,
@@ -177,7 +177,7 @@ func enrichTreeWithActions(situationID int64, rootCauses []*models.FrontRootCaus
 	return nil
 }
 
-func sortRecommendationTree(rootCauses []*models.FrontRootCause) {
+func sortRecommendationTree(rootCauses []*model.FrontRootCause) {
 	sort.SliceStable(rootCauses, func(i, j int) bool {
 		return rootCauses[i].UsageRate > rootCauses[j].UsageRate
 	})

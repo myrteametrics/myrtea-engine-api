@@ -7,7 +7,7 @@ package explainer
 // 	"github.com/jmoiron/sqlx"
 // 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/explainer/issues"
 // 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/groups"
-// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/models"
+// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/model"
 // 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
 // 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tests"
 // 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/users"
@@ -43,10 +43,10 @@ package explainer
 
 // 	ir := issues.NewPostgresRepository(dbClient)
 // 	issues.ReplaceGlobals(ir)
-// 	issue := models.Issue{
+// 	issue := model.Issue{
 // 		SituationID: situationID1,
 // 		SituationTS: time.Now().Truncate(1 * time.Millisecond).UTC(),
-// 		State:       models.Open,
+// 		State:       model.Open,
 // 	}
 // 	createIssue(ir, issue, t, true)
 // 	createIssue(ir, issue, t, true)

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"go.uber.org/zap"
 )
 
@@ -74,10 +74,10 @@ func (task CreateIssueTask) Perform(key string, context ContextData) error {
 		return err
 	}
 
-	issueLevel := models.ToIssueLevel(task.Level)
+	issueLevel := model.ToIssueLevel(task.Level)
 
 	issueID, err := explainer.CreateIssue(context.SituationHistoryID, context.SituationID, context.TemplateInstanceID, context.TS,
-		models.RuleData{
+		model.RuleData{
 			RuleID:      int64(context.RuleID),
 			RuleVersion: int64(context.RuleVersion),
 			CaseName:    context.CaseName,

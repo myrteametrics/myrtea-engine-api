@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"go.uber.org/zap"
 )
 
@@ -28,7 +28,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Get use to retrieve a draft by id
-func (r *PostgresRepository) Get(issueID int64) (models.FrontDraft, bool, error) {
+func (r *PostgresRepository) Get(issueID int64) (model.FrontDraft, bool, error) {
 
 	query := `SELECT concurrency_uuid, data FROM issue_resolution_draft_v1 WHERE issue_id = :issue_id`
 	params := map[string]interface{}{
@@ -36,23 +36,23 @@ func (r *PostgresRepository) Get(issueID int64) (models.FrontDraft, bool, error)
 	}
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
-		return models.FrontDraft{}, false, err
+		return model.FrontDraft{}, false, err
 	}
 	defer rows.Close()
-	var draft models.FrontDraft
+	var draft model.FrontDraft
 	var concurrencyUUID, data string
 	if rows.Next() {
 		err := rows.Scan(&concurrencyUUID, &data)
 		if err != nil {
-			return models.FrontDraft{}, false, err
+			return model.FrontDraft{}, false, err
 		}
 	} else {
-		return models.FrontDraft{}, false, nil
+		return model.FrontDraft{}, false, nil
 	}
 
 	err = json.Unmarshal([]byte(data), &draft)
 	if err != nil {
-		return models.FrontDraft{}, false, err
+		return model.FrontDraft{}, false, err
 	}
 
 	draft.ConcurrencyUUID = concurrencyUUID
@@ -61,7 +61,7 @@ func (r *PostgresRepository) Get(issueID int64) (models.FrontDraft, bool, error)
 }
 
 // Create method used to create a draft
-func (r *PostgresRepository) Create(tx *sqlx.Tx, issueID int64, draft models.FrontDraft) error {
+func (r *PostgresRepository) Create(tx *sqlx.Tx, issueID int64, draft model.FrontDraft) error {
 
 	data, err := json.Marshal(draft)
 	if err != nil {
@@ -91,7 +91,7 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, issueID int64, draft models.Fro
 }
 
 // Update method used to update a draft
-func (r *PostgresRepository) Update(tx *sqlx.Tx, issueID int64, draft models.FrontDraft) error {
+func (r *PostgresRepository) Update(tx *sqlx.Tx, issueID int64, draft model.FrontDraft) error {
 
 	if draft.ConcurrencyUUID == "" {
 		return errors.New("no concurrency uuid specified on this draft")

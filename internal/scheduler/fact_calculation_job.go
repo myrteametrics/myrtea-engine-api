@@ -12,7 +12,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tasker"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
@@ -438,7 +438,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situationsToUpdate map[string]history.HistoryRecordV4) ([]tasker.TaskBatch, error) {
 	taskBatchs := make([]tasker.TaskBatch, 0)
 	taskBatchsMap := make(map[string]tasker.TaskBatch)
-	situationHistoryMetadata := make(map[models.Key]map[string]interface{})
+	situationHistoryMetadata := make(map[model.Key]map[string]interface{})
 	for _, situationToUpdate := range situationsToUpdate {
 
 		// zap.L().Sugar().Info(situationToUpdate)
@@ -479,13 +479,13 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			zap.L().Error("", zap.Error(err))
 		}
 
-		metadatas := make([]models.MetaData, 0)
+		metadatas := make([]model.MetaData, 0)
 		agenda := evaluator.EvaluateRules(localRuleEngine, historySituationFlattenData, enabledRuleIDs)
 		for _, agen := range agenda {
 			if agen.GetName() == "set" {
 				context := tasker.BuildContextData(agen.GetMetaData())
 				for key, value := range agen.GetParameters() {
-					metadatas = append(metadatas, models.MetaData{
+					metadatas = append(metadatas, model.MetaData{
 						Key:         key,
 						Value:       value,
 						RuleID:      context.RuleID,
@@ -512,7 +512,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		}
 		// zap.L().Sugar().Info("insert new situation", historySituationNew)
 
-		situationHistoryMetadata[models.Key{SituationID: situationToUpdate.SituationID, SituationInstanceID: situationToUpdate.SituationInstanceID}] = map[string]interface{}{
+		situationHistoryMetadata[model.Key{SituationID: situationToUpdate.SituationID, SituationInstanceID: situationToUpdate.SituationInstanceID}] = map[string]interface{}{
 			"HistorySituation": historySituationNew,
 		}
 		// Build and insert HistorySituationFactsV4
@@ -555,7 +555,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 }
 
 // filtration
-func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, situationHistoryMetadata map[models.Key]map[string]interface{}, taskBatchsMap map[string]tasker.TaskBatch) []tasker.TaskBatch {
+func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, situationHistoryMetadata map[model.Key]map[string]interface{}, taskBatchsMap map[string]tasker.TaskBatch) []tasker.TaskBatch {
 	filteredTaskBatch := make(map[string]tasker.TaskBatch, len(taskBatchsMap))
 	for key, taskBatch := range taskBatchsMap {
 		filteredTaskBatch[key] = taskBatch
@@ -647,7 +647,7 @@ func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, situ
 	return taskBatchSlice
 }
 
-func filterAgendaAndUpdateHistory(keychild string, DependsOnMetadata string, filteredTaskBatch map[string]tasker.TaskBatch, situationHistoryMetadata map[models.Key]map[string]interface{}, situation history.HistoryRecordV4) error {
+func filterAgendaAndUpdateHistory(keychild string, DependsOnMetadata string, filteredTaskBatch map[string]tasker.TaskBatch, situationHistoryMetadata map[model.Key]map[string]interface{}, situation history.HistoryRecordV4) error {
 	// Filter agenda...
 	filteredAgenda := make([]ruleeng.Action, 0)
 	for _, action := range filteredTaskBatch[keychild].Agenda {
@@ -660,7 +660,7 @@ func filterAgendaAndUpdateHistory(keychild string, DependsOnMetadata string, fil
 	filteredTaskBatch[keychild] = taskBatch
 
 	// Update history situation...
-	valuesituationHistoryMetadata := situationHistoryMetadata[models.Key{SituationID: situation.SituationID, SituationInstanceID: situation.SituationInstanceID}]
+	valuesituationHistoryMetadata := situationHistoryMetadata[model.Key{SituationID: situation.SituationID, SituationInstanceID: situation.SituationInstanceID}]
 	historySituation := valuesituationHistoryMetadata["HistorySituation"].(history.HistorySituationsV4)
 	for i, metadata := range historySituation.Metadatas {
 		if metadata.Key == DependsOnMetadata {

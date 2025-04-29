@@ -11,7 +11,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"go.uber.org/zap"
 )
 
@@ -24,7 +24,7 @@ type HistorySituationsV4 struct {
 	Ts                    time.Time
 	Parameters            map[string]interface{}
 	ExpressionFacts       map[string]interface{}
-	Metadatas             []models.MetaData
+	Metadatas             []model.MetaData
 	Calendar              *calendar.Calendar
 }
 
@@ -272,7 +272,7 @@ func (querier *HistorySituationsQuerier) QueryGetFieldsTsMetadatas(ctx context.C
 
 	var result HistorySituationsV4
 	for rows.Next() {
-		var metadatas []models.MetaData
+		var metadatas []model.MetaData
 		var ts time.Time
 		var metadataBytes []byte
 

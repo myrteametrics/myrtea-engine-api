@@ -9,7 +9,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tasker"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
@@ -298,13 +298,13 @@ func (job FactRecalculationJob) RecalculateAndUpdateSituations(localRuleEngine *
 			return err
 		}
 
-		metadatas := make([]models.MetaData, 0)
+		metadatas := make([]model.MetaData, 0)
 		agenda := evaluator.EvaluateRules(localRuleEngine, historySituationFlattenData, enabledRuleIDs)
 		for _, agen := range agenda {
 			if agen.GetName() == "set" {
 				context := tasker.BuildContextData(agen.GetMetaData())
 				for key, value := range agen.GetParameters() {
-					metadatas = append(metadatas, models.MetaData{
+					metadatas = append(metadatas, model.MetaData{
 						Key:         key,
 						Value:       value,
 						RuleID:      context.RuleID,

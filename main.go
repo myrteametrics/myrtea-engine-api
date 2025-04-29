@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handlers"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/metrics"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/service"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
@@ -104,9 +104,9 @@ func main() {
 	// Init router services struct (used to inject services into the router)
 	routerServices := router.Services{
 		PluginCore:       core,
-		ProcessorHandler: handlers.NewProcessorHandler(),
-		ExportHandler:    handlers.NewExportHandler(exportWrapper, directDownload, indirectDownloadUrl),
-		ServiceHandler:   handlers.NewServiceHandler(serviceManager),
+		ProcessorHandler: handler.NewProcessorHandler(),
+		ExportHandler:    handler.NewExportHandler(exportWrapper, directDownload, indirectDownloadUrl),
+		ServiceHandler:   handler.NewServiceHandler(serviceManager),
 	}
 
 	mux := router.New(routerConfig, routerServices)

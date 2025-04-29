@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 // PostgresRepository is a repository containing the ConnectorConfig definition based on a PSQL database and
@@ -24,7 +24,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Get use to retrieve an ConnectorConfig by id
-func (r *PostgresRepository) Get(id int64) (models.ConnectorConfig, bool, error) {
+func (r *PostgresRepository) Get(id int64) (model.ConnectorConfig, bool, error) {
 	query := `SELECT name, connector_id, current FROM connectors_config_v1 WHERE id = :id`
 	params := map[string]interface{}{
 		"id": id,
@@ -32,7 +32,7 @@ func (r *PostgresRepository) Get(id int64) (models.ConnectorConfig, bool, error)
 
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
-		return models.ConnectorConfig{}, false, fmt.Errorf("couldn't retrieve the action with name %d: %s", id, err.Error())
+		return model.ConnectorConfig{}, false, fmt.Errorf("couldn't retrieve the action with name %d: %s", id, err.Error())
 	}
 	defer rows.Close()
 
@@ -40,13 +40,13 @@ func (r *PostgresRepository) Get(id int64) (models.ConnectorConfig, bool, error)
 	if rows.Next() {
 		err := rows.Scan(&name, &connectorId, &current)
 		if err != nil {
-			return models.ConnectorConfig{}, false, fmt.Errorf("couldn't scan the action with id %d: %s", id, err.Error())
+			return model.ConnectorConfig{}, false, fmt.Errorf("couldn't scan the action with id %d: %s", id, err.Error())
 		}
 	} else {
-		return models.ConnectorConfig{}, false, nil
+		return model.ConnectorConfig{}, false, nil
 	}
 
-	return models.ConnectorConfig{
+	return model.ConnectorConfig{
 		Id:          id,
 		Name:        name,
 		ConnectorId: connectorId,
@@ -55,7 +55,7 @@ func (r *PostgresRepository) Get(id int64) (models.ConnectorConfig, bool, error)
 }
 
 // Create method used to create an ConnectorConfig
-func (r *PostgresRepository) Create(tx *sqlx.Tx, ConnectorConfig models.ConnectorConfig) (int64, error) {
+func (r *PostgresRepository) Create(tx *sqlx.Tx, ConnectorConfig model.ConnectorConfig) (int64, error) {
 	query := `INSERT into connectors_config_v1 (name, connector_id, current, last_modified) 
 			 values (:name, :connector_id, :current, current_timestamp)`
 	params := map[string]interface{}{
@@ -86,7 +86,7 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, ConnectorConfig models.Connecto
 }
 
 // Update method used to update un ConnectorConfig
-func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, ConnectorConfig models.ConnectorConfig) error {
+func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, ConnectorConfig model.ConnectorConfig) error {
 	query := `UPDATE connectors_config_v1 SET name = :name, connector_id = :connector_id,
 				current = :current, previous = current WHERE id = :id`
 	params := map[string]interface{}{
@@ -146,8 +146,8 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
 }
 
 // GetAll method used to get all ConnectorConfigs
-func (r *PostgresRepository) GetAll() (map[int64]models.ConnectorConfig, error) {
-	ConnectorConfigs := make(map[int64]models.ConnectorConfig)
+func (r *PostgresRepository) GetAll() (map[int64]model.ConnectorConfig, error) {
+	ConnectorConfigs := make(map[int64]model.ConnectorConfig)
 
 	query := `SELECT id, name, connector_id, current FROM connectors_config_v1`
 	rows, err := r.conn.Query(query)
@@ -166,7 +166,7 @@ func (r *PostgresRepository) GetAll() (map[int64]models.ConnectorConfig, error) 
 			return nil, err
 		}
 
-		ConnectorConfig := models.ConnectorConfig{
+		ConnectorConfig := model.ConnectorConfig{
 			Id:          id,
 			Name:        name,
 			ConnectorId: connectorId,

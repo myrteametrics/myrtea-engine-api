@@ -6,7 +6,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 )
@@ -55,14 +55,14 @@ func dbInit(dbClient *sqlx.DB, t *testing.T) {
 	}
 
 	rcr := rootcause.NewPostgresRepository(dbClient)
-	rc := models.NewRootCause(0, "rc_name_1", "rc_desc_1", sid1, int64(ruleID1))
+	rc := model.NewRootCause(0, "rc_name_1", "rc_desc_1", sid1, int64(ruleID1))
 	_, err = rcr.Create(nil, rc)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	rc2 := models.NewRootCause(0, "rc_name_2", "rc_desc_2", sid2, int64(ruleID1))
+	rc2 := model.NewRootCause(0, "rc_name_2", "rc_desc_2", sid2, int64(ruleID1))
 	_, err = rcr.Create(nil, rc2)
 	if err != nil {
 		t.Error(err)
@@ -125,7 +125,7 @@ func TestPostgresGet(t *testing.T) {
 		t.Error("found an action from nowhere")
 	}
 
-	action := models.NewAction(0, "action_name_1", "action_desc_1", 1)
+	action := model.NewAction(0, "action_name_1", "action_desc_1", 1)
 	id, err := r.Create(nil, action)
 	if err != nil {
 		t.Error(err)
@@ -161,7 +161,7 @@ func TestPostgresCreateWithoutID(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	action := models.NewAction(0, "action_name_1", "action_desc_1", 1)
+	action := model.NewAction(0, "action_name_1", "action_desc_1", 1)
 	id, err := r.Create(nil, action)
 	if err != nil {
 		t.Error(err)
@@ -194,12 +194,12 @@ func TestPostgresCreateIfExists(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	action := models.NewAction(0, "action_name_1", "action_desc_1", 1)
+	action := model.NewAction(0, "action_name_1", "action_desc_1", 1)
 	id, err := r.Create(nil, action)
 	if err != nil {
 		t.Error(err)
 	}
-	action2 := models.NewAction(0, "action_name_1", "action_desc_2", 1)
+	action2 := model.NewAction(0, "action_name_1", "action_desc_2", 1)
 	_, err = r.Create(nil, action2)
 	if err == nil {
 		t.Error("Create should not be created")
@@ -226,14 +226,14 @@ func TestPostgresUpdate(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	action1 := models.NewAction(0, "action_name_1", "action_desc_1", 1)
+	action1 := model.NewAction(0, "action_name_1", "action_desc_1", 1)
 	id, err := r.Create(nil, action1)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Update existing
-	action2 := models.NewAction(0, "action_name_2", "action_desc_2", 1)
+	action2 := model.NewAction(0, "action_name_2", "action_desc_2", 1)
 	err = r.Update(nil, id, action2)
 	if err != nil {
 		t.Error(err)
@@ -266,7 +266,7 @@ func TestPostgresUpdateNotExists(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	action := models.NewAction(0, "action_name_1", "action_desc_1", 1)
+	action := model.NewAction(0, "action_name_1", "action_desc_1", 1)
 	err = r.Update(nil, 1, action)
 	if err == nil {
 		t.Error("updating a non-existing action should return an error")
@@ -290,7 +290,7 @@ func TestPostgresDelete(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	action := models.NewAction(0, "action_name_1", "action_desc_1", 1)
+	action := model.NewAction(0, "action_name_1", "action_desc_1", 1)
 	id, err := r.Create(nil, action)
 	if err != nil {
 		t.Error(err)
@@ -343,12 +343,12 @@ func TestPostgresGetAllByRootCauseID(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	action := models.NewAction(0, "action_name_1", "action_desc_1", 1)
+	action := model.NewAction(0, "action_name_1", "action_desc_1", 1)
 	_, err = r.Create(nil, action)
 	if err != nil {
 		t.Error(err)
 	}
-	action2 := models.NewAction(0, "action_name_2", "action_desc_2", 2)
+	action2 := model.NewAction(0, "action_name_2", "action_desc_2", 2)
 	_, err = r.Create(nil, action2)
 	if err != nil {
 		t.Error(err)
@@ -385,12 +385,12 @@ func TestPostgresGetAllByRootCauseIDNotExists(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	action := models.NewAction(0, "action_name_1", "action_desc_1", 1)
+	action := model.NewAction(0, "action_name_1", "action_desc_1", 1)
 	_, err = r.Create(nil, action)
 	if err != nil {
 		t.Error(err)
 	}
-	action2 := models.NewAction(0, "action_name_2", "action_desc_2", 2)
+	action2 := model.NewAction(0, "action_name_2", "action_desc_2", 2)
 	_, err = r.Create(nil, action2)
 	if err != nil {
 		t.Error(err)
@@ -420,12 +420,12 @@ func TestPostgresGetAllBySituationID(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	action := models.NewAction(0, "action_name_1", "action_desc_1", 1)
+	action := model.NewAction(0, "action_name_1", "action_desc_1", 1)
 	_, err = r.Create(nil, action)
 	if err != nil {
 		t.Error(err)
 	}
-	action2 := models.NewAction(0, "action_name_2", "action_desc_2", 2)
+	action2 := model.NewAction(0, "action_name_2", "action_desc_2", 2)
 	_, err = r.Create(nil, action2)
 	if err != nil {
 		t.Error(err)
@@ -462,12 +462,12 @@ func TestPostgresGetAllBySituationIDNotExists(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	action := models.NewAction(0, "action_name_1", "action_desc_1", 1)
+	action := model.NewAction(0, "action_name_1", "action_desc_1", 1)
 	_, err = r.Create(nil, action)
 	if err != nil {
 		t.Error(err)
 	}
-	action2 := models.NewAction(0, "action_name_2", "action_desc_2", 2)
+	action2 := model.NewAction(0, "action_name_2", "action_desc_2", 2)
 	_, err = r.Create(nil, action2)
 	if err != nil {
 		t.Error(err)

@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 // PostgresRepository is a repository containing the Action definition based on a PSQL database and
@@ -25,7 +25,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Get use to retrieve an action by id
-func (r *PostgresRepository) Get(id int64) (models.Action, bool, error) {
+func (r *PostgresRepository) Get(id int64) (model.Action, bool, error) {
 	query := `SELECT name, description, rootcause_id FROM ref_action_v1 WHERE id = :id`
 	params := map[string]interface{}{
 		"id": id,
@@ -33,7 +33,7 @@ func (r *PostgresRepository) Get(id int64) (models.Action, bool, error) {
 
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
-		return models.Action{}, false, fmt.Errorf("Couldn't retrieve the action with id %d: %s", id, err.Error())
+		return model.Action{}, false, fmt.Errorf("Couldn't retrieve the action with id %d: %s", id, err.Error())
 	}
 	defer rows.Close()
 
@@ -43,13 +43,13 @@ func (r *PostgresRepository) Get(id int64) (models.Action, bool, error) {
 	if rows.Next() {
 		err := rows.Scan(&name, &description, &rootCauseID)
 		if err != nil {
-			return models.Action{}, false, fmt.Errorf("Couldn't scan the action with id %d: %s", id, err.Error())
+			return model.Action{}, false, fmt.Errorf("Couldn't scan the action with id %d: %s", id, err.Error())
 		}
 	} else {
-		return models.Action{}, false, nil
+		return model.Action{}, false, nil
 	}
 
-	return models.Action{
+	return model.Action{
 		ID:          id,
 		Name:        name,
 		Description: description,
@@ -58,7 +58,7 @@ func (r *PostgresRepository) Get(id int64) (models.Action, bool, error) {
 }
 
 // Create method used to create an action
-func (r *PostgresRepository) Create(tx *sqlx.Tx, action models.Action) (int64, error) {
+func (r *PostgresRepository) Create(tx *sqlx.Tx, action model.Action) (int64, error) {
 	if !checkValidity(action) {
 		return -1, errors.New("missing action data")
 	}
@@ -94,7 +94,7 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, action models.Action) (int64, e
 }
 
 // Update method used to update un action
-func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, action models.Action) error {
+func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, action model.Action) error {
 	if !checkValidity(action) {
 		return errors.New("missing action data")
 	}
@@ -156,8 +156,8 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
 }
 
 // GetAll method used to get all actions
-func (r *PostgresRepository) GetAll() (map[int64]models.Action, error) {
-	actions := make(map[int64]models.Action, 0)
+func (r *PostgresRepository) GetAll() (map[int64]model.Action, error) {
+	actions := make(map[int64]model.Action, 0)
 
 	query := `SELECT id, name, description, rootcause_id FROM ref_action_v1`
 	rows, err := r.conn.Query(query)
@@ -176,7 +176,7 @@ func (r *PostgresRepository) GetAll() (map[int64]models.Action, error) {
 			return nil, err
 		}
 
-		action := models.Action{
+		action := model.Action{
 			ID:          id,
 			Name:        name,
 			Description: description,
@@ -189,8 +189,8 @@ func (r *PostgresRepository) GetAll() (map[int64]models.Action, error) {
 }
 
 // GetAllBySituationID method used to get all actions for a specific situation ID
-func (r *PostgresRepository) GetAllBySituationID(situationID int64) (map[int64]models.Action, error) {
-	actions := make(map[int64]models.Action, 0)
+func (r *PostgresRepository) GetAllBySituationID(situationID int64) (map[int64]model.Action, error) {
+	actions := make(map[int64]model.Action, 0)
 
 	query := `SELECT a.id, a.name, a.description, a.rootcause_id 
 		FROM ref_action_v1 a INNER JOIN ref_rootcause_v1 rc ON a.rootcause_id = rc.id
@@ -214,7 +214,7 @@ func (r *PostgresRepository) GetAllBySituationID(situationID int64) (map[int64]m
 			return nil, err
 		}
 
-		action := models.Action{
+		action := model.Action{
 			ID:          id,
 			Name:        name,
 			Description: description,
@@ -227,8 +227,8 @@ func (r *PostgresRepository) GetAllBySituationID(situationID int64) (map[int64]m
 }
 
 // GetAllByRootCauseID method used to get all actions for a specific rootcause ID
-func (r *PostgresRepository) GetAllByRootCauseID(rootCauseID int64) (map[int64]models.Action, error) {
-	actions := make(map[int64]models.Action, 0)
+func (r *PostgresRepository) GetAllByRootCauseID(rootCauseID int64) (map[int64]model.Action, error) {
+	actions := make(map[int64]model.Action, 0)
 
 	query := `SELECT id, name, description, rootcause_id FROM ref_action_v1 where rootcause_id = :rootcause_id`
 	params := map[string]interface{}{
@@ -250,7 +250,7 @@ func (r *PostgresRepository) GetAllByRootCauseID(rootCauseID int64) (map[int64]m
 			return nil, err
 		}
 
-		action := models.Action{
+		action := model.Action{
 			ID:          id,
 			Name:        name,
 			Description: description,
@@ -262,7 +262,7 @@ func (r *PostgresRepository) GetAllByRootCauseID(rootCauseID int64) (map[int64]m
 	return actions, nil
 }
 
-func checkValidity(action models.Action) bool {
+func checkValidity(action model.Action) bool {
 	if action.Name == "" || len(action.Name) == 0 {
 		return false
 	}

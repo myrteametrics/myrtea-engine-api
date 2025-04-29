@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"go.uber.org/zap"
 )
 
@@ -47,15 +47,15 @@ func (task CloseAllIssuesTask) GetID() string {
 func (task CloseAllIssuesTask) Perform(key string, context ContextData) error {
 	zap.L().Debug("Perform close all issues")
 
-	var states []models.IssueState
+	var states []model.IssueState
 
 	statesToClose := strings.Split(task.StatesToClose, ",")
 
 	for _, s := range statesToClose {
-		states = append(states, models.ToIssueState(s))
+		states = append(states, model.ToIssueState(s))
 	}
 
-	err := issues.R().ChangeState(key, states, models.ClosedDiscard)
+	err := issues.R().ChangeState(key, states, model.ClosedDiscard)
 	if err != nil {
 		return err
 	}

@@ -4,18 +4,18 @@ import (
 	"sync"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows standard CRUD operation on ConnectorConfigs
 type Repository interface {
-	Get(id int64) (models.ConnectorConfig, bool, error)
-	Create(tx *sqlx.Tx, rootCause models.ConnectorConfig) (int64, error)
-	Update(tx *sqlx.Tx, id int64, rootCause models.ConnectorConfig) error
+	Get(id int64) (model.ConnectorConfig, bool, error)
+	Create(tx *sqlx.Tx, rootCause model.ConnectorConfig) (int64, error)
+	Update(tx *sqlx.Tx, id int64, rootCause model.ConnectorConfig) error
 	Delete(tx *sqlx.Tx, id int64) error
-	GetAll() (map[int64]models.ConnectorConfig, error)
+	GetAll() (map[int64]model.ConnectorConfig, error)
 }
 
 var (

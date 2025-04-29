@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 const (
@@ -23,7 +23,7 @@ func securityCheckSQLField(str string) bool {
 }
 
 // AppendSearchOptions alter the input query and parameters based on the input search options
-func AppendSearchOptions(query string, params map[string]interface{}, options models.SearchOptions, sortFieldPrefix string) (string, map[string]interface{}, error) {
+func AppendSearchOptions(query string, params map[string]interface{}, options model.SearchOptions, sortFieldPrefix string) (string, map[string]interface{}, error) {
 	if nbSortBy := len(options.SortBy); nbSortBy > 0 {
 		query += ` ORDER BY `
 		for i, sortBy := range options.SortBy {

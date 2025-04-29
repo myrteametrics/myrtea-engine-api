@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -18,7 +18,7 @@ func initElasticsearch() {
 	} else if !exists {
 		urls := viper.GetStringSlice("ELASTICSEARCH_URLS")
 		zap.L().Warn("Default ElasticSearch config does not exists, creating one using ELASTICSEARCH_URLS", zap.Strings("urls", urls))
-		config = models.ElasticSearchConfig{
+		config = model.ElasticSearchConfig{
 			Name:    "default",
 			URLs:    urls,
 			Default: true,

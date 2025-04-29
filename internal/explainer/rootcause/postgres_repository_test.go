@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 )
@@ -100,7 +100,7 @@ func TestPostgresGet(t *testing.T) {
 		t.Error("found a rc from nowhere")
 	}
 
-	rc := models.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
+	rc := model.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
 	id, err := r.Create(nil, rc)
 	if err != nil {
 		t.Error(err)
@@ -135,7 +135,7 @@ func TestPostgresCreateWithoutID(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	rc := models.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
+	rc := model.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
 	id, err := r.Create(nil, rc)
 	if err != nil {
 		t.Error(err)
@@ -169,12 +169,12 @@ func TestPostgresCreateIfExists(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	rc := models.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
+	rc := model.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
 	id, err := r.Create(nil, rc)
 	if err != nil {
 		t.Error(err)
 	}
-	rc2 := models.NewRootCause(0, "rc_name_1", "rc_desc_2", 1, 1)
+	rc2 := model.NewRootCause(0, "rc_name_1", "rc_desc_2", 1, 1)
 	_, err = r.Create(nil, rc2)
 	if err == nil {
 		t.Error("Create should not be created")
@@ -202,14 +202,14 @@ func TestPostgresUpdate(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	rc1 := models.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
+	rc1 := model.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
 	id, err := r.Create(nil, rc1)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Update existing
-	rc2 := models.NewRootCause(0, "rc_name_2", "rc_desc_2", 1, 1)
+	rc2 := model.NewRootCause(0, "rc_name_2", "rc_desc_2", 1, 1)
 	err = r.Update(nil, id, rc2)
 	if err != nil {
 		t.Error(err)
@@ -243,7 +243,7 @@ func TestPostgresUpdateNotExists(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	rc := models.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
+	rc := model.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
 	err = r.Update(nil, 1, rc)
 	if err == nil {
 		t.Error("updating a non-existing rc should return an error")
@@ -268,7 +268,7 @@ func TestPostgresDelete(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	rc := models.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
+	rc := model.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
 	id, err := r.Create(nil, rc)
 	if err != nil {
 		t.Error(err)
@@ -323,12 +323,12 @@ func TestPostgresGetAllBySituationID(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	rc := models.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
+	rc := model.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
 	_, err = r.Create(nil, rc)
 	if err != nil {
 		t.Error(err)
 	}
-	rc2 := models.NewRootCause(0, "rc_name_2", "rc_desc_2", 1, 1)
+	rc2 := model.NewRootCause(0, "rc_name_2", "rc_desc_2", 1, 1)
 	_, err = r.Create(nil, rc2)
 	if err != nil {
 		t.Error(err)
@@ -365,12 +365,12 @@ func TestPostgresGetAllBySituationIDNotExists(t *testing.T) {
 	r := NewPostgresRepository(db)
 
 	var err error
-	rc := models.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
+	rc := model.NewRootCause(0, "rc_name_1", "rc_desc_1", 1, 1)
 	_, err = r.Create(nil, rc)
 	if err != nil {
 		t.Error(err)
 	}
-	rc2 := models.NewRootCause(0, "rc_name_2", "rc_desc_2", 1, 1)
+	rc2 := model.NewRootCause(0, "rc_name_2", "rc_desc_2", 1, 1)
 	_, err = r.Create(nil, rc2)
 	if err != nil {
 		t.Error(err)

@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 // PostgresRepository is a repository containing the RootCause definition based on a PSQL database and
@@ -25,7 +25,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Get use to retrieve an rootCause by id
-func (r *PostgresRepository) Get(id int64) (models.RootCause, bool, error) {
+func (r *PostgresRepository) Get(id int64) (model.RootCause, bool, error) {
 	query := `SELECT name, description, situation_id, rule_id FROM ref_rootcause_v1 WHERE id = :id`
 	params := map[string]interface{}{
 		"id": id,
@@ -33,7 +33,7 @@ func (r *PostgresRepository) Get(id int64) (models.RootCause, bool, error) {
 
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
-		return models.RootCause{}, false, fmt.Errorf("Couldn't retrieve the action with id %d: %s", id, err.Error())
+		return model.RootCause{}, false, fmt.Errorf("Couldn't retrieve the action with id %d: %s", id, err.Error())
 	}
 	defer rows.Close()
 
@@ -43,13 +43,13 @@ func (r *PostgresRepository) Get(id int64) (models.RootCause, bool, error) {
 	if rows.Next() {
 		err := rows.Scan(&name, &description, &situationID, &ruleID)
 		if err != nil {
-			return models.RootCause{}, false, fmt.Errorf("Couldn't scan the action with id %d: %s", id, err.Error())
+			return model.RootCause{}, false, fmt.Errorf("Couldn't scan the action with id %d: %s", id, err.Error())
 		}
 	} else {
-		return models.RootCause{}, false, nil
+		return model.RootCause{}, false, nil
 	}
 
-	return models.RootCause{
+	return model.RootCause{
 		ID:          id,
 		Name:        name,
 		Description: description,
@@ -59,7 +59,7 @@ func (r *PostgresRepository) Get(id int64) (models.RootCause, bool, error) {
 }
 
 // Create method used to create an rootCause
-func (r *PostgresRepository) Create(tx *sqlx.Tx, rootCause models.RootCause) (int64, error) {
+func (r *PostgresRepository) Create(tx *sqlx.Tx, rootCause model.RootCause) (int64, error) {
 	if !checkValidity(rootCause) {
 		return -1, errors.New("missing rootcause data")
 	}
@@ -96,7 +96,7 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, rootCause models.RootCause) (in
 }
 
 // Update method used to update un rootCause
-func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, rootCause models.RootCause) error {
+func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, rootCause model.RootCause) error {
 	if !checkValidity(rootCause) {
 		return errors.New("missing rootcause data")
 	}
@@ -158,8 +158,8 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
 }
 
 // GetAll method used to get all rootCauses
-func (r *PostgresRepository) GetAll() (map[int64]models.RootCause, error) {
-	rootCauses := make(map[int64]models.RootCause, 0)
+func (r *PostgresRepository) GetAll() (map[int64]model.RootCause, error) {
+	rootCauses := make(map[int64]model.RootCause, 0)
 
 	query := `SELECT id, name, description, situation_id, rule_id FROM ref_rootcause_v1`
 	rows, err := r.conn.Query(query)
@@ -178,7 +178,7 @@ func (r *PostgresRepository) GetAll() (map[int64]models.RootCause, error) {
 			return nil, err
 		}
 
-		rootCause := models.RootCause{
+		rootCause := model.RootCause{
 			ID:          id,
 			Name:        name,
 			Description: description,
@@ -192,8 +192,8 @@ func (r *PostgresRepository) GetAll() (map[int64]models.RootCause, error) {
 }
 
 // GetAllBySituationID method used to get all rootCauses for a specific situation ID
-func (r *PostgresRepository) GetAllBySituationID(situationID int64) (map[int64]models.RootCause, error) {
-	rootCauses := make(map[int64]models.RootCause, 0)
+func (r *PostgresRepository) GetAllBySituationID(situationID int64) (map[int64]model.RootCause, error) {
+	rootCauses := make(map[int64]model.RootCause, 0)
 
 	query := `SELECT id, name, description, rule_id FROM ref_rootcause_v1 where situation_id = :situation_id`
 	params := map[string]interface{}{
@@ -215,7 +215,7 @@ func (r *PostgresRepository) GetAllBySituationID(situationID int64) (map[int64]m
 			return nil, err
 		}
 
-		rootCause := models.RootCause{
+		rootCause := model.RootCause{
 			ID:          id,
 			Name:        name,
 			Description: description,
@@ -229,8 +229,8 @@ func (r *PostgresRepository) GetAllBySituationID(situationID int64) (map[int64]m
 }
 
 // GetAllBySituationIDRuleID method used to get all rootCauses for a specific situation ID and rule ID
-func (r *PostgresRepository) GetAllBySituationIDRuleID(situationID int64, ruleID int64) (map[int64]models.RootCause, error) {
-	rootCauses := make(map[int64]models.RootCause, 0)
+func (r *PostgresRepository) GetAllBySituationIDRuleID(situationID int64, ruleID int64) (map[int64]model.RootCause, error) {
+	rootCauses := make(map[int64]model.RootCause, 0)
 
 	query := `SELECT id, name, description FROM ref_rootcause_v1 where situation_id = :situation_id and rule_id = :rule_id`
 	params := map[string]interface{}{
@@ -253,7 +253,7 @@ func (r *PostgresRepository) GetAllBySituationIDRuleID(situationID int64, ruleID
 			return nil, err
 		}
 
-		rootCause := models.RootCause{
+		rootCause := model.RootCause{
 			ID:          id,
 			Name:        name,
 			Description: description,
@@ -266,7 +266,7 @@ func (r *PostgresRepository) GetAllBySituationIDRuleID(situationID int64, ruleID
 	return rootCauses, nil
 }
 
-func checkValidity(rootCause models.RootCause) bool {
+func checkValidity(rootCause model.RootCause) bool {
 	if rootCause.Name == "" || len(rootCause.Name) == 0 {
 		return false
 	}

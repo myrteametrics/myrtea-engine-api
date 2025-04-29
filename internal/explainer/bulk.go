@@ -7,12 +7,12 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 	"go.uber.org/zap"
 )
 
-func DraftIssues(idIssues []int64, user users.User, status *models.DraftIssuesStatus) {
+func DraftIssues(idIssues []int64, user users.User, status *model.DraftIssuesStatus) {
 	for _, idIssue := range idIssues {
 		issue, _, err := issues.R().Get(idIssue)
 		if err != nil {
@@ -38,13 +38,13 @@ func DraftIssues(idIssues []int64, user users.User, status *models.DraftIssuesSt
 	}
 }
 
-func DrafHandleError(status *models.DraftIssuesStatus, idIssue int64, err error, apiError httputil.APIError) {
+func DrafHandleError(status *model.DraftIssuesStatus, idIssue int64, err error, apiError httputil.APIError) {
 	status.AllOk = false
 	status.ErrorMessages += fmt.Sprintf("ID Issue: %d, error: %s, Api_Error (Status %d, ErrType %s, Code %d, Message %s)\n",
 		idIssue, err.Error(), apiError.Status, apiError.ErrType, apiError.Code, apiError.Message)
 }
 
-func CloseIssues(idIssues []int64, user users.User, status *models.CloseIssuesStatus) {
+func CloseIssues(idIssues []int64, user users.User, status *model.CloseIssuesStatus) {
 	for _, idIssue := range idIssues {
 		issue, _, err := issues.R().Get(idIssue)
 		if err != nil {
@@ -53,8 +53,8 @@ func CloseIssues(idIssues []int64, user users.User, status *models.CloseIssuesSt
 			continue
 		}
 
-		//reason := models.Reason{S: "unknown"}
-		err = CloseIssueWithoutFeedback(postgres.DB(), issue, user, models.ClosedNoFeedback)
+		//reason := model.Reason{S: "unknown"}
+		err = CloseIssueWithoutFeedback(postgres.DB(), issue, user, model.ClosedNoFeedback)
 		if err != nil {
 			zap.L().Error("CloseIssueWithoutFeedback", zap.Error(err))
 			CloseHandleError(status, idIssue, err, httputil.ErrAPIDBUpdateFailed)
@@ -62,7 +62,7 @@ func CloseIssues(idIssues []int64, user users.User, status *models.CloseIssuesSt
 		status.SuccessCount++
 	}
 }
-func CloseHandleError(status *models.CloseIssuesStatus, idIssue int64, err error, apiError httputil.APIError) {
+func CloseHandleError(status *model.CloseIssuesStatus, idIssue int64, err error, apiError httputil.APIError) {
 	status.AllOk = false
 	status.ErrorMessages += fmt.Sprintf("ID Issue: %d, error: %s, Api_Error (Status %d, ErrType %s, Code %d, Message %s)\n",
 		idIssue, err.Error(), apiError.Status, apiError.ErrType, apiError.Code, apiError.Message)

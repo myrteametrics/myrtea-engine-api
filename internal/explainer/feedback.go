@@ -11,12 +11,12 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/action"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 )
 
 // CloseIssueWithoutFeedback close an issue without standard feedback on rootcause / action
-func CloseIssueWithoutFeedback(dbClient *sqlx.DB, issue models.Issue, user users.User, targetState models.IssueState) error {
+func CloseIssueWithoutFeedback(dbClient *sqlx.DB, issue model.Issue, user users.User, targetState model.IssueState) error {
 
 	if issue.State.IsClosed() {
 		return fmt.Errorf("Issue with id %d is already in a closed state", issue.ID)
@@ -41,17 +41,17 @@ func CloseIssueWithoutFeedback(dbClient *sqlx.DB, issue models.Issue, user users
 }
 
 // CloseIssueWithFeedback generate and persist an issue feedback for the rootcause/action stats and ML models
-func CloseIssueWithFeedback(dbClient *sqlx.DB, issue models.Issue, recommendation models.FrontRecommendation, user users.User, isFakeAlert bool) error {
+func CloseIssueWithFeedback(dbClient *sqlx.DB, issue model.Issue, recommendation model.FrontRecommendation, user users.User, isFakeAlert bool) error {
 
 	if issue.State.IsClosed() {
 		return fmt.Errorf("Issue with id %d is already in a closed state", issue.ID)
 	}
 
-	var targetState models.IssueState
+	var targetState model.IssueState
 	if isFakeAlert {
-		targetState = models.ClosedFeedbackRejected
+		targetState = model.ClosedFeedbackRejected
 	} else {
-		targetState = models.ClosedFeedbackConfirmed
+		targetState = model.ClosedFeedbackConfirmed
 	}
 
 	exists, err := checkExistsIssueResolution(dbClient, issue.ID)
@@ -109,7 +109,7 @@ func checkExistsIssueResolution(dbClient *sqlx.DB, issueID int64) (bool, error) 
 	return exists, nil
 }
 
-func updateIssueState(tx *sqlx.Tx, issue models.Issue, targetState models.IssueState, user users.User) error {
+func updateIssueState(tx *sqlx.Tx, issue model.Issue, targetState model.IssueState, user users.User) error {
 	issue.State = targetState
 	err := issues.R().Update(tx, issue.ID, issue, user)
 	if err != nil {
@@ -119,7 +119,7 @@ func updateIssueState(tx *sqlx.Tx, issue models.Issue, targetState models.IssueS
 }
 
 // persistIssueFeedback persist a rootcause and an ensemble of actions related to the resolution of an issue
-func persistIssueFeedback(tx *sqlx.Tx, issue models.Issue, selectedRootCause *models.FrontRootCause, selectedActions []*models.FrontAction) error {
+func persistIssueFeedback(tx *sqlx.Tx, issue model.Issue, selectedRootCause *model.FrontRootCause, selectedActions []*model.FrontAction) error {
 
 	situationID := issue.SituationID
 	ruleID := issue.Rule.RuleID
@@ -128,7 +128,7 @@ func persistIssueFeedback(tx *sqlx.Tx, issue models.Issue, selectedRootCause *mo
 	dbRootCauseID := selectedRootCause.ID
 	var err error
 	if selectedRootCause.Custom {
-		dbRootCause := models.NewRootCause(-1, selectedRootCause.Name, selectedRootCause.Description, situationID, ruleID)
+		dbRootCause := model.NewRootCause(-1, selectedRootCause.Name, selectedRootCause.Description, situationID, ruleID)
 		dbRootCauseID, err = rootcause.R().Create(tx, dbRootCause)
 		if err != nil {
 			return err
@@ -154,7 +154,7 @@ func persistIssueFeedback(tx *sqlx.Tx, issue models.Issue, selectedRootCause *mo
 	for _, selectedAction := range selectedActions {
 		dbActionID := selectedAction.ID
 		if selectedAction.Custom {
-			dbAction := models.NewAction(-1, selectedAction.Name, selectedAction.Description, dbRootCauseID)
+			dbAction := model.NewAction(-1, selectedAction.Name, selectedAction.Description, dbRootCauseID)
 			dbActionID, err = action.R().Create(tx, dbAction)
 			if err != nil {
 				return err

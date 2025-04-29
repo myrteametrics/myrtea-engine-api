@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/models"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"go.uber.org/zap"
 )
 
@@ -60,7 +60,7 @@ func (task CloseTodayIssuesTask) Perform(key string, context ContextData) error 
 	from := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	to := from.Add(24 * time.Hour)
 
-	err = issues.R().ChangeStateBetweenDates(key, []models.IssueState{models.Open}, models.ClosedDiscard, from, to)
+	err = issues.R().ChangeStateBetweenDates(key, []model.IssueState{model.Open}, model.ClosedDiscard, from, to)
 
 	if err != nil {
 		return err
