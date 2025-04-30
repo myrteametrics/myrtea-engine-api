@@ -2,7 +2,9 @@ package app
 
 import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/docs"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 // Init initialize all the app configuration and components
@@ -14,9 +16,15 @@ func Init() {
 	initRepositories()
 	initElasticsearch()
 	initServices()
+
+	// we want to check if the superuser exists
+	zap.L().Info("Trying to create superuser if not exists")
+	if err := users.R().CreateSuperUserIfNotExists(); err != nil {
+		zap.L().Error("Error creating superuser", zap.Error(err))
+	}
 }
 
-// Stop cleanup everything before stopping the app
+// Stop clean everything up before stopping the app
 func Stop() {
 	stopServices()
 }
