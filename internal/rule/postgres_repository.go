@@ -43,38 +43,47 @@ func (r *PostgresRulesRepository) CheckByName(name string) (bool, error) {
 func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
-	tx, err := r.conn.Begin()
+
+	query := `INSERT INTO rules_v1 (id, name, enabled, calendar_id, last_modified) VALUES (DEFAULT, :name, :enabled, :calendarId, :lastModified) RETURNING id`
+	params := map[string]interface{}{
+		"name":         rule.Name,
+		"enabled":      rule.Enabled,
+		"calendarId":   rule.CalendarID,
+		"lastModified": t,
+	}
+	if rule.ID != 0 {
+		query = `INSERT INTO rules_v1 (id, name, enabled, calendar_id, last_modified) VALUES (:id, :name, :enabled, :calendarId, :lastModified) RETURNING id`
+		params["id"] = rule.ID
+	}
+	if rule.CalendarID == 0 {
+		params["calendarId"] = nil
+	}
+
+	tx, err := r.conn.Beginx()
 	if err != nil {
 		return -1, err
 	}
 
-	var rows *sql.Rows
-
-	if rule.CalendarID == 0 {
-		rows, err = tx.Query(`INSERT INTO rules_v1(name, enabled, calendar_id, last_modified)
-							VALUES ($1,$2,$3,$4) RETURNING id`, rule.Name, rule.Enabled, nil, t)
-
-	} else {
-		rows, err = tx.Query(`INSERT INTO rules_v1(name, enabled, calendar_id, last_modified)
-		VALUES ($1,$2,$3,$4) RETURNING id`, rule.Name, rule.Enabled, rule.CalendarID, t)
-	}
-
+	rows, err := tx.NamedQuery(query, params)
 	if err != nil {
 		tx.Rollback()
 		return -1, err
 	}
 	defer rows.Close()
 
-	var ruleID int64
+	var id int64
 	if rows.Next() {
-		rows.Scan(&ruleID)
+		err := rows.Scan(&id)
+		if err != nil {
+			tx.Rollback()
+			return -1, err
+		}
 	} else {
 		tx.Rollback()
-		return -1, errors.New("no id returning of insert rule action")
+		return -1, errors.New("no id returning of insert situation")
 	}
-	rows.Close()
 
-	rule.ID = ruleID
+	rule.ID = id
 	ruledata, err := json.Marshal(rule)
 	if err != nil {
 		return -1, errors.New("failled to marshall the rule:" + rule.Name +
@@ -83,7 +92,7 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 
 	//insert rule version
 	res, err := tx.Exec(`INSERT INTO rule_versions_v1(rule_id, version_number, data, creation_datetime)
-							VALUES ($1,$2,$3,$4)`, ruleID, rule.Version, string(ruledata), t)
+							VALUES ($1,$2,$3,$4)`, id, rule.Version, string(ruledata), t)
 	if err != nil {
 		tx.Rollback()
 		return -1, err
@@ -104,7 +113,7 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 		return -1, err
 	}
 
-	return ruleID, nil
+	return id, nil
 }
 
 // Get search and returns an entity from the repository by its id

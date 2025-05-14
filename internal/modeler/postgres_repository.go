@@ -105,6 +105,11 @@ func (r *PostgresRepository) Create(model modeler.Model) (int64, error) {
 		"name":       model.Name,
 		"definition": string(modelData),
 	}
+	if model.ID != 0 {
+		query = `INSERT INTO model_v1 (id, name, definition) VALUES (:id, :name, :definition) RETURNING id`
+		params["id"] = model.ID
+	}
+
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
 		return -1, err

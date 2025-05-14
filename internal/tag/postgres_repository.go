@@ -32,13 +32,17 @@ func NewPostgresRepository(conn *sqlx.DB) Repository {
 func (r *PostgresRepository) Create(tag Tag) (int64, error) {
 	var id int64
 	now := time.Now()
-	err := r.newStatement().
+	statement := r.newStatement().
 		Insert(table).
 		Columns("name", "description", "color", "created_at", "updated_at").
 		Values(tag.Name, tag.Description, tag.Color, now, now).
-		Suffix("RETURNING \"id\"").
-		QueryRow().
-		Scan(&id)
+		Suffix("RETURNING \"id\"")
+	if tag.Id != 0 {
+		statement = statement.
+			Columns("id", "name", "description", "color", "created_at", "updated_at").
+			Values(tag.Id, tag.Name, tag.Description, tag.Color, now, now)
+	}
+	err := statement.QueryRow().Scan(&id)
 	if err != nil {
 		return -1, err
 	}

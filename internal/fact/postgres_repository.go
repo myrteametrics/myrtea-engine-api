@@ -109,6 +109,11 @@ func (r *PostgresRepository) Create(fact engine.Fact) (int64, error) {
 		"definition":    string(factdata),
 		"last_modified": timestamp,
 	}
+	if fact.ID != 0 {
+		query = `INSERT INTO fact_definition_v1 (id, name, definition, last_modified) 
+		VALUES (:id, :name, :definition, :last_modified) RETURNING id`
+		params["id"] = fact.ID
+	}
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
 		return -1, err

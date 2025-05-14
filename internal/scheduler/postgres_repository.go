@@ -45,6 +45,11 @@ func (r *PostgresRepository) Create(schedule InternalSchedule) (int64, error) {
 		"last_modified": timestamp,
 		"enabled":       schedule.Enabled,
 	}
+	if schedule.ID != 0 {
+		query = `INSERT INTO job_schedules_v1 (id, name, cronexpr, job_type, job_data, last_modified, enabled) 
+		VALUES (:id, :name, :cronexpr, :job_type, :job_data, :last_modified, :enabled) RETURNING id`
+		params["id"] = schedule.ID
+	}
 
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {

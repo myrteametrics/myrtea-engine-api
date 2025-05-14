@@ -139,13 +139,17 @@ func (r *PostgresRepository) GetDefault() (model.ElasticSearchConfig, bool, erro
 // Create method used to create an elasticSearchConfig
 func (r *PostgresRepository) Create(elasticSearchConfig model.ElasticSearchConfig) (int64, error) {
 	var id int64
-	err := r.newStatement().
+	statement := r.newStatement().
 		Insert(table).
 		Columns("name", "urls", `"default"`, "export_activated").
 		Values(elasticSearchConfig.Name, strings.Join(elasticSearchConfig.URLs, ","), elasticSearchConfig.Default, elasticSearchConfig.ExportActivated).
-		Suffix("RETURNING \"id\"").
-		QueryRow().
-		Scan(&id)
+		Suffix("RETURNING \"id\"")
+	if elasticSearchConfig.Id != 0 {
+		statement = statement.
+			Columns("id", "name", "urls", `"default"`, "export_activated").
+			Values(elasticSearchConfig.Id, elasticSearchConfig.Name, strings.Join(elasticSearchConfig.URLs, ","), elasticSearchConfig.Default, elasticSearchConfig.ExportActivated)
+	}
+	err := statement.QueryRow().Scan(&id)
 	if err != nil {
 		return -1, err
 	}

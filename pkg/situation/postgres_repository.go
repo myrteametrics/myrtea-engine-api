@@ -137,6 +137,11 @@ func (r *PostgresRepository) Create(situation Situation) (int64, error) {
 		"calendar_id":   situation.CalendarID,
 		"last_modified": timestamp,
 	}
+	if situation.ID != 0 {
+		query = `INSERT INTO situation_definition_v1 (id, name, definition, is_template, is_object, calendar_id, last_modified)
+		VALUES (:id, :name, :definition, :is_template, :is_object, :calendar_id, :last_modified) RETURNING id`
+		params["id"] = situation.ID
+	}
 
 	if situation.CalendarID == 0 {
 		params["calendar_id"] = nil

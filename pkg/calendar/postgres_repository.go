@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"time"
@@ -77,8 +78,16 @@ func (r *PostgresRepository) Create(calendar Calendar) (int64, error) {
 		return -1, err
 	}
 
-	rows, err := tx.Query(`INSERT into calendar_v1 (id, name, description, timezone, period_data, enabled, creation_date, last_modified ) 
+	var rows *sql.Rows
+
+	if calendar.ID != 0 {
+		rows, err = tx.Query(`INSERT into calendar_v1 (id, name, description, timezone, period_data, enabled, creation_date, last_modified ) 
+	values ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`, calendar.ID, calendar.Name, calendar.Description, calendar.Timezone, string(periodData), calendar.Enabled, creationTS, creationTS)
+	} else {
+		rows, err = tx.Query(`INSERT into calendar_v1 (id, name, description, timezone, period_data, enabled, creation_date, last_modified ) 
 	values (DEFAULT, $1, $2, $3, $4, $5, $6, $7) RETURNING id`, calendar.Name, calendar.Description, calendar.Timezone, string(periodData), calendar.Enabled, creationTS, creationTS)
+
+	}
 
 	if err != nil {
 		tx.Rollback()
