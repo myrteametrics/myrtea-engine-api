@@ -1,7 +1,0 @@
-entities:
-  - order
-  - region
-  - client
-  - boutique
-  - in_timestamp
-  - out_timestamp

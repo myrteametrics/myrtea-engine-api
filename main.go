@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/export"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/handlers"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/metrics"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/service"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handler"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/metrics"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/service"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,9 +15,8 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/app"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internals/router"
-	plugin "github.com/myrteametrics/myrtea-engine-api/v5/plugins"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/app"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/router"
 	"github.com/myrteametrics/myrtea-sdk/v5/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v5/server"
 	"github.com/spf13/viper"
@@ -30,18 +30,23 @@ var (
 	BuildDate string
 )
 
-// @version 1.0
-// @description Myrtea Engine-API Swagger
-// @termsOfService http://swagger.io/terms/
+//	@version		1.0
+//	@title			Myrtea Engine-API
+//	@description	Myrtea Engine-API Swagger
+//	@termsOfService	http://swagger.io/terms/
 
-// @contact.name Myrtea Metrics
-// @contact.url https://myrteametrics.ai/en/
-// @contact.email contact@myrteametrics.com
+//	@contact.name	Myrtea Metrics
+//	@contact.url	https://myrteametrics.ai/en/
+//	@contact.email	contact@myrteametrics.com
 
-// @securityDefinitions.apikey Bearer
-// @in header
-// @name Authorization
+//	@securityDefinitions.apikey	Bearer
+//	@in							header
+//	@name						Authorization
 
+// @securityDefinitions.apikey	ApiKeyAuth
+// @in							header
+// @name						X-API-Key
+// @description				Authentication using the X-API-Key header
 func main() {
 	hostname, _ := os.Hostname()
 	metrics.InitMetricLabels(hostname)
@@ -99,9 +104,9 @@ func main() {
 	// Init router services struct (used to inject services into the router)
 	routerServices := router.Services{
 		PluginCore:       core,
-		ProcessorHandler: handlers.NewProcessorHandler(),
-		ExportHandler:    handlers.NewExportHandler(exportWrapper, directDownload, indirectDownloadUrl),
-		ServiceHandler:   handlers.NewServiceHandler(serviceManager),
+		ProcessorHandler: handler.NewProcessorHandler(),
+		ExportHandler:    handler.NewExportHandler(exportWrapper, directDownload, indirectDownloadUrl),
+		ServiceHandler:   handler.NewServiceHandler(serviceManager),
 	}
 
 	mux := router.New(routerConfig, routerServices)
