@@ -71,28 +71,29 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 	}
 	defer rows.Close()
 
-	var id int64
+	var ruleID int64
 	if rows.Next() {
-		err := rows.Scan(&id)
+		err := rows.Scan(&ruleID)
 		if err != nil {
 			tx.Rollback()
 			return -1, err
 		}
 	} else {
 		tx.Rollback()
-		return -1, errors.New("no id returning of insert situation")
+		return -1, errors.New("no id returning of insert rule action")
 	}
+	rows.Close()
 
-	rule.ID = id
+	rule.ID = ruleID
 	ruledata, err := json.Marshal(rule)
 	if err != nil {
-		return -1, errors.New("failled to marshall the rule:" + rule.Name +
+		return -1, errors.New("failed to marshall the rule:" + rule.Name +
 			"\nError from Marshal" + err.Error())
 	}
 
 	//insert rule version
 	res, err := tx.Exec(`INSERT INTO rule_versions_v1(rule_id, version_number, data, creation_datetime)
-							VALUES ($1,$2,$3,$4)`, id, rule.Version, string(ruledata), t)
+							VALUES ($1,$2,$3,$4)`, ruleID, rule.Version, string(ruledata), t)
 	if err != nil {
 		tx.Rollback()
 		return -1, err
@@ -113,7 +114,7 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 		return -1, err
 	}
 
-	return id, nil
+	return ruleID, nil
 }
 
 // Get search and returns an entity from the repository by its id
