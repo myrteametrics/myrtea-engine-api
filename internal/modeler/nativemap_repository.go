@@ -129,3 +129,7 @@ func (r *NativeMapRepository) GetAllByIDs(ids []int64) (map[int64]modeler.Model,
 	modelsByID := r.modelsByID
 	return modelsByID, nil
 }
+
+func (r *NativeMapRepository) refreshNextIdGen() (int64, bool, error) {
+	return 0, false, nil
+}
