@@ -6,6 +6,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
+	"go.uber.org/zap"
 	"time"
 )
 
@@ -240,4 +241,26 @@ func (r *PostgresRepository) scan(rows *sql.Rows) (Tag, error) {
 // newStatement creates a new statement builder with Dollar format
 func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
 	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(r.conn.DB)
+}
+
+func (r *PostgresRepository) refreshNextIdGen() (int64, bool, error) {
+	query := `SELECT setval(pg_get_serial_sequence('fact_definition_v1', 'id'), coalesce(max(id),0) + 1, false) FROM fact_definition_v1`
+	rows, err := r.conn.Query(query)
+
+	if err != nil {
+		zap.L().Error("Couldn't query the database:", zap.Error(err))
+		return 0, false, err
+	}
+	defer rows.Close()
+
+	var data int64
+	if rows.Next() {
+		err := rows.Scan(&data)
+		if err != nil {
+			return 0, false, err
+		}
+		return data, true, nil
+	} else {
+		return 0, false, nil
+	}
 }

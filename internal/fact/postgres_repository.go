@@ -3,6 +3,7 @@ package fact
 import (
 	"encoding/json"
 	"errors"
+	"go.uber.org/zap"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -250,4 +251,26 @@ func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]engine.Fact, er
 	}
 	return facts, nil
 
+}
+
+func (r *PostgresRepository) refreshNextIdGen() (int64, bool, error) {
+	query := `SELECT setval(pg_get_serial_sequence('fact_definition_v1', 'id'), coalesce(max(id),0) + 1, false) FROM fact_definition_v1`
+	rows, err := r.conn.Query(query)
+
+	if err != nil {
+		zap.L().Error("Couldn't query the database:", zap.Error(err))
+		return 0, false, err
+	}
+	defer rows.Close()
+
+	var data int64
+	if rows.Next() {
+		err := rows.Scan(&data)
+		if err != nil {
+			return 0, false, err
+		}
+		return data, true, nil
+	} else {
+		return 0, false, nil
+	}
 }

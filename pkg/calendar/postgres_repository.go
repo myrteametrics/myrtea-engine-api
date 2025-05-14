@@ -392,6 +392,28 @@ func (r *PostgresRepository) GetAllModifiedFrom(from time.Time) (map[int64]Calen
 	return calendars, nil
 }
 
+func (r *PostgresRepository) refreshNextIdGen() (int64, bool, error) {
+	query := `SELECT setval(pg_get_serial_sequence('calendar_v1', 'id'), coalesce(max(id),0) + 1, false) FROM calendar_v1`
+	rows, err := r.conn.Query(query)
+
+	if err != nil {
+		zap.L().Error("Couldn't query the database:", zap.Error(err))
+		return 0, false, err
+	}
+	defer rows.Close()
+
+	var data int64
+	if rows.Next() {
+		err := rows.Scan(&data)
+		if err != nil {
+			return 0, false, err
+		}
+		return data, true, nil
+	} else {
+		return 0, false, nil
+	}
+}
+
 // GetSituationCalendar search and returns a Calendar from the repository by the situation id
 func (r *PostgresRepository) GetSituationCalendar(id int64) (Calendar, bool, error) {
 	query := `SELECT id, name, description, timezone, period_data, enabled,
