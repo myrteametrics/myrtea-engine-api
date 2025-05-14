@@ -94,7 +94,7 @@ func (r *PostgresRepository) GetByName(name string) (modeler.Model, bool, error)
 
 // Create creates a new model definition in the repository
 func (r *PostgresRepository) Create(model modeler.Model) (int64, error) {
-
+	_, _, _ = r.refreshNextIdGen()
 	modelData, err := json.Marshal(model)
 	if err != nil {
 		return -1, err
@@ -171,8 +171,9 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
+	_, _, _ = r.refreshNextIdGen()
 	return nil
 }
 

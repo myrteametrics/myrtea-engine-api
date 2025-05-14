@@ -31,6 +31,7 @@ func NewPostgresRepository(conn *sqlx.DB) Repository {
 }
 
 func (r *PostgresRepository) Create(tag Tag) (int64, error) {
+	_, _, _ = r.refreshNextIdGen()
 	var id int64
 	now := time.Now()
 	statement := r.newStatement().
@@ -87,6 +88,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 	if err != nil {
 		return err
 	}
+	_, _, _ = r.refreshNextIdGen()
 	return nil
 }
 

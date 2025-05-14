@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
+	"go.uber.org/zap"
 )
 
 // PostgresRepository is a repository containing the ConnectorConfig definition based on a PSQL database and
@@ -56,12 +57,18 @@ func (r *PostgresRepository) Get(id int64) (model.ConnectorConfig, bool, error) 
 
 // Create method used to create an ConnectorConfig
 func (r *PostgresRepository) Create(tx *sqlx.Tx, ConnectorConfig model.ConnectorConfig) (int64, error) {
-	query := `INSERT into connectors_config_v1 (name, connector_id, current, last_modified) 
-			 values (:name, :connector_id, :current, current_timestamp)`
+	_, _, _ = r.refreshNextIdGen()
+	query := `INSERT into connectors_config_v1 (id, name, connector_id, current, last_modified) 
+			 values (DEFAULT, :name, :connector_id, :current, current_timestamp)`
 	params := map[string]interface{}{
 		"name":         ConnectorConfig.Name,
 		"connector_id": ConnectorConfig.ConnectorId,
 		"current":      ConnectorConfig.Current,
+	}
+	if ConnectorConfig.Id != 0 {
+		query = `INSERT into connectors_config_v1 (id, name, connector_id, current, last_modified) 
+			 values (:id, :name, :connector_id, :current, current_timestamp)`
+		params["id"] = ConnectorConfig.Id
 	}
 
 	var err error
@@ -140,8 +147,9 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
+	_, _, _ = r.refreshNextIdGen()
 	return nil
 }
 
@@ -177,4 +185,26 @@ func (r *PostgresRepository) GetAll() (map[int64]model.ConnectorConfig, error) {
 	}
 
 	return ConnectorConfigs, nil
+}
+
+func (r *PostgresRepository) refreshNextIdGen() (int64, bool, error) {
+	query := `SELECT setval(pg_get_serial_sequence('connectors_config_v1', 'id'), coalesce(max(id),0) + 1, false) FROM connectors_config_v1`
+	rows, err := r.conn.Query(query)
+
+	if err != nil {
+		zap.L().Error("Couldn't query the database:", zap.Error(err))
+		return 0, false, err
+	}
+	defer rows.Close()
+
+	var data int64
+	if rows.Next() {
+		err := rows.Scan(&data)
+		if err != nil {
+			return 0, false, err
+		}
+		return data, true, nil
+	} else {
+		return 0, false, nil
+	}
 }

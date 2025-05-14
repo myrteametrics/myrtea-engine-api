@@ -27,7 +27,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 
 // Create creates a new schedule in the repository
 func (r *PostgresRepository) Create(schedule InternalSchedule) (int64, error) {
-
+	_, _, _ = r.refreshNextIdGen()
 	timestamp := time.Now().Truncate(1 * time.Millisecond).UTC()
 	scheduleData, err := json.Marshal(schedule.Job)
 	if err != nil {
@@ -146,8 +146,9 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
+	_, _, _ = r.refreshNextIdGen()
 	return nil
 }
 

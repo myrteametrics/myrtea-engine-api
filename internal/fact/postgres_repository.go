@@ -96,7 +96,7 @@ func (r *PostgresRepository) GetByName(name string) (engine.Fact, bool, error) {
 
 // Create creates a new Fact definition in the repository
 func (r *PostgresRepository) Create(fact engine.Fact) (int64, error) {
-
+	_, _, _ = r.refreshNextIdGen()
 	factdata, err := json.Marshal(fact)
 	if err != nil {
 		return -1, err
@@ -180,8 +180,9 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
+	_, _, _ = r.refreshNextIdGen()
 	return nil
 }
 

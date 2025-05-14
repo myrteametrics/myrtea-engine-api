@@ -41,7 +41,7 @@ func (r *PostgresRulesRepository) CheckByName(name string) (bool, error) {
 
 // Create creates a new Rule in the repository
 func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
-
+	_, _, _ = r.refreshNextIdGen()
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
 
 	query := `INSERT INTO rules_v1 (id, name, enabled, calendar_id, last_modified) VALUES (DEFAULT, :name, :enabled, :calendarId, :lastModified) RETURNING id`
@@ -355,7 +355,7 @@ func (r *PostgresRulesRepository) Delete(id int64) error {
 	if err != nil {
 		return err
 	}
-
+	_, _, _ = r.refreshNextIdGen()
 	return nil
 }
 

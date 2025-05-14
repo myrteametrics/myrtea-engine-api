@@ -66,6 +66,7 @@ func (r *PostgresRepository) Get(id int64) (Calendar, bool, error) {
 
 // Create method used to create a Calendar
 func (r *PostgresRepository) Create(calendar Calendar) (int64, error) {
+	_, _, _ = r.refreshNextIdGen()
 	creationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
 	tx, err := r.conn.Begin()
@@ -305,12 +306,10 @@ func (r *PostgresRepository) Delete(id int64) error {
 	if err != nil {
 		return err
 	}
-	if i > 1 {
+	if i != 1 {
 		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
-	if i < 1 {
-		return errors.New("calendar not found for deletion")
-	}
+	_, _, _ = r.refreshNextIdGen()
 	return nil
 }
 
