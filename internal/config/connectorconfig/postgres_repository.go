@@ -59,7 +59,7 @@ func (r *PostgresRepository) Get(id int64) (model.ConnectorConfig, bool, error) 
 func (r *PostgresRepository) Create(tx *sqlx.Tx, ConnectorConfig model.ConnectorConfig) (int64, error) {
 	_, _, _ = r.refreshNextIdGen()
 	query := `INSERT into connectors_config_v1 (id, name, connector_id, current, last_modified) 
-			 values (DEFAULT, :name, :connector_id, :current, current_timestamp)`
+			 values (DEFAULT, :name, :connector_id, :current, current_timestamp) RETURNING id`
 	params := map[string]interface{}{
 		"name":         ConnectorConfig.Name,
 		"connector_id": ConnectorConfig.ConnectorId,
@@ -67,29 +67,31 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, ConnectorConfig model.Connector
 	}
 	if ConnectorConfig.Id != 0 {
 		query = `INSERT into connectors_config_v1 (id, name, connector_id, current, last_modified) 
-			 values (:id, :name, :connector_id, :current, current_timestamp)`
+			 values (:id, :name, :connector_id, :current, current_timestamp) RETURNING id`
 		params["id"] = ConnectorConfig.Id
 	}
 
 	var err error
-	var res sql.Result
+	var res *sqlx.Rows
 	if tx != nil {
-		res, err = tx.NamedExec(query, params)
+		res, err = tx.NamedQuery(query, params)
 	} else {
-		res, err = r.conn.NamedExec(query, params)
+		res, err = r.conn.NamedQuery(query, params)
 	}
 	if err != nil {
 		return -1, errors.New("couldn't query the database:" + err.Error())
 	}
 
-	i, err := res.RowsAffected()
-	if err != nil {
-		return -1, errors.New("error with the affected rows:" + err.Error())
+	var id int64
+	if res.Next() {
+		err := res.Scan(&id)
+		if err != nil {
+			return -1, err
+		}
+	} else {
+		return -1, errors.New("no id returning of insert connector config")
 	}
-	if i != 1 {
-		return -1, errors.New("no row inserted (or multiple row inserted) instead of 1 row")
-	}
-	return -1, nil
+	return id, nil
 }
 
 // Update method used to update un ConnectorConfig
@@ -119,7 +121,7 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, ConnectorConfig model
 		return errors.New("error with the affected rows:" + err.Error())
 	}
 	if i != 1 {
-		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row updated (or multiple row updated) instead of 1 row")
 	}
 	return nil
 }
