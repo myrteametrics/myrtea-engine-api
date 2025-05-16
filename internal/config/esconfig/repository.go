@@ -17,6 +17,7 @@ type Repository interface {
 	Update(id int64, config model.ElasticSearchConfig) error
 	Delete(id int64) error
 	GetAll() (map[int64]model.ElasticSearchConfig, error)
+	refreshNextIdGen() (int64, bool, error)
 }
 
 var (

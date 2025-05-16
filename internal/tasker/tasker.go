@@ -30,13 +30,13 @@ func ReplaceGlobals(tasker *Tasker) func() {
 	return func() { ReplaceGlobals(prev) }
 }
 
-//Tasker represents the actions router, it process the BRMS results and triggers the actions.
+// Tasker represents the actions router, it process the BRMS results and triggers the actions.
 type Tasker struct {
 	BatchReceiver chan []TaskBatch
 	Close         chan struct{}
 }
 
-//NewTasker renders a new Tasker
+// NewTasker renders a new Tasker
 func NewTasker() *Tasker {
 	return &Tasker{
 		BatchReceiver: make(chan []TaskBatch),
@@ -44,12 +44,12 @@ func NewTasker() *Tasker {
 	}
 }
 
-//GetBatch retrieve the current tasker batch
+// GetBatch retrieve the current tasker batch
 func (t *Tasker) GetBatch() []TaskBatch {
 	return <-t.BatchReceiver
 }
 
-//StartBatchProcessor starts the go routines that will listen to all the incoming batchs
+// StartBatchProcessor starts the go routines that will listen to all the incoming batchs
 func (t *Tasker) StartBatchProcessor() {
 	go func() {
 		for {
@@ -68,7 +68,7 @@ func (t *Tasker) StartBatchProcessor() {
 
 }
 
-//StopBatchProcessor stops the batchprocessor
+// StopBatchProcessor stops the batchprocessor
 func (t *Tasker) StopBatchProcessor() {
 	zap.L().Info("Stopping batchProcessor...")
 	zap.L().Info("Stopping batchProcessor...Done")

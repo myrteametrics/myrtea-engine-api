@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"time"
@@ -65,6 +66,7 @@ func (r *PostgresRepository) Get(id int64) (Calendar, bool, error) {
 
 // Create method used to create a Calendar
 func (r *PostgresRepository) Create(calendar Calendar) (int64, error) {
+	_, _, _ = r.refreshNextIdGen()
 	creationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
 	tx, err := r.conn.Begin()
@@ -77,8 +79,16 @@ func (r *PostgresRepository) Create(calendar Calendar) (int64, error) {
 		return -1, err
 	}
 
-	rows, err := tx.Query(`INSERT into calendar_v1 (id, name, description, timezone, period_data, enabled, creation_date, last_modified ) 
+	var rows *sql.Rows
+
+	if calendar.ID != 0 {
+		rows, err = tx.Query(`INSERT into calendar_v1 (id, name, description, timezone, period_data, enabled, creation_date, last_modified ) 
+	values ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`, calendar.ID, calendar.Name, calendar.Description, calendar.Timezone, string(periodData), calendar.Enabled, creationTS, creationTS)
+	} else {
+		rows, err = tx.Query(`INSERT into calendar_v1 (id, name, description, timezone, period_data, enabled, creation_date, last_modified ) 
 	values (DEFAULT, $1, $2, $3, $4, $5, $6, $7) RETURNING id`, calendar.Name, calendar.Description, calendar.Timezone, string(periodData), calendar.Enabled, creationTS, creationTS)
+
+	}
 
 	if err != nil {
 		tx.Rollback()
@@ -296,12 +306,10 @@ func (r *PostgresRepository) Delete(id int64) error {
 	if err != nil {
 		return err
 	}
-	if i > 1 {
+	if i != 1 {
 		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
-	if i < 1 {
-		return errors.New("calendar not found for deletion")
-	}
+	_, _, _ = r.refreshNextIdGen()
 	return nil
 }
 
@@ -381,6 +389,28 @@ func (r *PostgresRepository) GetAllModifiedFrom(from time.Time) (map[int64]Calen
 	}
 
 	return calendars, nil
+}
+
+func (r *PostgresRepository) refreshNextIdGen() (int64, bool, error) {
+	query := `SELECT setval(pg_get_serial_sequence('calendar_v1', 'id'), coalesce(max(id),0) + 1, false) FROM calendar_v1`
+	rows, err := r.conn.Query(query)
+
+	if err != nil {
+		zap.L().Error("Couldn't query the database:", zap.Error(err))
+		return 0, false, err
+	}
+	defer rows.Close()
+
+	var data int64
+	if rows.Next() {
+		err := rows.Scan(&data)
+		if err != nil {
+			return 0, false, err
+		}
+		return data, true, nil
+	} else {
+		return 0, false, nil
+	}
 }
 
 // GetSituationCalendar search and returns a Calendar from the repository by the situation id

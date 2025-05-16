@@ -41,24 +41,30 @@ func (r *PostgresRulesRepository) CheckByName(name string) (bool, error) {
 
 // Create creates a new Rule in the repository
 func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
-
+	_, _, _ = r.refreshNextIdGen()
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
-	tx, err := r.conn.Begin()
+
+	query := `INSERT INTO rules_v1 (id, name, enabled, calendar_id, last_modified) VALUES (DEFAULT, :name, :enabled, :calendarId, :lastModified) RETURNING id`
+	params := map[string]interface{}{
+		"name":         rule.Name,
+		"enabled":      rule.Enabled,
+		"calendarId":   rule.CalendarID,
+		"lastModified": t,
+	}
+	if rule.ID != 0 {
+		query = `INSERT INTO rules_v1 (id, name, enabled, calendar_id, last_modified) VALUES (:id, :name, :enabled, :calendarId, :lastModified) RETURNING id`
+		params["id"] = rule.ID
+	}
+	if rule.CalendarID == 0 {
+		params["calendarId"] = nil
+	}
+
+	tx, err := r.conn.Beginx()
 	if err != nil {
 		return -1, err
 	}
 
-	var rows *sql.Rows
-
-	if rule.CalendarID == 0 {
-		rows, err = tx.Query(`INSERT INTO rules_v1(name, enabled, calendar_id, last_modified)
-							VALUES ($1,$2,$3,$4) RETURNING id`, rule.Name, rule.Enabled, nil, t)
-
-	} else {
-		rows, err = tx.Query(`INSERT INTO rules_v1(name, enabled, calendar_id, last_modified)
-		VALUES ($1,$2,$3,$4) RETURNING id`, rule.Name, rule.Enabled, rule.CalendarID, t)
-	}
-
+	rows, err := tx.NamedQuery(query, params)
 	if err != nil {
 		tx.Rollback()
 		return -1, err
@@ -67,7 +73,11 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 
 	var ruleID int64
 	if rows.Next() {
-		rows.Scan(&ruleID)
+		err := rows.Scan(&ruleID)
+		if err != nil {
+			tx.Rollback()
+			return -1, err
+		}
 	} else {
 		tx.Rollback()
 		return -1, errors.New("no id returning of insert rule action")
@@ -77,7 +87,7 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 	rule.ID = ruleID
 	ruledata, err := json.Marshal(rule)
 	if err != nil {
-		return -1, errors.New("failled to marshall the rule:" + rule.Name +
+		return -1, errors.New("failed to marshall the rule:" + rule.Name +
 			"\nError from Marshal" + err.Error())
 	}
 
@@ -346,7 +356,7 @@ func (r *PostgresRulesRepository) Delete(id int64) error {
 	if err != nil {
 		return err
 	}
-
+	_, _, _ = r.refreshNextIdGen()
 	return nil
 }
 
@@ -489,4 +499,26 @@ func (r *PostgresRulesRepository) GetEnabledRuleIDs(situationID int64, ts time.T
 	}
 
 	return ruleIDsInt, nil
+}
+
+func (r *PostgresRulesRepository) refreshNextIdGen() (int64, bool, error) {
+	query := `SELECT setval(pg_get_serial_sequence('rules_v1', 'id'), coalesce(max(id),0) + 1, false) FROM rules_v1`
+	rows, err := r.conn.Query(query)
+
+	if err != nil {
+		zap.L().Error("Couldn't query the database:", zap.Error(err))
+		return 0, false, err
+	}
+	defer rows.Close()
+
+	var data int64
+	if rows.Next() {
+		err := rows.Scan(&data)
+		if err != nil {
+			return 0, false, err
+		}
+		return data, true, nil
+	} else {
+		return 0, false, nil
+	}
 }

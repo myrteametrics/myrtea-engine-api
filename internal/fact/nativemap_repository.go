@@ -127,3 +127,7 @@ func (r *NativeMapRepository) GetAllByIDs(ids []int64) (map[int64]engine.Fact, e
 	r.mutex.RUnlock()
 	return factsByID, nil
 }
+
+func (r *NativeMapRepository) refreshNextIdGen() (int64, bool, error) {
+	return 0, false, nil
+}

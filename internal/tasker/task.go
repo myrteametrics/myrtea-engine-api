@@ -7,14 +7,14 @@ import (
 	"go.uber.org/zap"
 )
 
-//Task interface of tasks
+// Task interface of tasks
 type Task interface {
 	String() string
 	GetID() string
 	Perform(key string, input ContextData) error
 }
 
-//ApplyTasks applies the task of an evaluated situation
+// ApplyTasks applies the task of an evaluated situation
 func ApplyTasks(batch TaskBatch) (err error) {
 
 	for _, action := range batch.Agenda {
@@ -99,7 +99,7 @@ func buildTaskKey(input ContextData, task Task) string {
 	return key
 }
 
-//ApplyBatchs applies the tasks batchs
+// ApplyBatchs applies the tasks batchs
 func ApplyBatchs(batchs []TaskBatch) {
 	for _, batch := range batchs {
 		err := ApplyTasks(batch)

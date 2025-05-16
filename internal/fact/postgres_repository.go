@@ -3,6 +3,7 @@ package fact
 import (
 	"encoding/json"
 	"errors"
+	"go.uber.org/zap"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -95,7 +96,7 @@ func (r *PostgresRepository) GetByName(name string) (engine.Fact, bool, error) {
 
 // Create creates a new Fact definition in the repository
 func (r *PostgresRepository) Create(fact engine.Fact) (int64, error) {
-
+	_, _, _ = r.refreshNextIdGen()
 	factdata, err := json.Marshal(fact)
 	if err != nil {
 		return -1, err
@@ -108,6 +109,11 @@ func (r *PostgresRepository) Create(fact engine.Fact) (int64, error) {
 		"name":          fact.Name,
 		"definition":    string(factdata),
 		"last_modified": timestamp,
+	}
+	if fact.ID != 0 {
+		query = `INSERT INTO fact_definition_v1 (id, name, definition, last_modified) 
+		VALUES (:id, :name, :definition, :last_modified) RETURNING id`
+		params["id"] = fact.ID
 	}
 	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
@@ -174,8 +180,9 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
+	_, _, _ = r.refreshNextIdGen()
 	return nil
 }
 
@@ -245,4 +252,26 @@ func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]engine.Fact, er
 	}
 	return facts, nil
 
+}
+
+func (r *PostgresRepository) refreshNextIdGen() (int64, bool, error) {
+	query := `SELECT setval(pg_get_serial_sequence('fact_definition_v1', 'id'), coalesce(max(id),0) + 1, false) FROM fact_definition_v1`
+	rows, err := r.conn.Query(query)
+
+	if err != nil {
+		zap.L().Error("Couldn't query the database:", zap.Error(err))
+		return 0, false, err
+	}
+	defer rows.Close()
+
+	var data int64
+	if rows.Next() {
+		err := rows.Scan(&data)
+		if err != nil {
+			return 0, false, err
+		}
+		return data, true, nil
+	} else {
+		return 0, false, nil
+	}
 }
