@@ -7,14 +7,15 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
+	"strings"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tasker"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/history"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/model"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
@@ -343,7 +344,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 
 		if !f.IsTemplate {
 			// execute fact, to get results
-			widgetData, err := fact.ExecuteFact(t, f, 0, 0, nil, -1, -1, false)
+			widgetData, err := fact.ExecuteFact(t, f, 0, 0, make(map[string]interface{}), -1, -1, false)
 			if err != nil {
 				zap.L().Error("Fact calculation Error, skipping fact calculation...", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
 				continue
@@ -481,8 +482,10 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 
 		metadatas := make([]model.MetaData, 0)
 		agenda := evaluator.EvaluateRules(localRuleEngine, historySituationFlattenData, enabledRuleIDs)
+		var filteredAgenda []ruleeng.Action
+		var prev *history.HistorySituationsV4 = nil
 		for _, agen := range agenda {
-			if agen.GetName() == "set" {
+			if agen.GetName() == tasker.ActionSet {
 				context := tasker.BuildContextData(agen.GetMetaData())
 				for key, value := range agen.GetParameters() {
 					metadatas = append(metadatas, model.MetaData{
@@ -493,6 +496,35 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 						CaseName:    context.CaseName,
 					})
 				}
+				continue
+			}
+			if !agen.GetCheckPrevSetAction() {
+				filteredAgenda = append(filteredAgenda, agen)
+				continue
+			}
+
+			if agen.GetName() == tasker.ActionCreateIssue || agen.GetName() == tasker.ActionSituationReporting {
+				// Load previous history if necessary
+				if prev == nil {
+					latestHistory, err := history.S().HistorySituationsQuerier.GetLatestHistory(situationToUpdate.SituationID, situationToUpdate.SituationInstanceID)
+					if err != nil {
+						filteredAgenda = append(filteredAgenda, agen)
+						continue
+					}
+					prev = &latestHistory
+				}
+				isCritical := false
+				for _, metadata := range prev.Metadatas {
+					if strings.EqualFold(metadata.Value.(string), model.Critical.String()) {
+						isCritical = true
+						break
+					}
+				}
+
+				if !isCritical {
+					filteredAgenda = append(filteredAgenda, agen)
+				}
+
 			}
 		}
 
@@ -532,7 +564,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			zap.L().Error(fmt.Sprintf("error inserting historySituationFact: make sure you added all facts of situation (%d) to a scheduler", situationToUpdate.SituationID), zap.Error(err))
 		}
 
-		if agenda != nil {
+		if filteredAgenda != nil {
 			newTaskBatch := tasker.TaskBatch{
 				Context: map[string]interface{}{
 					"situationID":                 situationToUpdate.SituationID,
@@ -541,7 +573,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 					"historySituationFlattenData": historySituationFlattenData,
 					"situationHistoryID":          historySituationNew.ID,
 				},
-				Agenda: agenda,
+				Agenda: filteredAgenda,
 			}
 			taskBatchs = append(taskBatchs, newTaskBatch)
 			key := fmt.Sprintf("%v-%v", situationToUpdate.SituationID, situationToUpdate.SituationInstanceID)
@@ -549,13 +581,13 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		}
 	}
 
-	filteredTaskBatch := filterTaskBatch(situationsToUpdate, situationHistoryMetadata, taskBatchsMap)
+	filteredTaskBatch := filterTaskByDependency(situationsToUpdate, situationHistoryMetadata, taskBatchsMap)
 
 	return filteredTaskBatch, nil
 }
 
 // filtration
-func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, situationHistoryMetadata map[model.Key]map[string]interface{}, taskBatchsMap map[string]tasker.TaskBatch) []tasker.TaskBatch {
+func filterTaskByDependency(situationsToUpdate map[string]history.HistoryRecordV4, situationHistoryMetadata map[model.Key]map[string]interface{}, taskBatchsMap map[string]tasker.TaskBatch) []tasker.TaskBatch {
 	filteredTaskBatch := make(map[string]tasker.TaskBatch, len(taskBatchsMap))
 	for key, taskBatch := range taskBatchsMap {
 		filteredTaskBatch[key] = taskBatch
@@ -621,15 +653,14 @@ func filterTaskBatch(situationsToUpdate map[string]history.HistoryRecordV4, situ
 					if err != nil {
 						logDataRetrieval(false, idSituationDependsOn, idInstanceDependsOn, situation.SituationID, situation.SituationInstanceID, err, "")
 					} else {
-						if Parent.Metadatas[0].Key == DependsOnMetadata && Parent.Metadatas[0].Value == DependsOnMetadataValue {
-							// Filter the actions to execute, retaining only those actions that do not adhere to the dependency management.
-							// Also, set the situation's action to pending.
-							logDataRetrieval(true, idSituationDependsOn, idInstanceDependsOn, situation.SituationID, situation.SituationInstanceID, err, Parent.Ts.String())
-							err := filterAgendaAndUpdateHistory(keychild, DependsOnMetadata, filteredTaskBatch, situationHistoryMetadata, situation)
-							if err != nil {
-								zap.L().Error("Failed to filter agenda and update history", zap.Error(err))
+						for _, metadata := range Parent.Metadatas {
+							if metadata.Key == DependsOnMetadata && metadata.Value == DependsOnMetadataValue {
+								logDataRetrieval(true, idSituationDependsOn, idInstanceDependsOn, situation.SituationID, situation.SituationInstanceID, err, Parent.Ts.String())
+								err := filterAgendaAndUpdateHistory(keychild, DependsOnMetadata, filteredTaskBatch, situationHistoryMetadata, situation)
+								if err != nil {
+									zap.L().Error("Failed to filter agenda and update history", zap.Error(err))
+								}
 							}
-
 						}
 					}
 

@@ -7,7 +7,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/model"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 	"go.uber.org/zap"
 )

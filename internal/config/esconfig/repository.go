@@ -3,7 +3,7 @@ package esconfig
 import (
 	"sync"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/model"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend

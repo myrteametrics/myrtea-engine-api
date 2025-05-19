@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/model"
 )
 
 const (
