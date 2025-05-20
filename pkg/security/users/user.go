@@ -12,13 +12,13 @@ import (
 
 // User is used as the main user struct
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	Login     string    `json:"login"` // is the unique identifier of the user, through the different connection modes
-	Created   time.Time `json:"created"`
-	LastName  string    `json:"lastName"`
-	FirstName string    `json:"firstName"`
-	Email     string    `json:"email"`
-	Phone     string    `json:"phone"`
+	ID        uuid.UUID `json:"id" db:"id"`
+	Login     string    `json:"login" db:"login"` // is the unique identifier of the user, through the different connection modes
+	Created   time.Time `json:"created" db:"created"`
+	LastName  string    `json:"lastName" db:"last_name"`
+	FirstName string    `json:"firstName" db:"first_name"`
+	Email     string    `json:"email" db:"email"`
+	Phone     string    `json:"phone" db:"phone"`
 }
 
 // IsValid checks if an user is valid and has no missing mandatory fields

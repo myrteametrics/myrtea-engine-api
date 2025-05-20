@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	uuid "github.com/google/uuid"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -49,7 +50,15 @@ func (r *PostgresRepository) Create(user UserWithPassword) (uuid.UUID, error) {
 	_, err := r.newStatement().
 		Insert(table).
 		Columns(append(fields, "password")...).
-		Values(newUUID, user.Login, user.LastName, user.FirstName, user.Email, user.Phone, sq.Expr("crypt(? ,gen_salt('md5'))", user.Password)).
+		Values(newUUID,
+			user.Login,
+			time.Now(),
+			user.LastName,
+			user.FirstName,
+			user.Email,
+			user.Phone,
+			sq.Expr("crypt(? , gen_salt('bf'))", user.Password),
+		).
 		Exec()
 	if err != nil {
 		return uuid.UUID{}, err
@@ -158,6 +167,40 @@ func (r *PostgresRepository) SetUserRoles(userUUID uuid.UUID, roleUUIDs []uuid.U
 	return nil
 }
 
+// CreateSuperUserIfNotExists creates the superuser if it does not exist
+// Make sure to change the password in production
+func (r *PostgresRepository) CreateSuperUserIfNotExists() error {
+	rows, err := r.newStatement().
+		Select("id").
+		From(table).
+		Where("login = ?", "admin").
+		Query()
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+	if rows.Next() {
+		return nil
+	}
+
+	// if not, we create it
+	_, err = r.Create(UserWithPassword{
+		User: User{
+			ID:        uuid.New(),
+			Login:     "admin",
+			Created:   time.Now(),
+			LastName:  "admin",
+			FirstName: "admin",
+			Email:     "admin@myrtea.ai",
+			Phone:     "",
+		},
+		Password: "myrtea",
+	})
+
+	return err
+}
+
 func (r *PostgresRepository) newTransactionStatement(tx *sql.Tx) sq.StatementBuilderType {
 	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(tx)
 }
@@ -199,7 +242,8 @@ func (r *PostgresRepository) checkRowAffected(result sql.Result, nbRows int64) e
 
 func (r *PostgresRepository) scan(rows *sql.Rows) (User, error) {
 	user := User{}
-	err := rows.Scan(&user.ID, &user.Login, &user.Created, &user.LastName, &user.FirstName, &user.Email, &user.Phone)
+	err := sqlx.StructScan(rows, &user)
+	// todo: fix this
 	if err != nil {
 		return User{}, errors.New("couldn't scan the retrieved data: " + err.Error())
 	}
