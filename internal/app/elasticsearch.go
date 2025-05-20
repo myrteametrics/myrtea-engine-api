@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/model"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"

@@ -7,7 +7,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/draft"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/model"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 // SaveIssueDraft generate and persist an issue draft

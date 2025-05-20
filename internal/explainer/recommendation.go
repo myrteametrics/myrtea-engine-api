@@ -8,7 +8,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/action"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/draft"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/rootcause"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/model"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 // GetRecommendationTree build a recommendation tree based on issue resolution stats table
