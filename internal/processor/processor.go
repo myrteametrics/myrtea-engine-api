@@ -1,15 +1,15 @@
 package processor
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tasker"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/history"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"go.uber.org/zap"
@@ -100,7 +100,7 @@ func evaluateFactObjects(factObject engine.Fact, objects []map[string]interface{
 					Ts:                  t,
 					Parameters:          s.Parameters,
 					ExpressionFacts:     expressionFacts,
-					Metadatas:           make([]model.MetaData, 0),
+					Metadatas:           make([]metadata.MetaData, 0),
 				}
 				historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
 				if err != nil {

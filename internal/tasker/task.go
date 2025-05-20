@@ -7,21 +7,21 @@ import (
 	"go.uber.org/zap"
 )
 
-//Task interface of tasks
+// Task interface of tasks
 type Task interface {
 	String() string
 	GetID() string
 	Perform(key string, input ContextData) error
 }
 
-//ApplyTasks applies the task of an evaluated situation
+// ApplyTasks applies the task of an evaluated situation
 func ApplyTasks(batch TaskBatch) (err error) {
 
 	for _, action := range batch.Agenda {
 
 		switch action.GetName() {
 
-		case "create-issue":
+		case ActionCreateIssue:
 			task, err := buildCreateIssueTask(action.GetParameters())
 			if err != nil {
 				zap.L().Warn("Error building CreateIssueTask: ", zap.Any("Parameters:", action.GetParameters()), zap.Error(err))
@@ -34,7 +34,7 @@ func ApplyTasks(batch TaskBatch) (err error) {
 				zap.L().Warn("Error while performing task CreateIssueTask", zap.Error(err))
 			}
 
-		case "close-today-issues":
+		case ActionCloseTodayIssues:
 			task, err := buildCloseTodayIssuesTask(action.GetParameters())
 			if err != nil {
 				zap.L().Warn("Error building CloseTodayIssuesTask: ", zap.Any("Parameters:", action.GetParameters()), zap.Error(err))
@@ -47,7 +47,7 @@ func ApplyTasks(batch TaskBatch) (err error) {
 				zap.L().Warn("Error while performing task CloseTodayIssuesTask", zap.Error(err))
 			}
 
-		case "close-all-issues":
+		case ActionCloseAllIssues:
 			task, err := buildCloseAllIssuesTask(action.GetParameters())
 			if err != nil {
 				zap.L().Warn("Error building CloseAllIssuesTask: ", zap.Any("Parameters:", action.GetParameters()), zap.Error(err))
@@ -60,7 +60,7 @@ func ApplyTasks(batch TaskBatch) (err error) {
 				zap.L().Warn("Error while performing task CloseAllIssuesTask", zap.Error(err))
 			}
 
-		case "notify":
+		case ActionNotify:
 			task, err := buildNotifyTask(action.GetParameters())
 			if err != nil {
 				zap.L().Warn("Error building NotifyTask: ", zap.Any("Parameters:", action.GetParameters()), zap.Error(err))
@@ -73,7 +73,7 @@ func ApplyTasks(batch TaskBatch) (err error) {
 				zap.L().Warn("Error while performing task NotifyTask", zap.Error(err))
 			}
 
-		case "situation-reporting":
+		case ActionSituationReporting:
 			task, err := buildSituationReportingTask(action.GetParameters())
 			if err != nil {
 				zap.L().Warn("Error building SituationReportingTask: ", zap.Any("Parameters:", action.GetParameters()), zap.Error(err))
@@ -99,7 +99,7 @@ func buildTaskKey(input ContextData, task Task) string {
 	return key
 }
 
-//ApplyBatchs applies the tasks batchs
+// ApplyBatchs applies the tasks batchs
 func ApplyBatchs(batchs []TaskBatch) {
 	for _, batch := range batchs {
 		err := ApplyTasks(batch)
