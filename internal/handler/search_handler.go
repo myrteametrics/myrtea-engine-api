@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/history"
 	"go.uber.org/zap"
 )
 
