@@ -74,8 +74,13 @@ SWAGGER_TOPBAR_TITLE = ""
 
 # Set the background color of the topbar of the Swagger UI
 # Default value: ""
-# Example values: "#000000", "#618EF2", "#A6343A"
+# Example values: "#000000", "#618EF2", "#A6343A"
 SWAGGER_TOPBAR_COLOR = ""
+
+# Specify the elasticsearch URLS
+# Array of URLS might not work using environment variable (should be fixed soon)
+# Default value: 7
+ELASTICSEARCH_VERSION = 7
 
 # Specify the elasticsearch URLS
 # Array of URLS might not work using environment variable (should be fixed soon)
@@ -115,12 +120,6 @@ POSTGRESQL_CONN_POOL_MAX_IDLE = "10"
 # Default value: "0"
 POSTGRESQL_CONN_MAX_LIFETIME = "0"
 
-# Specify whether to migrate the database on startup
-# If set to "true", the database will be migrated to the latest version on startup
-# This is useful for ensuring that the database schema is always up to date with the latest version of the application.
-# Default value: "true"
-POSTGRESQL_MIGRATION_ON_STARTUP = "true"
-
 # Enable or disable crons automation on API start
 # Warning: Keep this parameter to "true" in production to ensure proper rotation even after a restart
 # Default value: "true"
@@ -131,9 +130,64 @@ ENABLE_CRONS_ON_START = "true"
 AGGREGATEINGESTER_QUEUE_BUFFER_SIZE = "100"
 
 # Specify the authentication mode
-# Can either be "BASIC" or "OIDC"
+# Can either be "BASIC" or "SAML"  or "OIDC"
+# In case of SAML, some more parameters are required to ensure proper functionning
 # Default value: "BASIC"
 AUTHENTICATION_MODE = "BASIC"
+
+# Specify the SAML root URL (Only if AUTHENTICATION_MODE="SAML")
+# It is the public endpoint used to access the API (frequently through a frontend proxy)
+# Default value: "http://localhost:8080/api/v5
+AUTHENTICATION_SAML_ROOT_URL = "http://localhost:8080/api/v5/"
+
+# Specify the unique SAML EntityID used in the SP metadata file, registered in the IDP (Only if AUTHENTICATION_MODE="SAML")
+# Default value: "http://localhost:8080/"
+AUTHENTICATION_SAML_ENTITYID = "http://localhost:8080/"
+
+# Specify the file path for the SAML SSL certificate private key (Only if AUTHENTICATION_MODE="SAML")
+# Default value: "resources/saml/certs/myservice.key"
+AUTHENTICATION_SAML_KEY_FILE_PATH = "resources/saml/certs/myservice.key"
+
+# Specify the file path for the SAML SSL certificate public key (Only if AUTHENTICATION_MODE="SAML")
+# Default value: "resources/saml/certs/myservice.crt"
+AUTHENTICATION_SAML_CRT_FILE_PATH = "resources/saml/certs/myservice.crt"
+
+# Specify the IDP metadata retrieval mode (Only if AUTHENTICATION_MODE="SAML")
+# Can either be "FETCH" or "FILE"
+# Default value: "FETCH"
+AUTHENTICATION_SAML_METADATA_MODE = "FETCH"
+
+# Specify the IDP metadata fetch URL (Only if AUTHENTICATION_MODE="SAML")
+# Default value: "https://samltest.id/saml/idp"
+AUTHENTICATION_SAML_METADATA_FETCH_URL = "https://samltest.id/saml/idp"
+
+# Specify the IDP metadata file path (Only if AUTHENTICATION_MODE="SAML")
+# Default value: "resources/saml/metadata/idp-samltestid.metadata.xml"
+AUTHENTICATION_SAML_METADATA_FILE_PATH = "resources/saml/metadata/idp-samltestid.metadata.xml"
+
+# Specify the SAML response attribute corresponding to the user unique ID
+# Default value: "uid"
+AUTHENTICATION_SAML_ATTRIBUTE_USER_ID = "uid"
+
+# Specify the SAML response attribute corresponding to the user displayed name
+# Default value: "cn"
+AUTHENTICATION_SAML_ATTRIBUTE_USER_DISPLAYNAME = "cn"
+
+# Specify if the authentication process must check if the user has at least one existing group in Myrtea
+# Default value: "true"
+AUTHENTICATION_SAML_ENABLE_MEMBEROF_VALIDATION = "true"
+
+# Specify the SAML response attribute corresponding to the user groups
+# Default value: "memberOf"
+AUTHENTICATION_SAML_ATTRIBUTE_USER_MEMBEROF = "memberOf"
+
+# Specify the SAML user group name for admins
+# Default value: "administrators"
+AUTHENTICATION_SAML_ADMIN_GROUP_NAME = "administrators"
+
+# Specify the SAML cookie max age
+# Default value: "1h"
+AUTHENTICATION_SAML_COOKIE_MAX_AGE_DURATION = "1h"
 
 # Specify the SMTP Username
 # Default value : "smtp@example.com"

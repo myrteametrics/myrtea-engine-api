@@ -43,13 +43,13 @@ func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, r, VariablesConfig)
 }
 
-// GetVariablesConfig godoc
+// GetVariablesConfigByScope godoc
 // @Summary Get all Variables Config definitions by scope
 // @Description Get all VariableConfig definitions that match with scope value or scope 'global' by default
 // @Tags VariablesConfig
 // @Produce json
 // @Security Bearer
-// @Success 200 {array} models.VariablesConfig "list of all Variables with it's config"
+// @Success 200 {array} variablesconfig.VariablesConfig "list of all Variables with it's config"
 // @Failure 500 "internal server error"
 // @Router /engine/variablesconfig/{scope} [get]
 func GetVariablesConfigByScope(w http.ResponseWriter, r *http.Request) {

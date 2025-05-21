@@ -1,16 +1,17 @@
 package connectorconfig
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
-	"go.uber.org/zap"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 )
 
-// PostgresRepository is a repository containing the ConnectorConfig definition based on a PSQL database and
-// implementing the repository interface
+const table = "connectors_config_v1"
+
+// PostgresRepository embeds utils.PostgresRepository to implement Repository interface
 type PostgresRepository struct {
 	conn *sqlx.DB
 }
@@ -24,14 +25,19 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	return repo
 }
 
+// newStatement creates a new statement builder with Dollar format
+func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
+	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(r.conn.DB)
+}
+
 // Get use to retrieve an ConnectorConfig by id
 func (r *PostgresRepository) Get(id int64) (model.ConnectorConfig, bool, error) {
-	query := `SELECT name, connector_id, current FROM connectors_config_v1 WHERE id = :id`
-	params := map[string]interface{}{
-		"id": id,
-	}
+	query := r.newStatement().
+		Select("name", "connector_id", "current").
+		From(table).
+		Where(sq.Eq{"id": id})
 
-	rows, err := r.conn.NamedQuery(query, params)
+	rows, err := query.Query()
 	if err != nil {
 		return model.ConnectorConfig{}, false, fmt.Errorf("couldn't retrieve the action with name %d: %s", id, err.Error())
 	}
@@ -57,61 +63,60 @@ func (r *PostgresRepository) Get(id int64) (model.ConnectorConfig, bool, error) 
 
 // Create method used to create an ConnectorConfig
 func (r *PostgresRepository) Create(tx *sqlx.Tx, ConnectorConfig model.ConnectorConfig) (int64, error) {
-	_, _, _ = r.refreshNextIdGen()
-	query := `INSERT into connectors_config_v1 (id, name, connector_id, current, last_modified) 
-			 values (DEFAULT, :name, :connector_id, :current, current_timestamp) RETURNING id`
-	params := map[string]interface{}{
-		"name":         ConnectorConfig.Name,
-		"connector_id": ConnectorConfig.ConnectorId,
-		"current":      ConnectorConfig.Current,
-	}
-	if ConnectorConfig.Id != 0 {
-		query = `INSERT into connectors_config_v1 (id, name, connector_id, current, last_modified) 
-			 values (:id, :name, :connector_id, :current, current_timestamp) RETURNING id`
-		params["id"] = ConnectorConfig.Id
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
+
+	var id int64
+	var statement sq.InsertBuilder
+
+	if tx != nil {
+		statement = sq.Insert(table).
+			PlaceholderFormat(sq.Dollar).
+			RunWith(tx)
+	} else {
+		statement = r.newStatement().
+			Insert(table)
 	}
 
-	var err error
-	var res *sqlx.Rows
-	if tx != nil {
-		res, err = tx.NamedQuery(query, params)
-	} else {
-		res, err = r.conn.NamedQuery(query, params)
+	statement = statement.
+		Columns("name", "connector_id", "current", "last_modified").
+		Values(ConnectorConfig.Name, ConnectorConfig.ConnectorId, ConnectorConfig.Current, sq.Expr("current_timestamp")).
+		Suffix("RETURNING \"id\"")
+
+	if ConnectorConfig.Id != 0 {
+		statement = statement.
+			Columns("id").
+			Values(ConnectorConfig.Id)
 	}
+
+	err := statement.QueryRow().Scan(&id)
 	if err != nil {
 		return -1, errors.New("couldn't query the database:" + err.Error())
 	}
 
-	var id int64
-	if res.Next() {
-		err := res.Scan(&id)
-		if err != nil {
-			return -1, err
-		}
-	} else {
-		return -1, errors.New("no id returning of insert connector config")
-	}
 	return id, nil
 }
 
 // Update method used to update un ConnectorConfig
 func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, ConnectorConfig model.ConnectorConfig) error {
-	query := `UPDATE connectors_config_v1 SET name = :name, connector_id = :connector_id,
-				current = :current, previous = current WHERE id = :id`
-	params := map[string]interface{}{
-		"id":           id,
-		"name":         ConnectorConfig.Name,
-		"connector_id": ConnectorConfig.ConnectorId,
-		"current":      ConnectorConfig.Current,
+	var statement sq.UpdateBuilder
+
+	if tx != nil {
+		statement = sq.Update(table).
+			PlaceholderFormat(sq.Dollar).
+			RunWith(tx)
+	} else {
+		statement = r.newStatement().
+			Update(table)
 	}
 
-	var err error
-	var res sql.Result
-	if tx != nil {
-		res, err = tx.NamedExec(query, params)
-	} else {
-		res, err = r.conn.NamedExec(query, params)
-	}
+	statement = statement.
+		Set("name", ConnectorConfig.Name).
+		Set("connector_id", ConnectorConfig.ConnectorId).
+		Set("current", ConnectorConfig.Current).
+		Set("previous", sq.Expr("current")).
+		Where(sq.Eq{"id": id})
+
+	res, err := statement.Exec()
 	if err != nil {
 		return errors.New("couldn't query the database:" + err.Error())
 	}
@@ -128,18 +133,20 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, ConnectorConfig model
 
 // Delete use to retrieve an ConnectorConfig by name
 func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
-	query := `DELETE FROM connectors_config_v1 WHERE id = :id`
-	params := map[string]interface{}{
-		"id": id,
+	var statement sq.DeleteBuilder
+
+	if tx != nil {
+		statement = sq.Delete(table).
+			PlaceholderFormat(sq.Dollar).
+			RunWith(tx)
+	} else {
+		statement = r.newStatement().
+			Delete(table)
 	}
 
-	var err error
-	var res sql.Result
-	if tx != nil {
-		res, err = tx.NamedExec(query, params)
-	} else {
-		res, err = r.conn.NamedExec(query, params)
-	}
+	statement = statement.Where(sq.Eq{"id": id})
+
+	res, err := statement.Exec()
 	if err != nil {
 		return errors.New("couldn't query the database:" + err.Error())
 	}
@@ -151,7 +158,7 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
 	if i != 1 {
 		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
-	_, _, _ = r.refreshNextIdGen()
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	return nil
 }
 
@@ -159,9 +166,11 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
 func (r *PostgresRepository) GetAll() (map[int64]model.ConnectorConfig, error) {
 	ConnectorConfigs := make(map[int64]model.ConnectorConfig)
 
-	query := `SELECT id, name, connector_id, current FROM connectors_config_v1`
-	rows, err := r.conn.Query(query)
+	query := r.newStatement().
+		Select("id", "name", "connector_id", "current").
+		From(table)
 
+	rows, err := query.Query()
 	if err != nil {
 		return nil, err
 	}
@@ -187,26 +196,4 @@ func (r *PostgresRepository) GetAll() (map[int64]model.ConnectorConfig, error) {
 	}
 
 	return ConnectorConfigs, nil
-}
-
-func (r *PostgresRepository) refreshNextIdGen() (int64, bool, error) {
-	query := `SELECT setval(pg_get_serial_sequence('connectors_config_v1', 'id'), coalesce(max(id),0) + 1, false) FROM connectors_config_v1`
-	rows, err := r.conn.Query(query)
-
-	if err != nil {
-		zap.L().Error("Couldn't query the database:", zap.Error(err))
-		return 0, false, err
-	}
-	defer rows.Close()
-
-	var data int64
-	if rows.Next() {
-		err := rows.Scan(&data)
-		if err != nil {
-			return 0, false, err
-		}
-		return data, true, nil
-	} else {
-		return 0, false, nil
-	}
 }
