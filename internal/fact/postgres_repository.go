@@ -3,14 +3,16 @@ package fact
 import (
 	"encoding/json"
 	"errors"
-	"go.uber.org/zap"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 )
+
+const table = "fact_definition_v1"
 
 // PostgresRepository is a repository containing the Fact definition based on a PSQL database and
 // implementing the repository interface
@@ -29,10 +31,13 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 
 // Get search and returns an entity from the repository by its id
 func (r *PostgresRepository) Get(id int64) (engine.Fact, bool, error) {
-	query := `SELECT definition FROM fact_definition_v1 WHERE id = :id`
-	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
-		"id": id,
-	})
+	// Create a statement builder for the select
+	rows, err := r.newStatement().
+		Select("definition").
+		From(table).
+		Where(sq.Eq{"id": id}).
+		Query()
+
 	if err != nil {
 		return engine.Fact{}, false, err
 	}
@@ -62,10 +67,13 @@ func (r *PostgresRepository) Get(id int64) (engine.Fact, bool, error) {
 
 // GetByName search and returns an entity from the repository by its name
 func (r *PostgresRepository) GetByName(name string) (engine.Fact, bool, error) {
-	query := `SELECT id, definition FROM fact_definition_v1 WHERE name = :name`
-	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
-		"name": name,
-	})
+	// Create a statement builder for the select
+	rows, err := r.newStatement().
+		Select("id", "definition").
+		From(table).
+		Where(sq.Eq{"name": name}).
+		Query()
+
 	if err != nil {
 		return engine.Fact{}, false, err
 	}
@@ -96,39 +104,33 @@ func (r *PostgresRepository) GetByName(name string) (engine.Fact, bool, error) {
 
 // Create creates a new Fact definition in the repository
 func (r *PostgresRepository) Create(fact engine.Fact) (int64, error) {
-	_, _, _ = r.refreshNextIdGen()
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	factdata, err := json.Marshal(fact)
 	if err != nil {
 		return -1, err
 	}
 
 	timestamp := time.Now().Truncate(1 * time.Millisecond).UTC()
-	query := `INSERT INTO fact_definition_v1 (id, name, definition, last_modified) 
-		VALUES (DEFAULT, :name, :definition, :last_modified) RETURNING id`
-	params := map[string]interface{}{
-		"name":          fact.Name,
-		"definition":    string(factdata),
-		"last_modified": timestamp,
-	}
+
+	// Create a statement builder for the insert
+	statement := r.newStatement().
+		Insert(table).
+		Columns("name", "definition", "last_modified").
+		Values(fact.Name, string(factdata), timestamp).
+		Suffix("RETURNING \"id\"")
+
+	// If fact.ID is provided, include it in the insert
 	if fact.ID != 0 {
-		query = `INSERT INTO fact_definition_v1 (id, name, definition, last_modified) 
-		VALUES (:id, :name, :definition, :last_modified) RETURNING id`
-		params["id"] = fact.ID
+		statement = statement.
+			Columns("id").
+			Values(fact.ID)
 	}
-	rows, err := r.conn.NamedQuery(query, params)
+
+	// Execute the query and scan the returned ID
+	var id int64
+	err = statement.QueryRow().Scan(&id)
 	if err != nil {
 		return -1, err
-	}
-	defer rows.Close()
-
-	var id int64
-	if rows.Next() {
-		err := rows.Scan(&id)
-		if err != nil {
-			return -1, err
-		}
-	} else {
-		return -1, errors.New("no id returning of insert situation")
 	}
 
 	return id, nil
@@ -136,8 +138,6 @@ func (r *PostgresRepository) Create(fact engine.Fact) (int64, error) {
 
 // Update updates an entity in the repository by its name
 func (r *PostgresRepository) Update(id int64, fact engine.Fact) error {
-	query := `UPDATE fact_definition_v1 SET name = :name, definition = :definition, last_modified = :last_modified WHERE id = :id`
-
 	//This is necessary because within the definition we don't have the id
 	fact.ID = id
 
@@ -147,20 +147,25 @@ func (r *PostgresRepository) Update(id int64, fact engine.Fact) error {
 	}
 
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
-	res, err := r.conn.NamedExec(query, map[string]interface{}{
-		"id":            id,
-		"name":          fact.Name,
-		"definition":    factdata,
-		"last_modified": t,
-	})
+
+	// Create a statement builder for the update
+	result, err := r.newStatement().
+		Update(table).
+		Set("name", fact.Name).
+		Set("definition", string(factdata)).
+		Set("last_modified", t).
+		Where(sq.Eq{"id": id}).
+		Exec()
+
 	if err != nil {
 		return errors.New("couldn't query the database:" + err.Error())
 	}
-	i, err := res.RowsAffected()
+
+	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return errors.New("error with the affected rows:" + err.Error())
 	}
-	if i != 1 {
+	if rowsAffected != 1 {
 		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 	}
 	return nil
@@ -168,31 +173,36 @@ func (r *PostgresRepository) Update(id int64, fact engine.Fact) error {
 
 // Delete deletes an entity from the repository by its name
 func (r *PostgresRepository) Delete(id int64) error {
-	query := `DELETE FROM fact_definition_v1 WHERE id = :id`
-	res, err := r.conn.NamedExec(query, map[string]interface{}{
-		"id": id,
-	})
+	// Create a statement builder for the delete
+	result, err := r.newStatement().
+		Delete(table).
+		Where(sq.Eq{"id": id}).
+		Exec()
+
 	if err != nil {
 		return err
 	}
-	i, err := res.RowsAffected()
+
+	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
-	if i != 1 {
+	if rowsAffected != 1 {
 		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
-	_, _, _ = r.refreshNextIdGen()
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	return nil
 }
 
 // GetAll returns all entities in the repository
 func (r *PostgresRepository) GetAll() (map[int64]engine.Fact, error) {
-
 	facts := make(map[int64]engine.Fact, 0)
 
-	query := `SELECT id, definition FROM fact_definition_v1`
-	rows, err := r.conn.Query(query)
+	// Create a statement builder for the select
+	rows, err := r.newStatement().
+		Select("id", "definition").
+		From(table).
+		Query()
 
 	if err != nil {
 		return nil, err
@@ -217,22 +227,24 @@ func (r *PostgresRepository) GetAll() (map[int64]engine.Fact, error) {
 		facts[factID] = fact
 	}
 	return facts, nil
-
 }
 
 // GetAllByIDs returns all entities filtered by IDs in the repository
 func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]engine.Fact, error) {
+	facts := make(map[int64]engine.Fact, 0)
 
-	query := `SELECT id, definition FROM fact_definition_v1 WHERE id = ANY(:ids)`
-	rows, err := r.conn.NamedQuery(query, map[string]interface{}{
-		"ids": pq.Array(ids),
-	})
+	// Create a statement builder for the select with a custom WHERE clause for PostgreSQL's ANY operator
+	rows, err := r.newStatement().
+		Select("id", "definition").
+		From(table).
+		Where("id = ANY(?)", pq.Array(ids)).
+		Query()
+
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	facts := make(map[int64]engine.Fact, 0)
 	for rows.Next() {
 		var factID int64
 		var factDef string
@@ -251,27 +263,9 @@ func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]engine.Fact, er
 		facts[factID] = fact
 	}
 	return facts, nil
-
 }
 
-func (r *PostgresRepository) refreshNextIdGen() (int64, bool, error) {
-	query := `SELECT setval(pg_get_serial_sequence('fact_definition_v1', 'id'), coalesce(max(id),0) + 1, false) FROM fact_definition_v1`
-	rows, err := r.conn.Query(query)
-
-	if err != nil {
-		zap.L().Error("Couldn't query the database:", zap.Error(err))
-		return 0, false, err
-	}
-	defer rows.Close()
-
-	var data int64
-	if rows.Next() {
-		err := rows.Scan(&data)
-		if err != nil {
-			return 0, false, err
-		}
-		return data, true, nil
-	} else {
-		return 0, false, nil
-	}
+// newStatement creates a new statement builder with Dollar format
+func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
+	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(r.conn.DB)
 }

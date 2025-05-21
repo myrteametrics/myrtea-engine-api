@@ -17,7 +17,6 @@ type Repository interface {
 	Delete(id int64) error
 	GetAll() (map[int64]engine.Fact, error)
 	GetAllByIDs(ids []int64) (map[int64]engine.Fact, error)
-	refreshNextIdGen() (int64, bool, error)
 }
 
 var (

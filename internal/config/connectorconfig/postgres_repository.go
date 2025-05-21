@@ -84,8 +84,8 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, ConnectorConfig model.Connector
 
 	if ConnectorConfig.Id != 0 {
 		statement = statement.
-			Columns("id").
-			Values(ConnectorConfig.Id)
+			Columns("id", "name", "connector_id", "current", "last_modified").
+			Values(ConnectorConfig.Id, ConnectorConfig.Name, ConnectorConfig.ConnectorId, ConnectorConfig.Current, sq.Expr("current_timestamp"))
 	}
 
 	err := statement.QueryRow().Scan(&id)
