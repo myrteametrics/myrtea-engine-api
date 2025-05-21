@@ -122,8 +122,8 @@ func (r *PostgresRepository) Create(fact engine.Fact) (int64, error) {
 	// If fact.ID is provided, include it in the insert
 	if fact.ID != 0 {
 		statement = statement.
-			Columns("id").
-			Values(fact.ID)
+			Columns("id", "name", "definition", "last_modified").
+			Values(fact.ID, fact.Name, string(factdata), timestamp)
 	}
 
 	// Execute the query and scan the returned ID
