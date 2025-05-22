@@ -162,11 +162,9 @@ func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
 func (r *PostgresRepository) GetAll() (map[int64]model.ConnectorConfig, error) {
 	ConnectorConfigs := make(map[int64]model.ConnectorConfig)
 
-	query := r.newStatement().
-		Select("id", "name", "connector_id", "current").
-		From(table)
+	query := `SELECT id, name, connector_id, current FROM connectors_config_v1`
+	rows, err := r.conn.Query(query)
 
-	rows, err := query.Query()
 	if err != nil {
 		return nil, err
 	}
