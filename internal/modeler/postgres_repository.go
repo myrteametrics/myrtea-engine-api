@@ -3,12 +3,16 @@ package modeler
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
 	"go.uber.org/zap"
 )
+
+const table = "model_v1"
 
 // PostgresRepository is a repository containing the Fact definition based on a PSQL database and
 // implementing the repository interface
@@ -23,6 +27,11 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	}
 	var ifm Repository = &r
 	return ifm
+}
+
+// newStatement creates a new statement builder with Dollar format
+func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
+	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(r.conn.DB)
 }
 
 // Get search and returns a model from the repository by its name
@@ -94,36 +103,30 @@ func (r *PostgresRepository) GetByName(name string) (modeler.Model, bool, error)
 
 // Create creates a new model definition in the repository
 func (r *PostgresRepository) Create(model modeler.Model) (int64, error) {
-	_, _, _ = r.refreshNextIdGen()
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, "model_v1")
 	modelData, err := json.Marshal(model)
 	if err != nil {
 		return -1, err
 	}
 
-	query := `INSERT INTO model_v1 (id, name, definition) VALUES (DEFAULT, :name, :definition) RETURNING id`
-	params := map[string]interface{}{
-		"name":       model.Name,
-		"definition": string(modelData),
-	}
-	if model.ID != 0 {
-		query = `INSERT INTO model_v1 (id, name, definition) VALUES (:id, :name, :definition) RETURNING id`
-		params["id"] = model.ID
-	}
-
-	rows, err := r.conn.NamedQuery(query, params)
-	if err != nil {
-		return -1, err
-	}
-	defer rows.Close()
-
 	var id int64
-	if rows.Next() {
-		err := rows.Scan(&id)
-		if err != nil {
-			return -1, err
-		}
-	} else {
-		return -1, errors.New("no id returning of insert situation")
+	var statement sq.InsertBuilder
+
+	statement = r.newStatement().
+		Insert(table).
+		Columns("name", "definition").
+		Values(model.Name, string(modelData)).
+		Suffix("RETURNING \"id\"")
+
+	if model.ID != 0 {
+		statement = statement.
+			Columns("id", "name", "definition").
+			Values(model.ID, model.Name, string(modelData))
+	}
+
+	err = statement.QueryRow().Scan(&id)
+	if err != nil {
+		return -1, errors.New("couldn't query the database:" + err.Error())
 	}
 
 	return id, nil
@@ -173,7 +176,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 	if i != 1 {
 		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
-	_, _, _ = r.refreshNextIdGen()
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, "model_v1")
 	return nil
 }
 
@@ -249,26 +252,4 @@ func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]modeler.Model, 
 	}
 	return models, nil
 
-}
-
-func (r *PostgresRepository) refreshNextIdGen() (int64, bool, error) {
-	query := `SELECT setval(pg_get_serial_sequence('model_v1', 'id'), coalesce(max(id),0) + 1, false) FROM model_v1`
-	rows, err := r.conn.Query(query)
-
-	if err != nil {
-		zap.L().Error("Couldn't query the database:", zap.Error(err))
-		return 0, false, err
-	}
-	defer rows.Close()
-
-	var data int64
-	if rows.Next() {
-		err := rows.Scan(&data)
-		if err != nil {
-			return 0, false, err
-		}
-		return data, true, nil
-	} else {
-		return 0, false, nil
-	}
 }

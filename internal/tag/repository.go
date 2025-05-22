@@ -21,8 +21,6 @@ type Repository interface {
 	GetTagsByTemplateInstanceId(templateInstanceId int64) ([]Tag, error)
 
 	GetSituationsTags() (map[int64][]Tag, error)
-
-	refreshNextIdGen() (int64, bool, error)
 }
 
 var (

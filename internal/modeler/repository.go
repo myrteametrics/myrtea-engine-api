@@ -17,7 +17,6 @@ type Repository interface {
 	Delete(id int64) error
 	GetAll() (map[int64]modeler.Model, error)
 	GetAllByIDs(ids []int64) (map[int64]modeler.Model, error)
-	refreshNextIdGen() (int64, bool, error)
 }
 
 var (

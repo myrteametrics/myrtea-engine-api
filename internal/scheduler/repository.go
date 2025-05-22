@@ -13,7 +13,6 @@ type Repository interface {
 	Update(schedule InternalSchedule) error
 	Delete(id int64) error
 	GetAll() (map[int64]InternalSchedule, error)
-	refreshNextIdGen() (int64, bool, error)
 }
 
 var (

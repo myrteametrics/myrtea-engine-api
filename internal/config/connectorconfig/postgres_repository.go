@@ -1,6 +1,7 @@
 package connectorconfig
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
@@ -32,12 +33,12 @@ func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
 
 // Get use to retrieve an ConnectorConfig by id
 func (r *PostgresRepository) Get(id int64) (model.ConnectorConfig, bool, error) {
-	query := r.newStatement().
-		Select("name", "connector_id", "current").
-		From(table).
-		Where(sq.Eq{"id": id})
+	query := `SELECT name, connector_id, current FROM connectors_config_v1 WHERE id = :id`
+	params := map[string]interface{}{
+		"id": id,
+	}
 
-	rows, err := query.Query()
+	rows, err := r.conn.NamedQuery(query, params)
 	if err != nil {
 		return model.ConnectorConfig{}, false, fmt.Errorf("couldn't retrieve the action with name %d: %s", id, err.Error())
 	}
@@ -98,25 +99,22 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, ConnectorConfig model.Connector
 
 // Update method used to update un ConnectorConfig
 func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, ConnectorConfig model.ConnectorConfig) error {
-	var statement sq.UpdateBuilder
-
-	if tx != nil {
-		statement = sq.Update(table).
-			PlaceholderFormat(sq.Dollar).
-			RunWith(tx)
-	} else {
-		statement = r.newStatement().
-			Update(table)
+	query := `UPDATE connectors_config_v1 SET name = :name, connector_id = :connector_id,
+				current = :current, previous = current WHERE id = :id`
+	params := map[string]interface{}{
+		"id":           id,
+		"name":         ConnectorConfig.Name,
+		"connector_id": ConnectorConfig.ConnectorId,
+		"current":      ConnectorConfig.Current,
 	}
 
-	statement = statement.
-		Set("name", ConnectorConfig.Name).
-		Set("connector_id", ConnectorConfig.ConnectorId).
-		Set("current", ConnectorConfig.Current).
-		Set("previous", sq.Expr("current")).
-		Where(sq.Eq{"id": id})
-
-	res, err := statement.Exec()
+	var err error
+	var res sql.Result
+	if tx != nil {
+		res, err = tx.NamedExec(query, params)
+	} else {
+		res, err = r.conn.NamedExec(query, params)
+	}
 	if err != nil {
 		return errors.New("couldn't query the database:" + err.Error())
 	}
@@ -133,20 +131,18 @@ func (r *PostgresRepository) Update(tx *sqlx.Tx, id int64, ConnectorConfig model
 
 // Delete use to retrieve an ConnectorConfig by name
 func (r *PostgresRepository) Delete(tx *sqlx.Tx, id int64) error {
-	var statement sq.DeleteBuilder
-
-	if tx != nil {
-		statement = sq.Delete(table).
-			PlaceholderFormat(sq.Dollar).
-			RunWith(tx)
-	} else {
-		statement = r.newStatement().
-			Delete(table)
+	query := `DELETE FROM connectors_config_v1 WHERE id = :id`
+	params := map[string]interface{}{
+		"id": id,
 	}
 
-	statement = statement.Where(sq.Eq{"id": id})
-
-	res, err := statement.Exec()
+	var err error
+	var res sql.Result
+	if tx != nil {
+		res, err = tx.NamedExec(query, params)
+	} else {
+		res, err = r.conn.NamedExec(query, params)
+	}
 	if err != nil {
 		return errors.New("couldn't query the database:" + err.Error())
 	}

@@ -4,12 +4,16 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 )
+
+const table = "situation_definition_v1"
 
 // PostgresRepository is a repository containing the situation definition based on a PSQL database and
 // implementing the repository interface
@@ -24,6 +28,11 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	}
 	var ifm Repository = &r
 	return ifm
+}
+
+// newStatement creates a new statement builder with Dollar format
+func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
+	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(r.conn.DB)
 }
 
 // Get retrieve the specified situation definition
@@ -118,58 +127,50 @@ func (r *PostgresRepository) GetByName(name string, parseParameters ...bool) (Si
 	return situation, true, nil
 }
 
+func getSituationCalendarIdLinkValue(situation Situation) interface{} {
+	if situation.CalendarID == 0 {
+		return nil
+	} else {
+		return situation.CalendarID
+	}
+}
+
 // Create creates a new situation in the database using the given situation object
 func (r *PostgresRepository) Create(situation Situation) (int64, error) {
-	_, _, _ = r.refreshNextIdGen()
+
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	situationData, err := json.Marshal(situation)
 	if err != nil {
 		return -1, err
 	}
 
 	timestamp := time.Now().Truncate(1 * time.Millisecond).UTC()
-	query := `INSERT INTO situation_definition_v1 (id, name, definition, is_template, is_object, calendar_id, last_modified)
-		VALUES (DEFAULT, :name, :definition, :is_template, :is_object, :calendar_id, :last_modified) RETURNING id`
-	params := map[string]interface{}{
-		"name":          situation.Name,
-		"definition":    string(situationData),
-		"is_template":   situation.IsTemplate,
-		"is_object":     situation.IsObject,
-		"calendar_id":   situation.CalendarID,
-		"last_modified": timestamp,
-	}
-	if situation.ID != 0 {
-		query = `INSERT INTO situation_definition_v1 (id, name, definition, is_template, is_object, calendar_id, last_modified)
-		VALUES (:id, :name, :definition, :is_template, :is_object, :calendar_id, :last_modified) RETURNING id`
-		params["id"] = situation.ID
-	}
-
-	if situation.CalendarID == 0 {
-		params["calendar_id"] = nil
-	}
 
 	tx, err := r.conn.Beginx()
 	if err != nil {
 		return -1, err
 	}
 
-	rows, err := tx.NamedQuery(query, params)
+	// Create a new statement builder
+	statement := r.newStatement().
+		Insert(table).
+		Columns("name", "definition", "is_template", "is_object", "calendar_id", "last_modified").
+		Values(situation.Name, string(situationData), situation.IsTemplate, situation.IsObject, getSituationCalendarIdLinkValue(situation), timestamp).
+		Suffix("RETURNING \"id\"")
+
+	// If situation.ID is provided, include it in the query
+	if situation.ID != 0 {
+		statement = statement.
+			Columns("id", "name", "definition", "is_template", "is_object", "calendar_id", "last_modified").
+			Values(situation.ID, situation.Name, string(situationData), situation.IsTemplate, situation.IsObject, getSituationCalendarIdLinkValue(situation), timestamp)
+	}
+
+	// Execute the query and get the returned ID
+	var id int64
+	err = statement.RunWith(tx).QueryRow().Scan(&id)
 	if err != nil {
 		tx.Rollback()
-		return -1, err
-	}
-	defer rows.Close()
-
-	var id int64
-	if rows.Next() {
-		err := rows.Scan(&id)
-		if err != nil {
-			tx.Rollback()
-			return -1, err
-		}
-		rows.Close()
-	} else {
-		tx.Rollback()
-		return -1, errors.New("no id returning of insert situation")
+		return -1, errors.New("couldn't query the database: " + err.Error())
 	}
 
 	err = r.updateSituationFacts(tx, id, situation.Facts)
@@ -292,7 +293,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 	if err != nil {
 		return err
 	}
-	_, _, _ = r.refreshNextIdGen()
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	return nil
 }
 
@@ -463,28 +464,6 @@ func (r *PostgresRepository) GetAllByRuleID(ruleID int64, parseParameters ...boo
 	defer rows.Close()
 
 	return parseAllRows(rows, shouldParseForEvaluation(parseParameters...))
-}
-
-func (r *PostgresRepository) refreshNextIdGen() (int64, bool, error) {
-	query := `SELECT setval(pg_get_serial_sequence('situation_definition_v1', 'id'), coalesce(max(id),0) + 1, false) FROM situation_definition_v1`
-	rows, err := r.conn.Query(query)
-
-	if err != nil {
-		zap.L().Error("Couldn't query the database:", zap.Error(err))
-		return 0, false, err
-	}
-	defer rows.Close()
-
-	var data int64
-	if rows.Next() {
-		err := rows.Scan(&data)
-		if err != nil {
-			return 0, false, err
-		}
-		return data, true, nil
-	} else {
-		return 0, false, nil
-	}
 }
 
 func parseAllRows(rows *sqlx.Rows, parseParameters bool) (map[int64]Situation, error) {
@@ -775,7 +754,7 @@ func (r *PostgresRepository) DeleteTemplateInstance(instanceID int64) error {
 	if i != 1 {
 		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
-	_, _, _ = r.refreshNextIdGen()
+	_, _, _ = r.refreshNextInstanceIdGen()
 	return nil
 }
 

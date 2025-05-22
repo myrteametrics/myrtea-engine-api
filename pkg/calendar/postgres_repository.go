@@ -1,15 +1,18 @@
 package calendar
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 )
+
+const table = "calendar_v1"
 
 // PostgresRepository is a repository containing the user groups data based on a PSQL database and
 // implementing the repository interface
@@ -64,9 +67,14 @@ func (r *PostgresRepository) Get(id int64) (Calendar, bool, error) {
 	return Calendar{}, false, nil
 }
 
+// newStatement creates a new statement builder with Dollar format
+func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
+	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(r.conn.DB)
+}
+
 // Create method used to create a Calendar
 func (r *PostgresRepository) Create(calendar Calendar) (int64, error) {
-	_, _, _ = r.refreshNextIdGen()
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	creationTS := time.Now().Truncate(1 * time.Millisecond).UTC()
 
 	tx, err := r.conn.Begin()
@@ -79,53 +87,51 @@ func (r *PostgresRepository) Create(calendar Calendar) (int64, error) {
 		return -1, err
 	}
 
-	var rows *sql.Rows
+	// Create a statement builder for the transaction
+	stmt := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(tx)
 
+	// Build the insert query
+	insertBuilder := stmt.Insert(table).
+		Columns("name", "description", "timezone", "period_data", "enabled", "creation_date", "last_modified").
+		Values(calendar.Name, calendar.Description, calendar.Timezone, string(periodData), calendar.Enabled, creationTS, creationTS).
+		Suffix("RETURNING \"id\"")
+
+	// Handle the case where calendar.ID is provided
 	if calendar.ID != 0 {
-		rows, err = tx.Query(`INSERT into calendar_v1 (id, name, description, timezone, period_data, enabled, creation_date, last_modified ) 
-	values ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`, calendar.ID, calendar.Name, calendar.Description, calendar.Timezone, string(periodData), calendar.Enabled, creationTS, creationTS)
-	} else {
-		rows, err = tx.Query(`INSERT into calendar_v1 (id, name, description, timezone, period_data, enabled, creation_date, last_modified ) 
-	values (DEFAULT, $1, $2, $3, $4, $5, $6, $7) RETURNING id`, calendar.Name, calendar.Description, calendar.Timezone, string(periodData), calendar.Enabled, creationTS, creationTS)
-
+		insertBuilder = insertBuilder.
+			Columns("id", "name", "description", "timezone", "period_data", "enabled", "creation_date", "last_modified").
+			Values(calendar.ID, calendar.Name, calendar.Description, calendar.Timezone, string(periodData), calendar.Enabled, creationTS, creationTS)
 	}
 
+	// Execute the query
+	var calendarID int64
+	err = insertBuilder.QueryRow().Scan(&calendarID)
 	if err != nil {
 		tx.Rollback()
 		return -1, err
 	}
-	defer rows.Close()
-
-	var calendarID int64
-	if rows.Next() {
-		rows.Scan(&calendarID)
-	} else {
-		tx.Rollback()
-		return -1, errors.New("no id returning of insert calendar action")
-	}
-	rows.Close()
 
 	//insert unions calendar
 	for i, subCalendarID := range calendar.UnionCalendarIDs {
 		priority := i + 1
-		res, err := tx.Exec(`INSERT INTO calendar_union_v1(calendar_id, sub_calendar_id, priority) 
-							VALUES ($1,$2,$3)`, calendarID, subCalendarID, priority)
-		if err != nil {
-			tx.Rollback()
-			return -1, err
-		}
+
+		// Build the insert query for union calendar
+		res, err := stmt.Insert("calendar_union_v1").
+			Columns("calendar_id", "sub_calendar_id", "priority").
+			Values(calendarID, subCalendarID, priority).
+			Exec()
 
 		if err != nil {
 			tx.Rollback()
 			return -1, err
 		}
 
-		i, err := res.RowsAffected()
+		rowsAffected, err := res.RowsAffected()
 		if err != nil {
 			tx.Rollback()
 			return -1, errors.New("error with the affected rows:" + err.Error())
 		}
-		if i != 1 {
+		if rowsAffected != 1 {
 			tx.Rollback()
 			return -1, errors.New("no row inserted (or multiple row inserted) instead of 1 row")
 		}
@@ -309,7 +315,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 	if i != 1 {
 		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
-	_, _, _ = r.refreshNextIdGen()
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	return nil
 }
 
@@ -389,28 +395,6 @@ func (r *PostgresRepository) GetAllModifiedFrom(from time.Time) (map[int64]Calen
 	}
 
 	return calendars, nil
-}
-
-func (r *PostgresRepository) refreshNextIdGen() (int64, bool, error) {
-	query := `SELECT setval(pg_get_serial_sequence('calendar_v1', 'id'), coalesce(max(id),0) + 1, false) FROM calendar_v1`
-	rows, err := r.conn.Query(query)
-
-	if err != nil {
-		zap.L().Error("Couldn't query the database:", zap.Error(err))
-		return 0, false, err
-	}
-	defer rows.Close()
-
-	var data int64
-	if rows.Next() {
-		err := rows.Scan(&data)
-		if err != nil {
-			return 0, false, err
-		}
-		return data, true, nil
-	} else {
-		return 0, false, nil
-	}
 }
 
 // GetSituationCalendar search and returns a Calendar from the repository by the situation id

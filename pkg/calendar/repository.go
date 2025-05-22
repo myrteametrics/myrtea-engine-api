@@ -15,7 +15,6 @@ type Repository interface {
 	Delete(id int64) error
 	GetAll() (map[int64]Calendar, error)
 	GetAllModifiedFrom(from time.Time) (map[int64]Calendar, error)
-	refreshNextIdGen() (int64, bool, error)
 	GetSituationCalendar(id int64) (Calendar, bool, error)
 }
 

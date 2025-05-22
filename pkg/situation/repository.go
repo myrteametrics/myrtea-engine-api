@@ -19,8 +19,6 @@ type Repository interface {
 	GetAllByIDs(ids []int64, parseGlobalVariables ...bool) (map[int64]Situation, error)
 	GetAllByRuleID(ruleID int64, parseGlobalVariables ...bool) (map[int64]Situation, error)
 
-	refreshNextIdGen() (int64, bool, error)
-
 	GetRules(id int64) ([]int64, error)
 	SetRules(id int64, rules []int64) error
 	AddRule(tx *sqlx.Tx, id int64, ruleID int64) error
