@@ -49,14 +49,16 @@ func (r *PostgresRepository) Create(schedule InternalSchedule) (int64, error) {
 
 	statement = r.newStatement().
 		Insert(table).
-		Columns("name", "cronexpr", "job_type", "job_data", "last_modified", "enabled").
-		Values(schedule.Name, schedule.CronExpr, schedule.JobType, string(scheduleData), timestamp, schedule.Enabled).
 		Suffix("RETURNING \"id\"")
 
 	if schedule.ID != 0 {
 		statement = statement.
 			Columns("id", "name", "cronexpr", "job_type", "job_data", "last_modified", "enabled").
 			Values(schedule.ID, schedule.Name, schedule.CronExpr, schedule.JobType, string(scheduleData), timestamp, schedule.Enabled)
+	} else {
+		statement = statement.
+			Columns("name", "cronexpr", "job_type", "job_data", "last_modified", "enabled").
+			Values(schedule.Name, schedule.CronExpr, schedule.JobType, string(scheduleData), timestamp, schedule.Enabled)
 	}
 
 	err = statement.QueryRow().Scan(&id)

@@ -92,8 +92,6 @@ func (r *PostgresRepository) Create(calendar Calendar) (int64, error) {
 
 	// Build the insert query
 	insertBuilder := stmt.Insert(table).
-		Columns("name", "description", "timezone", "period_data", "enabled", "creation_date", "last_modified").
-		Values(calendar.Name, calendar.Description, calendar.Timezone, string(periodData), calendar.Enabled, creationTS, creationTS).
 		Suffix("RETURNING \"id\"")
 
 	// Handle the case where calendar.ID is provided
@@ -101,6 +99,10 @@ func (r *PostgresRepository) Create(calendar Calendar) (int64, error) {
 		insertBuilder = insertBuilder.
 			Columns("id", "name", "description", "timezone", "period_data", "enabled", "creation_date", "last_modified").
 			Values(calendar.ID, calendar.Name, calendar.Description, calendar.Timezone, string(periodData), calendar.Enabled, creationTS, creationTS)
+	} else {
+		insertBuilder = insertBuilder.
+			Columns("name", "description", "timezone", "period_data", "enabled", "creation_date", "last_modified").
+			Values(calendar.Name, calendar.Description, calendar.Timezone, string(periodData), calendar.Enabled, creationTS, creationTS)
 	}
 
 	// Execute the query

@@ -114,14 +114,16 @@ func (r *PostgresRepository) Create(model modeler.Model) (int64, error) {
 
 	statement = r.newStatement().
 		Insert(table).
-		Columns("name", "definition").
-		Values(model.Name, string(modelData)).
 		Suffix("RETURNING \"id\"")
 
 	if model.ID != 0 {
 		statement = statement.
 			Columns("id", "name", "definition").
 			Values(model.ID, model.Name, string(modelData))
+	} else {
+		statement = statement.
+			Columns("name", "definition").
+			Values(model.Name, string(modelData))
 	}
 
 	err = statement.QueryRow().Scan(&id)

@@ -109,8 +109,6 @@ func (r *PostgresRepository) Create(fact engine.Fact) (int64, error) {
 	// Create a statement builder for the insert
 	statement := r.newStatement().
 		Insert(table).
-		Columns("name", "definition", "last_modified").
-		Values(fact.Name, string(factdata), timestamp).
 		Suffix("RETURNING \"id\"")
 
 	// If fact.ID is provided, include it in the insert
@@ -118,6 +116,10 @@ func (r *PostgresRepository) Create(fact engine.Fact) (int64, error) {
 		statement = statement.
 			Columns("id", "name", "definition", "last_modified").
 			Values(fact.ID, fact.Name, string(factdata), timestamp)
+	} else {
+		statement = statement.
+			Columns("name", "definition", "last_modified").
+			Values(fact.Name, string(factdata), timestamp)
 	}
 
 	// Execute the query and scan the returned ID

@@ -154,8 +154,6 @@ func (r *PostgresRepository) Create(situation Situation) (int64, error) {
 	// Create a new statement builder
 	statement := r.newStatement().
 		Insert(table).
-		Columns("name", "definition", "is_template", "is_object", "calendar_id", "last_modified").
-		Values(situation.Name, string(situationData), situation.IsTemplate, situation.IsObject, getSituationCalendarIdLinkValue(situation), timestamp).
 		Suffix("RETURNING \"id\"")
 
 	// If situation.ID is provided, include it in the query
@@ -163,6 +161,10 @@ func (r *PostgresRepository) Create(situation Situation) (int64, error) {
 		statement = statement.
 			Columns("id", "name", "definition", "is_template", "is_object", "calendar_id", "last_modified").
 			Values(situation.ID, situation.Name, string(situationData), situation.IsTemplate, situation.IsObject, getSituationCalendarIdLinkValue(situation), timestamp)
+	} else {
+		statement = statement.
+			Columns("name", "definition", "is_template", "is_object", "calendar_id", "last_modified").
+			Values(situation.Name, string(situationData), situation.IsTemplate, situation.IsObject, getSituationCalendarIdLinkValue(situation), timestamp)
 	}
 
 	// Execute the query and get the returned ID
@@ -616,8 +618,14 @@ func (r *PostgresRepository) CreateTemplateInstance(situationID int64, instance 
 	timestamp := time.Now().Truncate(1 * time.Millisecond).UTC()
 	query := `INSERT INTO situation_template_instances_v1 (situation_id, id, name, parameters, calendar_id, last_modified, enable_depends_on, depends_on_parameters)
 		VALUES (:situation_id, DEFAULT, :name, :parameters, :calendar_id, :last_modified, :enable_depends_on, :depends_on_parameters) RETURNING id`
+	if instance.ID != 0 {
+		query = `INSERT INTO situation_template_instances_v1 (situation_id, id, name, parameters, calendar_id, last_modified, enable_depends_on, depends_on_parameters)
+		VALUES (:situation_id, :id, :name, :parameters, :calendar_id, :last_modified, :enable_depends_on, :depends_on_parameters) RETURNING id`
+	}
+
 	params := map[string]interface{}{
 		"situation_id":          situationID,
+		"id":                    instance.ID,
 		"name":                  instance.Name,
 		"parameters":            string(parametersData),
 		"calendar_id":           instance.CalendarID,

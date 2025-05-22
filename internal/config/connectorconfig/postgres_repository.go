@@ -75,18 +75,17 @@ func (r *PostgresRepository) Create(tx *sqlx.Tx, ConnectorConfig model.Connector
 			RunWith(tx)
 	} else {
 		statement = r.newStatement().
-			Insert(table)
+			Insert(table).
+			Suffix("RETURNING \"id\"")
 	}
-
-	statement = statement.
-		Columns("name", "connector_id", "current", "last_modified").
-		Values(ConnectorConfig.Name, ConnectorConfig.ConnectorId, ConnectorConfig.Current, sq.Expr("current_timestamp")).
-		Suffix("RETURNING \"id\"")
-
 	if ConnectorConfig.Id != 0 {
 		statement = statement.
 			Columns("id", "name", "connector_id", "current", "last_modified").
 			Values(ConnectorConfig.Id, ConnectorConfig.Name, ConnectorConfig.ConnectorId, ConnectorConfig.Current, sq.Expr("current_timestamp"))
+	} else {
+		statement = statement.
+			Columns("name", "connector_id", "current", "last_modified").
+			Values(ConnectorConfig.Name, ConnectorConfig.ConnectorId, ConnectorConfig.Current, sq.Expr("current_timestamp"))
 	}
 
 	err := statement.QueryRow().Scan(&id)

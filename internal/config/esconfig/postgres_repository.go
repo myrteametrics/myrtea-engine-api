@@ -143,13 +143,15 @@ func (r *PostgresRepository) Create(elasticSearchConfig model.ElasticSearchConfi
 	var id int64
 	statement := r.newStatement().
 		Insert(table).
-		Columns("name", "urls", `"default"`, "export_activated").
-		Values(elasticSearchConfig.Name, strings.Join(elasticSearchConfig.URLs, ","), elasticSearchConfig.Default, elasticSearchConfig.ExportActivated).
 		Suffix("RETURNING \"id\"")
 	if elasticSearchConfig.Id != 0 {
 		statement = statement.
 			Columns("id", "name", "urls", `"default"`, "export_activated").
 			Values(elasticSearchConfig.Id, elasticSearchConfig.Name, strings.Join(elasticSearchConfig.URLs, ","), elasticSearchConfig.Default, elasticSearchConfig.ExportActivated)
+	} else {
+		statement = statement.
+			Columns("name", "urls", `"default"`, "export_activated").
+			Values(elasticSearchConfig.Name, strings.Join(elasticSearchConfig.URLs, ","), elasticSearchConfig.Default, elasticSearchConfig.ExportActivated)
 	}
 	err := statement.QueryRow().Scan(&id)
 	if err != nil {
