@@ -4,6 +4,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 	"testing"
 )
 
@@ -376,7 +377,7 @@ func TestPostgresRefreshNextIdGen(t *testing.T) {
 		t.Error(err)
 	}
 
-	nextId, found, err := r.RefreshNextIdGen(table)
+	nextId, found, err := utils.RefreshNextIdGen(r.conn.DB, table)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
