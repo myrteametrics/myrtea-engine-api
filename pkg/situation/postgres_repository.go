@@ -595,7 +595,7 @@ func (r *PostgresRepository) RemoveRule(tx *sqlx.Tx, id int64, ruleID int64) err
 
 // CreateTemplateInstance creates a situation template instance
 func (r *PostgresRepository) CreateTemplateInstance(situationID int64, instance TemplateInstance) (int64, error) {
-	_, _, _ = r.refreshNextInstanceIdGen()
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, "situation_template_instances_v1")
 	isTemplate, err := r.isTemplate(situationID)
 
 	if err != nil {
@@ -762,7 +762,7 @@ func (r *PostgresRepository) DeleteTemplateInstance(instanceID int64) error {
 	if i != 1 {
 		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
-	_, _, _ = r.refreshNextInstanceIdGen()
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, "situation_template_instances_v1")
 	return nil
 }
 
@@ -868,26 +868,4 @@ func (r *PostgresRepository) GetAllTemplateInstances(situationID int64, parsePar
 	}
 
 	return templateInstances, nil
-}
-
-func (r *PostgresRepository) refreshNextInstanceIdGen() (int64, bool, error) {
-	query := `SELECT setval(pg_get_serial_sequence('situation_template_instances_v1', 'id'), coalesce(max(id),0) + 1, false) FROM situation_template_instances_v1`
-	rows, err := r.conn.Query(query)
-
-	if err != nil {
-		zap.L().Error("Couldn't query the database:", zap.Error(err))
-		return 0, false, err
-	}
-	defer rows.Close()
-
-	var data int64
-	if rows.Next() {
-		err := rows.Scan(&data)
-		if err != nil {
-			return 0, false, err
-		}
-		return data, true, nil
-	} else {
-		return 0, false, nil
-	}
 }
