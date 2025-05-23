@@ -112,7 +112,7 @@ type FactHitsRequest struct {
 	Offset              int                    `json:"offset,omitempty"`
 	SituationId         int64                  `json:"situationId,omitempty"`
 	SituationInstanceId int64                  `json:"situationInstanceId,omitempty"`
-	Debug               bool                   `json:"debug,omitempty"`
+	Debug               *bool                  `json:"debug,omitempty"`
 	FactParameters      map[string]interface{} `json:"factParameters,omitempty"`
 	HitsOnly            bool                   `json:"hitsOnly,omitempty"` // If true, forces f.Intent.Operator = engine.Select
 }
@@ -140,6 +140,9 @@ func (r *FactHitsRequest) validateBasicFields() error {
 		return errors.New("offset cannot be negative")
 	}
 
+	if r.Debug == nil {
+		*r.Debug = true
+	}
 	return nil
 }
 
