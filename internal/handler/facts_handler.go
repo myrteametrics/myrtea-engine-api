@@ -430,12 +430,6 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if f.Dimensions != nil {
-		zap.L().Warn("Fact does have dimensions", zap.Int64("factid", request.FactId))
-		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, fmt.Errorf("service not supported on fact with dimensions"))
-		return
-	}
-
 	if f.IsObject {
 		zap.L().Warn("Fact is an object fact", zap.Int64("factid", request.FactId))
 		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, fmt.Errorf("service not supported on fact object"))
@@ -515,7 +509,7 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 
 	t := time.Now().Truncate(1 * time.Second).UTC()
 
-	data, err = fact.ExecuteFact(t, f, 0, 0, placeholders, request.Nhit, request.Offset, !request.Debug)
+	data, err = fact.ExecuteFact(t, f, 0, 0, placeholders, request.Nhit, request.Offset, !*request.Debug)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIElasticSelectFailed, err)
