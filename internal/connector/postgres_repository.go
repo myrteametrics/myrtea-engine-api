@@ -24,7 +24,7 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	return ifm
 }
 
-//GetLastConnectionReading returns the datetime of the last connections reading for a connector id
+// GetLastConnectionReading returns the datetime of the last connections reading for a connector id
 func (r *PostgresRepository) GetLastConnectionReading(connectorID string, successOnly bool, maxAgeDays int64) (map[string]time.Time, error) {
 	query := fmt.Sprintf(`SELECT DISTINCT ON (name) name, ts 
 				FROM connectors_executions_log_v1 

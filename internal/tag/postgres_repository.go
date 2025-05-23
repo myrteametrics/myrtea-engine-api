@@ -6,6 +6,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 	"time"
 )
 
@@ -30,15 +31,22 @@ func NewPostgresRepository(conn *sqlx.DB) Repository {
 }
 
 func (r *PostgresRepository) Create(tag Tag) (int64, error) {
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	var id int64
 	now := time.Now()
-	err := r.newStatement().
+	statement := r.newStatement().
 		Insert(table).
-		Columns("name", "description", "color", "created_at", "updated_at").
-		Values(tag.Name, tag.Description, tag.Color, now, now).
-		Suffix("RETURNING \"id\"").
-		QueryRow().
-		Scan(&id)
+		Suffix("RETURNING \"id\"")
+	if tag.Id != 0 {
+		statement = statement.
+			Columns("id", "name", "description", "color", "created_at", "updated_at").
+			Values(tag.Id, tag.Name, tag.Description, tag.Color, now, now)
+	} else {
+		statement = statement.
+			Columns("name", "description", "color", "created_at", "updated_at").
+			Values(tag.Name, tag.Description, tag.Color, now, now)
+	}
+	err := statement.QueryRow().Scan(&id)
 	if err != nil {
 		return -1, err
 	}
@@ -82,6 +90,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 	if err != nil {
 		return err
 	}
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	return nil
 }
 

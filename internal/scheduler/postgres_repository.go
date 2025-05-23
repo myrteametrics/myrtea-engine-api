@@ -4,11 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
+
+const table = "job_schedules_v1"
 
 // PostgresRepository is a repository containing the rules based on a PSQL database and
 // implementing the repository interface
@@ -25,39 +29,43 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	return ifm
 }
 
+// newStatement creates a new statement builder with Dollar format
+func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
+	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(r.conn.DB)
+}
+
 // Create creates a new schedule in the repository
 func (r *PostgresRepository) Create(schedule InternalSchedule) (int64, error) {
-
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	timestamp := time.Now().Truncate(1 * time.Millisecond).UTC()
 	scheduleData, err := json.Marshal(schedule.Job)
 	if err != nil {
-		return -1, errors.New("failled to marshall the InternalSchedule ID:" + fmt.Sprint(schedule.ID) +
+		return -1, errors.New("failed to marshall the InternalSchedule ID:" + fmt.Sprint(schedule.ID) +
 			"\nError from Marshal" + err.Error())
 	}
 
-	query := `INSERT INTO job_schedules_v1 (id, name, cronexpr, job_type, job_data, last_modified, enabled) 
-		VALUES (DEFAULT, :name, :cronexpr, :job_type, :job_data, :last_modified, :enabled) RETURNING id`
-	params := map[string]interface{}{
-		"name":          schedule.Name,
-		"cronexpr":      schedule.CronExpr,
-		"job_type":      schedule.JobType,
-		"job_data":      string(scheduleData),
-		"last_modified": timestamp,
-		"enabled":       schedule.Enabled,
-	}
-
-	rows, err := r.conn.NamedQuery(query, params)
-	if err != nil {
-		return -1, err
-	}
-	defer rows.Close()
-
 	var id int64
-	if rows.Next() {
-		rows.Scan(&id)
+	var statement sq.InsertBuilder
+
+	statement = r.newStatement().
+		Insert(table).
+		Suffix("RETURNING \"id\"")
+
+	if schedule.ID != 0 {
+		statement = statement.
+			Columns("id", "name", "cronexpr", "job_type", "job_data", "last_modified", "enabled").
+			Values(schedule.ID, schedule.Name, schedule.CronExpr, schedule.JobType, string(scheduleData), timestamp, schedule.Enabled)
 	} else {
-		return -1, errors.New("no id returning of insert situation")
+		statement = statement.
+			Columns("name", "cronexpr", "job_type", "job_data", "last_modified", "enabled").
+			Values(schedule.Name, schedule.CronExpr, schedule.JobType, string(scheduleData), timestamp, schedule.Enabled)
 	}
+
+	err = statement.QueryRow().Scan(&id)
+	if err != nil {
+		return -1, errors.New("couldn't query the database:" + err.Error())
+	}
+
 	return id, nil
 }
 
@@ -141,8 +149,9 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	return nil
 }
 

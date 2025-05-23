@@ -7,11 +7,15 @@ import (
 	"fmt"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 	"time"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
+
+const table = "rules_v1"
 
 // PostgresRulesRepository is a repository containing the rules based on a PSQL database and
 // implementing the repository interface
@@ -41,49 +45,66 @@ func (r *PostgresRulesRepository) CheckByName(name string) (bool, error) {
 
 // Create creates a new Rule in the repository
 func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
-
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	t := time.Now().Truncate(1 * time.Millisecond).UTC()
-	tx, err := r.conn.Begin()
+
+	// Start a transaction
+	tx, err := r.conn.Beginx()
 	if err != nil {
 		return -1, err
 	}
 
-	var rows *sql.Rows
+	// Build the insert query for rules_v1 table using Squirrel
+	psql := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+	insertBuilder := psql.Insert("rules_v1").Suffix("RETURNING id")
 
-	if rule.CalendarID == 0 {
-		rows, err = tx.Query(`INSERT INTO rules_v1(name, enabled, calendar_id, last_modified)
-							VALUES ($1,$2,$3,$4) RETURNING id`, rule.Name, rule.Enabled, nil, t)
+	// Determine which columns to include based on whether ID is provided
+	var calendarIDValue interface{} = nil
+	if rule.CalendarID != 0 {
+		calendarIDValue = rule.CalendarID
+	}
 
+	if rule.ID != 0 {
+		insertBuilder = insertBuilder.Columns("id", "name", "enabled", "calendar_id", "last_modified").
+			Values(rule.ID, rule.Name, rule.Enabled, calendarIDValue, t)
 	} else {
-		rows, err = tx.Query(`INSERT INTO rules_v1(name, enabled, calendar_id, last_modified)
-		VALUES ($1,$2,$3,$4) RETURNING id`, rule.Name, rule.Enabled, rule.CalendarID, t)
+		insertBuilder = insertBuilder.Columns("name", "enabled", "calendar_id", "last_modified").
+			Values(rule.Name, rule.Enabled, calendarIDValue, t)
 	}
 
+	// Build the SQL query and arguments
+	query, args, err := insertBuilder.ToSql()
 	if err != nil {
-		tx.Rollback()
 		return -1, err
 	}
-	defer rows.Close()
 
+	// Execute the query
 	var ruleID int64
-	if rows.Next() {
-		rows.Scan(&ruleID)
-	} else {
+	err = tx.QueryRow(query, args...).Scan(&ruleID)
+	if err != nil {
 		tx.Rollback()
-		return -1, errors.New("no id returning of insert rule action")
+		return -1, err
 	}
-	rows.Close()
 
 	rule.ID = ruleID
 	ruledata, err := json.Marshal(rule)
 	if err != nil {
-		return -1, errors.New("failled to marshall the rule:" + rule.Name +
+		return -1, errors.New("failed to marshall the rule:" + rule.Name +
 			"\nError from Marshal" + err.Error())
 	}
 
-	//insert rule version
-	res, err := tx.Exec(`INSERT INTO rule_versions_v1(rule_id, version_number, data, creation_datetime)
-							VALUES ($1,$2,$3,$4)`, ruleID, rule.Version, string(ruledata), t)
+	// Build the insert query for rule_versions_v1 table using Squirrel
+	versionInsert, versionArgs, err := psql.Insert("rule_versions_v1").
+		Columns("rule_id", "version_number", "data", "creation_datetime").
+		Values(ruleID, rule.Version, string(ruledata), t).
+		ToSql()
+	if err != nil {
+		tx.Rollback()
+		return -1, err
+	}
+
+	// Execute the version insert query
+	res, err := tx.Exec(versionInsert, versionArgs...)
 	if err != nil {
 		tx.Rollback()
 		return -1, err
@@ -346,7 +367,7 @@ func (r *PostgresRulesRepository) Delete(id int64) error {
 	if err != nil {
 		return err
 	}
-
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	return nil
 }
 
