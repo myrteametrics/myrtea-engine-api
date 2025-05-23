@@ -3,15 +3,15 @@ package scheduler
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tasker"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/history"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
@@ -298,13 +298,13 @@ func (job FactRecalculationJob) RecalculateAndUpdateSituations(localRuleEngine *
 			return err
 		}
 
-		metadatas := make([]model.MetaData, 0)
+		metadatas := make([]metadata.MetaData, 0)
 		agenda := evaluator.EvaluateRules(localRuleEngine, historySituationFlattenData, enabledRuleIDs)
 		for _, agen := range agenda {
 			if agen.GetName() == "set" {
 				context := tasker.BuildContextData(agen.GetMetaData())
 				for key, value := range agen.GetParameters() {
-					metadatas = append(metadatas, model.MetaData{
+					metadatas = append(metadatas, metadata.MetaData{
 						Key:         key,
 						Value:       value,
 						RuleID:      context.RuleID,

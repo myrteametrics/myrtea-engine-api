@@ -5,7 +5,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/history"
 	"go.uber.org/zap"
 )
 
