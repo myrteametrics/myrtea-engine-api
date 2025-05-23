@@ -249,7 +249,7 @@ func ExportFactHitsFull(f engine.Fact) ([]reader.Hit, error) {
 			//Index(indicesStr).
 			Request(searchRequest).
 			Size(10000).
-			Sort("_shard_doc").
+			Sort(NewSortCombinations().Field("_shard_doc")).
 			Do(context.Background())
 		if err != nil {
 			zap.L().Error("ES Search failed", zap.Error(err))
