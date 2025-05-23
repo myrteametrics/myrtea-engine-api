@@ -20,7 +20,6 @@ type Repository interface {
 	GetAllEnabled() (map[int64]Rule, error)
 	GetAllModifiedFrom(from time.Time) (map[int64]Rule, error)
 	GetEnabledRuleIDs(situationID int64, ts time.Time) ([]int64, error)
-	refreshNextIdGen() (int64, bool, error)
 }
 
 var (
