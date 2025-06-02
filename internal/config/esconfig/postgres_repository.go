@@ -7,6 +7,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 	"strings"
 )
 
@@ -138,14 +139,21 @@ func (r *PostgresRepository) GetDefault() (model.ElasticSearchConfig, bool, erro
 
 // Create method used to create an elasticSearchConfig
 func (r *PostgresRepository) Create(elasticSearchConfig model.ElasticSearchConfig) (int64, error) {
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	var id int64
-	err := r.newStatement().
+	statement := r.newStatement().
 		Insert(table).
-		Columns("name", "urls", `"default"`, "export_activated").
-		Values(elasticSearchConfig.Name, strings.Join(elasticSearchConfig.URLs, ","), elasticSearchConfig.Default, elasticSearchConfig.ExportActivated).
-		Suffix("RETURNING \"id\"").
-		QueryRow().
-		Scan(&id)
+		Suffix("RETURNING \"id\"")
+	if elasticSearchConfig.Id != 0 {
+		statement = statement.
+			Columns("id", "name", "urls", `"default"`, "export_activated").
+			Values(elasticSearchConfig.Id, elasticSearchConfig.Name, strings.Join(elasticSearchConfig.URLs, ","), elasticSearchConfig.Default, elasticSearchConfig.ExportActivated)
+	} else {
+		statement = statement.
+			Columns("name", "urls", `"default"`, "export_activated").
+			Values(elasticSearchConfig.Name, strings.Join(elasticSearchConfig.URLs, ","), elasticSearchConfig.Default, elasticSearchConfig.ExportActivated)
+	}
+	err := statement.QueryRow().Scan(&id)
 	if err != nil {
 		return -1, err
 	}
@@ -177,6 +185,7 @@ func (r *PostgresRepository) Delete(id int64) error {
 	if err != nil {
 		return err
 	}
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	return r.checkRowsAffected(res, 1)
 
 	// TODO: check & set default

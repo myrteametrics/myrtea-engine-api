@@ -1,9 +1,11 @@
 FROM alpine:3.19.1
 LABEL maintainer="Myrtea Metrics <contact@myrteametrics.com>"
 
-RUN apk update && apk add --no-cache ca-certificates tzdata && rm -rf /var/cache/apk/*
-RUN addgroup -S myrtea -g "1001" &&  \
-    adduser -S myrtea -G myrtea -u "1001"
+RUN apk update
+RUN apk add --no-cache ca-certificates tzdata
+RUN rm -rf /var/cache/apk/*
+RUN addgroup -S myrtea -g "1001"
+RUN adduser -S myrtea -G myrtea -u "1001"
 
 USER myrtea
 

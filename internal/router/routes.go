@@ -122,7 +122,7 @@ func engineRouter(services Services) http.Handler {
 
 	r.Get("/rules", handler.GetRules)
 	r.Get("/rules/{id}", handler.GetRule)
-	r.Get("/rules/{id}/versions/{versionid}", handler.GetRuleByVersion)
+	r.Get("/rules/{id}/versions/{versionId}", handler.GetRuleByVersion)
 	r.Post("/rules/validate", handler.ValidateRule)
 	r.Post("/rules", handler.PostRule)
 	r.Put("/rules/{id}", handler.PutRule)
@@ -201,6 +201,7 @@ func engineRouter(services Services) http.Handler {
 	r.Post("/exports/custom", services.ExportHandler.ExportCustom)
 
 	r.Get("/variablesconfig", handler.GetVariablesConfig)
+	r.Get("/variablesconfig/scope/{scope}", handler.GetVariablesConfigByScope)
 	r.Get("/variablesconfig/{id}", handler.GetVariableConfig)
 	r.Get("/variablesconfig/key/{key}", handler.GetVariableConfigByKey)
 	r.Post("/variablesconfig", handler.PostVariableConfig)
