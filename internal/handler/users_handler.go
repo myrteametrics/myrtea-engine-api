@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	users2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
@@ -55,7 +55,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usersSlice, err := users2.R().GetAll()
+	usersSlice, err := users.R().GetAll()
 	if err != nil {
 		zap.L().Error("GetUsers", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -98,7 +98,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, found, err := users2.R().Get(userID)
+	user, found, err := users.R().Get(userID)
 	if err != nil {
 		zap.L().Error("Cannot get user", zap.String("uuid", userID.String()), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -128,7 +128,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500	{string}	string		"Internal Server Error"
 //	@Router			/admin/security/users/validate [post]
 func ValidateUser(w http.ResponseWriter, r *http.Request) {
-	var newUser users2.UserWithPassword
+	var newUser users.UserWithPassword
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
 		zap.L().Warn("User json decode", zap.Error(err))
@@ -166,7 +166,7 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user users2.UserWithPassword
+	var user users.UserWithPassword
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		zap.L().Warn("User json decode", zap.Error(err))
@@ -180,14 +180,14 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := users2.R().Create(user)
+	userID, err := users.R().Create(user)
 	if err != nil {
 		zap.L().Error("PostUser.Create", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	newUser, found, err := users2.R().Get(userID)
+	newUser, found, err := users.R().Get(userID)
 	if err != nil {
 		zap.L().Error("Cannot get user", zap.String("uuid", userID.String()), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -232,7 +232,7 @@ func PutUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user users2.User
+	var user users.User
 	err = json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		zap.L().Warn("User json decode", zap.Error(err))
@@ -247,14 +247,14 @@ func PutUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = users2.R().Update(user)
+	err = users.R().Update(user)
 	if err != nil {
 		zap.L().Error("PutUser.Update", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	user, found, err := users2.R().Get(userID)
+	user, found, err := users.R().Get(userID)
 	if err != nil {
 		zap.L().Error("Cannot get user", zap.String("uuid", userID.String()), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -297,7 +297,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = users2.R().Delete(userID)
+	err = users.R().Delete(userID)
 	if err != nil {
 		zap.L().Error("Cannot delete user", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
@@ -357,7 +357,7 @@ func SetUserRoles(w http.ResponseWriter, r *http.Request) {
 		roleUUIDs = append(roleUUIDs, roleUUID)
 	}
 
-	err = users2.R().SetUserRoles(userID, roleUUIDs)
+	err = users.R().SetUserRoles(userID, roleUUIDs)
 	if err != nil {
 		zap.L().Error("PutUser.Update", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
