@@ -1,4 +1,4 @@
-FROM alpine:3.14
+FROM alpine:3.19.1
 LABEL maintainer="Myrtea Metrics <contact@myrteametrics.com>"
 
 RUN apk update && apk add --no-cache ca-certificates tzdata && rm -rf /var/cache/apk/*
