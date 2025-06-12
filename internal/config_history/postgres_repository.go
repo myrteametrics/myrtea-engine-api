@@ -10,7 +10,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-const table = "config_history_v1"
+const (
+	table             = "config_history_v1"
+	maxHistoryRecords = 30 // Maximum number of records to keep in the history table
+)
 
 // PostgresRepository implements the Repository interface for PostgreSQL
 type PostgresRepository struct {
@@ -38,14 +41,55 @@ func (r *PostgresRepository) Create(history ConfigHistory) (int64, error) {
 		return -1, err
 	}
 
-	statement := r.newStatement().
+	// Begin a transaction to ensure atomicity
+	tx, err := r.conn.Beginx()
+	if err != nil {
+		return -1, fmt.Errorf("couldn't begin transaction: %s", err.Error())
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Count the current number of records
+	var count int
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
+	err = tx.QueryRow(countQuery).Scan(&count)
+	if err != nil {
+		return -1, fmt.Errorf("couldn't count config history records: %s", err.Error())
+	}
+
+	// If we already have maxHistoryRecords or more, delete the oldest records
+	if count >= maxHistoryRecords {
+		// Calculate how many records to delete
+		toDelete := count - maxHistoryRecords + 1 // +1 to make room for the new record
+
+		// Delete the oldest records (those with the lowest IDs)
+		deleteQuery := fmt.Sprintf("DELETE FROM %s WHERE id IN (SELECT id FROM %s ORDER BY id ASC LIMIT $1)", table, table)
+		_, err = tx.Exec(deleteQuery, toDelete)
+		if err != nil {
+			return -1, fmt.Errorf("couldn't delete oldest config history records: %s", err.Error())
+		}
+	}
+
+	// Insert the new record
+	statement := sq.StatementBuilder.
+		PlaceholderFormat(sq.Dollar).
+		RunWith(tx).
 		Insert(table).
 		Columns("id", "commentary", "type", "user").
 		Values(history.ID, history.Commentary, history.Type, history.User)
 
-	_, err := statement.Exec()
+	_, err = statement.Exec()
 	if err != nil {
 		return -1, fmt.Errorf("couldn't insert config history: %s", err.Error())
+	}
+
+	// Commit the transaction
+	err = tx.Commit()
+	if err != nil {
+		return -1, fmt.Errorf("couldn't commit transaction: %s", err.Error())
 	}
 
 	return history.ID, nil

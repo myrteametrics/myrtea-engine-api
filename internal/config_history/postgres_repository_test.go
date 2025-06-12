@@ -1,6 +1,7 @@
 package config_history
 
 import (
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 	"testing"
@@ -421,5 +422,66 @@ func TestPostgresDeleteNotExists(t *testing.T) {
 	err = r.Delete(999999)
 	if err == nil {
 		t.Error("Should not be able to delete a non-existing ConfigHistory")
+	}
+}
+
+func TestPostgresHistoryRecordLimit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql test in short mode")
+	}
+	db := tests.DBClient(t)
+	defer dbDestroyRepo(db, t)
+	dbInitRepo(db, t)
+	r := NewPostgresRepository(db)
+
+	// Create maxHistoryRecords + 5 entries
+	var ids []int64
+	for i := 0; i < maxHistoryRecords+5; i++ {
+		history := NewConfigHistory(fmt.Sprintf("test comment %d", i), "test_type", "test_user")
+		// Add a small delay to ensure different timestamps
+		time.Sleep(5 * time.Millisecond)
+		id, err := r.Create(history)
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+		ids = append(ids, id)
+	}
+
+	// Get all entries
+	histories, err := r.GetAll()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	// Check that we have exactly maxHistoryRecords entries
+	if len(histories) != maxHistoryRecords {
+		t.Errorf("Expected %d history records, got %d", maxHistoryRecords, len(histories))
+	}
+
+	// Check that the oldest entries were deleted
+	// The first 5 entries should be gone, and only the last maxHistoryRecords should remain
+	for i := 0; i < 5; i++ {
+		_, found, err := r.Get(ids[i])
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+		if found {
+			t.Errorf("Expected entry with ID %d to be deleted, but it still exists", ids[i])
+		}
+	}
+
+	// Check that the newest entries are still there
+	for i := 5; i < maxHistoryRecords+5; i++ {
+		_, found, err := r.Get(ids[i])
+		if err != nil {
+			t.Error(err)
+			t.FailNow()
+		}
+		if !found {
+			t.Errorf("Expected entry with ID %d to exist, but it was deleted", ids[i])
+		}
 	}
 }
