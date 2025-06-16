@@ -7,10 +7,10 @@ import (
 
 // ConfigHistory represents a history entry for configuration changes
 type ConfigHistory struct {
-	ID         int64  `json:"id"`         // timestamp in milliseconds
-	Commentary string `json:"commentary"` // optional comment about the change
-	Type       string `json:"type"`       // type of configuration change
-	User       string `json:"user"`       // user who made the change
+	ID         int64  `json:"id"`                    // timestamp in milliseconds
+	Commentary string `json:"commentary"`            // optional comment about the change
+	Type       string `json:"type" db:"update_type"` // type of configuration change
+	User       string `json:"user" db:"update_user"` // user who made the change
 }
 
 // NewConfigHistory creates a new ConfigHistory instance with the current timestamp as ID
