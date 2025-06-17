@@ -12,7 +12,7 @@ import (
 
 const (
 	table             = "config_history_v1"
-	maxHistoryRecords = 1000 // Maximum number of history records to keep
+	maxHistoryRecords = 20 // Maximum number of history records to keep
 )
 
 // PostgresRepository implements the Repository interface for PostgreSQL
@@ -223,6 +223,27 @@ func (r *PostgresRepository) Delete(id int64) error {
 
 	if count == 0 {
 		return errors.New("no config history found with the specified id")
+	}
+
+	return nil
+}
+
+// DeleteOldest removes the oldest ConfigHistory entry (the one with the lowest ID)
+func (r *PostgresRepository) DeleteOldest() error {
+	query := `DELETE FROM config_history_v1 WHERE id = (SELECT id FROM config_history_v1 ORDER BY id ASC LIMIT 1)`
+
+	res, err := r.conn.Exec(query)
+	if err != nil {
+		return fmt.Errorf("couldn't delete oldest config history: %s", err.Error())
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("error checking affected rows: %s", err.Error())
+	}
+
+	if count == 0 {
+		return errors.New("no config history found to delete")
 	}
 
 	return nil

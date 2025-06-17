@@ -16,6 +16,7 @@ type Repository interface {
 	GetAllByType(historyType string) (map[int64]ConfigHistory, error)
 	GetAllByUser(user string) (map[int64]ConfigHistory, error)
 	Delete(id int64) error
+	DeleteOldest() error
 }
 
 var (
