@@ -233,7 +233,7 @@ func GetConfigHistoriesByInterval(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ConfigHistory
 //	@Accept			json
 //	@Produce		json
-//	@Param			history	body	struct{Commentary string `json:"commentary"`;Type string `json:"type"`;User string `json:"user"`}	true	"Config History (json)"
+//	@Param			history	body	struct{Commentary string `json:"commentary"`;Type string `json:"type"`;User string `json:"user"`;Config string `json:"config"`}	true	"Config History (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	config_history.ConfigHistory	"created config history"
@@ -251,6 +251,7 @@ func CreateConfigHistory(w http.ResponseWriter, r *http.Request) {
 		Commentary string `json:"commentary"`
 		Type       string `json:"type"`
 		User       string `json:"user"`
+		Config     string `json:"config"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&historyInput)
@@ -261,7 +262,7 @@ func CreateConfigHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a new history entry with auto-generated ID
-	newHistory := config_history.NewConfigHistory(historyInput.Commentary, historyInput.Type, historyInput.User)
+	newHistory := config_history.NewConfigHistory(historyInput.Commentary, historyInput.Type, historyInput.User, historyInput.Config)
 
 	if ok, err := newHistory.IsValid(); !ok {
 		zap.L().Warn("Config history is not valid", zap.Error(err))

@@ -11,15 +11,17 @@ type ConfigHistory struct {
 	Commentary string `json:"commentary"`            // optional comment about the change
 	Type       string `json:"type" db:"update_type"` // type of configuration change
 	User       string `json:"user" db:"update_user"` // user who made the change
+	Config     string `json:"config"`                // configuration content, can be very large (1-2MB+)
 }
 
 // NewConfigHistory creates a new ConfigHistory instance with the current timestamp as ID
-func NewConfigHistory(commentary string, changeType string, user string) ConfigHistory {
+func NewConfigHistory(commentary string, changeType string, user string, config string) ConfigHistory {
 	return ConfigHistory{
 		ID:         time.Now().UnixNano() / int64(time.Millisecond),
 		Commentary: commentary,
 		Type:       changeType,
 		User:       user,
+		Config:     config,
 	}
 }
 

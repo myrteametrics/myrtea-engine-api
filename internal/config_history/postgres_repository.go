@@ -78,8 +78,8 @@ func (r *PostgresRepository) Create(history ConfigHistory) (int64, error) {
 		PlaceholderFormat(sq.Dollar).
 		RunWith(tx).
 		Insert(table).
-		Columns("id", "commentary", "update_type", "update_user").
-		Values(history.ID, history.Commentary, history.Type, history.User)
+		Columns("id", "commentary", "update_type", "update_user", "config").
+		Values(history.ID, history.Commentary, history.Type, history.User, history.Config)
 
 	_, err = statement.Exec()
 	if err != nil {
@@ -97,10 +97,10 @@ func (r *PostgresRepository) Create(history ConfigHistory) (int64, error) {
 
 // Get retrieves a ConfigHistory entry by id
 func (r *PostgresRepository) Get(id int64) (ConfigHistory, bool, error) {
-	query := `SELECT id, commentary, update_type, update_user FROM config_history_v1 WHERE id = $1`
+	query := `SELECT id, commentary, update_type, update_user, config FROM config_history_v1 WHERE id = $1`
 
 	var history ConfigHistory
-	err := r.conn.QueryRow(query, id).Scan(&history.ID, &history.Commentary, &history.Type, &history.User)
+	err := r.conn.QueryRow(query, id).Scan(&history.ID, &history.Commentary, &history.Type, &history.User, &history.Config)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -116,7 +116,7 @@ func (r *PostgresRepository) Get(id int64) (ConfigHistory, bool, error) {
 func (r *PostgresRepository) GetAll() (map[int64]ConfigHistory, error) {
 	histories := make(map[int64]ConfigHistory)
 
-	query := `SELECT id, commentary, update_type, update_user FROM config_history_v1 ORDER BY id DESC`
+	query := `SELECT id, commentary, update_type, update_user, config FROM config_history_v1 ORDER BY id DESC`
 	rows, err := r.conn.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't retrieve config histories: %s", err.Error())
@@ -125,7 +125,7 @@ func (r *PostgresRepository) GetAll() (map[int64]ConfigHistory, error) {
 
 	for rows.Next() {
 		var history ConfigHistory
-		err := rows.Scan(&history.ID, &history.Commentary, &history.Type, &history.User)
+		err := rows.Scan(&history.ID, &history.Commentary, &history.Type, &history.User, &history.Config)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't scan config history: %s", err.Error())
 		}
@@ -142,7 +142,7 @@ func (r *PostgresRepository) GetAllFromInterval(from time.Time, to time.Time) (m
 	fromMillis := from.UnixNano() / int64(time.Millisecond)
 	toMillis := to.UnixNano() / int64(time.Millisecond)
 
-	query := `SELECT id, commentary, update_type, update_user FROM config_history_v1 WHERE id >= $1 AND id <= $2 ORDER BY id DESC`
+	query := `SELECT id, commentary, update_type, update_user, config FROM config_history_v1 WHERE id >= $1 AND id <= $2 ORDER BY id DESC`
 	rows, err := r.conn.Query(query, fromMillis, toMillis)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't retrieve config histories in interval: %s", err.Error())
@@ -151,7 +151,7 @@ func (r *PostgresRepository) GetAllFromInterval(from time.Time, to time.Time) (m
 
 	for rows.Next() {
 		var history ConfigHistory
-		err := rows.Scan(&history.ID, &history.Commentary, &history.Type, &history.User)
+		err := rows.Scan(&history.ID, &history.Commentary, &history.Type, &history.User, &history.Config)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't scan config history: %s", err.Error())
 		}
@@ -165,7 +165,7 @@ func (r *PostgresRepository) GetAllFromInterval(from time.Time, to time.Time) (m
 func (r *PostgresRepository) GetAllByType(historyType string) (map[int64]ConfigHistory, error) {
 	histories := make(map[int64]ConfigHistory)
 
-	query := `SELECT id, commentary, update_type, update_user FROM config_history_v1 WHERE update_type = $1 ORDER BY id DESC`
+	query := `SELECT id, commentary, update_type, update_user, config FROM config_history_v1 WHERE update_type = $1 ORDER BY id DESC`
 	rows, err := r.conn.Query(query, historyType)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't retrieve config histories by type: %s", err.Error())
@@ -174,7 +174,7 @@ func (r *PostgresRepository) GetAllByType(historyType string) (map[int64]ConfigH
 
 	for rows.Next() {
 		var history ConfigHistory
-		err := rows.Scan(&history.ID, &history.Commentary, &history.Type, &history.User)
+		err := rows.Scan(&history.ID, &history.Commentary, &history.Type, &history.User, &history.Config)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't scan config history: %s", err.Error())
 		}
@@ -188,7 +188,7 @@ func (r *PostgresRepository) GetAllByType(historyType string) (map[int64]ConfigH
 func (r *PostgresRepository) GetAllByUser(user string) (map[int64]ConfigHistory, error) {
 	histories := make(map[int64]ConfigHistory)
 
-	query := `SELECT id, commentary, update_type, update_user FROM config_history_v1 WHERE update_user = $1 ORDER BY id DESC`
+	query := `SELECT id, commentary, update_type, update_user, config FROM config_history_v1 WHERE update_user = $1 ORDER BY id DESC`
 	rows, err := r.conn.Query(query, user)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't retrieve config histories by user: %s", err.Error())
@@ -197,7 +197,7 @@ func (r *PostgresRepository) GetAllByUser(user string) (map[int64]ConfigHistory,
 
 	for rows.Next() {
 		var history ConfigHistory
-		err := rows.Scan(&history.ID, &history.Commentary, &history.Type, &history.User)
+		err := rows.Scan(&history.ID, &history.Commentary, &history.Type, &history.User, &history.Config)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't scan config history: %s", err.Error())
 		}
