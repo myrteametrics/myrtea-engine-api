@@ -171,7 +171,6 @@ func GetConfigHistoriesByUser(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ConfigHistory
 //	@Accept			json
 //	@Produce		json
-//	@Param			interval	body	struct{From string `json:"from"`;To string `json:"to"`}	true	"Time interval (format: 2006-01-02T15:04:05Z)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}	config_history.ConfigHistory	"list of config histories in interval"
@@ -233,7 +232,6 @@ func GetConfigHistoriesByInterval(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ConfigHistory
 //	@Accept			json
 //	@Produce		json
-//	@Param			history	body	struct{Commentary string `json:"commentary"`;Type string `json:"type"`;User string `json:"user"`;Config string `json:"config"`}	true	"Config History (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	config_history.ConfigHistory	"created config history"
