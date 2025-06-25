@@ -1,6 +1,7 @@
 package config_history
 
 import (
+	"github.com/spf13/viper"
 	"sync"
 	"time"
 )
@@ -22,6 +23,7 @@ type Repository interface {
 var (
 	_globalRepositoryMu sync.RWMutex
 	_globalRepository   Repository
+	maxHistoryRecords   int // Maximum number of history records to keep
 )
 
 // R is used to access the global repository singleton
@@ -40,5 +42,7 @@ func ReplaceGlobals(repository Repository) func() {
 
 	prev := _globalRepository
 	_globalRepository = repository
+
+	maxHistoryRecords = viper.GetInt("MAX_CONFIG_HISTORY_RECORDS")
 	return func() { ReplaceGlobals(prev) }
 }

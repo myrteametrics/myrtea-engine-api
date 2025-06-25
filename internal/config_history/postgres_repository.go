@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	table             = "config_history_v1"
-	maxHistoryRecords = 20 // Maximum number of history records to keep
+	table = "config_history_v1"
 )
 
 // PostgresRepository implements the Repository interface for PostgreSQL
@@ -22,6 +21,7 @@ type PostgresRepository struct {
 
 // NewPostgresRepository returns a new instance of PostgresRepository
 func NewPostgresRepository(dbClient *sqlx.DB) Repository {
+
 	r := PostgresRepository{
 		conn: dbClient,
 	}
