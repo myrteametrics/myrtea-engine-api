@@ -1,4 +1,4 @@
-package config_history
+package historyconfig
 
 import (
 	"github.com/jmoiron/sqlx"

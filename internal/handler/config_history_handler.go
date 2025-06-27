@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/config_history"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/historyconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"go.uber.org/zap"
@@ -21,7 +21,7 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	config_history.ConfigHistory	"list of all config histories"
+//	@Success		200	{array}	historyconfig.ConfigHistory	"list of all config histories"
 //	@Failure		500	"internal server error"
 //	@Router			/engine/config-histories [get]
 func GetConfigHistories(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +31,7 @@ func GetConfigHistories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	histories, err := config_history.R().GetAll()
+	histories, err := historyconfig.R().GetAll()
 	if err != nil {
 		zap.L().Error("Error getting config histories", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -39,7 +39,7 @@ func GetConfigHistories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Convert map to slice for consistent ordering
-	historiesSlice := make([]config_history.ConfigHistory, 0, len(histories))
+	historiesSlice := make([]historyconfig.ConfigHistory, 0, len(histories))
 	for _, h := range histories {
 		historiesSlice = append(historiesSlice, h)
 	}
@@ -56,7 +56,7 @@ func GetConfigHistories(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path	string	true	"Config History ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	config_history.ConfigHistory	"config history"
+//	@Success		200	{object}	historyconfig.ConfigHistory	"config history"
 //	@Failure		400	"Status Bad Request"
 //	@Failure		404	"Status Not Found"
 //	@Router			/engine/config-histories/{id} [get]
@@ -75,7 +75,7 @@ func GetConfigHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	history, found, err := config_history.R().Get(idHistory)
+	history, found, err := historyconfig.R().Get(idHistory)
 	if err != nil {
 		zap.L().Error("Cannot get config history", zap.Int64("historyId", idHistory), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -99,7 +99,7 @@ func GetConfigHistory(w http.ResponseWriter, r *http.Request) {
 //	@Param			type	path	string	true	"History Type"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	config_history.ConfigHistory	"list of config histories by type"
+//	@Success		200	{array}	historyconfig.ConfigHistory	"list of config histories by type"
 //	@Failure		400	"Status Bad Request"
 //	@Router			/engine/config-histories/type/{type} [get]
 func GetConfigHistoriesByType(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +111,7 @@ func GetConfigHistoriesByType(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	histories, err := config_history.R().GetAllByType(historyType)
+	histories, err := historyconfig.R().GetAllByType(historyType)
 	if err != nil {
 		zap.L().Error("Error getting config histories by type", zap.String("type", historyType), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -119,7 +119,7 @@ func GetConfigHistoriesByType(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Convert map to slice for consistent ordering
-	historiesSlice := make([]config_history.ConfigHistory, 0, len(histories))
+	historiesSlice := make([]historyconfig.ConfigHistory, 0, len(histories))
 	for _, h := range histories {
 		historiesSlice = append(historiesSlice, h)
 	}
@@ -136,7 +136,7 @@ func GetConfigHistoriesByType(w http.ResponseWriter, r *http.Request) {
 //	@Param			user	path	string	true	"Username"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	config_history.ConfigHistory	"list of config histories by user"
+//	@Success		200	{array}	historyconfig.ConfigHistory	"list of config histories by user"
 //	@Failure		400	"Status Bad Request"
 //	@Router			/engine/config-histories/user/{user} [get]
 func GetConfigHistoriesByUser(w http.ResponseWriter, r *http.Request) {
@@ -148,7 +148,7 @@ func GetConfigHistoriesByUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	histories, err := config_history.R().GetAllByUser(user)
+	histories, err := historyconfig.R().GetAllByUser(user)
 	if err != nil {
 		zap.L().Error("Error getting config histories by user", zap.String("user", user), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -156,7 +156,7 @@ func GetConfigHistoriesByUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Convert map to slice for consistent ordering
-	historiesSlice := make([]config_history.ConfigHistory, 0, len(histories))
+	historiesSlice := make([]historyconfig.ConfigHistory, 0, len(histories))
 	for _, h := range histories {
 		historiesSlice = append(historiesSlice, h)
 	}
@@ -173,7 +173,7 @@ func GetConfigHistoriesByUser(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	config_history.ConfigHistory	"list of config histories in interval"
+//	@Success		200	{array}	historyconfig.ConfigHistory	"list of config histories in interval"
 //	@Failure		400	"Status Bad Request"
 //	@Router			/engine/config-histories/interval [post]
 func GetConfigHistoriesByInterval(w http.ResponseWriter, r *http.Request) {
@@ -209,7 +209,7 @@ func GetConfigHistoriesByInterval(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	histories, err := config_history.R().GetAllFromInterval(from, to)
+	histories, err := historyconfig.R().GetAllFromInterval(from, to)
 	if err != nil {
 		zap.L().Error("Error getting config histories by interval", zap.Time("from", from), zap.Time("to", to), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -217,7 +217,7 @@ func GetConfigHistoriesByInterval(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Convert map to slice for consistent ordering
-	historiesSlice := make([]config_history.ConfigHistory, 0, len(histories))
+	historiesSlice := make([]historyconfig.ConfigHistory, 0, len(histories))
 	for _, h := range histories {
 		historiesSlice = append(historiesSlice, h)
 	}
@@ -234,7 +234,7 @@ func GetConfigHistoriesByInterval(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	config_history.ConfigHistory	"created config history"
+//	@Success		200	{object}	historyconfig.ConfigHistory	"created config history"
 //	@Failure		400	"Status Bad Request"
 //	@Failure		500	"internal server error"
 //	@Router			/engine/config-histories [post]
@@ -260,7 +260,7 @@ func CreateConfigHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a new history entry with auto-generated ID
-	newHistory := config_history.NewConfigHistory(historyInput.Commentary, historyInput.Type, historyInput.User, historyInput.Config)
+	newHistory := historyconfig.NewConfigHistory(historyInput.Commentary, historyInput.Type, historyInput.User, historyInput.Config)
 
 	if ok, err := newHistory.IsValid(); !ok {
 		zap.L().Warn("Config history is not valid", zap.Error(err))
@@ -268,14 +268,14 @@ func CreateConfigHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := config_history.R().Create(newHistory)
+	id, err := historyconfig.R().Create(newHistory)
 	if err != nil {
 		zap.L().Error("Error creating config history", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	createdHistory, found, err := config_history.R().Get(id)
+	createdHistory, found, err := historyconfig.R().Get(id)
 	if err != nil {
 		zap.L().Error("Error getting created config history", zap.Int64("id", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -317,7 +317,7 @@ func DeleteConfigHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = config_history.R().Delete(idHistory)
+	err = historyconfig.R().Delete(idHistory)
 	if err != nil {
 		zap.L().Error("Error deleting config history", zap.Int64("id", idHistory), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
@@ -345,7 +345,7 @@ func DeleteOldestConfigHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := config_history.R().DeleteOldest()
+	err := historyconfig.R().DeleteOldest()
 	if err != nil {
 		zap.L().Error("Error deleting oldest config history", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
