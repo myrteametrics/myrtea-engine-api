@@ -226,3 +226,9 @@ EXPORT_MAX_CUSTOM_SEARCH_REQUESTS = 10
 # starting with the oldest versions to retain only the most recent ones.
 # Default value: 5
 MAX_EXTERNAL_CONFIG_VERSIONS_TO_KEEP = 5
+
+# Specify the maximum number of historical versions to keep for configuration history.
+# When a new version is added, any versions exceeding this number will be deleted,
+# starting with the oldest versions to retain only the most recent ones.
+# Default value: 100
+MAX_CONFIG_HISTORY_RECORDS = 100

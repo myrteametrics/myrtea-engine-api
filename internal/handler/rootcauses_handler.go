@@ -170,7 +170,7 @@ func PostRootCause(w http.ResponseWriter, r *http.Request) {
 //	@Tags			RootCauses
 //	@Accept			json
 //	@Produce		json
-//	@Param			id			path	string				true	"RootCause ID"
+//	@Param			id			path	string			true	"RootCause ID"
 //	@Param			rootcause	body	model.RootCause	true	"RootCause definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth

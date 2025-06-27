@@ -233,6 +233,18 @@ func engineRouter(services Services) http.Handler {
 		r.Delete("/{tagId}/situationinstances/{instanceId}", handler.RemoveTagFromTemplateInstance)
 	})
 
+	// Config History routes
+	r.Route("/config-histories", func(r chi.Router) {
+		r.Get("/", handler.GetConfigHistories)
+		r.Get("/{id}", handler.GetConfigHistory)
+		r.Post("/", handler.CreateConfigHistory)
+		r.Delete("/{id}", handler.DeleteConfigHistory)
+		r.Delete("/oldest", handler.DeleteOldestConfigHistory)
+		r.Get("/type/{type}", handler.GetConfigHistoriesByType)
+		r.Get("/user/{user}", handler.GetConfigHistoriesByUser)
+		r.Post("/interval", handler.GetConfigHistoriesByInterval)
+	})
+
 	return r
 }
 
