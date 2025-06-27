@@ -44,14 +44,15 @@ func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetVariablesConfigByScope godoc
-// @Summary Get all Variables Config definitions by scope
-// @Description Get all VariableConfig definitions that match with scope value or scope 'global' by default
-// @Tags VariablesConfig
-// @Produce json
-// @Security Bearer
-// @Success 200 {array} variablesconfig.VariablesConfig "list of all Variables with it's config"
-// @Failure 500 "internal server error"
-// @Router /engine/variablesconfig/{scope} [get]
+//
+//	@Summary		Get all Variables Config definitions by scope
+//	@Description	Get all VariableConfig definitions that match with scope value or scope 'global' by default
+//	@Tags			VariablesConfig
+//	@Produce		json
+//	@Security		Bearer
+//	@Success		200	{array}	variablesconfig.VariablesConfig	"list of all Variables with it's config"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/variablesconfig/{scope} [get]
 func GetVariablesConfigByScope(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -213,7 +214,7 @@ func PostVariableConfig(w http.ResponseWriter, r *http.Request) {
 //	@Tags			VariablesConfig
 //	@Accept			json
 //	@Produce		json
-//	@Param			id				path	string					true	"VariableConfig ID"
+//	@Param			id				path	string							true	"VariableConfig ID"
 //	@Param			VariableConfig	body	variablesconfig.VariablesConfig	true	"VariableConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth

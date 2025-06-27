@@ -325,7 +325,7 @@ func GetTagsBySituation(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Tags
 //	@Produce		json
 //	@Param			situationId	path	string	true	"Situation ID"
-//	@Param			tagId	path	string	true	"Tag ID"
+//	@Param			tagId		path	string	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
@@ -388,7 +388,7 @@ func AddTagToSituation(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Tags
 //	@Produce		json
 //	@Param			situationId	path	string	true	"Situation ID"
-//	@Param			tagId	path	string	true	"Tag ID"
+//	@Param			tagId		path	string	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
@@ -477,7 +477,7 @@ func GetTagsByTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Tags
 //	@Produce		json
 //	@Param			instanceId	path	string	true	"Template Instance ID"
-//	@Param			tagId	path	string	true	"Tag ID"
+//	@Param			tagId		path	string	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
@@ -540,7 +540,7 @@ func AddTagToTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Tags
 //	@Produce		json
 //	@Param			instanceId	path	string	true	"Template Instance ID"
-//	@Param			tagId	path	string	true	"Tag ID"
+//	@Param			tagId		path	string	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"

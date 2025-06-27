@@ -189,7 +189,7 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ExternalConfigs
 //	@Accept			json
 //	@Produce		json
-//	@Param			name			path	string					true	"ExternalConfig ID"
+//	@Param			name			path	string							true	"ExternalConfig ID"
 //	@Param			externalConfig	body	externalconfig.ExternalConfig	true	"ExternalConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
@@ -293,7 +293,7 @@ func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Param			id	path	int						true	"ExternalConfig ID"
+//	@Param			id	path	int								true	"ExternalConfig ID"
 //	@Success		200	{array}	externalconfig.ExternalConfig	"list of all old versions of the externalConfig"
 //	@Failure		400	"bad request"
 //	@Failure		500	"internal server error"
