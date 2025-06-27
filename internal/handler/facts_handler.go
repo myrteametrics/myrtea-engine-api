@@ -23,15 +23,16 @@ import (
 )
 
 // GetFacts godoc
-// @Summary Get all fact definitions
-// @Description Get all fact definitions
-// @Tags Facts
-// @Produce json
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 500 "internal server error"
-// @Router /engine/facts [get]
+//
+//	@Summary		Get all fact definitions
+//	@Description	Get all fact definitions
+//	@Tags			Facts
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/facts [get]
 func GetFacts(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionList)) {
@@ -66,16 +67,17 @@ func GetFacts(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetFact godoc
-// @Summary Get a fact definition
-// @Description Get a fact definition
-// @Tags Facts
-// @Produce json
-// @Param id path string true "Fact ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/facts/{id} [get]
+//
+//	@Summary		Get a fact definition
+//	@Description	Get a fact definition
+//	@Tags			Facts
+//	@Produce		json
+//	@Param			id	path	string	true	"Fact ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/facts/{id} [get]
 func GetFact(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idFact, err := strconv.ParseInt(id, 10, 64)
@@ -107,18 +109,19 @@ func GetFact(w http.ResponseWriter, r *http.Request) {
 }
 
 // ValidateFact godoc
-// @Summary Validate a new fact definition
-// @Description Validate a new fact definition
-// @Tags Facts
-// @Accept json
-// @Produce json
-// @Param fact body interface{} true "Fact definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/facts/validate [post]
+//
+//	@Summary		Validate a new fact definition
+//	@Description	Validate a new fact definition
+//	@Tags			Facts
+//	@Accept			json
+//	@Produce		json
+//	@Param			fact	body	interface{}	true	"Fact definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/facts/validate [post]
 func ValidateFact(w http.ResponseWriter, r *http.Request) {
 
 	var newFact engine.Fact
@@ -139,18 +142,19 @@ func ValidateFact(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostFact godoc
-// @Summary Create a new fact definition
-// @Description Create a new fact definition
-// @Tags Facts
-// @Accept json
-// @Produce json
-// @Param fact body interface{} true "Fact definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/facts [post]
+//
+//	@Summary		Create a new fact definition
+//	@Description	Create a new fact definition
+//	@Tags			Facts
+//	@Accept			json
+//	@Produce		json
+//	@Param			fact	body	interface{}	true	"Fact definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/facts [post]
 func PostFact(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
@@ -196,19 +200,20 @@ func PostFact(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutFact godoc
-// @Summary Create or remplace a fact definition
-// @Description Create or remplace a fact definition
-// @Tags Facts
-// @Accept json
-// @Produce json
-// @Param id path string true "Fact ID"
-// @Param fact body interface{} true "Fact definition (json)"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Failure 500 "Status" internal server error"
-// @Router /engine/facts/{id} [put]
+//
+//	@Summary		Create or remplace a fact definition
+//	@Description	Create or remplace a fact definition
+//	@Tags			Facts
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path	string		true	"Fact ID"
+//	@Param			fact	body	interface{}	true	"Fact definition (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/facts/{id} [put]
 func PutFact(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idFact, err := strconv.ParseInt(id, 10, 64)
@@ -262,16 +267,17 @@ func PutFact(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteFact godoc
-// @Summary Delete a fact definition
-// @Description Delete a fact definition
-// @Tags Facts
-// @Produce json
-// @Param id path string true "Fact ID"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/facts/{id} [delete]
+//
+//	@Summary		Delete a fact definition
+//	@Description	Delete a fact definition
+//	@Tags			Facts
+//	@Produce		json
+//	@Param			id	path	string	true	"Fact ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/facts/{id} [delete]
 func DeleteFact(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	idFact, err := strconv.ParseInt(id, 10, 64)
@@ -298,23 +304,25 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 }
 
 // ExecuteFact godoc
-// @Summary Execute a fact with a given timestamp
-// @Description Execute a fact with a given timestamp (This route is deprecated. Please use POST /engine/facts/execute instead.)
-// @Tags Facts
-// @Produce json
-// @Param id path string true "Fact ID"
-// @Param byName query string false "Find fact by it's name"
-// @Param time query string false "Timestamp used for the fact execution"
-// @Param nhit query int false "Hit per page"
-// @Param offset query int false "Offset number"
-// @Param placeholders query string false "Placeholders (format: key1:value1,key2:value2)"
-// @Param debug query string false "Debug true/false"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Deprecated true
-// @Router /engine/facts/{id}/execute [get]
+//
+//	@Summary		Execute a fact with a given timestamp
+//	@Description	Execute a fact with a given timestamp (This route is deprecated. Please use POST /engine/facts/execute instead.)
+//	@Tags			Facts
+//	@Produce		json
+//	@Param			id				path	string	true	"Fact ID"
+//	@Param			byName			query	string	false	"Find fact by it's name"
+//	@Param			time			query	string	false	"Timestamp used for the fact execution"
+//	@Param			nhit			query	int		false	"Hit per page"
+//	@Param			offset			query	int		false	"Offset number"
+//	@Param			placeholders	query	string	false	"Placeholders (format: key1:value1,key2:value2)"
+//	@Param			debug			query	string	false	"Debug true/false"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Deprecated		true
+//	@Router			/engine/facts/{id}/execute [get]
+//
 // Deprecated: Use ExecuteFactOrGetHits instead.
 func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 
@@ -390,17 +398,18 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 }
 
 // ExecuteFactOrGetHits godoc
-// @Summary Execute a fact and restitue the hits
-// @Description Execute a fact and restitue the hits
-// @Tags Facts
-// @Accept json
-// @Produce json
-// @Param request body model.FactHitsRequest true "Request parameters"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/facts/execute [POST]
+//
+//	@Summary		Execute a fact and restitue the hits
+//	@Description	Execute a fact and restitue the hits
+//	@Tags			Facts
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body	model.FactHitsRequest	true	"Request parameters"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/facts/execute [POST]
 func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 	var request model.FactHitsRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -531,23 +540,25 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetFactHits godoc
-// @Summary Execute a fact and restitue the hits
-// @Description Execute a fact and restitue the hits (This route is deprecated. Please use POST /engine/facts/execute instead.)
-// @Tags Facts
-// @Produce json
-// @Param id path string true "Fact ID"
-// @Param time query string true "Timestamp used for the fact execution"
-// @Param nhit query int false "Hit per page"
-// @Param offset query int false "Offset number"
-// @Param situationId query string false "Situation Id, necessary if the fact is template"
-// @Param situationInstanceId query string false "Situation instance Id if applicable"
-// @Param debug query string false "Debug true/false"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Deprecated true
-// @Router /engine/facts/{id}/hits [get]
+//
+//	@Summary		Execute a fact and restitue the hits
+//	@Description	Execute a fact and restitue the hits (This route is deprecated. Please use POST /engine/facts/execute instead.)
+//	@Tags			Facts
+//	@Produce		json
+//	@Param			id					path	string	true	"Fact ID"
+//	@Param			time				query	string	true	"Timestamp used for the fact execution"
+//	@Param			nhit				query	int		false	"Hit per page"
+//	@Param			offset				query	int		false	"Offset number"
+//	@Param			situationId			query	string	false	"Situation Id, necessary if the fact is template"
+//	@Param			situationInstanceId	query	string	false	"Situation instance Id if applicable"
+//	@Param			debug				query	string	false	"Debug true/false"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Deprecated		true
+//	@Router			/engine/facts/{id}/hits [get]
+//
 // Deprecated: Use ExecuteFactOrGetHits instead.
 func GetFactHits(w http.ResponseWriter, r *http.Request) {
 
@@ -698,24 +709,25 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 }
 
 // FactToESQuery godoc
-// @Summary Execute a fact with a given timestamp
-// @Description Execute a fact with a given timestamp
-// @Tags Facts
-// @Produce json
-// @Param id path string true "Fact ID"
-// @Param byName query string false "Find fact by it's name"
-// @Param situationid query string false "Optional SituationID"
-// @Param instanceid query string false "Optional InstanceID"
-// @Param time query string true "Timestamp used for the fact execution"
-// @Param nhit query int false "Hit per page"
-// @Param offset query int false "Offset number"
-// @Param placeholders query string false "Placeholders (format: key1:value1,key2:value2)"
-// @Param debug query string false "Debug true/false"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/facts/{id}/es [get]
+//
+//	@Summary		Execute a fact with a given timestamp
+//	@Description	Execute a fact with a given timestamp
+//	@Tags			Facts
+//	@Produce		json
+//	@Param			id				path	string	true	"Fact ID"
+//	@Param			byName			query	string	false	"Find fact by it's name"
+//	@Param			situationid		query	string	false	"Optional SituationID"
+//	@Param			instanceid		query	string	false	"Optional InstanceID"
+//	@Param			time			query	string	true	"Timestamp used for the fact execution"
+//	@Param			nhit			query	int		false	"Hit per page"
+//	@Param			offset			query	int		false	"Offset number"
+//	@Param			placeholders	query	string	false	"Placeholders (format: key1:value1,key2:value2)"
+//	@Param			debug			query	string	false	"Debug true/false"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/facts/{id}/es [get]
 func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 
 	debug := false
