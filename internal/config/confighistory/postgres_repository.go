@@ -1,4 +1,4 @@
-package historyconfig
+package confighistory
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package historyconfig
+package confighistory
 
 import (
 	"github.com/spf13/viper"
