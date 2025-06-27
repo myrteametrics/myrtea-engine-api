@@ -3,9 +3,15 @@ package config_history
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
+	"github.com/spf13/viper"
 	"testing"
 	"time"
 )
+
+func init() {
+	// Set maxHistoryRecords to a high value to prevent automatic deletion of old records during tests
+	viper.SetDefault("MAX_CONFIG_HISTORY_RECORDS", 100)
+}
 
 // SQL scripts for testing
 const (
@@ -17,7 +23,8 @@ const (
 		id        bigint PRIMARY KEY NOT NULL,
 		commentary text DEFAULT '',
 		update_type      varchar(100) NOT NULL,
-		update_user      varchar(150) NOT NULL
+		update_user      varchar(150) NOT NULL,
+		config     text DEFAULT ''
 	);`
 )
 
@@ -73,7 +80,7 @@ func TestPostgresCreate(t *testing.T) {
 
 	var err error
 
-	history := NewConfigHistory("test comment", "test_type", "test_user")
+	history := NewConfigHistory("test comment", "test_type", "test_user", "")
 	id, err := r.Create(history)
 	if err != nil {
 		t.Error(err)
@@ -103,7 +110,7 @@ func TestPostgresGet(t *testing.T) {
 		t.Error("found a config history from nowhere")
 	}
 
-	history := NewConfigHistory("test comment", "test_type", "test_user")
+	history := NewConfigHistory("test comment", "test_type", "test_user", "")
 	id, err := r.Create(history)
 	if err != nil {
 		t.Error(err)
@@ -152,13 +159,13 @@ func TestPostgresGetAll(t *testing.T) {
 		t.Error("ConfigHistories should be empty")
 	}
 
-	history1 := NewConfigHistory("test comment 1", "test_type_1", "test_user_1")
+	history1 := NewConfigHistory("test comment 1", "test_type_1", "test_user_1", "")
 	id1, err := r.Create(history1)
 	if err != nil {
 		t.Error(err)
 	}
 
-	history2 := NewConfigHistory("test comment 2", "test_type_2", "test_user_2")
+	history2 := NewConfigHistory("test comment 2", "test_type_2", "test_user_2", "")
 	id2, err := r.Create(history2)
 	if err != nil {
 		t.Error(err)
@@ -201,6 +208,7 @@ func TestPostgresGetAllFromInterval(t *testing.T) {
 		Commentary: "past comment",
 		Type:       "test_type",
 		User:       "test_user",
+		Config:     "",
 	}
 	_, err = r.Create(history1)
 	if err != nil {
@@ -212,6 +220,7 @@ func TestPostgresGetAllFromInterval(t *testing.T) {
 		Commentary: "now comment",
 		Type:       "test_type",
 		User:       "test_user",
+		Config:     "",
 	}
 	_, err = r.Create(history2)
 	if err != nil {
@@ -223,6 +232,7 @@ func TestPostgresGetAllFromInterval(t *testing.T) {
 		Commentary: "future comment",
 		Type:       "test_type",
 		User:       "test_user",
+		Config:     "",
 	}
 	_, err = r.Create(history3)
 	if err != nil {
@@ -268,19 +278,19 @@ func TestPostgresGetAllByType(t *testing.T) {
 
 	var err error
 
-	history1 := NewConfigHistory("test comment 1", "type_a", "test_user")
+	history1 := NewConfigHistory("test comment 1", "type_a", "test_user", "")
 	_, err = r.Create(history1)
 	if err != nil {
 		t.Error(err)
 	}
 
-	history2 := NewConfigHistory("test comment 2", "type_a", "test_user")
+	history2 := NewConfigHistory("test comment 2", "type_a", "test_user", "")
 	_, err = r.Create(history2)
 	if err != nil {
 		t.Error(err)
 	}
 
-	history3 := NewConfigHistory("test comment 3", "type_b", "test_user")
+	history3 := NewConfigHistory("test comment 3", "type_b", "test_user", "")
 	_, err = r.Create(history3)
 	if err != nil {
 		t.Error(err)
@@ -322,19 +332,19 @@ func TestPostgresGetAllByUser(t *testing.T) {
 
 	var err error
 
-	history1 := NewConfigHistory("test comment 1", "test_type", "user_a")
+	history1 := NewConfigHistory("test comment 1", "test_type", "user_a", "")
 	_, err = r.Create(history1)
 	if err != nil {
 		t.Error(err)
 	}
 
-	history2 := NewConfigHistory("test comment 2", "test_type", "user_a")
+	history2 := NewConfigHistory("test comment 2", "test_type", "user_a", "")
 	_, err = r.Create(history2)
 	if err != nil {
 		t.Error(err)
 	}
 
-	history3 := NewConfigHistory("test comment 3", "test_type", "user_b")
+	history3 := NewConfigHistory("test comment 3", "test_type", "user_b", "")
 	_, err = r.Create(history3)
 	if err != nil {
 		t.Error(err)
@@ -376,7 +386,7 @@ func TestPostgresDelete(t *testing.T) {
 
 	var err error
 
-	history := NewConfigHistory("test comment", "test_type", "test_user")
+	history := NewConfigHistory("test comment", "test_type", "test_user", "")
 	id, err := r.Create(history)
 	if err != nil {
 		t.Error(err)
@@ -421,5 +431,121 @@ func TestPostgresDeleteNotExists(t *testing.T) {
 	err = r.Delete(999999)
 	if err == nil {
 		t.Error("Should not be able to delete a non-existing ConfigHistory")
+	}
+}
+
+func TestPostgresCreateWithLimitReached(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql test in short mode")
+	}
+
+	// Save the original value to restore it later
+	originalMaxHistoryRecords := viper.GetInt("MAX_CONFIG_HISTORY_RECORDS")
+
+	// Set a small limit for testing
+	viper.Set("MAX_CONFIG_HISTORY_RECORDS", 3)
+
+	// Ensure we restore the original value after the test
+	defer viper.Set("MAX_CONFIG_HISTORY_RECORDS", originalMaxHistoryRecords)
+
+	db := tests.DBClient(t)
+	defer dbDestroyRepo(db, t)
+	dbInitRepo(db, t)
+	r := NewPostgresRepository(db)
+
+	// Create a repository instance to update the maxHistoryRecords variable
+	ReplaceGlobals(r)
+
+	// Create 5 records (exceeding the limit of 3)
+	history1 := NewConfigHistory("test comment 1", "test_type", "test_user", "")
+	// Ensure a specific timestamp for easier testing
+	history1.ID = 1000
+	id1, err := r.Create(history1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	history2 := NewConfigHistory("test comment 2", "test_type", "test_user", "")
+	history2.ID = 2000
+	id2, err := r.Create(history2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	history3 := NewConfigHistory("test comment 3", "test_type", "test_user", "")
+	history3.ID = 3000
+	id3, err := r.Create(history3)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// At this point, we have reached the limit (3 records)
+	// Adding a 4th record should delete the oldest one (history1)
+	history4 := NewConfigHistory("test comment 4", "test_type", "test_user", "")
+	history4.ID = 4000
+	id4, err := r.Create(history4)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Adding a 5th record should delete the second oldest one (history2)
+	history5 := NewConfigHistory("test comment 5", "test_type", "test_user", "")
+	history5.ID = 5000
+	id5, err := r.Create(history5)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Verify that we still have only 3 records
+	histories, err := r.GetAll()
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	if len(histories) != 3 {
+		t.Errorf("Expected 3 histories (limit), got %d", len(histories))
+	}
+
+	// Verify that the oldest records were deleted
+	_, found1, err := r.Get(id1)
+	if err != nil {
+		t.Error(err)
+	}
+	if found1 {
+		t.Error("The oldest record (history1) should have been deleted")
+	}
+
+	_, found2, err := r.Get(id2)
+	if err != nil {
+		t.Error(err)
+	}
+	if found2 {
+		t.Error("The second oldest record (history2) should have been deleted")
+	}
+
+	// Verify that the newest records are still there
+	_, found3, err := r.Get(id3)
+	if err != nil {
+		t.Error(err)
+	}
+	if !found3 {
+		t.Error("The third record (history3) should still exist")
+	}
+
+	_, found4, err := r.Get(id4)
+	if err != nil {
+		t.Error(err)
+	}
+	if !found4 {
+		t.Error("The fourth record (history4) should exist")
+	}
+
+	_, found5, err := r.Get(id5)
+	if err != nil {
+		t.Error(err)
+	}
+	if !found5 {
+		t.Error("The fifth record (history5) should exist")
 	}
 }

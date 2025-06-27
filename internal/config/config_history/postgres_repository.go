@@ -1,7 +1,6 @@
 package config_history
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -54,8 +53,12 @@ func (r *PostgresRepository) Create(history ConfigHistory) (int64, error) {
 
 	// Count the current number of records
 	var count int
-	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
-	err = tx.QueryRow(countQuery).Scan(&count)
+	countQuery := sq.StatementBuilder.
+		PlaceholderFormat(sq.Dollar).
+		RunWith(tx).
+		Select("COUNT(*)").
+		From(table)
+	err = countQuery.QueryRow().Scan(&count)
 	if err != nil {
 		return -1, fmt.Errorf("couldn't count config history records: %s", err.Error())
 	}
@@ -66,8 +69,28 @@ func (r *PostgresRepository) Create(history ConfigHistory) (int64, error) {
 		toDelete := count - maxHistoryRecords + 1 // +1 to make room for the new record
 
 		// Delete the oldest records (those with the lowest IDs)
-		deleteQuery := fmt.Sprintf("DELETE FROM %s WHERE id IN (SELECT id FROM %s ORDER BY id ASC LIMIT $1)", table, table)
-		_, err = tx.Exec(deleteQuery, toDelete)
+		// Create a subquery to find the oldest records
+		subQuery := sq.StatementBuilder.
+			PlaceholderFormat(sq.Dollar).
+			Select("id").
+			From(table).
+			OrderBy("id ASC").
+			Limit(uint64(toDelete))
+
+		// Convert the subquery to SQL
+		subQuerySQL, subQueryArgs, err := subQuery.ToSql()
+		if err != nil {
+			return -1, fmt.Errorf("couldn't create subquery: %s", err.Error())
+		}
+
+		// Use the subquery in the DELETE statement
+		deleteQuery := sq.StatementBuilder.
+			PlaceholderFormat(sq.Dollar).
+			RunWith(tx).
+			Delete(table).
+			Where(fmt.Sprintf("id IN (%s)", subQuerySQL), subQueryArgs...)
+
+		_, err = deleteQuery.Exec()
 		if err != nil {
 			return -1, fmt.Errorf("couldn't delete oldest config history records: %s", err.Error())
 		}
@@ -97,27 +120,38 @@ func (r *PostgresRepository) Create(history ConfigHistory) (int64, error) {
 
 // Get retrieves a ConfigHistory entry by id
 func (r *PostgresRepository) Get(id int64) (ConfigHistory, bool, error) {
-	query := `SELECT id, commentary, update_type, update_user, config FROM config_history_v1 WHERE id = $1`
-
-	var history ConfigHistory
-	err := r.conn.QueryRow(query, id).Scan(&history.ID, &history.Commentary, &history.Type, &history.User, &history.Config)
+	rows, err := r.newStatement().
+		Select("id", "commentary", "update_type", "update_user", "config").
+		From(table).
+		Where("id = ?", id).
+		Query()
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return ConfigHistory{}, false, nil
-		}
 		return ConfigHistory{}, false, fmt.Errorf("couldn't retrieve config history with id %d: %s", id, err.Error())
 	}
+	defer rows.Close()
 
-	return history, true, nil
+	if rows.Next() {
+		var history ConfigHistory
+		err := rows.Scan(&history.ID, &history.Commentary, &history.Type, &history.User, &history.Config)
+		if err != nil {
+			return ConfigHistory{}, false, fmt.Errorf("couldn't scan config history: %s", err.Error())
+		}
+		return history, true, nil
+	}
+
+	return ConfigHistory{}, false, nil
 }
 
 // GetAll returns all ConfigHistory entries
 func (r *PostgresRepository) GetAll() (map[int64]ConfigHistory, error) {
 	histories := make(map[int64]ConfigHistory)
 
-	query := `SELECT id, commentary, update_type, update_user, config FROM config_history_v1 ORDER BY id DESC`
-	rows, err := r.conn.Query(query)
+	rows, err := r.newStatement().
+		Select("id", "commentary", "update_type", "update_user", "config").
+		From(table).
+		OrderBy("id DESC").
+		Query()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't retrieve config histories: %s", err.Error())
 	}
@@ -142,8 +176,13 @@ func (r *PostgresRepository) GetAllFromInterval(from time.Time, to time.Time) (m
 	fromMillis := from.UnixNano() / int64(time.Millisecond)
 	toMillis := to.UnixNano() / int64(time.Millisecond)
 
-	query := `SELECT id, commentary, update_type, update_user, config FROM config_history_v1 WHERE id >= $1 AND id <= $2 ORDER BY id DESC`
-	rows, err := r.conn.Query(query, fromMillis, toMillis)
+	rows, err := r.newStatement().
+		Select("id", "commentary", "update_type", "update_user", "config").
+		From(table).
+		Where("id >= ?", fromMillis).
+		Where("id <= ?", toMillis).
+		OrderBy("id DESC").
+		Query()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't retrieve config histories in interval: %s", err.Error())
 	}
@@ -165,8 +204,12 @@ func (r *PostgresRepository) GetAllFromInterval(from time.Time, to time.Time) (m
 func (r *PostgresRepository) GetAllByType(historyType string) (map[int64]ConfigHistory, error) {
 	histories := make(map[int64]ConfigHistory)
 
-	query := `SELECT id, commentary, update_type, update_user, config FROM config_history_v1 WHERE update_type = $1 ORDER BY id DESC`
-	rows, err := r.conn.Query(query, historyType)
+	rows, err := r.newStatement().
+		Select("id", "commentary", "update_type", "update_user", "config").
+		From(table).
+		Where("update_type = ?", historyType).
+		OrderBy("id DESC").
+		Query()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't retrieve config histories by type: %s", err.Error())
 	}
@@ -188,8 +231,12 @@ func (r *PostgresRepository) GetAllByType(historyType string) (map[int64]ConfigH
 func (r *PostgresRepository) GetAllByUser(user string) (map[int64]ConfigHistory, error) {
 	histories := make(map[int64]ConfigHistory)
 
-	query := `SELECT id, commentary, update_type, update_user, config FROM config_history_v1 WHERE update_user = $1 ORDER BY id DESC`
-	rows, err := r.conn.Query(query, user)
+	rows, err := r.newStatement().
+		Select("id", "commentary", "update_type", "update_user", "config").
+		From(table).
+		Where("update_user = ?", user).
+		OrderBy("id DESC").
+		Query()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't retrieve config histories by user: %s", err.Error())
 	}
@@ -209,14 +256,15 @@ func (r *PostgresRepository) GetAllByUser(user string) (map[int64]ConfigHistory,
 
 // Delete removes a ConfigHistory entry by id
 func (r *PostgresRepository) Delete(id int64) error {
-	query := `DELETE FROM config_history_v1 WHERE id = $1`
-
-	res, err := r.conn.Exec(query, id)
+	result, err := r.newStatement().
+		Delete(table).
+		Where("id = ?", id).
+		Exec()
 	if err != nil {
 		return fmt.Errorf("couldn't delete config history: %s", err.Error())
 	}
 
-	count, err := res.RowsAffected()
+	count, err := result.RowsAffected()
 	if err != nil {
 		return fmt.Errorf("error checking affected rows: %s", err.Error())
 	}
@@ -230,14 +278,29 @@ func (r *PostgresRepository) Delete(id int64) error {
 
 // DeleteOldest removes the oldest ConfigHistory entry (the one with the lowest ID)
 func (r *PostgresRepository) DeleteOldest() error {
-	query := `DELETE FROM config_history_v1 WHERE id = (SELECT id FROM config_history_v1 ORDER BY id ASC LIMIT 1)`
+	// Create a subquery to find the oldest record
+	subQuery := r.newStatement().
+		Select("id").
+		From(table).
+		OrderBy("id ASC").
+		Limit(1)
 
-	res, err := r.conn.Exec(query)
+	// Convert the subquery to SQL
+	subQuerySQL, subQueryArgs, err := subQuery.ToSql()
+	if err != nil {
+		return fmt.Errorf("couldn't create subquery: %s", err.Error())
+	}
+
+	// Use the subquery in the DELETE statement
+	result, err := r.newStatement().
+		Delete(table).
+		Where(fmt.Sprintf("id = (%s)", subQuerySQL), subQueryArgs...).
+		Exec()
 	if err != nil {
 		return fmt.Errorf("couldn't delete oldest config history: %s", err.Error())
 	}
 
-	count, err := res.RowsAffected()
+	count, err := result.RowsAffected()
 	if err != nil {
 		return fmt.Errorf("error checking affected rows: %s", err.Error())
 	}
