@@ -128,9 +128,10 @@ func ContextMiddlewareApiKey(next http.Handler, Cache *ttlcache.Cache) http.Hand
 
 		var authKey apikey.APIKey
 
-		Key, found := Cache.Get(keyValue)
-		authKey, found = Key.(apikey.APIKey)
-		if !found {
+		Key, ok := Cache.Get(keyValue)
+		authKey, isValid := Key.(apikey.APIKey)
+
+		if !ok || !isValid {
 			authKey, found, err := apikey.R().Validate(keyValue)
 			if err != nil {
 				zap.L().Error("API key validation error", zap.Error(err))
