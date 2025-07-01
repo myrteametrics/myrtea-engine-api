@@ -74,13 +74,8 @@ SWAGGER_TOPBAR_TITLE = ""
 
 # Set the background color of the topbar of the Swagger UI
 # Default value: ""
-# Example values: "#000000", "#618EF2", "#A6343A"
+# Example values: "#000000", "#618EF2", "#A6343A"
 SWAGGER_TOPBAR_COLOR = ""
-
-# Specify the elasticsearch URLS
-# Array of URLS might not work using environment variable (should be fixed soon)
-# Default value: 7
-ELASTICSEARCH_VERSION = 7
 
 # Specify the elasticsearch URLS
 # Array of URLS might not work using environment variable (should be fixed soon)
@@ -119,6 +114,12 @@ POSTGRESQL_CONN_POOL_MAX_IDLE = "10"
 # Expressed as a Golang duration
 # Default value: "0"
 POSTGRESQL_CONN_MAX_LIFETIME = "0"
+
+# Specify whether to migrate the database on startup
+# If set to "true", the database will be migrated to the latest version on startup
+# This is useful for ensuring that the database schema is always up to date with the latest version of the application.
+# Default value: "true"
+POSTGRESQL_MIGRATION_ON_STARTUP = "true"
 
 # Enable or disable crons automation on API start
 # Warning: Keep this parameter to "true" in production to ensure proper rotation even after a restart
@@ -225,3 +226,9 @@ EXPORT_MAX_CUSTOM_SEARCH_REQUESTS = 10
 # starting with the oldest versions to retain only the most recent ones.
 # Default value: 5
 MAX_EXTERNAL_CONFIG_VERSIONS_TO_KEEP = 5
+
+# Specify the maximum number of historical versions to keep for configuration history.
+# When a new version is added, any versions exceeding this number will be deleted,
+# starting with the oldest versions to retain only the most recent ones.
+# Default value: 100
+MAX_CONFIG_HISTORY_RECORDS = 100

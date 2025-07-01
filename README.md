@@ -16,21 +16,32 @@ Myrtea is a platform dedicated to the monitoring of business processes (in real-
 Myrtea needs two external backbone components to run :
 
 * An instance of PostgreSQL v10+
-* An instance or cluster of Elasticsearch v6.x (v7+ is currently not supported)
+* An instance or cluster of Elasticsearch >= v7.0
 
 These two components can be easily started using docker containers :
 
 ```sh
 # Quick single elasticsearch node startup
-docker run -d --name myrtea-elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.7.0
+docker run -d --name myrtea-elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.17.28
 
 # Quick postgresql instance startup
-docker run -d --name myrtea-postgres -p 5432:5432 -e POSTGRES_DB="postgres" -e POSTGRES_USER="postgres" -e POSTGRES_PASSWORD="postgres" -v "$PWD/resources/model.sql:/docker-entrypoint-initdb.d/1-init.sql" postgres:11.0-alpine
+docker run -d --name myrtea-postgres -p 5432:5432 -e POSTGRES_DB="postgres" -e POSTGRES_USER="postgres" -e POSTGRES_PASSWORD="postgres"  postgres:16-alpine
+```
+
+### Migrations
+
+You can either run the migrations manually or let the executable do it for you.
+If you want to run them manually, you can do so setting the environment variable `MYRTEA_POSTGRESQL_MIGRATION_ON_STARTUP` to `false` before running the executable.
+
+```bash
+go install github.com/pressly/goose/v3/cmd/goose@latest
+cd migrations
+goose postgres "user=postgres dbname=postgres password=postgres host=localhost sslmode=disable" up
 ```
 
 ### From Source
 
-Myrtea Engine-API requires Go version 1.14 or newer, the Makefile requires GNU make.
+Myrtea Engine-API requires Go version 1.23 or newer, the Makefile requires GNU make.
 
 ```sh
 git clone https://github.com/myrteametrics/myrtea-engine-api.git
