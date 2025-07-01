@@ -3,7 +3,6 @@ package apikey
 import (
 	"database/sql"
 	"errors"
-	ttlcache "github.com/myrteametrics/myrtea-sdk/v5/cache"
 	"strings"
 	"time"
 
@@ -30,8 +29,7 @@ type PostgresRepository struct {
 // NewPostgresRepository returns a new instance of PostgresRepository
 func NewPostgresRepository(dbClient *sqlx.DB, cacheDuration time.Duration) Repository {
 	r := PostgresRepository{
-		conn:  dbClient,
-		Cache: ttlcache.NewCache(cacheDuration),
+		conn: dbClient,
 	}
 	var ifm Repository = &r
 	return ifm
