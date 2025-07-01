@@ -9,6 +9,7 @@ import (
 	roles2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
 	users2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
+	ttlcache "github.com/myrteametrics/myrtea-sdk/v5/cache"
 	"net/http"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -115,7 +116,7 @@ func CustomAuthenticator(next http.Handler) http.Handler {
 }
 
 // ContextMiddlewareApiKey :
-func ContextMiddlewareApiKey(next http.Handler) http.Handler {
+func ContextMiddlewareApiKey(next http.Handler, Cache *ttlcache.Cache) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		keyValue := r.Header.Get(HeaderKeyApiKey)
 
@@ -125,26 +126,34 @@ func ContextMiddlewareApiKey(next http.Handler) http.Handler {
 			return
 		}
 
-		apikey, found, err := apikey.R().Validate(keyValue)
-		if err != nil {
-			zap.L().Error("API key validation error", zap.Error(err))
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
+		var authKey apikey.APIKey
+
+		Key, found := Cache.Get(keyValue)
+		authKey, found = Key.(apikey.APIKey)
 		if !found {
-			zap.L().Debug("API key not found", zap.String("key", keyValue))
-			http.Error(w, "Invalid API key", http.StatusUnauthorized)
-			return
+			authKey, found, err := apikey.R().Validate(keyValue)
+			if err != nil {
+				zap.L().Error("API key validation error", zap.Error(err))
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			if !found {
+				zap.L().Debug("API key not found", zap.String("key", keyValue))
+				http.Error(w, "Invalid API key", http.StatusUnauthorized)
+				return
+			}
+
+			Cache.Set(keyValue, authKey)
 		}
 
-		role, found, err := roles2.R().Get(apikey.RoleID)
+		role, found, err := roles2.R().Get(authKey.RoleID)
 		if err != nil {
-			zap.L().Error("Error retrieving role", zap.Error(err), zap.Any("roleID", apikey.RoleID))
+			zap.L().Error("Error retrieving role", zap.Error(err), zap.Any("roleID", authKey.RoleID))
 			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("internal error"))
 			return
 		}
 		if !found {
-			zap.L().Debug("Role not found", zap.Any("roleID", apikey.RoleID))
+			zap.L().Debug("Role not found", zap.Any("roleID", authKey.RoleID))
 			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("role not found"))
 			return
 		}
@@ -158,11 +167,11 @@ func ContextMiddlewareApiKey(next http.Handler) http.Handler {
 
 		up := users2.UserWithPermissions{
 			User: users2.User{
-				ID:        apikey.ID,
-				Login:     "apikey-" + apikey.Name,
-				Created:   apikey.CreatedAt,
+				ID:        authKey.ID,
+				Login:     "apikey-" + authKey.Name,
+				Created:   authKey.CreatedAt,
 				LastName:  "API Service",
-				FirstName: apikey.Name,
+				FirstName: authKey.Name,
 			},
 			Roles:       []roles2.Role{role},
 			Permissions: userPermissions,
@@ -174,7 +183,7 @@ func ContextMiddlewareApiKey(next http.Handler) http.Handler {
 		}
 
 		zap.L().Debug("API key authentication successful",
-			zap.String("apikey", apikey.Name),
+			zap.String("apikey", authKey.Name),
 			zap.String("user", up.User.Login))
 		ctx := context.WithValue(r.Context(), httputil.ContextKeyUser, up)
 		next.ServeHTTP(w, r.WithContext(ctx))

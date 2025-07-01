@@ -3,16 +3,27 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/apikey"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
+	ttlcache "github.com/myrteametrics/myrtea-sdk/v5/cache"
+	"go.uber.org/zap"
 	"net/http"
 	"sort"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
-	"go.uber.org/zap"
+	"time"
 )
+
+type ApikeyHandler struct {
+	Cache *ttlcache.Cache
+}
+
+func NewApiKeyHandler(cacheDuration time.Duration) *ApikeyHandler {
+	return &ApikeyHandler{
+		Cache: ttlcache.NewCache(cacheDuration),
+	}
+}
 
 // GetAPIKeys godoc
 //
@@ -25,7 +36,7 @@ import (
 //	@Success		200	{array}		apikey.APIKey	"list of API keys"
 //	@Failure		500	{string}	string			"Internal Server Error"
 //	@Router			/admin/security/apikey [get]
-func GetAPIKeys(w http.ResponseWriter, r *http.Request) {
+func (a *ApikeyHandler) GetAPIKeys(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeAPIKey, permissions.All, permissions.ActionList)) {
 		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
@@ -60,7 +71,7 @@ func GetAPIKeys(w http.ResponseWriter, r *http.Request) {
 //	@Failure		404	{string}	string			"Not Found"
 //	@Failure		500	{string}	string			"Internal Server Error"
 //	@Router			/admin/security/apikey/{id} [get]
-func GetAPIKey(w http.ResponseWriter, r *http.Request) {
+func (a *ApikeyHandler) GetAPIKey(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	keyID, err := uuid.Parse(id)
 	if err != nil {
@@ -102,13 +113,19 @@ func GetAPIKey(w http.ResponseWriter, r *http.Request) {
 //	@Failure		401			{string}	string			"Unauthorized - Invalid API key"
 //	@Failure		500			{string}	string			"Internal Server Error"
 //	@Router			/engine/security/apikey/validate [get]
-func ValidateAPIKey(w http.ResponseWriter, r *http.Request) {
+func (a *ApikeyHandler) ValidateAPIKey(w http.ResponseWriter, r *http.Request) {
 	apiKeyValue := r.Header.Get("X-API-Key")
 
 	if apiKeyValue == "" {
 		zap.L().Warn("No API key provided")
 		httputil.Error(w, r, httputil.ErrAPIProcessError, errors.New("no API key provided"))
 		return
+	}
+
+	authKey, found := a.Cache.Get(apiKeyValue)
+
+	if found {
+		httputil.JSON(w, r, authKey)
 	}
 
 	key, valid, err := apikey.R().Validate(apiKeyValue)
@@ -141,7 +158,7 @@ func ValidateAPIKey(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400	{string}	string			"Bad Request"
 //	@Failure		500	{string}	string			"Internal Server Error"
 //	@Router			/admin/security/apikey [post]
-func CreateAPIKey(w http.ResponseWriter, r *http.Request) {
+func (a *ApikeyHandler) CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeAPIKey, permissions.All, permissions.ActionCreate)) {
 		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
@@ -190,7 +207,7 @@ func CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400	{string}	string			"Bad Request"
 //	@Failure		500	{string}	string			"Internal Server Error"
 //	@Router			/admin/security/apikey/{id} [put]
-func PutAPIKey(w http.ResponseWriter, r *http.Request) {
+func (a *ApikeyHandler) PutAPIKey(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	keyID, err := uuid.Parse(id)
 	if err != nil {
@@ -228,7 +245,7 @@ func PutAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key, found, err := apikey.R().Get(keyID, userCtx.Login)
+	authKey, found, err := apikey.R().Get(keyID, userCtx.Login)
 	if err != nil {
 		zap.L().Error("Cannot get API key", zap.String("uuid", keyID.String()), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -240,7 +257,9 @@ func PutAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, r, key)
+	a.Cache.Cleanup()
+
+	httputil.JSON(w, r, authKey)
 }
 
 // DeleteAPIKey godoc
@@ -256,7 +275,7 @@ func PutAPIKey(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400	{string}	string	"Bad Request"
 //	@Failure		500	{string}	string	"Internal Server Error"
 //	@Router			/admin/security/apikey/{id} [delete]
-func DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
+func (a *ApikeyHandler) DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	keyID, err := uuid.Parse(id)
 	if err != nil {
@@ -278,6 +297,8 @@ func DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	a.Cache.Cleanup()
+
 	httputil.OK(w, r)
 }
 
@@ -294,7 +315,7 @@ func DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400	{string}	string	"Bad Request"
 //	@Failure		500	{string}	string	"Internal Server Error"
 //	@Router			/admin/security/apikey/{id}/deactivate [post]
-func DeactivateAPIKey(w http.ResponseWriter, r *http.Request) {
+func (a *ApikeyHandler) DeactivateAPIKey(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	keyID, err := uuid.Parse(id)
 	if err != nil {
@@ -316,6 +337,8 @@ func DeactivateAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	a.Cache.Cleanup()
+
 	httputil.OK(w, r)
 }
 
@@ -332,7 +355,7 @@ func DeactivateAPIKey(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400	{string}	string			"Bad Request"
 //	@Failure		500	{string}	string			"Internal Server Error"
 //	@Router			/admin/security/roles/{roleId}/apikey [get]
-func GetAPIKeysForRole(w http.ResponseWriter, r *http.Request) {
+func (a *ApikeyHandler) GetAPIKeysForRole(w http.ResponseWriter, r *http.Request) {
 	roleID := chi.URLParam(r, "roleId")
 	roleUUID, err := uuid.Parse(roleID)
 	if err != nil {

@@ -24,8 +24,7 @@ type APIKeyWithValue struct {
 // PostgresRepository is a repository containing the API keys data
 // based on a PSQL database and implementing the Repository interface
 type PostgresRepository struct {
-	conn  *sqlx.DB
-	Cache *ttlcache.Cache
+	conn *sqlx.DB
 }
 
 // NewPostgresRepository returns a new instance of PostgresRepository
@@ -39,12 +38,12 @@ func NewPostgresRepository(dbClient *sqlx.DB, cacheDuration time.Duration) Repos
 }
 
 // Get retrieves and returns an APIKey from the repository by its id
-func (r *PostgresRepository) Get(apiKeyUUID uuid.UUID, loggedEmail string) (APIKey, bool, error) {
+func (r *PostgresRepository) Get(apiKeyUUID uuid.UUID, ctxLogin string) (APIKey, bool, error) {
 	rows, err := r.newStatement().
 		Select(fields...).
 		From(table).
 		Where("id = ?", apiKeyUUID).
-		Where("created_by = ?", loggedEmail).
+		Where("created_by = ?", ctxLogin).
 		Query()
 	if err != nil {
 		return APIKey{}, false, err
@@ -91,7 +90,7 @@ func (r *PostgresRepository) Create(apiKey APIKey) (APIKey, error) {
 }
 
 // Update updates an APIKey in the repository
-func (r *PostgresRepository) Update(apiKey APIKey, loggedEmail string) error {
+func (r *PostgresRepository) Update(apiKey APIKey, ctxLogin string) error {
 	result, err := r.newStatement().
 		Update(table).
 		Set("name", apiKey.Name).
@@ -99,7 +98,7 @@ func (r *PostgresRepository) Update(apiKey APIKey, loggedEmail string) error {
 		Set("expires_at", apiKey.ExpiresAt).
 		Set("is_active", apiKey.IsActive).
 		Where("id = ?", apiKey.ID).
-		Where("created_by = ?", loggedEmail).
+		Where("created_by = ?", ctxLogin).
 		Exec()
 	if err != nil {
 		return err
@@ -108,11 +107,11 @@ func (r *PostgresRepository) Update(apiKey APIKey, loggedEmail string) error {
 }
 
 // Delete deletes an APIKey from the repository
-func (r *PostgresRepository) Delete(uuid uuid.UUID, loggedEmail string) error {
+func (r *PostgresRepository) Delete(uuid uuid.UUID, ctxLogin string) error {
 	result, err := r.newStatement().
 		Delete(table).
 		Where("id = ?", uuid).
-		Where("created_by = ?", loggedEmail).
+		Where("created_by = ?", ctxLogin).
 		Exec()
 	if err != nil {
 		return err
@@ -121,12 +120,12 @@ func (r *PostgresRepository) Delete(uuid uuid.UUID, loggedEmail string) error {
 }
 
 // Deactivate deactivates an APIKey without deleting it
-func (r *PostgresRepository) Deactivate(uuid uuid.UUID, loggedEmail string) error {
+func (r *PostgresRepository) Deactivate(uuid uuid.UUID, ctxLogin string) error {
 	result, err := r.newStatement().
 		Update(table).
 		Set("is_active", false).
 		Where("id = ?", uuid).
-		Where("created_by = ?", loggedEmail).
+		Where("created_by = ?", ctxLogin).
 		Exec()
 	if err != nil {
 		return err
@@ -135,9 +134,10 @@ func (r *PostgresRepository) Deactivate(uuid uuid.UUID, loggedEmail string) erro
 }
 
 // GetAll retrieves all APIKeys from the repository
-func (r *PostgresRepository) GetAll(loggedEmail string) ([]APIKey, error) {
+func (r *PostgresRepository) GetAll(ctxLogin string) ([]APIKey, error) {
 	rows, err := r.newStatement().
 		Select(fields...).
+		Where("created_by = ?", ctxLogin).
 		From(table).
 		Query()
 	if err != nil {
@@ -148,12 +148,12 @@ func (r *PostgresRepository) GetAll(loggedEmail string) ([]APIKey, error) {
 }
 
 // GetAllForRole retrieves all APIKeys associated with a specific role
-func (r *PostgresRepository) GetAllForRole(roleUUID uuid.UUID, loggedEmail string) ([]APIKey, error) {
+func (r *PostgresRepository) GetAllForRole(roleUUID uuid.UUID, ctxLogin string) ([]APIKey, error) {
 	rows, err := r.newStatement().
 		Select(fields...).
 		From(table).
 		Where("role_id = ?", roleUUID).
-		Where("created_by = ?", loggedEmail).
+		Where("created_by = ?", ctxLogin).
 		Query()
 	if err != nil {
 		return nil, err
@@ -164,12 +164,6 @@ func (r *PostgresRepository) GetAllForRole(roleUUID uuid.UUID, loggedEmail strin
 
 // Validate checks if an API key is valid and returns the associated information
 func (r *PostgresRepository) Validate(keyValue string) (APIKey, bool, error) {
-
-	result, found := r.Cache.Get(keyValue)
-
-	if found {
-		return result.(APIKey), true, nil
-	}
 
 	if len(keyValue) < 3 {
 		return APIKey{}, false, errors.New("invalid API key format")
@@ -206,7 +200,6 @@ func (r *PostgresRepository) Validate(keyValue string) (APIKey, bool, error) {
 				Where("id = ?", apiKey.ID).
 				Exec()
 
-			r.Cache.Set(keyValue, apiKey)
 			return apiKey, true, nil
 		}
 	}

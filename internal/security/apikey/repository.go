@@ -6,14 +6,14 @@ import (
 )
 
 type Repository interface {
-	Get(uuid uuid.UUID, loggedEmail string) (APIKey, bool, error)
+	Get(uuid uuid.UUID, ctxLogin string) (APIKey, bool, error)
 	Create(apiKey APIKey) (APIKey, error)
-	Update(apiKey APIKey, loggedEmail string) error
+	Update(apiKey APIKey, ctxLogin string) error
 	Delete(uuid uuid.UUID, userEmail string) error
-	GetAll(loggedEmail string) ([]APIKey, error)
-	GetAllForRole(roleUUID uuid.UUID, loggedEmail string) ([]APIKey, error)
+	GetAll(ctxLogin string) ([]APIKey, error)
+	GetAllForRole(roleUUID uuid.UUID, ctxLogin string) ([]APIKey, error)
 	Validate(keyValue string) (APIKey, bool, error)
-	Deactivate(uuid uuid.UUID, loggedEmail string) error
+	Deactivate(uuid uuid.UUID, ctxLogin string) error
 }
 
 var (
