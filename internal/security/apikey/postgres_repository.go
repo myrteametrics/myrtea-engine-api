@@ -27,7 +27,7 @@ type PostgresRepository struct {
 }
 
 // NewPostgresRepository returns a new instance of PostgresRepository
-func NewPostgresRepository(dbClient *sqlx.DB, cacheDuration time.Duration) Repository {
+func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 	r := PostgresRepository{
 		conn: dbClient,
 	}
