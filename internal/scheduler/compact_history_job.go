@@ -82,11 +82,11 @@ func (job CompactHistoryJob) Run() {
 	}
 
 	options := history.GetHistorySituationsOptions{
-		SituationID:         -1,
-		SituationInstanceID: -1,
-		FromTS:              time.Now().Add(-1 * fromOffsetDuration),
-		ToTS:                time.Now().Add(-1 * toOffsetDuration),
-		ParameterFilters:    make(map[string]interface{}),
+		SituationID:          -1,
+		SituationInstanceIDs: []int64{},
+		FromTS:               time.Now().Add(-1 * fromOffsetDuration),
+		ToTS:                 time.Now().Add(-1 * toOffsetDuration),
+		ParameterFilters:     make(map[string]interface{}),
 	}
 
 	interval := job.Interval

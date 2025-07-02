@@ -125,7 +125,7 @@ func (job FactRecalculationJob) Run() {
 
 	for _, s := range situations {
 		situationHistory, err := history.S().GetHistorySituationsIdsByStandardInterval(history.GetHistorySituationsOptions{
-			SituationID: s.ID, SituationInstanceID: -1, FromTS: fromTS, ToTS: toTS,
+			SituationID: s.ID, SituationInstanceIDs: []int64{}, FromTS: fromTS, ToTS: toTS,
 		}, "day")
 		if err != nil {
 			zap.L().Error("history GetHistorySituationsIdsByStandardInterval", zap.Error(err))

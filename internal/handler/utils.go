@@ -54,6 +54,31 @@ func QueryParamToOptionalInt64(r *http.Request, name string, orDefault int64) (i
 	return orDefault, nil
 }
 
+// QueryParamToInt64Slice parse a comma-separated list of int64 from query string
+func QueryParamToInt64Slice(r *http.Request, name string) ([]int64, error) {
+	param := r.URL.Query().Get(name)
+	if param == "" {
+		return []int64{}, nil
+	}
+
+	strs := strings.Split(param, ",")
+	result := make([]int64, 0, len(strs))
+
+	for _, s := range strs {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			continue
+		}
+		val, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid int64 value in param %s: %v", name, err)
+		}
+		result = append(result, val)
+	}
+
+	return result, nil
+}
+
 // QueryParamToOptionalInt64Array parse multiple int64 entries separated by a separator from a string
 func QueryParamToOptionalInt64Array(r *http.Request, name, separator string, allowDuplicates bool, orDefault []int64) ([]int64, error) {
 	param := r.URL.Query().Get(name)

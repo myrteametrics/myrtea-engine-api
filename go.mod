@@ -123,7 +123,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-
-replace (
-	github.com/myrteametrics/myrtea-sdk/v5 =>  ../myrtea-sdk
-)
+replace github.com/myrteametrics/myrtea-sdk/v5 => ../myrtea-sdk

@@ -86,10 +86,10 @@ func GetFactsHistory(issue model.Issue) ([]model.FrontFactHistory, bool, error) 
 	// Get SituationHistoryV4 from ID
 	historySituationIDs, err := history.S().HistorySituationsQuerier.QueryIDs(history.S().HistorySituationsQuerier.Builder.GetHistorySituationsIdsBase(
 		history.GetHistorySituationsOptions{
-			SituationID:         issue.SituationID,
-			SituationInstanceID: issue.TemplateInstanceID,
-			FromTS:              from,
-			ToTS:                to,
+			SituationID:          issue.SituationID,
+			SituationInstanceIDs: []int64{issue.TemplateInstanceID},
+			FromTS:               from,
+			ToTS:                 to,
 		},
 	))
 	if err != nil {
