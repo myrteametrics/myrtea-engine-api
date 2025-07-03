@@ -546,11 +546,6 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			continue
-			/*
-				zap.L().Warn("Error: unknown template instance ID", zap.Error(err))
-				httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
-				return
-			*/
 		}
 	}
 
