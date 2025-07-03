@@ -539,9 +539,18 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 			}
 			delete(oldInstances, instance.ID)
 		} else {
-			zap.L().Warn("Error: unknown template instance ID", zap.Error(err))
-			httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
-			return
+			_, err = situation2.R().CreateTemplateInstance(idSituation, instance)
+			if err != nil {
+				zap.L().Error("Error while creating template instance", zap.Error(err))
+				httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
+				return
+			}
+			continue
+			/*
+				zap.L().Warn("Error: unknown template instance ID", zap.Error(err))
+				httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
+				return
+			*/
 		}
 	}
 
