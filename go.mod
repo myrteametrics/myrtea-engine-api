@@ -19,7 +19,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/json-iterator/go v1.1.12
 	github.com/lib/pq v1.10.9
-	github.com/myrteametrics/myrtea-sdk/v5 v5.2.8
+	github.com/myrteametrics/myrtea-sdk/v5 v5.3.1
 	github.com/pressly/goose/v3 v3.24.2
 	github.com/prometheus/client_golang v1.22.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -122,5 +122,3 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/myrteametrics/myrtea-sdk/v5 => ../myrtea-sdk
