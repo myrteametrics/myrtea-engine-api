@@ -10,12 +10,12 @@ import (
 type HistorySituationsBuilder struct{}
 
 type GetHistorySituationsOptions struct {
-	SituationID         int64
-	SituationInstanceID int64
-	ParameterFilters    map[string]interface{}
-	DeleteBeforeTs      time.Time
-	FromTS              time.Time
-	ToTS                time.Time
+	SituationID          int64
+	SituationInstanceIDs []int64
+	ParameterFilters     map[string]interface{}
+	DeleteBeforeTs       time.Time
+	FromTS               time.Time
+	ToTS                 time.Time
 }
 
 func (builder HistorySituationsBuilder) newStatement() sq.StatementBuilderType {
@@ -31,8 +31,8 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsBase(options GetH
 		q = q.Where(sq.Eq{"situation_id": options.SituationID})
 	}
 
-	if options.SituationInstanceID != -1 {
-		q = q.Where(sq.Eq{"situation_instance_id": options.SituationInstanceID})
+	if len(options.SituationInstanceIDs) > 0 {
+		q = q.Where(sq.Eq{"situation_instance_id": options.SituationInstanceIDs})
 	}
 
 	if !options.FromTS.IsZero() {
