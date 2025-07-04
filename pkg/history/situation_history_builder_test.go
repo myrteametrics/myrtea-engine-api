@@ -10,10 +10,10 @@ func TestGetHistorySituationsIdsBase(t *testing.T) {
 	t.SkipNow()
 
 	options := GetHistorySituationsOptions{
-		SituationID:         -1,
-		SituationInstanceID: -1,
-		FromTS:              time.Time{},
-		ToTS:                time.Time{},
+		SituationID:          -1,
+		SituationInstanceIDs: []int64{},
+		FromTS:               time.Time{},
+		ToTS:                 time.Time{},
 	}
 	builder := HistorySituationsBuilder{}.GetHistorySituationsIdsBase(options)
 
@@ -25,10 +25,10 @@ func TestGetHistorySituationsIdsLast(t *testing.T) {
 	t.SkipNow()
 
 	options := GetHistorySituationsOptions{
-		SituationID:         -1,
-		SituationInstanceID: -1,
-		FromTS:              time.Time{},
-		ToTS:                time.Time{},
+		SituationID:          -1,
+		SituationInstanceIDs: []int64{},
+		FromTS:               time.Time{},
+		ToTS:                 time.Time{},
 	}
 	builder := HistorySituationsBuilder{}.GetHistorySituationsIdsLast(options)
 
@@ -40,10 +40,10 @@ func TestGetHistorySituationsIdsByStandardInterval(t *testing.T) {
 	t.SkipNow()
 
 	options := GetHistorySituationsOptions{
-		SituationID:         -1,
-		SituationInstanceID: -1,
-		FromTS:              time.Time{},
-		ToTS:                time.Time{},
+		SituationID:          -1,
+		SituationInstanceIDs: []int64{},
+		FromTS:               time.Time{},
+		ToTS:                 time.Time{},
 	}
 	interval := "day"
 	builder := HistorySituationsBuilder{}.GetHistorySituationsIdsByStandardInterval(options, interval)
@@ -56,10 +56,10 @@ func TestGetHistorySituationsIdsByCustomInterval(t *testing.T) {
 	t.SkipNow()
 
 	options := GetHistorySituationsOptions{
-		SituationID:         -1,
-		SituationInstanceID: -1,
-		FromTS:              time.Time{},
-		ToTS:                time.Time{},
+		SituationID:          -1,
+		SituationInstanceIDs: []int64{},
+		FromTS:               time.Time{},
+		ToTS:                 time.Time{},
 	}
 	interval := 48 * time.Hour
 	referenceDate := time.Now()
