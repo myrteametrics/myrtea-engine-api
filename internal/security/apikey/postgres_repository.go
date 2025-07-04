@@ -36,11 +36,12 @@ func NewPostgresRepository(dbClient *sqlx.DB) Repository {
 }
 
 // Get retrieves and returns an APIKey from the repository by its id
-func (r *PostgresRepository) Get(apiKeyUUID uuid.UUID) (APIKey, bool, error) {
+func (r *PostgresRepository) Get(apiKeyUUID uuid.UUID, ctxLogin string) (APIKey, bool, error) {
 	rows, err := r.newStatement().
 		Select(fields...).
 		From(table).
 		Where("id = ?", apiKeyUUID).
+		Where("created_by = ?", ctxLogin).
 		Query()
 	if err != nil {
 		return APIKey{}, false, err
@@ -87,7 +88,7 @@ func (r *PostgresRepository) Create(apiKey APIKey) (APIKey, error) {
 }
 
 // Update updates an APIKey in the repository
-func (r *PostgresRepository) Update(apiKey APIKey) error {
+func (r *PostgresRepository) Update(apiKey APIKey, ctxLogin string) error {
 	result, err := r.newStatement().
 		Update(table).
 		Set("name", apiKey.Name).
@@ -95,6 +96,7 @@ func (r *PostgresRepository) Update(apiKey APIKey) error {
 		Set("expires_at", apiKey.ExpiresAt).
 		Set("is_active", apiKey.IsActive).
 		Where("id = ?", apiKey.ID).
+		Where("created_by = ?", ctxLogin).
 		Exec()
 	if err != nil {
 		return err
@@ -103,10 +105,11 @@ func (r *PostgresRepository) Update(apiKey APIKey) error {
 }
 
 // Delete deletes an APIKey from the repository
-func (r *PostgresRepository) Delete(uuid uuid.UUID) error {
+func (r *PostgresRepository) Delete(uuid uuid.UUID, ctxLogin string) error {
 	result, err := r.newStatement().
 		Delete(table).
 		Where("id = ?", uuid).
+		Where("created_by = ?", ctxLogin).
 		Exec()
 	if err != nil {
 		return err
@@ -115,11 +118,12 @@ func (r *PostgresRepository) Delete(uuid uuid.UUID) error {
 }
 
 // Deactivate deactivates an APIKey without deleting it
-func (r *PostgresRepository) Deactivate(uuid uuid.UUID) error {
+func (r *PostgresRepository) Deactivate(uuid uuid.UUID, ctxLogin string) error {
 	result, err := r.newStatement().
 		Update(table).
 		Set("is_active", false).
 		Where("id = ?", uuid).
+		Where("created_by = ?", ctxLogin).
 		Exec()
 	if err != nil {
 		return err
@@ -128,9 +132,10 @@ func (r *PostgresRepository) Deactivate(uuid uuid.UUID) error {
 }
 
 // GetAll retrieves all APIKeys from the repository
-func (r *PostgresRepository) GetAll() ([]APIKey, error) {
+func (r *PostgresRepository) GetAll(ctxLogin string) ([]APIKey, error) {
 	rows, err := r.newStatement().
 		Select(fields...).
+		Where("created_by = ?", ctxLogin).
 		From(table).
 		Query()
 	if err != nil {
@@ -141,11 +146,12 @@ func (r *PostgresRepository) GetAll() ([]APIKey, error) {
 }
 
 // GetAllForRole retrieves all APIKeys associated with a specific role
-func (r *PostgresRepository) GetAllForRole(roleUUID uuid.UUID) ([]APIKey, error) {
+func (r *PostgresRepository) GetAllForRole(roleUUID uuid.UUID, ctxLogin string) ([]APIKey, error) {
 	rows, err := r.newStatement().
 		Select(fields...).
 		From(table).
 		Where("role_id = ?", roleUUID).
+		Where("created_by = ?", ctxLogin).
 		Query()
 	if err != nil {
 		return nil, err

@@ -8,7 +8,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handler"
 )
 
-func adminRouter() http.Handler {
+func adminRouter(services Services) http.Handler {
 	r := chi.NewRouter()
 
 	// security
@@ -37,13 +37,13 @@ func adminRouter() http.Handler {
 	r.Put("/security/permissions/{id}", handler.PutPermission)
 	r.Delete("/security/permissions/{id}", handler.DeletePermission)
 
-	r.Get("/security/apikey", handler.GetAPIKeys)
-	r.Get("/security/apikey/{id}", handler.GetAPIKey)
-	r.Post("/security/apikey", handler.CreateAPIKey)
-	r.Put("/security/apikey/{id}", handler.PutAPIKey)
-	r.Delete("/security/apikey/{id}", handler.DeleteAPIKey)
-	r.Post("/security/apikey/{id}/deactivate", handler.DeactivateAPIKey)
-	r.Get("/security/roles/{roleId}/apikey", handler.GetAPIKeysForRole)
+	r.Get("/security/apikey", services.ApiKeyHandler.GetAPIKeys)
+	r.Get("/security/apikey/{id}", services.ApiKeyHandler.GetAPIKey)
+	r.Post("/security/apikey", services.ApiKeyHandler.CreateAPIKey)
+	r.Put("/security/apikey/{id}", services.ApiKeyHandler.PutAPIKey)
+	r.Delete("/security/apikey/{id}", services.ApiKeyHandler.DeleteAPIKey)
+	r.Post("/security/apikey/{id}/deactivate", services.ApiKeyHandler.DeactivateAPIKey)
+	r.Get("/security/roles/{roleId}/apikey", services.ApiKeyHandler.GetAPIKeysForRole)
 
 	r.Get("/engine/issues_all", handler.GetIssues)
 

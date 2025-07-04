@@ -107,6 +107,7 @@ func main() {
 		ProcessorHandler: handler.NewProcessorHandler(),
 		ExportHandler:    handler.NewExportHandler(exportWrapper, directDownload, indirectDownloadUrl),
 		ServiceHandler:   handler.NewServiceHandler(serviceManager),
+		ApiKeyHandler:    handler.NewApiKeyHandler(viper.GetDuration("API_KEY_CACHE_DURATION")),
 	}
 
 	mux := router.New(routerConfig, routerServices)
