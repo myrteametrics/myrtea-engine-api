@@ -116,7 +116,7 @@ func CustomAuthenticator(next http.Handler) http.Handler {
 }
 
 // ContextMiddlewareApiKey :
-func ContextMiddlewareApiKey(next http.Handler, Cache *ttlcache.Cache) http.Handler {
+func ContextMiddlewareApiKey(next http.Handler, cache *ttlcache.Cache) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		keyValue := r.Header.Get(HeaderKeyApiKey)
 
@@ -128,7 +128,7 @@ func ContextMiddlewareApiKey(next http.Handler, Cache *ttlcache.Cache) http.Hand
 
 		var authKey apikey.APIKey
 
-		key, foundInCache := Cache.Get(keyValue)
+		key, foundInCache := cache.Get(keyValue)
 		if k, ok := key.(apikey.APIKey); foundInCache && ok {
 			authKey = k
 		} else {
@@ -145,7 +145,7 @@ func ContextMiddlewareApiKey(next http.Handler, Cache *ttlcache.Cache) http.Hand
 				http.Error(w, "Invalid API key", http.StatusUnauthorized)
 				return
 			}
-			Cache.Set(keyValue, authKey)
+			cache.Set(keyValue, authKey)
 		}
 
 		role, found, err := roles2.R().Get(authKey.RoleID)

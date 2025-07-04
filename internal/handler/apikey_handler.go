@@ -126,6 +126,7 @@ func (a *ApikeyHandler) ValidateAPIKey(w http.ResponseWriter, r *http.Request) {
 
 	if found {
 		httputil.JSON(w, r, authKey)
+		return
 	}
 
 	key, valid, err := apikey.R().Validate(apiKeyValue)
