@@ -37,7 +37,8 @@ type FrontAction struct {
 
 // Ids of Issues to draf
 type IssuesIdsToDraf struct {
-	Ids []int64 `json:"ids"`
+	Ids     []int64 `json:"ids"`
+	Comment *string `json:"comment,omitempty"`
 }
 
 // status

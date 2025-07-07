@@ -603,7 +603,7 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 		status.SuccessCount++
 	}
 
-	explainer.DraftIssues(idIssuesOk, userCtx.User, status)
+	explainer.DraftIssues(idIssuesOk, userCtx.User, status, issueIdsToDraft.Comment)
 
 	if status.AllOk {
 		httputil.OK(w, r)
