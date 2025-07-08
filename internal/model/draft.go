@@ -35,8 +35,8 @@ type FrontAction struct {
 	UsageRate   float64 `json:"usageRate"`
 }
 
-// Ids of Issues to draf
-type IssuesIdsToDraf struct {
+// Ids of Issues to draft
+type IssuesIdsToDraft struct {
 	Ids     []int64 `json:"ids"`
 	Comment *string `json:"comment,omitempty"`
 }
