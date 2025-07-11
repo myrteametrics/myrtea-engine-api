@@ -340,16 +340,12 @@ func (querier *HistorySituationsQuerier) QueryGetSpecificFactExpr(builder sq.Sel
 		if err != nil {
 			return GetFactExprHistory{}, err
 		}
+		fmt.Println(parsedResult)
 
 		factRes := FactExprResult{FormattedTime: ts.Format(formatTime)}
 
-		if factExprValue, ok := parsedResult["factExpr"].(map[string]interface{}); ok {
-			for k, v := range factExprValue {
-				if k == factExpr {
-					factRes.Value = v.(float64)
-					break
-				}
-			}
+		if factExprValue, ok := parsedResult[factExpr]; ok {
+			factRes.Value = factExprValue.(float64)
 		}
 		results = append(results, factRes)
 	}
