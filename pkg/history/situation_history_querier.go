@@ -340,7 +340,6 @@ func (querier *HistorySituationsQuerier) QueryGetSpecificFactExpr(builder sq.Sel
 		if err != nil {
 			return GetFactExprHistory{}, err
 		}
-		fmt.Println(parsedResult)
 
 		factRes := FactExprResult{FormattedTime: ts.Format(formatTime)}
 
