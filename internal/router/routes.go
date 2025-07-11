@@ -181,6 +181,8 @@ func engineRouter(services Services) http.Handler {
 
 	r.Post("/history/facts/today/result", handler.GetFactResultForTodayByCriteria)
 	r.Post("/history/facts/date/result", handler.GetFactResultByDateCriteria)
+	r.Post("/history/factexpr/today/result", handler.GetFactExprResultForTodayByCriteria)
+	r.Post("/history/factexpr/date/result", handler.GetFactExprResultByDateCriteria)
 
 	r.Get("/calendars", handler.GetCalendars)
 	r.Get("/calendars/{id}", handler.GetCalendar)

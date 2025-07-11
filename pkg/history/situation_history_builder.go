@@ -126,3 +126,25 @@ func (builder HistorySituationsBuilder) GetLatestHistorySituation(situationID in
 		OrderBy("ts DESC").
 		Limit(1)
 }
+
+func (builder HistorySituationsBuilder) GetTodaysFactExprResultByParameters(param ParamGetFactExprHistory) sq.SelectBuilder {
+	todayStart, tomorrowStart := getTodayTimeRange()
+
+	return builder.newStatement().
+		Select("expression_facts, ts").
+		From("situation_history_v5").
+		Where(sq.Eq{"situation_id": param.SituationID}).
+		Where(sq.Eq{"situation_instance_id": param.SituationInstanceID}).
+		Where(sq.Expr("ts >= ?::timestamptz", todayStart)).
+		Where(sq.Expr("ts < ?::timestamptz", tomorrowStart))
+}
+
+func (builder HistorySituationsBuilder) GetFactExprResultByDate(param ParamGetFactExprHistoryByDate) sq.SelectBuilder {
+	return builder.newStatement().
+		Select("expression_facts, ts").
+		From("situation_history_v5").
+		Where(sq.Eq{"situation_id": param.SituationID}).
+		Where(sq.Eq{"situation_instance_id": param.SituationInstanceID}).
+		Where(sq.Expr("ts >= ?::timestamptz", param.StartDate)).
+		Where(sq.Expr("ts < ?::timestamptz", param.EndDate))
+}
