@@ -49,10 +49,7 @@ func GetFactResultForTodayByCriteria(w http.ResponseWriter, r *http.Request) {
 }
 
 //	@Summary		Get Fact Result by Date Criteria
-//	@Description	Fetches the result of a historical fact based on provided criteria within specified date range.
-//
-// The dates should be in the format "2006-01-02 15:04:05".
-//
+//	@Description	Fetches the result of a historical fact based on provided criteria within specified date range. The dates should be in the format "2006-01-02 15:04:05".
 //	@Tags			Facts_history
 //	@Accept			json
 //	@Produce		json
