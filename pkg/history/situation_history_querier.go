@@ -344,7 +344,9 @@ func (querier *HistorySituationsQuerier) QueryGetSpecificFactExpr(builder sq.Sel
 		factRes := FactExprResult{FormattedTime: ts.Format(formatTime)}
 
 		if factExprValue, ok := parsedResult[factExpr]; ok {
-			factRes.Value = factExprValue.(float64)
+			if v, ok := factExprValue.(float64); ok {
+				factRes.Value = v
+			}
 		}
 		results = append(results, factRes)
 	}
