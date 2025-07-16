@@ -9,18 +9,18 @@ import (
 	"go.uber.org/zap"
 )
 
-// @Summary		Get Today's Fact Result by Criteria
-// @Description	Fetches the result of a historical fact based on provided criteria for today's date.
-// @Tags			Facts_history
-// @Accept			json
-// @Produce		json
-// @Param			factHistory	body	history.ParamGetFactHistory	true	"JSON payload containing criteria for fetching today's history fact result."
-// @Security		Bearer
-// @Security		ApiKeyAuth
-// @Success		200	{object}	history.FactResult	"Successfully fetched result"
-// @Failure		400	"Status Bad Request"
-// @Failure		500	"Status"	internal	server	error"
-// @Router			/engine/history/facts/today/result [post]
+//	@Summary		Get Today's Fact Result by Criteria
+//	@Description	Fetches the result of a historical fact based on provided criteria for today's date.
+//	@Tags			Facts_history
+//	@Accept			json
+//	@Produce		json
+//	@Param			factHistory	body	history.ParamGetFactHistory	true	"JSON payload containing criteria for fetching today's history fact result."
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	history.FactResult	"Successfully fetched result"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/history/facts/today/result [post]
 func GetFactResultForTodayByCriteria(w http.ResponseWriter, r *http.Request) {
 
 	var param history.ParamGetFactHistory
@@ -89,18 +89,18 @@ func GetFactResultByDateCriteria(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, r, result)
 }
 
-// @Summary		Get Today's Fact Expression Result by Criteria
-// @Description	Fetches the result of a historical fact expression based on provided criteria for today's date.
-// @Tags			situation_history
-// @Accept			json
-// @Produce		json
-// @Param			factExprHistory	body	history.ParamGetFactExprHistory	true	"JSON payload containing criteria for fetching today's history fact expression result."
-// @Security		Bearer
-// @Security		ApiKeyAuth
-// @Success		200	{object}	history.FactExprResult	"Successfully fetched result"
-// @Failure		400	"Status Bad Request"
-// @Failure		500	"Status"	internal	server	error"
-// @Router			/engine/history/factexpr/today/result [post]
+//	@Summary		Get Today's Fact Expression Result by Criteria
+//	@Description	Fetches the result of a historical fact expression based on provided criteria for today's date.
+//	@Tags			situation_history
+//	@Accept			json
+//	@Produce		json
+//	@Param			factExprHistory	body	history.ParamGetFactExprHistory	true	"JSON payload containing criteria for fetching today's history fact expression result."
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	history.FactExprResult	"Successfully fetched result"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		500	"Status"	internal	server	error"
+//	@Router			/engine/history/factexpr/today/result [post]
 func GetFactExprResultForTodayByCriteria(w http.ResponseWriter, r *http.Request) {
 
 	var param history.ParamGetFactExprHistory
