@@ -195,11 +195,6 @@ func (logicalIndex *LogicalIndexCron) FindIndices(t time.Time, depthDays int64) 
 	}
 	defer rows.Close()
 
-	zap.L().Info("Searching indices for logical index",
-		zap.String("logicalIndex", logicalIndex.Name),
-		zap.Int64("depthDays", depthDays),
-		zap.Any("params", params))
-
 	indices := make([]string, 0)
 	for rows.Next() {
 		var name string
