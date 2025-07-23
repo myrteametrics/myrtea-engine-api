@@ -170,10 +170,23 @@ func (logicalIndex *LogicalIndexCron) FindIndices(t time.Time, depthDays int64) 
 		return []string{fmt.Sprintf("%s-%s", logicalIndex.Name, index.All)}, nil
 	}
 
+	// default for a day cron
+	dateMultiplicationFactor := time.Hour * 24
+
+	// If the cron has entries, adjust the dateMultiplicationFactor based on the first cron entry.
+	// This allows the function to support custom cron intervals (not just daily).
+	// The factor is calculated as the duration between the start of the year and the next scheduled cron run.
+	if len(logicalIndex.Cron.Entries()) != 0 {
+		firstEntry := logicalIndex.Cron.Entries()[0]
+		startOfTheYear := time.Date(t.Year(), time.January, 1, 0, 0, 0, 0, time.UTC)
+		next := firstEntry.Schedule.Next(startOfTheYear)
+		dateMultiplicationFactor = next.Sub(startOfTheYear)
+	}
+
 	query := "select technical from elasticsearch_indices_v1 where logical = :logical AND creation_date BETWEEN :mindate AND :maxdate"
 	params := map[string]interface{}{
 		"logical": logicalIndex.Name,
-		"mindate": t.Add(-1 * time.Duration(depthDays+1) * 24 * time.Hour),
+		"mindate": t.Add(-1 * time.Duration(depthDays+1) * dateMultiplicationFactor),
 		"maxdate": t,
 	}
 	rows, err := postgres.DB().NamedQuery(query, params)
