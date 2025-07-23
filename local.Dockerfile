@@ -16,4 +16,7 @@ COPY config config
 COPY plugin plugin
 COPY pkg/plugins/config plugins/config
 
+# This is needed for the plugin system to work both in local and production environments
+COPY pkg/plugins/config pkg/plugins/config
+
 ENTRYPOINT ["./myrtea-engine-api"]
