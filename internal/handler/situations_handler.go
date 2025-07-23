@@ -17,6 +17,8 @@ import (
 
 // GetSituations godoc
 //
+//	@Id				GetSituations
+//
 //	@Summary		Get all situation definitions
 //	@Description	Get all situation definitions
 //	@Tags			Situations
@@ -60,6 +62,8 @@ func GetSituations(w http.ResponseWriter, r *http.Request) {
 
 // GetSituation godoc
 //
+//	@Id				GetSituation
+//
 //	@Summary		Get a situation definition
 //	@Description	Get a situation definition
 //	@Tags			Situations
@@ -102,6 +106,8 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 
 // ValidateSituation godoc
 //
+//	@Id				ValidateSituation
+//
 //	@Summary		Validate a new situation definition
 //	@Description	Validate a new situation definition
 //	@Tags			Situations
@@ -133,6 +139,8 @@ func ValidateSituation(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostSituation godoc
+//
+//	@Id				PostSituation
 //
 //	@Summary		Creates a situation definition
 //	@Description	Creates a situation definition
@@ -243,6 +251,8 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 
 // PutSituation godoc
 //
+//	@Id				PutSituation
+//
 //	@Summary		replace a situation definition
 //	@Description	replace a situation definition
 //	@Tags			Situations
@@ -309,6 +319,8 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteSituation godoc
+//
+//	@Id				DeleteSituation
 //
 //	@Summary		Delete a situation definition
 //	@Description	Delete a situation definition

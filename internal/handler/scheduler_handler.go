@@ -16,6 +16,8 @@ import (
 
 // StartScheduler godoc
 //
+//	@Id				StartScheduler
+//
 //	@Summary		Start the scheduler
 //	@Description	Start the fact scheduler
 //	@Tags			Scheduler
@@ -35,6 +37,8 @@ func StartScheduler(w http.ResponseWriter, r *http.Request) {
 }
 
 // TriggerJobSchedule godoc
+//
+//	@Id				TriggerJobSchedule
 //
 //	@Summary		Force facts calculation pipeline
 //	@Description	<b>Force facts calculation pipeline</b>
@@ -78,6 +82,8 @@ func TriggerJobSchedule(w http.ResponseWriter, r *http.Request) {
 
 // GetJobSchedules godoc
 //
+//	@Id				GetJobSchedules
+//
 //	@Summary		Get all JobSchedules
 //	@Description	Get all JobSchedules from scheduler repository
 //	@Tags			Scheduler
@@ -114,6 +120,8 @@ func GetJobSchedules(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetJobSchedule godoc
+//
+//	@Id				GetJobSchedule
 //
 //	@Summary		Get a JobSchedule
 //	@Description	Get a specific JobSchedule by it's ID
@@ -157,6 +165,8 @@ func GetJobSchedule(w http.ResponseWriter, r *http.Request) {
 
 // ValidateJobSchedule godoc
 //
+//	@Id				ValidateJobSchedule
+//
 //	@Summary		validate a new JobSchedule definition
 //	@Description	validate a new JobSchedule definition
 //	@Tags			Scheduler
@@ -187,6 +197,8 @@ func ValidateJobSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostJobSchedule godoc
+//
+//	@Id				PostJobSchedule
 //
 //	@Summary		create JobSchedule
 //	@Description	creates new JobSchedule
@@ -257,6 +269,8 @@ func PostJobSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutJobSchedule godoc
+//
+//	@Id				PutJobSchedule
 //
 //	@Summary		Create or remplace a JobSchedule
 //	@Description	Create or remplace a JobSchedule
@@ -331,6 +345,8 @@ func PutJobSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteJobSchedule godoc
+//
+//	@Id				DeleteJobSchedule
 //
 //	@Summary		delete JobSchedule
 //	@Description	delete JobSchedule

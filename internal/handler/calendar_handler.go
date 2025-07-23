@@ -16,6 +16,8 @@ import (
 
 // GetCalendars godoc
 //
+//	@Id				GetCalendars
+//
 //	@Summary		Get all calendars
 //	@Description	Get all calendars
 //	@Tags			Calendars
@@ -52,6 +54,8 @@ func GetCalendars(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetCalendar godoc
+//
+//	@Id				GetCalendar
 //
 //	@Summary		Get a Calendar
 //	@Description	Get an calendar
@@ -94,6 +98,8 @@ func GetCalendar(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetResolvedCalendar godoc
+//
+//	@Id				GetResolvedCalendar
 //
 //	@Summary		Get a resolved Calendar
 //	@Description	Get a resolved Calendar
@@ -138,6 +144,8 @@ func GetResolvedCalendar(w http.ResponseWriter, r *http.Request) {
 }
 
 // IsInCalendarPeriod godoc
+//
+//	@Id				IsInCalendarPeriod
 //
 //	@Summary		Determines wether a timestamp is within a valid calendar period
 //	@Description	Determines wether a timestamp is within a valid calendar period
@@ -191,6 +199,8 @@ func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
 
 // PostCalendar godoc
 //
+//	@Id				PostCalendar
+//
 //	@Summary		Creates a Calendar
 //	@Description	Creates a Calendar
 //	@Tags			Calendars
@@ -241,6 +251,8 @@ func PostCalendar(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutCalendar godoc
+//
+//	@Id				PutCalendar
 //
 //	@Summary		Update a calendar
 //	@Description	Updates the calendar
@@ -301,6 +313,8 @@ func PutCalendar(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteCalendar godoc
+//
+//	@Id				DeleteCalendar
 //
 //	@Summary		Delete calendar
 //	@Description	Delete calendar

@@ -3,10 +3,13 @@ package dbutils
 import (
 	"database/sql"
 	"errors"
+	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 	"time"
 )
+
+var ErrNoRowDeleted = errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 
 // DBQueryOptionnal regroups all parameters used to alter an SQL Query with externals parameters
 type DBQueryOptionnal struct {
@@ -23,6 +26,18 @@ func UniqueViolation(err error) *pq.Error {
 	if errors.As(err, &pqerr) &&
 		pqerr.Code == "23505" {
 		return pqerr
+	}
+	return nil
+}
+
+// CheckRowAffected checks if the number of rows affected by a query is the expected number
+func CheckRowAffected(result sql.Result, nbRows int64) error {
+	i, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if i != nbRows {
+		return ErrNoRowDeleted
 	}
 	return nil
 }
@@ -49,4 +64,34 @@ func ScanAll[T any](rows *sql.Rows, scan func(rows *sql.Rows) (T, error)) ([]T, 
 		objs = append(objs, obj)
 	}
 	return objs, nil
+}
+
+// ScanFirstStruct scans the first row of a sql.Rows and returns the result
+func ScanFirstStruct[T any](rows *sql.Rows) (T, bool, error) {
+	var results []T
+	err := sqlx.StructScan(rows, &results)
+	if err != nil {
+		var a T
+		return a, false, err
+	}
+
+	if len(results) == 0 {
+		var a T
+		return a, false, nil
+	}
+
+	return results[0], true, nil
+}
+
+// ScanAllStruct scans all the rows of the given rows and returns a slice of DataSource
+func ScanAllStruct[T any](rows *sql.Rows) ([]T, error) {
+	var results []T
+	err := sqlx.StructScan(rows, &results)
+	if err != nil {
+		return []T{}, err
+	}
+	if results == nil {
+		results = make([]T, 0)
+	}
+	return results, nil
 }

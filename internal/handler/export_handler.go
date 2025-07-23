@@ -56,6 +56,8 @@ type CustomExportRequest struct {
 
 // ExportFactStreamed godoc
 //
+//	@Id				ExportFactStreamed
+//
 //	@Summary		CSV streamed export facts in chunks
 //	@Description	CSV Streamed export for facts in chunks
 //	@Tags			ExportFactStreamed
@@ -208,6 +210,8 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 
 // GetExports godoc
 //
+//	@Id				GetExports
+//
 //	@Summary		Get user exports
 //	@Description	Get in memory user exports
 //	@Produce		json
@@ -227,6 +231,8 @@ func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetExport godoc
+//
+//	@Id				GetExport
 //
 //	@Summary		Get single export from user
 //	@Description	Get single export from user
@@ -264,6 +270,8 @@ func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteExport godoc
+//
+//	@Id				DeleteExport
 //
 //	@Summary		Deletes a single export
 //	@Description	Deletes a single export, when running it is canceled
@@ -308,6 +316,8 @@ func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 }
 
 // ExportFact godoc
+//
+//	@Id				ExportFact
 //
 //	@Summary		Creates a new export request for a fact (or multiple facts)
 //	@Description	Creates a new export request for a fact (or multiple facts)
@@ -397,6 +407,8 @@ func (e *ExportHandler) handleAddToQueueResponse(w http.ResponseWriter, r *http.
 
 // ExportCustom godoc
 //
+//	@Id				ExportCustom
+//
 //	@Summary		Creates a new custom export request
 //	@Description	Creates a new custom export request
 //	@Tags			Exports
@@ -485,6 +497,8 @@ func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 }
 
 // DownloadExport godoc
+//
+//	@Id				DownloadExport
 //
 //	@Summary		Download export
 //	@Description	Download export

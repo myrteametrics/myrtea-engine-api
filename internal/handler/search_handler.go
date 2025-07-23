@@ -62,6 +62,8 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 
 // SearchLast Search godoc
 //
+//	@Id				SearchLast Search
+//
 //	@Summary		query situation history data
 //	@Description	query situation history data
 //	@Tags			Search
@@ -108,6 +110,8 @@ func SearchLast(w http.ResponseWriter, r *http.Request) {
 }
 
 // SearchLastByInterval godoc
+//
+//	@Id				SearchLastByInterval
 //
 //	@Summary		query situation history data
 //	@Description	query situation history data
@@ -163,6 +167,8 @@ func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 }
 
 // SearchLastByCustomInterval godoc
+//
+//	@Id				SearchLastByCustomInterval
 //
 //	@Summary		query situation history data
 //	@Description	query situation history data
