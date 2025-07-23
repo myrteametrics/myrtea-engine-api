@@ -40,5 +40,4 @@ func initPostgres() {
 	} else {
 		zap.L().Info("Skipping database migration")
 	}
-
 }

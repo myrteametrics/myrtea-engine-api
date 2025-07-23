@@ -188,6 +188,12 @@ AUTHENTICATION_OIDC_FRONT_END_URL = "http://127.0.0.1:4200"
 # Default value: "thisis24characterslongs." (24 characters)
 AUTHENTICATION_OIDC_ENCRYPTION_KEY = "thisis24characterslongs."
 
+# AUTHENTICATION_CREATE_SUPERUSER: Whether to create a superuser account on the first run of the application.
+# If set to "true", a superuser account will be created with the username "admin" and the password "myrtea".
+# This is useful for initial setup and testing, but should be set to "false" in production environments.
+# Default value: "false"
+AUTHENTICATION_CREATE_SUPERUSER = "false"
+
 # NOTIFICATION_LIFETIME: The lifetime of a notification in the database.
 # Default value: "168h"
 NOTIFICATION_LIFETIME = "168h" # 168h = 7 days, available units are "ns", "us" (or "µs"), "ms", "s", "m", "h"
