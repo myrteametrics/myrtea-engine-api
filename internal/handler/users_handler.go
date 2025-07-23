@@ -16,6 +16,8 @@ import (
 
 // GetUserSelf godoc
 //
+//	@Id				GetUserSelf
+//
 //	@Summary		Get an user
 //	@Description	Gets un user with the specified id.
 //	@Tags			Users
@@ -38,6 +40,8 @@ func GetUserSelf(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUsers godoc
+//
+//	@Id				GetUsers
 //
 //	@Summary		Get all user users
 //	@Description	Gets a list of all user users.
@@ -70,6 +74,8 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUser godoc
+//
+//	@Id				GetUser
 //
 //	@Summary		Get an user user
 //	@Description	Gets an user user with the specified id
@@ -115,6 +121,8 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 
 // ValidateUser godoc
 //
+//	@Id				ValidateUser
+//
 //	@Summary		Validate a new user definition
 //	@Description	Validate a new user definition
 //	@Tags			Users
@@ -146,6 +154,8 @@ func ValidateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostUser godoc
+//
+//	@Id				PostUser
 //
 //	@Summary		Create a new user
 //	@Description	Add an user user to the user users
@@ -203,6 +213,8 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutUser godoc
+//
+//	@Id				PutUser
 //
 //	@Summary		Update user
 //	@Description	Updates the user user information concerning the user user with id
@@ -271,6 +283,8 @@ func PutUser(w http.ResponseWriter, r *http.Request) {
 
 // DeleteUser godoc
 //
+//	@Id				DeleteUser
+//
 //	@Summary		Delete user
 //	@Description	Deletes an user user
 //	@Tags			Users
@@ -308,6 +322,8 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetUserRoles godoc
+//
+//	@Id				SetUserRoles
 //
 //	@Summary		Set roles on a user
 //	@Description	Set roles on a user

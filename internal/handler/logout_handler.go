@@ -10,6 +10,8 @@ import (
 
 // LogoutHandler godoc
 //
+//	@Id				LogoutHandler
+//
 //	@Summary		Logout
 //	@Description	Logs out the current user.
 //	@Tags			Admin
@@ -33,6 +35,8 @@ func LogoutHandler(deleteSessionMiddleware func(http.Handler) http.Handler) http
 }
 
 // GetAuthenticationMode godoc
+//
+//	@Id				GetAuthenticationMode
 //
 //	@Summary		Get the current authentication mode
 //	@Description	Retrieves the current mode used for authentication.

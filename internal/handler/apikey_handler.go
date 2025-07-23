@@ -27,6 +27,8 @@ func NewApiKeyHandler(cacheDuration time.Duration) *ApikeyHandler {
 
 // GetAPIKeys godoc
 //
+//	@Id				GetAPIKeys
+//
 //	@Summary		Get all API keys
 //	@Description	Gets a list of all API keys
 //	@Tags			APIKeys
@@ -58,6 +60,8 @@ func (a *ApikeyHandler) GetAPIKeys(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetAPIKey godoc
+//
+//	@Id				GetAPIKey
 //
 //	@Summary		Get an API key
 //	@Description	Gets an API key with the specified id
@@ -103,6 +107,8 @@ func (a *ApikeyHandler) GetAPIKey(w http.ResponseWriter, r *http.Request) {
 
 // ValidateAPIKey godoc
 //
+//	@Id				ValidateAPIKey
+//
 //	@Summary		Validate an API key
 //	@Description	Validates an API key and returns its associated information
 //	@Tags			APIKeys
@@ -146,6 +152,8 @@ func (a *ApikeyHandler) ValidateAPIKey(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostAPIKey godoc
+//
+//	@Id				PostAPIKey
 //
 //	@Summary		Create a new API key
 //	@Description	Add an API key
@@ -194,6 +202,8 @@ func (a *ApikeyHandler) CreateAPIKey(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutAPIKey godoc
+//
+//	@Id				PutAPIKey
 //
 //	@Summary		Update API key
 //	@Description	Updates the API key information
@@ -265,6 +275,8 @@ func (a *ApikeyHandler) PutAPIKey(w http.ResponseWriter, r *http.Request) {
 
 // DeleteAPIKey godoc
 //
+//	@Id				DeleteAPIKey
+//
 //	@Summary		Delete API key
 //	@Description	Deletes an API key
 //	@Tags			APIKeys
@@ -305,6 +317,8 @@ func (a *ApikeyHandler) DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
 
 // DeactivateAPIKey godoc
 //
+//	@Id				DeactivateAPIKey
+//
 //	@Summary		Deactivate API key
 //	@Description	Deactivates an API key without deleting it
 //	@Tags			APIKeys
@@ -344,6 +358,8 @@ func (a *ApikeyHandler) DeactivateAPIKey(w http.ResponseWriter, r *http.Request)
 }
 
 // GetAPIKeysForRole godoc
+//
+//	@Id				GetAPIKeysForRole
 //
 //	@Summary		Get API keys for a specific role
 //	@Description	Gets a list of all API keys associated with a specific role

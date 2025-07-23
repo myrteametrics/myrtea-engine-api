@@ -15,6 +15,8 @@ import (
 
 // GetPermissions godoc
 //
+//	@Id				GetPermissions
+//
 //	@Summary		Get all user permissions
 //	@Description	Gets a list of all user permissions.
 //	@Tags			Permissions
@@ -46,6 +48,8 @@ func GetPermissions(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetPermission godoc
+//
+//	@Id				GetPermission
 //
 //	@Summary		Get an user permission
 //	@Description	Gets an user permission with the specified id
@@ -91,6 +95,8 @@ func GetPermission(w http.ResponseWriter, r *http.Request) {
 
 // ValidatePermission godoc
 //
+//	@Id				ValidatePermission
+//
 //	@Summary		Validate a new permission definition
 //	@Description	Validate a new permission definition
 //	@Tags			Permissions
@@ -122,6 +128,8 @@ func ValidatePermission(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostPermission godoc
+//
+//	@Id				PostPermission
 //
 //	@Summary		Create a new permission
 //	@Description	Add an user permission to the user permissions
@@ -179,6 +187,8 @@ func PostPermission(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutPermission godoc
+//
+//	@Id				PutPermission
 //
 //	@Summary		Update permission
 //	@Description	Updates the user permission information concerning the user permission with id
@@ -246,6 +256,8 @@ func PutPermission(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeletePermission godoc
+//
+//	@Id				DeletePermission
 //
 //	@Summary		Delete permission
 //	@Description	Deletes an user permission

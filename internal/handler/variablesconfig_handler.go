@@ -16,6 +16,8 @@ import (
 
 // GetVariablesConfig godoc
 //
+//	@Id				GetVariablesConfig
+//
 //	@Summary		Get all Variables Config definitions
 //	@Description	Get all VariableConfig definitions
 //	@Tags			VariablesConfig
@@ -45,6 +47,8 @@ func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
 
 // GetVariablesConfigByScope godoc
 //
+//	@Id				GetVariablesConfigByScope
+//
 //	@Summary		Get all Variables Config definitions by scope
 //	@Description	Get all VariableConfig definitions that match with scope value or scope 'global' by default
 //	@Tags			VariablesConfig
@@ -73,6 +77,8 @@ func GetVariablesConfigByScope(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetVariableConfig godoc
+//
+//	@Id				GetVariableConfig
 //
 //	@Summary		Get an Variable Config definition
 //	@Description	Get an Variable Config definition
@@ -119,6 +125,8 @@ func GetVariableConfig(w http.ResponseWriter, r *http.Request) {
 
 // GetVariableConfigByKey godoc
 //
+//	@Id				GetVariableConfigByKey
+//
 //	@Summary		Get an Variable Config definition
 //	@Description	Get an Variable Config definition
 //	@Tags			VariablesConfig
@@ -156,6 +164,8 @@ func GetVariableConfigByKey(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostVariableConfig godoc
+//
+//	@Id				PostVariableConfig
 //
 //	@Summary		Create a new VariableConfig definition
 //	@Description	Create a new VariableConfig definition
@@ -208,6 +218,8 @@ func PostVariableConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutVariableConfig godoc
+//
+//	@Id				PutVariableConfig
 //
 //	@Summary		update an Variable Config definition
 //	@Description	update an Variable Config definition
@@ -271,6 +283,8 @@ func PutVariableConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteVariableConfig godoc
+//
+//	@Id				DeleteVariableConfig
 //
 //	@Summary		Delete an Variable Config definition
 //	@Description	Delete an Variable Config definition

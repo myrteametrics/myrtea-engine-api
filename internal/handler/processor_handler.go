@@ -26,6 +26,8 @@ func NewProcessorHandler() *ProcessorHandler {
 
 // PostObjects godoc
 //
+//	@Id				PostObjects
+//
 //	@Summary		Receive objects to be evaluated
 //	@Description	Receive objects to be evaluated
 //	@Tags			Service
@@ -65,6 +67,8 @@ func PostObjects(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostAggregates godoc
+//
+//	@Id				PostAggregates
 //
 //	@Summary		Receive ingester to be evaluated
 //	@Description	Receive ingester to be evaluated

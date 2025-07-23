@@ -21,6 +21,8 @@ var allowedSortByFields = []string{"id", "created_at", "last_modified"}
 
 // GetIssues godoc
 //
+//	@Id				GetIssues
+//
 //	@Summary		Get all issues
 //	@Description	Get all issues
 //	@Tags			Issues
@@ -55,6 +57,8 @@ func GetIssues(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetIssuesByStatesByPageUnProtected godoc
+//
+//	@Id				GetIssuesByStatesByPageUnProtected
 //
 //	@Summary		Get issues by issues states (paginated)
 //	@Description	Get issues by issues states (paginated)
@@ -130,6 +134,8 @@ func GetIssuesByStatesByPageUnProtected(w http.ResponseWriter, r *http.Request) 
 }
 
 // GetIssuesByStatesByPage godoc
+//
+//	@Id				GetIssuesByStatesByPage
 //
 //	@Summary		Get issues by issues states (paginated)
 //	@Description	Get issues by issues states (paginated)
@@ -216,6 +222,8 @@ func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 
 // GetIssue godoc
 //
+//	@Id				GetIssue
+//
 //	@Summary		Get an issue
 //	@Description	Get an issue
 //	@Tags			Issues
@@ -257,6 +265,8 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetIssueHistory godoc
+//
+//	@Id				GetIssueHistory
 //
 //	@Summary		Get an issue history
 //	@Description	Get an issue history
@@ -351,6 +361,8 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 
 // GetIssueFactsHistory godoc
 //
+//	@Id				GetIssueFactsHistory
+//
 //	@Summary		Get the facts history for an issue
 //	@Description	Get the facts history for an issue
 //	@Tags			Issues
@@ -407,6 +419,8 @@ func GetIssueFactsHistory(w http.ResponseWriter, r *http.Request) {
 
 // PostIssue godoc
 //
+//	@Id				PostIssue
+//
 //	@Summary		Creates an issue
 //	@Description	Creates an issue
 //	@Tags			Issues
@@ -446,6 +460,8 @@ func PostIssue(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetIssueFeedbackTree godoc
+//
+//	@Id				GetIssueFeedbackTree
 //
 //	@Summary		Generate the rootcauses/actions recommendation tree
 //	@Description	Generate the rootcauses/actions recommendation tree for an issue
@@ -497,6 +513,8 @@ func GetIssueFeedbackTree(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostIssueDraft godoc
+//
+//	@Id				PostIssueDraft
 //
 //	@Summary		Send a rootcauses/actions feedback draft on an issue
 //	@Description	Post a rootcauses/actions recommendation tree as a feedback draft on an issue
@@ -558,6 +576,8 @@ func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 
 // PostIssuesDraft godoc
 //
+//	@Id				PostIssuesDraft
+//
 //	@Summary		Send a rootcauses/actions feedback draft on many issues
 //	@Description	Post a rootcauses/actions recommendation tree as a feedback draft on many issues
 //	@Tags			Issues
@@ -617,6 +637,8 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostIssueCloseWithFeedback godoc
+//
+//	@Id				PostIssueCloseWithFeedback
 //
 //	@Summary		Send a rootcauses/actions feedback on an issue
 //	@Description	Post a rootcauses/actions recommendation tree as a feedback on an issue
@@ -686,6 +708,8 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostIssueCloseWithoutFeedback godoc
+//
+//	@Id				PostIssueCloseWithoutFeedback
 //
 //	@Summary		Close an issue without feedback
 //	@Description	Close an issue without feedback
@@ -767,6 +791,8 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 
 // PostIssueDetectionFeedback godoc
 //
+//	@Id				PostIssueDetectionFeedback
+//
 //	@Summary		Add a new detection feedback
 //	@Description	Add a new detection feedback on an issue (or replace an existing one if the user already made a feedback)
 //	@Tags			Issues
@@ -831,6 +857,8 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateIssueComment godoc
+//
+//	@Id				UpdateIssueComment
 //
 //	@Summary		Update an issue comment
 //	@Description	Update an issue comment

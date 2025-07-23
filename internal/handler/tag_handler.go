@@ -15,6 +15,8 @@ import (
 
 // GetTags godoc
 //
+//	@Id				GetTags
+//
 //	@Summary		Get all tag definitions
 //	@Description	Get all tag definitions
 //	@Tags			Tags
@@ -46,6 +48,8 @@ func GetTags(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetTag godoc
+//
+//	@Id				GetTag
 //
 //	@Summary		Get a tag definition
 //	@Description	Get a tag definition
@@ -89,6 +93,8 @@ func GetTag(w http.ResponseWriter, r *http.Request) {
 
 // ValidateTag godoc
 //
+//	@Id				ValidateTag
+//
 //	@Summary		Validate a new tag definition
 //	@Description	Validate a new tag definition
 //	@Tags			Tags
@@ -120,6 +126,8 @@ func ValidateTag(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostTag godoc
+//
+//	@Id				PostTag
 //
 //	@Summary		Create a new tag definition
 //	@Description	Create a new tag definition
@@ -177,6 +185,8 @@ func PostTag(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutTag godoc
+//
+//	@Id				PutTag
 //
 //	@Summary		Create or replace a tag definition
 //	@Description	Create or replace a tag definition
@@ -245,6 +255,8 @@ func PutTag(w http.ResponseWriter, r *http.Request) {
 
 // DeleteTag godoc
 //
+//	@Id				DeleteTag
+//
 //	@Summary		Delete a tag definition
 //	@Description	Delete a tag definition
 //	@Tags			Tags
@@ -281,6 +293,8 @@ func DeleteTag(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetTagsBySituation godoc
+//
+//	@Id				GetTagsBySituation
 //
 //	@Summary		Get all tags for a situation
 //	@Description	Get all tags associated with a specific situation
@@ -319,6 +333,8 @@ func GetTagsBySituation(w http.ResponseWriter, r *http.Request) {
 }
 
 // AddTagToSituation godoc
+//
+//	@Id				AddTagToSituation
 //
 //	@Summary		Associate a tag with a situation
 //	@Description	Create a link between a tag and a situation
@@ -383,6 +399,8 @@ func AddTagToSituation(w http.ResponseWriter, r *http.Request) {
 
 // RemoveTagFromSituation godoc
 //
+//	@Id				RemoveTagFromSituation
+//
 //	@Summary		Remove tag association from a situation
 //	@Description	Delete the link between a tag and a situation
 //	@Tags			Tags
@@ -433,6 +451,8 @@ func RemoveTagFromSituation(w http.ResponseWriter, r *http.Request) {
 
 // GetTagsByTemplateInstance godoc
 //
+//	@Id				GetTagsByTemplateInstance
+//
 //	@Summary		Get all tags for a template instance
 //	@Description	Get all tags associated with a specific template instance
 //	@Tags			Tags
@@ -471,6 +491,8 @@ func GetTagsByTemplateInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 // AddTagToTemplateInstance godoc
+//
+//	@Id				AddTagToTemplateInstance
 //
 //	@Summary		Associate a tag with a template instance
 //	@Description	Create a link between a tag and a template instance
@@ -535,6 +557,8 @@ func AddTagToTemplateInstance(w http.ResponseWriter, r *http.Request) {
 
 // RemoveTagFromTemplateInstance godoc
 //
+//	@Id				RemoveTagFromTemplateInstance
+//
 //	@Summary		Remove tag association from a template instance
 //	@Description	Delete the link between a tag and a template instance
 //	@Tags			Tags
@@ -584,6 +608,8 @@ func RemoveTagFromTemplateInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetAllSituationsTags godoc
+//
+//	@Id				GetAllSituationsTags
 //
 //	@Summary		Get all tags for all situations
 //	@Description	Get all tags grouped by situation ID

@@ -18,6 +18,8 @@ import (
 
 // GetSituationEvaluation godoc
 //
+//	@Id				GetSituationEvaluation
+//
 //	@Summary		Get the last evaluation of a situation
 //	@Description	Get the last evaluation of a situation
 //	@Tags			Situations
@@ -62,6 +64,8 @@ func GetSituationEvaluation(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSituationFacts godoc
+//
+//	@Id				GetSituationFacts
 //
 //	@Summary		Get the list of facts for the evaluation of a situation
 //	@Description	Get the list of facts for the evaluation of a situation
@@ -126,6 +130,8 @@ func GetSituationFacts(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSituationRules godoc
+//
+//	@Id				GetSituationRules
 //
 //	@Summary		Get the list of rules for the evaluation of a situation
 //	@Description	Get the list of rules for the evaluation of a situation
@@ -192,6 +198,8 @@ func GetSituationRules(w http.ResponseWriter, r *http.Request) {
 
 // SetSituationRules godoc
 //
+//	@Id				SetSituationRules
+//
 //	@Summary		Set the list of rules for the evaluation of a situation
 //	@Description	Set the list of rules for the evaluation of a situation
 //	@Tags			Situations
@@ -246,6 +254,8 @@ func SetSituationRules(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostSituationTemplateInstance godoc
+//
+//	@Id				PostSituationTemplateInstance
 //
 //	@Summary		Creates a situation template instance
 //	@Description	Creates a situation template instance
@@ -327,6 +337,8 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 
 // ValidateSituationTemplateInstance godoc
 //
+//	@Id				ValidateSituationTemplateInstance
+//
 //	@Summary		Validate a new situation template instance definition
 //	@Description	Validate a new  situation template instance definition
 //	@Tags			Situations
@@ -359,6 +371,8 @@ func ValidateSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutSituationTemplateInstance godoc
+//
+//	@Id				PutSituationTemplateInstance
 //
 //	@Summary		replace a situation template instance
 //	@Description	replace a situation template instance
@@ -448,6 +462,8 @@ func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutSituationTemplateInstances godoc
+//
+//	@Id				PutSituationTemplateInstances
 //
 //	@Summary		set the template instances of the situation
 //	@Description	set the template instances of the situation
@@ -563,6 +579,8 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 
 // DeleteSituationTemplateInstance godoc
 //
+//	@Id				DeleteSituationTemplateInstance
+//
 //	@Summary		Delete a situation template instance
 //	@Description	Delete a situation template instance
 //	@Tags			Situations
@@ -617,6 +635,8 @@ func DeleteSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSituationTemplateInstances godoc
+//
+//	@Id				GetSituationTemplateInstances
 //
 //	@Summary		Get the list of situation template instances
 //	@Description	Get the list of situation template instances
@@ -673,6 +693,8 @@ func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSituationTemplateInstancesUnprotected godoc
+//
+//	@Id				GetSituationTemplateInstancesUnprotected
 //
 //	@Summary		Get the list of situation template instances
 //	@Description	Get the list of situation template instances

@@ -15,6 +15,8 @@ import (
 
 // GetRootCauses godoc
 //
+//	@Id				GetRootCauses
+//
 //	@Summary		Get all rootcause definitions
 //	@Description	Get all rootcause definitions
 //	@Tags			RootCauses
@@ -45,6 +47,8 @@ func GetRootCauses(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetRootCause godoc
+//
+//	@Id				GetRootCause
 //
 //	@Summary		Get a rootcause definition
 //	@Description	Get a rootcause definition
@@ -82,6 +86,8 @@ func GetRootCause(w http.ResponseWriter, r *http.Request) {
 
 // ValidateRootCause godoc
 //
+//	@Id				ValidateRootCause
+//
 //	@Summary		Validate a new rootcause definition
 //	@Description	Validate a new rootcause definition
 //	@Tags			RootCauses
@@ -113,6 +119,8 @@ func ValidateRootCause(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostRootCause godoc
+//
+//	@Id				PostRootCause
 //
 //	@Summary		Create a new rootcause definition
 //	@Description	Create a new rootcause definition
@@ -164,6 +172,8 @@ func PostRootCause(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutRootCause godoc
+//
+//	@Id				PutRootCause
 //
 //	@Summary		Create or remplace a rootcause definition
 //	@Description	Create or remplace a rootcause definition
@@ -225,6 +235,8 @@ func PutRootCause(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteRootCause godoc
+//
+//	@Id				DeleteRootCause
 //
 //	@Summary		Delete a rootcause definition
 //	@Description	Delete a rootcause definition
