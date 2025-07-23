@@ -18,6 +18,8 @@ import (
 
 // GetElasticSearchConfigs godoc
 //
+//	@Id				GetElasticSearchConfigs
+//
 //	@Summary		Get all elasticSearchConfig definitions
 //	@Description	Get all elasticSearchConfig definitions
 //	@Tags			ElasticSearchConfigs
@@ -55,6 +57,8 @@ func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetElasticSearchConfig godoc
+//
+//	@Id				GetElasticSearchConfig
 //
 //	@Summary		Get an elasticSearchConfig definition
 //	@Description	Get an elasticSearchConfig definition
@@ -100,6 +104,8 @@ func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 // GetElasticSearchConfigByName godoc
 //
+//	@Id				GetElasticSearchConfigByName
+//
 //	@Summary		Get an elasticSearchConfig definition
 //	@Description	Get an elasticSearchConfig definition
 //	@Tags			ElasticSearchConfigs
@@ -144,6 +150,8 @@ func GetElasticSearchConfigByName(w http.ResponseWriter, r *http.Request) {
 
 // GetDefaultElasticSearchConfig godoc
 //
+//	@Id				GetDefaultElasticSearchConfig
+//
 //	@Summary		Get the default elasticSearchConfig definition
 //	@Description	Get the default elasticSearchConfig definition
 //	@Tags			ElasticSearchConfigs
@@ -178,6 +186,8 @@ func GetDefaultElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostElasticSearchConfig godoc
+//
+//	@Id				PostElasticSearchConfig
 //
 //	@Summary		Create a new elasticSearchConfig definition
 //	@Description	Create a new elasticSearchConfig definition
@@ -230,6 +240,8 @@ func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutElasticSearchConfig godoc
+//
+//	@Id				PutElasticSearchConfig
 //
 //	@Summary		Create or remplace an elasticSearchConfig definition
 //	@Description	Create or remplace an elasticSearchConfig definition
@@ -293,6 +305,8 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteElasticSearchConfig godoc
+//
+//	@Id				DeleteElasticSearchConfig
 //
 //	@Summary		Delete an elasticSearchConfig definition
 //	@Description	Delete an elasticSearchConfig definition

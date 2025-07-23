@@ -16,6 +16,8 @@ import (
 
 // GetRoles godoc
 //
+//	@Id				GetRoles
+//
 //	@Summary		Get all user roles
 //	@Description	Gets a list of all user roles.
 //	@Tags			Roles
@@ -47,6 +49,8 @@ func GetRoles(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetRole godoc
+//
+//	@Id				GetRole
 //
 //	@Summary		Get an user role
 //	@Description	Gets an user role with the specified id
@@ -92,6 +96,8 @@ func GetRole(w http.ResponseWriter, r *http.Request) {
 
 // ValidateRole godoc
 //
+//	@Id				ValidateRole
+//
 //	@Summary		Validate a new role definition
 //	@Description	Validate a new role definition
 //	@Tags			Roles
@@ -123,6 +129,8 @@ func ValidateRole(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostRole godoc
+//
+//	@Id				PostRole
 //
 //	@Summary		Create a new role
 //	@Description	Add an user role to the user roles
@@ -180,6 +188,8 @@ func PostRole(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutRole godoc
+//
+//	@Id				PutRole
 //
 //	@Summary		Update role
 //	@Description	Updates the user role information concerning the user role with id
@@ -248,6 +258,8 @@ func PutRole(w http.ResponseWriter, r *http.Request) {
 
 // DeleteRole godoc
 //
+//	@Id				DeleteRole
+//
 //	@Summary		Delete role
 //	@Description	Deletes an user role
 //	@Tags			Roles
@@ -285,6 +297,8 @@ func DeleteRole(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetRolePermissions godoc
+//
+//	@Id				SetRolePermissions
 //
 //	@Summary		Set permissions on a role
 //	@Description	Set permissions on a role

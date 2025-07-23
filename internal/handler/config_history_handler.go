@@ -15,6 +15,8 @@ import (
 
 // GetConfigHistories godoc
 //
+//	@Id				GetConfigHistories
+//
 //	@Summary		Get all config history entries
 //	@Description	Get all config history entries
 //	@Tags			ConfigHistory
@@ -48,6 +50,8 @@ func GetConfigHistories(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetConfigHistory godoc
+//
+//	@Id				GetConfigHistory
 //
 //	@Summary		Get a config history entry
 //	@Description	Get a config history entry by ID
@@ -92,6 +96,8 @@ func GetConfigHistory(w http.ResponseWriter, r *http.Request) {
 
 // GetConfigHistoriesByType godoc
 //
+//	@Id				GetConfigHistoriesByType
+//
 //	@Summary		Get config history entries by type
 //	@Description	Get all config history entries of a specific type
 //	@Tags			ConfigHistory
@@ -129,6 +135,8 @@ func GetConfigHistoriesByType(w http.ResponseWriter, r *http.Request) {
 
 // GetConfigHistoriesByUser godoc
 //
+//	@Id				GetConfigHistoriesByUser
+//
 //	@Summary		Get config history entries by user
 //	@Description	Get all config history entries created by a specific user
 //	@Tags			ConfigHistory
@@ -165,6 +173,8 @@ func GetConfigHistoriesByUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetConfigHistoriesByInterval godoc
+//
+//	@Id				GetConfigHistoriesByInterval
 //
 //	@Summary		Get config history entries by time interval
 //	@Description	Get all config history entries within a specified time interval
@@ -226,6 +236,8 @@ func GetConfigHistoriesByInterval(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateConfigHistory godoc
+//
+//	@Id				CreateConfigHistory
 //
 //	@Summary		Create a new config history entry
 //	@Description	Create a new config history entry
@@ -292,6 +304,8 @@ func CreateConfigHistory(w http.ResponseWriter, r *http.Request) {
 
 // DeleteConfigHistory godoc
 //
+//	@Id				DeleteConfigHistory
+//
 //	@Summary		Delete a config history entry
 //	@Description	Delete a config history entry by ID
 //	@Tags			ConfigHistory
@@ -328,6 +342,8 @@ func DeleteConfigHistory(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteOldestConfigHistory godoc
+//
+//	@Id				DeleteOldestConfigHistory
 //
 //	@Summary		Delete the oldest config history entry
 //	@Description	Delete the oldest config history entry (the one with the lowest ID)

@@ -25,6 +25,8 @@ func NewServiceHandler(manager *service.Manager) *ServiceHandler {
 
 // GetServices godoc
 //
+//	@Id				GetServices
+//
 //	@Summary		Get all services
 //	@Description	Get all services
 //	@Tags			Services
@@ -52,6 +54,8 @@ func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
 }
 
 // Restart godoc
+//
+//	@Id				Restart
 //
 //	@Summary		Restart the service
 //	@Description	Restart the service
@@ -101,6 +105,8 @@ func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 }
 
 // Reload godoc
+//
+//	@Id				Reload
 //
 //	@Summary		Reload the service
 //	@Description	Reload the service
@@ -156,6 +162,8 @@ func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetStatus godoc
+//
+//	@Id				GetStatus
 //
 //	@Summary		GetStatus of a service
 //	@Description	GetStatus of a service

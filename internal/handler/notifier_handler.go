@@ -10,6 +10,8 @@ import (
 
 // NotificationsWSRegister godoc
 //
+//	@Id				NotificationsWSRegister
+//
 //	@Summary		Register a new client to the notifications system using WS
 //	@Description	Register a new client to the notifications system using WS
 //	@Tags			Notifications
@@ -62,6 +64,8 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 // NotificationsSSERegister godoc
+//
+//	@Id				NotificationsSSERegister
 //
 //	@Summary		Register a new client to the notifications system using SSE
 //	@Description	Register a new client to the notifications system using SSE
@@ -122,6 +126,8 @@ func NotificationsSSERegister(w http.ResponseWriter, r *http.Request) {
 }
 
 // TriggerNotification godoc
+//
+//	@Id				TriggerNotification
 //
 //	@Summary		Send a notification
 //	@Description	Generate a new NotifyTask with a default message for testing

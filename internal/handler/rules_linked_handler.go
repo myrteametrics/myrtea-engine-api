@@ -16,6 +16,8 @@ import (
 
 // GetRuleSituations godoc
 //
+//	@Id				GetRuleSituations
+//
 //	@Summary		Get the list of situatons associated to a rule
 //	@Description	Get the list of situatons associated to a rule
 //	@Tags			Rules
@@ -56,6 +58,8 @@ func GetRuleSituations(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostRuleSituations godoc
+//
+//	@Id				PostRuleSituations
 //
 //	@Summary		Add the rule at the end of the rules list of each situation
 //	@Description	Add the rule at the end of the rules list of each situation

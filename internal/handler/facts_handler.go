@@ -24,6 +24,8 @@ import (
 
 // GetFacts godoc
 //
+//	@Id				GetFacts
+//
 //	@Summary		Get all fact definitions
 //	@Description	Get all fact definitions
 //	@Tags			Facts
@@ -68,6 +70,8 @@ func GetFacts(w http.ResponseWriter, r *http.Request) {
 
 // GetFact godoc
 //
+//	@Id				GetFact
+//
 //	@Summary		Get a fact definition
 //	@Description	Get a fact definition
 //	@Tags			Facts
@@ -110,6 +114,8 @@ func GetFact(w http.ResponseWriter, r *http.Request) {
 
 // ValidateFact godoc
 //
+//	@Id				ValidateFact
+//
 //	@Summary		Validate a new fact definition
 //	@Description	Validate a new fact definition
 //	@Tags			Facts
@@ -142,6 +148,8 @@ func ValidateFact(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostFact godoc
+//
+//	@Id				PostFact
 //
 //	@Summary		Create a new fact definition
 //	@Description	Create a new fact definition
@@ -200,6 +208,8 @@ func PostFact(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutFact godoc
+//
+//	@Id				PutFact
 //
 //	@Summary		Create or remplace a fact definition
 //	@Description	Create or remplace a fact definition
@@ -268,6 +278,8 @@ func PutFact(w http.ResponseWriter, r *http.Request) {
 
 // DeleteFact godoc
 //
+//	@Id				DeleteFact
+//
 //	@Summary		Delete a fact definition
 //	@Description	Delete a fact definition
 //	@Tags			Facts
@@ -304,6 +316,8 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 }
 
 // ExecuteFact godoc
+//
+//	@Id				ExecuteFact
 //
 //	@Summary		Execute a fact with a given timestamp
 //	@Description	Execute a fact with a given timestamp (This route is deprecated. Please use POST /engine/facts/execute instead.)
@@ -398,6 +412,8 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 }
 
 // ExecuteFactOrGetHits godoc
+//
+//	@Id				ExecuteFactOrGetHits
 //
 //	@Summary		Execute a fact and restitue the hits
 //	@Description	Execute a fact and restitue the hits
@@ -540,6 +556,8 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetFactHits godoc
+//
+//	@Id				GetFactHits
 //
 //	@Summary		Execute a fact and restitue the hits
 //	@Description	Execute a fact and restitue the hits (This route is deprecated. Please use POST /engine/facts/execute instead.)
@@ -709,6 +727,8 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 }
 
 // FactToESQuery godoc
+//
+//	@Id				FactToESQuery
 //
 //	@Summary		Execute a fact with a given timestamp
 //	@Description	Execute a fact with a given timestamp

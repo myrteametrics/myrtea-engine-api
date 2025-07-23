@@ -15,6 +15,8 @@ import (
 
 // GetConnectorConfigs godoc
 //
+//	@Id				GetConnectorConfigs
+//
 //	@Summary		Get all connectorConfig definitions
 //	@Description	Get all connectorConfig definitions
 //	@Tags			ConnectorConfigs
@@ -45,6 +47,8 @@ func GetConnectorConfigs(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetConnectorConfig godoc
+//
+//	@Id				GetConnectorConfig
 //
 //	@Summary		Get an connectorConfig definition
 //	@Description	Get an connectorConfig definition
@@ -83,6 +87,8 @@ func GetConnectorConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostConnectorConfig godoc
+//
+//	@Id				PostConnectorConfig
 //
 //	@Summary		Create a new connectorConfig definition
 //	@Description	Create a new connectorConfig definition
@@ -128,6 +134,8 @@ func PostConnectorConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutConnectorConfig godoc
+//
+//	@Id				PutConnectorConfig
 //
 //	@Summary		Create or remplace an connectorConfig definition
 //	@Description	Create or remplace an connectorConfig definition
@@ -184,6 +192,8 @@ func PutConnectorConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteConnectorConfig godoc
+//
+//	@Id				DeleteConnectorConfig
 //
 //	@Summary		Delete an connectorConfig definition
 //	@Description	Delete an connectorConfig definition

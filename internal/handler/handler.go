@@ -7,6 +7,8 @@ import (
 
 // IsAlive godoc
 //
+//	@Id				IsAlive
+//
 //	@Summary		Check if alive
 //	@Description	allows to check if the API is alive
 //	@Tags			System
