@@ -225,6 +225,7 @@ func engineRouter(services Services) http.Handler {
 		// Tags for situations
 		r.Get("/situations", handler.GetAllSituationsTags)
 		r.Get("/situations/{situationId}", handler.GetTagsBySituation)
+		r.Get("/situations/{situationId}/instances", handler.GetSituationTemplateInstanceTags)
 		r.Post("/{tagId}/situations/{situationId}", handler.AddTagToSituation)
 		r.Delete("/{tagId}/situations/{situationId}", handler.RemoveTagFromSituation)
 

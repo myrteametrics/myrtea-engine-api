@@ -642,3 +642,48 @@ func GetAllSituationsTags(w http.ResponseWriter, r *http.Request) {
 
 	httputil.JSON(w, r, result)
 }
+
+// GetSituationTemplateInstanceTags godoc
+//
+//	@Id				GetSituationTemplateInstanceTags
+//
+//	@Summary		Get all tags for template instances in a situation
+//	@Description	Get all tags associated with template instances in a specific situation
+//	@Tags			Tags
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Param			situationId	path	string	true	"Situation ID"
+//	@Success		200	{object}	map[string][]tag.Tag	"map of template instance IDs to tags"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/tags/situations/{situationId}/instances [get]
+func GetSituationTemplateInstanceTags(w http.ResponseWriter, r *http.Request) {
+	situationId := chi.URLParam(r, "situationId")
+	idSituation, err := strconv.ParseInt(situationId, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error on parsing situation id", zap.String("situationID", situationId), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeTag, permissions.All, permissions.ActionList)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	templateInstancesTags, err := tag.R().GetSituationInstanceTags(idSituation)
+	if err != nil {
+		zap.L().Error("Error getting all template instances tags", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	// Convert map[int64][]Tag to map[string][]Tag for JSON rendering
+	result := make(map[string][]tag.Tag)
+	for situationID, tags := range templateInstancesTags {
+		result[strconv.FormatInt(situationID, 10)] = tags
+	}
+
+	httputil.JSON(w, r, templateInstancesTags)
+}
