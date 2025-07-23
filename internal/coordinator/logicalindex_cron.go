@@ -186,7 +186,7 @@ func (logicalIndex *LogicalIndexCron) FindIndices(t time.Time, depthDays int64) 
 	query := "select technical from elasticsearch_indices_v1 where logical = :logical AND creation_date BETWEEN :mindate AND :maxdate"
 	params := map[string]interface{}{
 		"logical": logicalIndex.Name,
-		"mindate": t.Add(-1 * time.Duration(depthDays+1) * dateMultiplicationFactor * 24 * time.Hour),
+		"mindate": t.Add(-1 * time.Duration(depthDays+1) * dateMultiplicationFactor),
 		"maxdate": t,
 	}
 	rows, err := postgres.DB().NamedQuery(query, params)
