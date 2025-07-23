@@ -17,10 +17,12 @@ func Init() {
 	initElasticsearch()
 	initServices()
 
-	// we want to check if the superuser exists
-	zap.L().Info("Trying to create superuser if not exists")
-	if err := users.R().CreateSuperUserIfNotExists(); err != nil {
-		zap.L().Error("Error creating superuser", zap.Error(err))
+	if viper.GetBool("AUTHENTICATION_CREATE_SUPERUSER") {
+		// we want to check if the superuser exists
+		zap.L().Info("Trying to create superuser if not exists")
+		if err := users.R().CreateSuperUserIfNotExists(); err != nil {
+			zap.L().Error("Error creating superuser", zap.Error(err))
+		}
 	}
 }
 
