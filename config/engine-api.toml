@@ -232,3 +232,17 @@ EXPORT_MAX_CUSTOM_SEARCH_REQUESTS = 10
 # starting with the oldest versions to retain only the most recent ones.
 # Default value: 5
 MAX_EXTERNAL_CONFIG_VERSIONS_TO_KEEP = 5
+
+# Specify the maximum number of historical versions to keep for configuration history.
+# When a new version is added, any versions exceeding this number will be deleted,
+# starting with the oldest versions to retain only the most recent ones.
+# Default value: 100
+MAX_CONFIG_HISTORY_RECORDS = 100
+
+
+# Specify the duration for how long the API token will be cached.
+# This cache is used to avoid unnecessary revalidation of the token for each request.
+# Set this value according to the maximum validity period of the token provided by the service.
+# Default value: 1h (1 hour)
+# Available units are "ns", "us" (or "µs"), "ms", "s", "m", "h"
+API_KEY_CACHE_DURATION = "1h"  # Example: "168h" (1 week)

@@ -13,11 +13,11 @@ func TestCompact(t *testing.T) {
 	db := tests.DBClient(t)
 
 	options := GetHistorySituationsOptions{
-		SituationID:         -1,
-		SituationInstanceID: -1,
-		FromTS:              time.Time{},
-		ToTS:                time.Now().Add(-1 * 24 * time.Hour),
-		ParameterFilters:    make(map[string]interface{}),
+		SituationID:          -1,
+		SituationInstanceIDs: []int64{},
+		FromTS:               time.Time{},
+		ToTS:                 time.Now().Add(-1 * 24 * time.Hour),
+		ParameterFilters:     make(map[string]interface{}),
 	}
 	interval := "day"
 
@@ -30,11 +30,11 @@ func TestPurge(t *testing.T) {
 	db := tests.DBClient(t)
 
 	options := GetHistorySituationsOptions{
-		SituationID:         -1,
-		SituationInstanceID: -1,
-		FromTS:              time.Time{},
-		ToTS:                time.Now().Add(-1 * 24 * time.Hour),
-		ParameterFilters:    make(map[string]interface{}),
+		SituationID:          -1,
+		SituationInstanceIDs: []int64{},
+		FromTS:               time.Time{},
+		ToTS:                 time.Now().Add(-1 * 24 * time.Hour),
+		ParameterFilters:     make(map[string]interface{}),
 	}
 
 	New(db).PurgeHistory(options)

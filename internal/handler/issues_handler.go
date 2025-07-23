@@ -563,7 +563,7 @@ func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Issues
 //	@Accept			json
 //	@Produce		json
-//	@Param			issue	body	model.IssuesIdsToDraf	true	"Issues IDs"
+//	@Param			issue	body	model.IssuesIdsToDraft	true	"Issues IDs"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
@@ -571,7 +571,7 @@ func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500	"Status"	internal	server	error"
 //	@Router			/engine/issues/draft [post]
 func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
-	var issueIdsToDraft model.IssuesIdsToDraf
+	var issueIdsToDraft model.IssuesIdsToDraft
 	err := json.NewDecoder(r.Body).Decode(&issueIdsToDraft)
 	if err != nil {
 		zap.L().Warn("Body decode", zap.Error(err))
@@ -603,7 +603,7 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 		status.SuccessCount++
 	}
 
-	explainer.DraftIssues(idIssuesOk, userCtx.User, status)
+	explainer.DraftIssues(idIssuesOk, userCtx.User, status, issueIdsToDraft.Comment)
 
 	if status.AllOk {
 		httputil.OK(w, r)

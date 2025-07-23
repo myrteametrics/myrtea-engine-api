@@ -3,13 +3,16 @@ package fact
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 )
+
+const table = "fact_definition_v1"
 
 // PostgresRepository is a repository containing the Fact definition based on a PSQL database and
 // implementing the repository interface
@@ -95,34 +98,35 @@ func (r *PostgresRepository) GetByName(name string) (engine.Fact, bool, error) {
 
 // Create creates a new Fact definition in the repository
 func (r *PostgresRepository) Create(fact engine.Fact) (int64, error) {
-
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	factdata, err := json.Marshal(fact)
 	if err != nil {
 		return -1, err
 	}
 
 	timestamp := time.Now().Truncate(1 * time.Millisecond).UTC()
-	query := `INSERT INTO fact_definition_v1 (id, name, definition, last_modified) 
-		VALUES (DEFAULT, :name, :definition, :last_modified) RETURNING id`
-	params := map[string]interface{}{
-		"name":          fact.Name,
-		"definition":    string(factdata),
-		"last_modified": timestamp,
+
+	// Create a statement builder for the insert
+	statement := r.newStatement().
+		Insert(table).
+		Suffix("RETURNING \"id\"")
+
+	// If fact.ID is provided, include it in the insert
+	if fact.ID != 0 {
+		statement = statement.
+			Columns("id", "name", "definition", "last_modified").
+			Values(fact.ID, fact.Name, string(factdata), timestamp)
+	} else {
+		statement = statement.
+			Columns("name", "definition", "last_modified").
+			Values(fact.Name, string(factdata), timestamp)
 	}
-	rows, err := r.conn.NamedQuery(query, params)
+
+	// Execute the query and scan the returned ID
+	var id int64
+	err = statement.QueryRow().Scan(&id)
 	if err != nil {
 		return -1, err
-	}
-	defer rows.Close()
-
-	var id int64
-	if rows.Next() {
-		err := rows.Scan(&id)
-		if err != nil {
-			return -1, err
-		}
-	} else {
-		return -1, errors.New("no id returning of insert situation")
 	}
 
 	return id, nil
@@ -174,14 +178,14 @@ func (r *PostgresRepository) Delete(id int64) error {
 		return err
 	}
 	if i != 1 {
-		return errors.New("no row inserted (or multiple row inserted) instead of 1 row")
+		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
 	}
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	return nil
 }
 
 // GetAll returns all entities in the repository
 func (r *PostgresRepository) GetAll() (map[int64]engine.Fact, error) {
-
 	facts := make(map[int64]engine.Fact, 0)
 
 	query := `SELECT id, definition FROM fact_definition_v1`
@@ -210,7 +214,6 @@ func (r *PostgresRepository) GetAll() (map[int64]engine.Fact, error) {
 		facts[factID] = fact
 	}
 	return facts, nil
-
 }
 
 // GetAllByIDs returns all entities filtered by IDs in the repository
@@ -244,5 +247,9 @@ func (r *PostgresRepository) GetAllByIDs(ids []int64) (map[int64]engine.Fact, er
 		facts[factID] = fact
 	}
 	return facts, nil
+}
 
+// newStatement creates a new statement builder with Dollar format
+func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
+	return sq.StatementBuilder.PlaceholderFormat(sq.Dollar).RunWith(r.conn.DB)
 }

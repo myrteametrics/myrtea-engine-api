@@ -6,6 +6,15 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
 )
 
+const (
+	ActionCreateIssue        = "create-issue"
+	ActionCloseTodayIssues   = "close-today-issues"
+	ActionCloseAllIssues     = "close-all-issues"
+	ActionNotify             = "notify"
+	ActionSituationReporting = "situation-reporting"
+	ActionSet                = "set"
+)
+
 // TaskBatch batch of action to be performed
 type TaskBatch struct {
 	Context map[string]interface{}

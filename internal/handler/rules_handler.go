@@ -106,15 +106,18 @@ func GetRule(w http.ResponseWriter, r *http.Request) {
 
 // GetRuleByVersion godoc
 //
-//	@Summary		Get a rule
-//	@Description	Get a specific rule by it's ID
+//	@Summary		Get a rule by version
+//	@Description	Get a specific rule by its ID and version ID
 //	@Tags			Rules
 //	@Produce		json
-//	@Param			id	path	string	true	"Rule ID"
-//	@Param			versionId	path	string	true	"Rule Version ID"
+//	@Param			id			path	int	true	"Rule ID"
+//	@Param			versionId	path	int	true	"Rule Version ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	rule.Rule	"rule"
+//	@Failure		400	"bad request - invalid parameters"
+//	@Failure		403	"forbidden - insufficient permissions"
+//	@Failure		404	"not found - rule does not exist"
 //	@Failure		500	"internal server error"
 //	@Router			/engine/rules/{id}/versions/{versionId} [get]
 func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {

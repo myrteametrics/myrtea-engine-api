@@ -10,12 +10,12 @@ import (
 type HistorySituationsBuilder struct{}
 
 type GetHistorySituationsOptions struct {
-	SituationID         int64
-	SituationInstanceID int64
-	ParameterFilters    map[string]interface{}
-	DeleteBeforeTs      time.Time
-	FromTS              time.Time
-	ToTS                time.Time
+	SituationID          int64
+	SituationInstanceIDs []int64
+	ParameterFilters     map[string]interface{}
+	DeleteBeforeTs       time.Time
+	FromTS               time.Time
+	ToTS                 time.Time
 }
 
 func (builder HistorySituationsBuilder) newStatement() sq.StatementBuilderType {
@@ -31,8 +31,8 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsBase(options GetH
 		q = q.Where(sq.Eq{"situation_id": options.SituationID})
 	}
 
-	if options.SituationInstanceID != -1 {
-		q = q.Where(sq.Eq{"situation_instance_id": options.SituationInstanceID})
+	if len(options.SituationInstanceIDs) > 0 {
+		q = q.Where(sq.Eq{"situation_instance_id": options.SituationInstanceIDs})
 	}
 
 	if !options.FromTS.IsZero() {
@@ -125,4 +125,26 @@ func (builder HistorySituationsBuilder) GetLatestHistorySituation(situationID in
 		Where(sq.Expr("ts >= ?::timestamptz", startOfLastMonth)).
 		OrderBy("ts DESC").
 		Limit(1)
+}
+
+func (builder HistorySituationsBuilder) GetTodaysFactExprResultByParameters(param ParamGetFactExprHistory) sq.SelectBuilder {
+	todayStart, tomorrowStart := getTodayTimeRange()
+
+	return builder.newStatement().
+		Select("expression_facts, ts").
+		From("situation_history_v5").
+		Where(sq.Eq{"situation_id": param.SituationID}).
+		Where(sq.Eq{"situation_instance_id": param.SituationInstanceID}).
+		Where(sq.Expr("ts >= ?::timestamptz", todayStart)).
+		Where(sq.Expr("ts < ?::timestamptz", tomorrowStart))
+}
+
+func (builder HistorySituationsBuilder) GetFactExprResultByDate(param ParamGetFactExprHistoryByDate) sq.SelectBuilder {
+	return builder.newStatement().
+		Select("expression_facts, ts").
+		From("situation_history_v5").
+		Where(sq.Eq{"situation_id": param.SituationID}).
+		Where(sq.Eq{"situation_instance_id": param.SituationInstanceID}).
+		Where(sq.Expr("ts >= ?::timestamptz", param.StartDate)).
+		Where(sq.Expr("ts < ?::timestamptz", param.EndDate))
 }

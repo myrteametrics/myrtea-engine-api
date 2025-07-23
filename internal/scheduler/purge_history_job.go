@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/history"
 	"go.uber.org/zap"
 )
 
@@ -46,10 +46,10 @@ func (job PurgeHistoryJob) Run() {
 	}
 
 	options := history.GetHistorySituationsOptions{
-		SituationID:         -1,
-		SituationInstanceID: -1,
-		ParameterFilters:    make(map[string]interface{}),
-		DeleteBeforeTs:      time.Now().Add(-1 * DeleteBeforeTsDuration),
+		SituationID:          -1,
+		SituationInstanceIDs: []int64{},
+		ParameterFilters:     make(map[string]interface{}),
+		DeleteBeforeTs:       time.Now().Add(-1 * DeleteBeforeTsDuration),
 	}
 
 	err = history.S().PurgeHistory(options)

@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/confighistory"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/connectorconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
@@ -24,7 +25,6 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/issues"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/rootcause"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/modeler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier/notification"
@@ -33,6 +33,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/scheduler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/search"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tasker"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/history"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -66,6 +67,7 @@ func initRepositories() {
 	history.ReplaceGlobals(history.New(dbClient))
 	variablesconfig.ReplaceGlobals(variablesconfig.NewPostgresRepository(dbClient))
 	apikey.ReplaceGlobals(apikey.NewPostgresRepository(dbClient))
+	confighistory.ReplaceGlobals(confighistory.NewPostgresRepository(dbClient))
 }
 
 func initServices() {

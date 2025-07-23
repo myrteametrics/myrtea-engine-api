@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/history"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/history"
 	"github.com/myrteametrics/myrtea-sdk/v5/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 	"github.com/spf13/viper"

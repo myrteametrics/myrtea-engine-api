@@ -8,7 +8,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handler"
 )
 
-func adminRouter() http.Handler {
+func adminRouter(services Services) http.Handler {
 	r := chi.NewRouter()
 
 	// security
@@ -37,13 +37,13 @@ func adminRouter() http.Handler {
 	r.Put("/security/permissions/{id}", handler.PutPermission)
 	r.Delete("/security/permissions/{id}", handler.DeletePermission)
 
-	r.Get("/security/apikey", handler.GetAPIKeys)
-	r.Get("/security/apikey/{id}", handler.GetAPIKey)
-	r.Post("/security/apikey", handler.CreateAPIKey)
-	r.Put("/security/apikey/{id}", handler.PutAPIKey)
-	r.Delete("/security/apikey/{id}", handler.DeleteAPIKey)
-	r.Post("/security/apikey/{id}/deactivate", handler.DeactivateAPIKey)
-	r.Get("/security/roles/{roleId}/apikey", handler.GetAPIKeysForRole)
+	r.Get("/security/apikey", services.ApiKeyHandler.GetAPIKeys)
+	r.Get("/security/apikey/{id}", services.ApiKeyHandler.GetAPIKey)
+	r.Post("/security/apikey", services.ApiKeyHandler.CreateAPIKey)
+	r.Put("/security/apikey/{id}", services.ApiKeyHandler.PutAPIKey)
+	r.Delete("/security/apikey/{id}", services.ApiKeyHandler.DeleteAPIKey)
+	r.Post("/security/apikey/{id}/deactivate", services.ApiKeyHandler.DeactivateAPIKey)
+	r.Get("/security/roles/{roleId}/apikey", services.ApiKeyHandler.GetAPIKeysForRole)
 
 	r.Get("/engine/issues_all", handler.GetIssues)
 
@@ -122,7 +122,7 @@ func engineRouter(services Services) http.Handler {
 
 	r.Get("/rules", handler.GetRules)
 	r.Get("/rules/{id}", handler.GetRule)
-	r.Get("/rules/{id}/versions/{versionid}", handler.GetRuleByVersion)
+	r.Get("/rules/{id}/versions/{versionId}", handler.GetRuleByVersion)
 	r.Post("/rules/validate", handler.ValidateRule)
 	r.Post("/rules", handler.PostRule)
 	r.Put("/rules/{id}", handler.PutRule)
@@ -181,6 +181,8 @@ func engineRouter(services Services) http.Handler {
 
 	r.Post("/history/facts/today/result", handler.GetFactResultForTodayByCriteria)
 	r.Post("/history/facts/date/result", handler.GetFactResultByDateCriteria)
+	r.Post("/history/factexpr/today/result", handler.GetFactExprResultForTodayByCriteria)
+	r.Post("/history/factexpr/date/result", handler.GetFactExprResultByDateCriteria)
 
 	r.Get("/calendars", handler.GetCalendars)
 	r.Get("/calendars/{id}", handler.GetCalendar)
@@ -201,6 +203,7 @@ func engineRouter(services Services) http.Handler {
 	r.Post("/exports/custom", services.ExportHandler.ExportCustom)
 
 	r.Get("/variablesconfig", handler.GetVariablesConfig)
+	r.Get("/variablesconfig/scope/{scope}", handler.GetVariablesConfigByScope)
 	r.Get("/variablesconfig/{id}", handler.GetVariableConfig)
 	r.Get("/variablesconfig/key/{key}", handler.GetVariableConfigByKey)
 	r.Post("/variablesconfig", handler.PostVariableConfig)
@@ -230,6 +233,18 @@ func engineRouter(services Services) http.Handler {
 		r.Get("/situationinstances/{instanceId}", handler.GetTagsByTemplateInstance)
 		r.Post("/{tagId}/situationinstances/{instanceId}", handler.AddTagToTemplateInstance)
 		r.Delete("/{tagId}/situationinstances/{instanceId}", handler.RemoveTagFromTemplateInstance)
+	})
+
+	// Config History routes
+	r.Route("/config-histories", func(r chi.Router) {
+		r.Get("/", handler.GetConfigHistories)
+		r.Get("/{id}", handler.GetConfigHistory)
+		r.Post("/", handler.CreateConfigHistory)
+		r.Delete("/{id}", handler.DeleteConfigHistory)
+		r.Delete("/oldest", handler.DeleteOldestConfigHistory)
+		r.Get("/type/{type}", handler.GetConfigHistoriesByType)
+		r.Get("/user/{user}", handler.GetConfigHistoriesByUser)
+		r.Post("/interval", handler.GetConfigHistoriesByInterval)
 	})
 
 	return r

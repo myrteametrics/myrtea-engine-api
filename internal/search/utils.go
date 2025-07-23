@@ -2,10 +2,9 @@ package search
 
 import (
 	"encoding/json"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"sort"
-
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 func extractFactHistoryRecordValues(rawResults []byte, out *FactHistoryRecord, downSamplingOperation string) error {
@@ -82,7 +81,7 @@ func extractMetaData(rawMetadatas []byte, out map[string]interface{}, metaDataSo
 		keys = append(keys, value...)
 	}
 
-	var metadatas []model.MetaData
+	var metadatas []metadata.MetaData
 
 	if downSamplingOperation == "" || downSamplingOperation == "first" || downSamplingOperation == "latest" {
 		err := json.Unmarshal(rawMetadatas, &metadatas)
@@ -90,20 +89,20 @@ func extractMetaData(rawMetadatas []byte, out map[string]interface{}, metaDataSo
 			return err
 		}
 		if len(keys) == 0 {
-			for _, metadata := range metadatas {
-				out[metadata.Key] = metadata.Value
+			for _, md := range metadatas {
+				out[md.Key] = md.Value
 			}
 		} else {
 			sort.Strings(keys)
-			for _, metadata := range metadatas {
-				i := sort.SearchStrings(keys, metadata.Key)
-				if i < len(keys) && keys[i] == metadata.Key {
-					out[metadata.Key] = metadata.Value
+			for _, md := range metadatas {
+				i := sort.SearchStrings(keys, md.Key)
+				if i < len(keys) && keys[i] == md.Key {
+					out[md.Key] = md.Value
 				}
 			}
 		}
 	} else {
-		var metadatasList [][]model.MetaData
+		var metadatasList [][]metadata.MetaData
 		var dataList []map[string]interface{}
 		err := json.Unmarshal(rawMetadatas, &metadatasList)
 		if err != nil {
@@ -112,15 +111,15 @@ func extractMetaData(rawMetadatas []byte, out map[string]interface{}, metaDataSo
 		for _, m := range metadatasList {
 			data := make(map[string]interface{}, 0)
 			if len(keys) == 0 {
-				for _, metadata := range m {
-					data[metadata.Key] = metadata.Value
+				for _, md := range m {
+					data[md.Key] = md.Value
 				}
 			} else {
 				sort.Strings(keys)
-				for _, metadata := range m {
-					i := sort.SearchStrings(keys, metadata.Key)
-					if i < len(keys) && keys[i] == metadata.Key {
-						data[metadata.Key] = metadata.Value
+				for _, md := range m {
+					i := sort.SearchStrings(keys, md.Key)
+					if i < len(keys) && keys[i] == md.Key {
+						data[md.Key] = md.Value
 					}
 				}
 			}

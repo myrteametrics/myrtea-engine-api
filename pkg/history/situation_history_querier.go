@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"go.uber.org/zap"
 )
 
@@ -24,7 +24,7 @@ type HistorySituationsV4 struct {
 	Ts                    time.Time
 	Parameters            map[string]interface{}
 	ExpressionFacts       map[string]interface{}
-	Metadatas             []model.MetaData
+	Metadatas             []metadata.MetaData
 	Calendar              *calendar.Calendar
 }
 
@@ -38,6 +38,26 @@ type HistoryRecordV4 struct {
 	ExpressionFacts     map[string]interface{}
 	EnableDependsOn     bool
 	DependsOnParameters map[string]string
+}
+
+type ParamGetFactExprHistory struct {
+	FactExpr            string `json:"factExpr"`
+	SituationID         int64  `json:"situationId"`
+	SituationInstanceID int64  `json:"situationInstanceId"`
+}
+type ParamGetFactExprHistoryByDate struct {
+	ParamGetFactExprHistory
+	StartDate string `json:"startDate"` // Expected format: "2006-01-02 15:04:05"
+	EndDate   string `json:"endDate"`   // Expected format: "2006-01-02 15:04:05"
+}
+
+type GetFactExprHistory struct {
+	Results []FactExprResult `json:"results"`
+}
+
+type FactExprResult struct {
+	Value         float64 `json:"value"`
+	FormattedTime string  `json:"formattedTime" example:"2006-01-02 15:04:05"`
 }
 
 // OverrideParameters overrides the parameters of the History Record.
@@ -272,7 +292,7 @@ func (querier *HistorySituationsQuerier) QueryGetFieldsTsMetadatas(ctx context.C
 
 	var result HistorySituationsV4
 	for rows.Next() {
-		var metadatas []model.MetaData
+		var metadatas []metadata.MetaData
 		var ts time.Time
 		var metadataBytes []byte
 
@@ -299,6 +319,83 @@ func (querier *HistorySituationsQuerier) QueryGetFieldsTsMetadatas(ctx context.C
 	return result, nil
 }
 
+func (querier *HistorySituationsQuerier) QueryGetSpecificFactExpr(builder sq.SelectBuilder, formatTime string, factExpr string) (GetFactExprHistory, error) {
+	rows, err := builder.RunWith(querier.conn).Query()
+	if err != nil {
+		return GetFactExprHistory{}, err
+	}
+	defer rows.Close()
+
+	var results []FactExprResult
+	for rows.Next() {
+		var resultBytes []byte
+		var ts time.Time
+		err = rows.Scan(&resultBytes, &ts)
+		if err != nil {
+			return GetFactExprHistory{}, err
+		}
+
+		var parsedResult map[string]interface{}
+		err = json.Unmarshal(resultBytes, &parsedResult)
+		if err != nil {
+			return GetFactExprHistory{}, err
+		}
+
+		factRes := FactExprResult{FormattedTime: ts.Format(formatTime)}
+
+		if factExprValue, ok := parsedResult[factExpr]; ok {
+			if v, ok := factExprValue.(float64); ok {
+				factRes.Value = v
+			}
+		}
+		results = append(results, factRes)
+	}
+
+	return GetFactExprHistory{Results: results}, nil
+}
+
+func (querier HistorySituationsQuerier) GetTodaysFactExprResultByParameters(param ParamGetFactExprHistory) (GetFactExprHistory, error) {
+	builder := querier.Builder.GetTodaysFactExprResultByParameters(param)
+	return querier.QueryGetSpecificFactExpr(builder, FormatHourMinute, param.FactExpr)
+}
+
+func (querier HistorySituationsQuerier) GetFactExprResultByDate(param ParamGetFactExprHistoryByDate) (GetFactExprHistory, error) {
+	builder := querier.Builder.GetFactExprResultByDate(param)
+	return querier.QueryGetSpecificFactExpr(builder, FormatDateHourMinute, param.FactExpr)
+}
+
+func (param ParamGetFactExprHistory) IsValid() error {
+	if param.FactExpr == "" {
+		return errors.New("Missing or invalide FactID ")
+	}
+	if param.SituationID <= 0 {
+		return errors.New("Missing  or invalide SituationID")
+	}
+
+	if param.SituationInstanceID <= 0 {
+		return errors.New("Missing or invalie  SituationInstanceID")
+	}
+	return nil
+}
+
+func (p ParamGetFactExprHistoryByDate) IsValid() error {
+	if err := p.ParamGetFactExprHistory.IsValid(); err != nil {
+		return err
+	}
+	if _, err := time.Parse("2006-01-02 15:04:05", p.StartDate); err != nil {
+		return errors.New("invalid StartDate format")
+	}
+	if _, err := time.Parse("2006-01-02 15:04:05", p.EndDate); err != nil {
+		return errors.New("invalid EndDate format")
+	}
+	start, _ := time.Parse("2006-01-02 15:04:05", p.StartDate)
+	end, _ := time.Parse("2006-01-02 15:04:05", p.EndDate)
+	if start.After(end) {
+		return errors.New("StartDate must be before EndDate")
+	}
+	return nil
+}
+
 func (querier HistorySituationsQuerier) GetLatestHistory(situationID int64, situationInstanceID int64) (HistorySituationsV4, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -314,22 +411,3 @@ func (querier HistorySituationsQuerier) GetLatestHistory(situationID int64, situ
 	}
 	return results, nil
 }
-
-// func (querier HistorySituationsQuerier) scanFirst(rows *sql.Rows) (HistorySituationsV4, bool, error) {
-// 	if rows.Next() {
-// 		user, err := querier.scan(rows)
-// 		return user, err == nil, err
-// 	}
-// 	return HistorySituationsV4{}, false, nil
-// }
-
-// func (querier HistorySituationsQuerier) checkRowAffected(result sql.Result, nbRows int64) error {
-// 	i, err := result.RowsAffected()
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if i != nbRows {
-// 		return errors.New("no row deleted (or multiple row deleted) instead of 1 row")
-// 	}
-// 	return nil
-// }
