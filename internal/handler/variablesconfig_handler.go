@@ -53,6 +53,7 @@ func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get all VariableConfig definitions that match with scope value or scope 'global' by default
 //	@Tags			VariablesConfig
 //	@Produce		json
+//	@Param			scope	path	string	false	"Variable Config scope, default is 'global'"
 //	@Security		Bearer
 //	@Success		200	{array}	variablesconfig.VariablesConfig	"list of all Variables with it's config"
 //	@Failure		500	"internal server error"
