@@ -150,7 +150,7 @@ func (r *PostgresRepository) GetTagsBySituationId(situationId int64) ([]Tag, err
 func (r *PostgresRepository) CreateLinkWithTemplateInstance(tagID int64, templateInstanceID int64) error {
 	_, err := r.newStatement().
 		Insert(tableTemplateInstances).
-		Columns("tag_id", "template_instance_id").
+		Columns("tag_id", "situation_template_instance_id").
 		Values(tagID, templateInstanceID).
 		Exec()
 	if err != nil {
@@ -162,7 +162,7 @@ func (r *PostgresRepository) CreateLinkWithTemplateInstance(tagID int64, templat
 func (r *PostgresRepository) DeleteLinkWithTemplateInstance(tagID int64, templateInstanceID int64) error {
 	_, err := r.newStatement().
 		Delete(tableTemplateInstances).
-		Where(sq.Eq{"tag_id": tagID, "template_instance_id": templateInstanceID}).
+		Where(sq.Eq{"tag_id": tagID, "situation_template_instance_id": templateInstanceID}).
 		Exec()
 	if err != nil {
 		return err
@@ -175,7 +175,7 @@ func (r *PostgresRepository) GetTagsByTemplateInstanceId(templateInstanceId int6
 		Select(fieldsPrefix...).
 		From(fmt.Sprintf("%s ts", tableTemplateInstances)).
 		Join(fmt.Sprintf("%s t ON ts.tag_id = t.id", table)).
-		Where(sq.Eq{"ts.template_instance_id": templateInstanceId}).
+		Where(sq.Eq{"ts.situation_template_instance_id": templateInstanceId}).
 		Query()
 	if err != nil {
 		return nil, err
@@ -270,10 +270,10 @@ func (r *PostgresRepository) GetSituationInstanceTags(situationId int64) (map[in
 
 	// Get all tags linked to these situation instances
 	rows, err = r.newStatement().
-		Select(append(fieldsPrefix, "sti.situation_template_instance_id")...).
+		Select(append(fieldsPrefix, "sti.situation_situation_template_instance_id")...).
 		From(fmt.Sprintf("%s sti", tableTemplateInstances)).
 		Join(fmt.Sprintf("%s t ON sti.tag_id = t.id", table)).
-		Where(sq.Eq{"sti.situation_template_instance_id": ids}).
+		Where(sq.Eq{"sti.situation_situation_template_instance_id": ids}).
 		Query()
 	if err != nil {
 		return nil, err
