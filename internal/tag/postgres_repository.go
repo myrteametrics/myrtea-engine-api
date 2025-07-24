@@ -270,10 +270,10 @@ func (r *PostgresRepository) GetSituationInstanceTags(situationId int64) (map[in
 
 	// Get all tags linked to these situation instances
 	rows, err = r.newStatement().
-		Select(append(fieldsPrefix, "sti.situation_situation_template_instance_id")...).
+		Select(append(fieldsPrefix, "sti.situation_template_instance_id")...).
 		From(fmt.Sprintf("%s sti", tableTemplateInstances)).
 		Join(fmt.Sprintf("%s t ON sti.tag_id = t.id", table)).
-		Where(sq.Eq{"sti.situation_situation_template_instance_id": ids}).
+		Where(sq.Eq{"sti.situation_template_instance_id": ids}).
 		Query()
 	if err != nil {
 		return nil, err
