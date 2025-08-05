@@ -82,6 +82,9 @@ func engineRouter(services Services) http.Handler {
 	r.Post("/facts/streamedexport", handler.ExportFactStreamed)
 
 	r.Get("/situations", handler.GetSituations)
+
+	r.Get("/situations/overview", handler.GetSituationOverview)
+
 	r.Get("/situations/{id}", handler.GetSituation)
 	r.Post("/situations/validate", handler.ValidateSituation)
 	r.Post("/situations", handler.PostSituation)
