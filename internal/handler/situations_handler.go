@@ -6,6 +6,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
+	"github.com/myrteametrics/myrtea-sdk/v5/handlers/render"
 	"net/http"
 	"sort"
 	"strconv"
@@ -102,6 +103,36 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, r, situation)
+}
+
+// GetSituationOverview godoc
+//
+//	@Id				GetSituationOverview
+//
+//	@Summary		Get situation overview
+//	@Description	Get situation overview
+//	@Tags			Situations
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}	situation.SituationOverview	"situation overview"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/situations/overview [get]
+func GetSituationOverview(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionList)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	situations, err := situation2.R().GetSituationOverview()
+	if err != nil {
+		zap.L().Warn("Cannot retrieve situations", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	render.JSON(w, r, situations)
 }
 
 // ValidateSituation godoc

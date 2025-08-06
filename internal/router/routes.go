@@ -82,6 +82,9 @@ func engineRouter(services Services) http.Handler {
 	r.Post("/facts/streamedexport", handler.ExportFactStreamed)
 
 	r.Get("/situations", handler.GetSituations)
+
+	r.Get("/situations/overview", handler.GetSituationOverview)
+
 	r.Get("/situations/{id}", handler.GetSituation)
 	r.Post("/situations/validate", handler.ValidateSituation)
 	r.Post("/situations", handler.PostSituation)
@@ -225,6 +228,7 @@ func engineRouter(services Services) http.Handler {
 		// Tags for situations
 		r.Get("/situations", handler.GetAllSituationsTags)
 		r.Get("/situations/{situationId}", handler.GetTagsBySituation)
+		r.Get("/situations/{situationId}/instances", handler.GetSituationTemplateInstanceTags)
 		r.Post("/{tagId}/situations/{situationId}", handler.AddTagToSituation)
 		r.Delete("/{tagId}/situations/{situationId}", handler.RemoveTagFromSituation)
 
