@@ -7,6 +7,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
 	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -148,7 +150,7 @@ func (r *PostgresRepository) GetTagsBySituationId(situationId int64) ([]Tag, err
 func (r *PostgresRepository) CreateLinkWithTemplateInstance(tagID int64, templateInstanceID int64) error {
 	_, err := r.newStatement().
 		Insert(tableTemplateInstances).
-		Columns("tag_id", "template_instance_id").
+		Columns("tag_id", "situation_template_instance_id").
 		Values(tagID, templateInstanceID).
 		Exec()
 	if err != nil {
@@ -160,7 +162,7 @@ func (r *PostgresRepository) CreateLinkWithTemplateInstance(tagID int64, templat
 func (r *PostgresRepository) DeleteLinkWithTemplateInstance(tagID int64, templateInstanceID int64) error {
 	_, err := r.newStatement().
 		Delete(tableTemplateInstances).
-		Where(sq.Eq{"tag_id": tagID, "template_instance_id": templateInstanceID}).
+		Where(sq.Eq{"tag_id": tagID, "situation_template_instance_id": templateInstanceID}).
 		Exec()
 	if err != nil {
 		return err
@@ -173,7 +175,7 @@ func (r *PostgresRepository) GetTagsByTemplateInstanceId(templateInstanceId int6
 		Select(fieldsPrefix...).
 		From(fmt.Sprintf("%s ts", tableTemplateInstances)).
 		Join(fmt.Sprintf("%s t ON ts.tag_id = t.id", table)).
-		Where(sq.Eq{"ts.template_instance_id": templateInstanceId}).
+		Where(sq.Eq{"ts.situation_template_instance_id": templateInstanceId}).
 		Query()
 	if err != nil {
 		return nil, err
@@ -198,38 +200,119 @@ func (r *PostgresRepository) GetSituationsTags() (map[int64][]Tag, error) {
 	situationsTags := make(map[int64][]Tag)
 	for rows.Next() {
 		var situationId int64
-		var tagIds []int64
-		err = rows.Scan(&situationId, &tagIds)
+		var tagIdsRaw []byte
+		err = rows.Scan(&situationId, &tagIdsRaw)
+		if err != nil {
+			return nil, err
+		}
+
+		tagIds, err := parseInt64Array(tagIdsRaw)
 		if err != nil {
 			return nil, err
 		}
 
 		var tags []Tag
 
-		// get all tags from db
-		rows, err = r.newStatement().
-			Select(fields...).
-			From(table).
-			Where(sq.Eq{"t.id": tagIds}).
-			Query()
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; rows.Next(); i++ {
-			tag, err := r.scan(rows)
+		if len(tagIds) > 0 {
+			rows2, err := r.newStatement().
+				Select(fields...).
+				From(table).
+				Where(sq.Eq{"id": tagIds}).
+				Query()
 			if err != nil {
 				return nil, err
 			}
-			tags = append(tags, tag)
-		}
 
-		_ = rows.Close()
+			for rows2.Next() {
+				tag, err := r.scan(rows2)
+				if err != nil {
+					_ = rows2.Close()
+					return nil, err
+				}
+				tags = append(tags, tag)
+			}
+			_ = rows2.Close()
+		}
 
 		situationsTags[situationId] = tags
 	}
 
 	return situationsTags, nil
+}
+
+// GetSituationInstanceTags returns all tags linked to each situation instance for a given situationId
+func (r *PostgresRepository) GetSituationInstanceTags(situationId int64) (map[int64][]Tag, error) {
+	// Get all situation instance IDs linked to the situationId
+	rows, err := r.newStatement().
+		Select("id").
+		From("situation_template_instances_v1").
+		Where(sq.Eq{"situation_id": situationId}).
+		Query()
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]int64, 0)
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			_ = rows.Close()
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	_ = rows.Close()
+
+	result := make(map[int64][]Tag)
+	if len(ids) == 0 {
+		return result, nil
+	}
+
+	// Get all tags linked to these situation instances
+	rows, err = r.newStatement().
+		Select(append(fieldsPrefix, "sti.situation_template_instance_id")...).
+		From(fmt.Sprintf("%s sti", tableTemplateInstances)).
+		Join(fmt.Sprintf("%s t ON sti.tag_id = t.id", table)).
+		Where(sq.Eq{"sti.situation_template_instance_id": ids}).
+		Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var templateInstanceId int64
+		var tag Tag
+		err := rows.Scan(
+			&tag.Id, &tag.Name, &tag.Description, &tag.Color, &tag.CreatedAt, &tag.UpdatedAt,
+			&templateInstanceId,
+		)
+		if err != nil {
+			return nil, err
+		}
+		result[templateInstanceId] = append(result[templateInstanceId], tag)
+	}
+
+	return result, nil
+}
+
+// parseInt64Array parses a Postgres int8[] array in byte slice form (e.g., "{1,2,3}") to []int64
+func parseInt64Array(b []byte) ([]int64, error) {
+	s := string(b)
+	s = strings.Trim(s, "{}")
+	if len(s) == 0 {
+		return []int64{}, nil
+	}
+	parts := strings.Split(s, ",")
+	result := make([]int64, 0, len(parts))
+	for _, p := range parts {
+		v, err := strconv.ParseInt(strings.TrimSpace(p), 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, v)
+	}
+	return result, nil
 }
 
 // scan scans a row into a Tag struct

@@ -15,5 +15,6 @@ COPY bin/myrtea-engine-api myrtea-engine-api
 COPY config config
 COPY plugin plugin
 COPY pkg/plugins/config plugins/config
+COPY pkg/plugins/config pkg/plugins/config
 
 ENTRYPOINT ["./myrtea-engine-api"]
