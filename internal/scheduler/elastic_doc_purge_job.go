@@ -2,7 +2,7 @@ package scheduler
 
 import (
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
+	fact2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
 	"time"
@@ -46,7 +46,7 @@ func PurgeElasticDocs(t time.Time, factIds []int64) {
 		zap.L().Debug("Processing fact", zap.Int64("factId", factId))
 
 		// Retrieve the Fact
-		f, found, err := fact.R().Get(factId)
+		f, found, err := fact2.R().Get(factId)
 		if err != nil {
 			zap.L().Error("Error retrieving the fact; skipping deletion",
 				zap.Int64("factId", factId),
@@ -65,7 +65,7 @@ func PurgeElasticDocs(t time.Time, factIds []int64) {
 		}
 
 		// Execute deletion
-		_, err = fact.ExecuteFactDeleteQuery(t, f)
+		_, err = fact2.ExecuteFactDeleteQuery(t, f)
 		if err != nil {
 			zap.L().Error("Error during fact deletion",
 				zap.Int64("factId", f.ID),

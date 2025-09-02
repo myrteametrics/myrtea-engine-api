@@ -2,12 +2,12 @@ package export
 
 import (
 	"github.com/elastic/go-elasticsearch/v8"
+	fact2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"testing"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/coordinator"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/modeler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
@@ -78,7 +78,7 @@ func TestExportFactHits(t *testing.T) {
 	db := tests.DBClient(t)
 	postgres.ReplaceGlobals(db)
 	history.ReplaceGlobals(history.New(db))
-	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
+	fact2.ReplaceGlobals(fact2.NewPostgresRepository(db))
 	situation2.ReplaceGlobals(situation2.NewPostgresRepository(db))
 	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
 	modeler.ReplaceGlobals(modeler.NewPostgresRepository(db))

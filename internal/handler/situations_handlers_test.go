@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	fact2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
@@ -10,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 )
@@ -42,9 +42,9 @@ func TestPostSituation(t *testing.T) {
 	situationDbInit(db, t)
 
 	situation2.ReplaceGlobals(situation2.NewPostgresRepository(db))
-	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
+	fact2.ReplaceGlobals(fact2.NewPostgresRepository(db))
 
-	factID, err := fact.R().Create(engine.Fact{})
+	factID, err := fact2.R().Create(engine.Fact{})
 
 	s := situation2.Situation{
 		Name:  "test_situation",

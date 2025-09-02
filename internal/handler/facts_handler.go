@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
+	fact2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
@@ -16,7 +17,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
@@ -45,10 +45,10 @@ func GetFacts(w http.ResponseWriter, r *http.Request) {
 	var facts map[int64]engine.Fact
 	var err error
 	if userCtx.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionGet)) {
-		facts, err = fact.R().GetAll()
+		facts, err = fact2.R().GetAll()
 	} else {
 		resourceIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionGet))
-		facts, err = fact.R().GetAllByIDs(resourceIDs)
+		facts, err = fact2.R().GetAllByIDs(resourceIDs)
 	}
 	if err != nil {
 		zap.L().Error("Error getting facts", zap.Error(err))
@@ -97,7 +97,7 @@ func GetFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	f, found, err := fact.R().Get(idFact)
+	f, found, err := fact2.R().Get(idFact)
 	if err != nil {
 		zap.L().Error("Cannot retrieve fact", zap.Int64("factID", idFact), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -185,14 +185,14 @@ func PostFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newFactID, err := fact.R().Create(newFact)
+	newFactID, err := fact2.R().Create(newFact)
 	if err != nil {
 		zap.L().Error("Error while creating the Fact", zap.Any("fact", newFact), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
 
-	f, found, err := fact.R().Get(newFactID)
+	f, found, err := fact2.R().Get(newFactID)
 	if err != nil {
 		zap.L().Error("Error while fetch the created fact", zap.Any("newfactID", newFactID), zap.Any("newfact", newFact), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -254,14 +254,14 @@ func PutFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = fact.R().Update(idFact, newFact)
+	err = fact2.R().Update(idFact, newFact)
 	if err != nil {
 		zap.L().Error("Error while updating the Fact", zap.Int64("idFact", idFact), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
 
-	f, found, err := fact.R().Get(idFact)
+	f, found, err := fact2.R().Get(idFact)
 	if err != nil {
 		zap.L().Error("Error while fetch the created fact", zap.Any("factID", idFact), zap.Any("newfact", newFact), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -305,7 +305,7 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = fact.R().Delete(idFact)
+	err = fact2.R().Delete(idFact)
 	if err != nil {
 		zap.L().Error("Error while deleting the Fact", zap.Int64("factID", idFact), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
@@ -389,7 +389,7 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := fact.ExecuteFact(t, f, 0, 0, placeholders, nhit, offset, false)
+	data, err := fact2.ExecuteFact(t, f, 0, 0, placeholders, nhit, offset, false)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIElasticSelectFailed, err)
@@ -443,7 +443,7 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 	var f engine.Fact
 	var found bool
 
-	f, found, err := fact.R().Get(request.FactId)
+	f, found, err := fact2.R().Get(request.FactId)
 	if err != nil {
 		zap.L().Error("Error while fetching fact", zap.Int64("factid", request.FactId), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -534,7 +534,7 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 
 	t := time.Now().Truncate(1 * time.Second).UTC()
 
-	data, err = fact.ExecuteFact(t, f, 0, 0, placeholders, request.Nhit, request.Offset, !*request.Debug)
+	data, err = fact2.ExecuteFact(t, f, 0, 0, placeholders, request.Nhit, request.Offset, !*request.Debug)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIElasticSelectFailed, err)
@@ -619,7 +619,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	f, found, err = fact.R().Get(idFact)
+	f, found, err = fact2.R().Get(idFact)
 	if err != nil {
 		zap.L().Error("Error while fetching fact", zap.String("factid", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -716,7 +716,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 	// Change the behaviour of the Fact
 	f.Intent.Operator = engine.Select
 
-	data, err = fact.ExecuteFact(t, f, 0, 0, placeholders, nhit, offset, false)
+	data, err = fact2.ExecuteFact(t, f, 0, 0, placeholders, nhit, offset, false)
 	if err != nil {
 		zap.L().Error("Cannot execute fact", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIElasticSelectFailed, err)
@@ -879,7 +879,7 @@ func lookupFact(byName bool, id string) (engine.Fact, httputil.APIError, error) 
 	var err error
 	var found bool
 	if byName {
-		f, found, err = fact.R().GetByName(id)
+		f, found, err = fact2.R().GetByName(id)
 		if err != nil {
 			zap.L().Error("Error while fetching fact", zap.String("factid", id), zap.Error(err))
 			return engine.Fact{}, httputil.ErrAPIDBSelectFailed, err
@@ -894,7 +894,7 @@ func lookupFact(byName bool, id string) (engine.Fact, httputil.APIError, error) 
 			zap.L().Warn("Error on parsing fact id", zap.String("factID", id), zap.Error(err))
 			return engine.Fact{}, httputil.ErrAPIParsingInteger, err
 		}
-		f, found, err = fact.R().Get(idFact)
+		f, found, err = fact2.R().Get(idFact)
 		if err != nil {
 			zap.L().Error("Error while fetching fact", zap.Int64("factid", idFact), zap.Error(err))
 			return engine.Fact{}, httputil.ErrAPIDBSelectFailed, err

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
+	fact2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
@@ -12,7 +13,6 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tasker"
@@ -159,7 +159,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 	for _, agg := range aggregates {
 		t := agg.Time.UTC().Truncate(time.Second)
 
-		f, found, err := fact.R().Get(agg.FactID)
+		f, found, err := fact2.R().Get(agg.FactID)
 		if err != nil {
 			zap.L().Error("ReceiveAndPersistFacts fact get error, skipping aggregate", zap.Error(err), zap.Int64("situationId", agg.SituationID), zap.Int64("situationInstanceId", agg.SituationInstanceID), zap.Int64("factId", agg.FactID))
 			continue
@@ -226,7 +226,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 				Aggregates: &agg.Value,
 			}
 
-			fact.GetBaselineValues(widgetData, agg.FactID, agg.SituationID, agg.SituationInstanceID, agg.Time)
+			fact2.GetBaselineValues(widgetData, agg.FactID, agg.SituationID, agg.SituationInstanceID, agg.Time)
 
 			historyFactNew := history.HistoryFactsV4{
 				// ID:                  -1,
@@ -278,7 +278,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 					Aggregates: &agg.Value,
 				}
 
-				fact.GetBaselineValues(widgetData, agg.FactID, agg.SituationID, agg.SituationInstanceID, agg.Time)
+				fact2.GetBaselineValues(widgetData, agg.FactID, agg.SituationID, agg.SituationInstanceID, agg.Time)
 
 				historyFactNew := history.HistoryFactsV4{
 					// ID:                  -1,
@@ -323,7 +323,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 	situationsToUpdate := make(map[string]history.HistoryRecordV4)
 
 	for _, factID := range factIDs {
-		f, found, err := fact.R().Get(factID)
+		f, found, err := fact2.R().Get(factID)
 		if err != nil {
 			zap.L().Error("Error Getting the Fact, skipping fact calculation...", zap.Int64("factID", factID))
 			continue
@@ -345,7 +345,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 
 		if !f.IsTemplate {
 			// execute fact, to get results
-			widgetData, err := fact.ExecuteFact(t, f, 0, 0, make(map[string]interface{}), -1, -1, false)
+			widgetData, err := fact2.ExecuteFact(t, f, 0, 0, make(map[string]interface{}), -1, -1, false)
 			if err != nil {
 				zap.L().Error("Fact calculation Error, skipping fact calculation...", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
 				continue
@@ -394,7 +394,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 					continue
 				}
 
-				widgetData, err := fact.ExecuteFact(t, fCopy, sh.SituationID, sh.SituationInstanceID, sh.Parameters, -1, -1, false)
+				widgetData, err := fact2.ExecuteFact(t, fCopy, sh.SituationID, sh.SituationInstanceID, sh.Parameters, -1, -1, false)
 				if err != nil {
 					zap.L().Error("Fact calculation Error, skipping fact calculation...", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
 					continue
