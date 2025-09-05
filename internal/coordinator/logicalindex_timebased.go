@@ -54,9 +54,11 @@ func NewLogicalIndexTimeBased(instanceName string, model modeler.Model) (*Logica
 	}
 	if !templateExists {
 		zap.L().Info("template doesn't exists, creating it", zap.String("logicalIndexName", logicalIndexName))
-		indexPatern := fmt.Sprintf("%s-*", logicalIndexName)
-		logicalIndex.putTemplate(templateName, indexPatern, model)
+	} else {
+		zap.L().Info("template already exists, updating it", zap.String("logicalIndexName", logicalIndexName))
 	}
+	indexPatern := fmt.Sprintf("%s-*", logicalIndexName)
+	logicalIndex.putTemplate(templateName, indexPatern, model)
 
 	logicalIndex.FetchIndices()
 	zap.L().Info("LogicalIndex initialized", zap.String("logicalIndex", logicalIndex.Name))

@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
@@ -334,4 +335,30 @@ func DeleteModel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//render.OK(w, r)
+}
+
+func UpdateModelTemplate(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeModel, id, permissions.ActionDelete)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	logicalIndexName, err := model.UpdateElasticTemplate(id, w, r)
+
+	if err != nil {
+		zap.L().Error("Error while creating or updating the template", zap.String("modelid", id), zap.Error(err), zap.String("target template", fmt.Sprintf("template-%s", logicalIndexName)))
+		httputil.Error(w, r, httputil.ErrAPIElasticUpdateTemplate, err)
+		return
+	}
+
+	response := struct {
+		LogicalIndexName string `json:"logicalIndexName"`
+	}{
+		LogicalIndexName: logicalIndexName,
+	}
+
+	httputil.JSON(w, r, response)
 }

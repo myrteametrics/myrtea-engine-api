@@ -80,6 +80,9 @@ var (
 	// ErrAPIElasticSelectFailed must be used when an Elasticsearch query fails
 	ErrAPIElasticSelectFailed = APIError{Status: http.StatusInternalServerError, ErrType: "ResourceError", Code: 4000, Message: `Failed to execute the query`}
 
+	// ErrAPIElasticUpdateTemplate must be used when an update of Elastic template query fails
+	ErrAPIElasticUpdateTemplate = APIError{Status: http.StatusInternalServerError, ErrType: "ResourceError", Code: 4000, Message: `Failed to execute the query`}
+
 	// ErrAPIProcessError must be used when an internal error occurred during the stack call
 	ErrAPIProcessError = APIError{Status: http.StatusInternalServerError, ErrType: "ProcessError", Code: 5000, Message: `Internal error has occurred during the process`}
 
