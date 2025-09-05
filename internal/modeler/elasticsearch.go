@@ -14,7 +14,7 @@ func UpdateElasticTemplate(model modeler.Model) (string, error) {
 	switch model.ElasticsearchOptions.Rollmode.Type {
 	case modeler.RollmodeCron:
 		var cronIndex *coordinator.LogicalIndexCron
-		cronIndex, _, err = coordinator.NewLogicalIndexCronTemplate(instanceName, model)
+		cronIndex, err = coordinator.NewLogicalIndexCron(instanceName, model)
 		if err == nil {
 			logicalIndexName = cronIndex.Name
 		}
