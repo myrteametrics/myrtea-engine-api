@@ -61,7 +61,7 @@ func engineRouter(services Services) http.Handler {
 	r.Post("/models/validate", handler.ValidateModel)
 	r.Put("/models/{id}", handler.PutModel)
 	r.Delete("/models/{id}", handler.DeleteModel)
-	r.Get("models/updateTemplate/{id}", handler.UpdateModelTemplate)
+	r.Get("/models/updateTemplate/{id}", handler.UpdateModelTemplate)
 
 	// r.Get("/crons", handler.GetAllCron)
 	// r.Post("/crons/start", handler.StartAllCron)
