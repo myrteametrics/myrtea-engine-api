@@ -18,6 +18,8 @@ import (
 
 // GetModels godoc
 //
+//	@Id				GetModels
+//
 //	@Summary		Get all model definitions
 //	@Description	Get all model definitions
 //	@Tags			Models
@@ -61,6 +63,8 @@ func GetModels(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetModel godoc
+//
+//	@Id				GetModel
 //
 //	@Summary		Get a model definition
 //	@Description	Get a model definition
@@ -129,6 +133,8 @@ func GetModel(w http.ResponseWriter, r *http.Request) {
 
 // ValidateModel godoc
 //
+//	@Id				ValidateModel
+//
 //	@Summary		Validate a new model definition
 //	@Description	Validate a new model definition
 //	@Tags			Models
@@ -160,6 +166,8 @@ func ValidateModel(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostModel godoc
+//
+//	@Id				PostModel
 //
 //	@Summary		Create a new model definition
 //	@Description	Create a new model definition
@@ -221,6 +229,8 @@ func PostModel(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutModel godoc
+//
+//	@Id				PutModel
 //
 //	@Summary		Create or remplace a model definition
 //	@Description	Create or remplace a model definition
@@ -288,6 +298,8 @@ func PutModel(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteModel godoc
+//
+//	@Id				DeleteModel
 //
 //	@Summary		Delete a model definition
 //	@Description	Delete a model definition

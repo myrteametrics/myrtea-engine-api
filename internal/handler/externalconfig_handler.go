@@ -17,6 +17,8 @@ import (
 
 // GetExternalConfigs godoc
 //
+//	@Id				GetExternalConfigs
+//
 //	@Summary		Get all externalConfig definitions
 //	@Description	Get all externalConfig definitions
 //	@Tags			ExternalConfigs
@@ -54,6 +56,8 @@ func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetExternalConfig godoc
+//
+//	@Id				GetExternalConfig
 //
 //	@Summary		Get an externalConfig definition
 //	@Description	Get an externalConfig definition
@@ -94,6 +98,8 @@ func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 // GetExternalConfigByName godoc
 //
+//	@Id				GetExternalConfigByName
+//
 //	@Summary		Get an externalConfig definition
 //	@Description	Get an externalConfig definition
 //	@Tags			ExternalConfigs
@@ -131,6 +137,8 @@ func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostExternalConfig godoc
+//
+//	@Id				PostExternalConfig
 //
 //	@Summary		Create a new externalConfig definition
 //	@Description	Create a new externalConfig definition
@@ -184,12 +192,14 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 // PutExternalConfig godoc
 //
+//	@Id				PutExternalConfig
+//
 //	@Summary		Create or remplace an externalConfig definition
 //	@Description	Create or remplace an externalConfig definition
 //	@Tags			ExternalConfigs
 //	@Accept			json
 //	@Produce		json
-//	@Param			name			path	string					true	"ExternalConfig ID"
+//	@Param			name			path	string							true	"ExternalConfig ID"
 //	@Param			externalConfig	body	externalconfig.ExternalConfig	true	"ExternalConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
@@ -247,6 +257,8 @@ func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 // DeleteExternalConfig godoc
 //
+//	@Id				DeleteExternalConfig
+//
 //	@Summary		Delete an externalConfig definition
 //	@Description	Delete an externalConfig definition
 //	@Tags			ExternalConfigs
@@ -287,13 +299,15 @@ func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 
 // GetAllOldVersions godoc
 //
+//	@Id				GetAllOldVersions
+//
 //	@Summary		Get all old versions of a specific externalConfig
 //	@Description	Get all old versions of a specific externalConfig by id
 //	@Tags			ExternalConfigs
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Param			id	path	int						true	"ExternalConfig ID"
+//	@Param			id	path	int								true	"ExternalConfig ID"
 //	@Success		200	{array}	externalconfig.ExternalConfig	"list of all old versions of the externalConfig"
 //	@Failure		400	"bad request"
 //	@Failure		500	"internal server error"

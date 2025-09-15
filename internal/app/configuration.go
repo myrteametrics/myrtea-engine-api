@@ -52,6 +52,9 @@ var AllowedConfigKey = [][]helpers.ConfigKey{
 		{Type: helpers.StringFlag, Name: "ENABLE_CRONS_ON_START", DefaultValue: "true", Description: "Enable crons on startup"},
 		{Type: helpers.StringFlag, Name: "AUTHENTICATION_MODE", DefaultValue: "BASIC", Description: "Authentication mode"},
 		{Type: helpers.StringFlag, Name: "MAX_EXTERNAL_CONFIG_VERSIONS_TO_KEEP", DefaultValue: 5, Description: "Maximum number of historical versions to keep for external configurations. When a new version is added, versions exceeding this number will be deleted, starting with the oldest."},
+		{Type: helpers.StringFlag, Name: "MAX_CONFIG_HISTORY_RECORDS", DefaultValue: 100, Description: "Maximum number of historical versions to keep for configuration history. When a new version is added, versions exceeding this number will be deleted, starting with the oldest."},
+		{Type: helpers.StringFlag, Name: "API_KEY_CACHE_DURATION", DefaultValue: "1h", Description: "Specify the duration for how long the API token will be cached."},
+		{Type: helpers.StringFlag, Name: "AUTHENTICATION_CREATE_SUPERUSER", DefaultValue: "false", Description: "Create superuser if not exists"},
 	},
 }
 

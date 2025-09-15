@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/confighistory"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/connectorconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
@@ -66,6 +67,7 @@ func initRepositories() {
 	history.ReplaceGlobals(history.New(dbClient))
 	variablesconfig.ReplaceGlobals(variablesconfig.NewPostgresRepository(dbClient))
 	apikey.ReplaceGlobals(apikey.NewPostgresRepository(dbClient))
+	confighistory.ReplaceGlobals(confighistory.NewPostgresRepository(dbClient))
 }
 
 func initServices() {

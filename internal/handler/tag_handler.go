@@ -15,6 +15,8 @@ import (
 
 // GetTags godoc
 //
+//	@Id				GetTags
+//
 //	@Summary		Get all tag definitions
 //	@Description	Get all tag definitions
 //	@Tags			Tags
@@ -46,6 +48,8 @@ func GetTags(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetTag godoc
+//
+//	@Id				GetTag
 //
 //	@Summary		Get a tag definition
 //	@Description	Get a tag definition
@@ -89,6 +93,8 @@ func GetTag(w http.ResponseWriter, r *http.Request) {
 
 // ValidateTag godoc
 //
+//	@Id				ValidateTag
+//
 //	@Summary		Validate a new tag definition
 //	@Description	Validate a new tag definition
 //	@Tags			Tags
@@ -120,6 +126,8 @@ func ValidateTag(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostTag godoc
+//
+//	@Id				PostTag
 //
 //	@Summary		Create a new tag definition
 //	@Description	Create a new tag definition
@@ -177,6 +185,8 @@ func PostTag(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutTag godoc
+//
+//	@Id				PutTag
 //
 //	@Summary		Create or replace a tag definition
 //	@Description	Create or replace a tag definition
@@ -245,6 +255,8 @@ func PutTag(w http.ResponseWriter, r *http.Request) {
 
 // DeleteTag godoc
 //
+//	@Id				DeleteTag
+//
 //	@Summary		Delete a tag definition
 //	@Description	Delete a tag definition
 //	@Tags			Tags
@@ -281,6 +293,8 @@ func DeleteTag(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetTagsBySituation godoc
+//
+//	@Id				GetTagsBySituation
 //
 //	@Summary		Get all tags for a situation
 //	@Description	Get all tags associated with a specific situation
@@ -320,12 +334,14 @@ func GetTagsBySituation(w http.ResponseWriter, r *http.Request) {
 
 // AddTagToSituation godoc
 //
+//	@Id				AddTagToSituation
+//
 //	@Summary		Associate a tag with a situation
 //	@Description	Create a link between a tag and a situation
 //	@Tags			Tags
 //	@Produce		json
 //	@Param			situationId	path	string	true	"Situation ID"
-//	@Param			tagId	path	string	true	"Tag ID"
+//	@Param			tagId		path	string	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
@@ -383,12 +399,14 @@ func AddTagToSituation(w http.ResponseWriter, r *http.Request) {
 
 // RemoveTagFromSituation godoc
 //
+//	@Id				RemoveTagFromSituation
+//
 //	@Summary		Remove tag association from a situation
 //	@Description	Delete the link between a tag and a situation
 //	@Tags			Tags
 //	@Produce		json
 //	@Param			situationId	path	string	true	"Situation ID"
-//	@Param			tagId	path	string	true	"Tag ID"
+//	@Param			tagId		path	string	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
@@ -433,6 +451,8 @@ func RemoveTagFromSituation(w http.ResponseWriter, r *http.Request) {
 
 // GetTagsByTemplateInstance godoc
 //
+//	@Id				GetTagsByTemplateInstance
+//
 //	@Summary		Get all tags for a template instance
 //	@Description	Get all tags associated with a specific template instance
 //	@Tags			Tags
@@ -472,12 +492,14 @@ func GetTagsByTemplateInstance(w http.ResponseWriter, r *http.Request) {
 
 // AddTagToTemplateInstance godoc
 //
+//	@Id				AddTagToTemplateInstance
+//
 //	@Summary		Associate a tag with a template instance
 //	@Description	Create a link between a tag and a template instance
 //	@Tags			Tags
 //	@Produce		json
 //	@Param			instanceId	path	string	true	"Template Instance ID"
-//	@Param			tagId	path	string	true	"Tag ID"
+//	@Param			tagId		path	string	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
@@ -535,12 +557,14 @@ func AddTagToTemplateInstance(w http.ResponseWriter, r *http.Request) {
 
 // RemoveTagFromTemplateInstance godoc
 //
+//	@Id				RemoveTagFromTemplateInstance
+//
 //	@Summary		Remove tag association from a template instance
 //	@Description	Delete the link between a tag and a template instance
 //	@Tags			Tags
 //	@Produce		json
 //	@Param			instanceId	path	string	true	"Template Instance ID"
-//	@Param			tagId	path	string	true	"Tag ID"
+//	@Param			tagId		path	string	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
@@ -585,6 +609,8 @@ func RemoveTagFromTemplateInstance(w http.ResponseWriter, r *http.Request) {
 
 // GetAllSituationsTags godoc
 //
+//	@Id				GetAllSituationsTags
+//
 //	@Summary		Get all tags for all situations
 //	@Description	Get all tags grouped by situation ID
 //	@Tags			Tags
@@ -615,4 +641,49 @@ func GetAllSituationsTags(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, r, result)
+}
+
+// GetSituationTemplateInstanceTags godoc
+//
+//	@Id				GetSituationTemplateInstanceTags
+//
+//	@Summary		Get all tags for template instances in a situation
+//	@Description	Get all tags associated with template instances in a specific situation
+//	@Tags			Tags
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Param			situationId	path	string	true	"Situation ID"
+//	@Success		200	{object}	map[string][]tag.Tag	"map of template instance IDs to tags"
+//	@Failure		500	"internal server error"
+//	@Router			/engine/tags/situations/{situationId}/instances [get]
+func GetSituationTemplateInstanceTags(w http.ResponseWriter, r *http.Request) {
+	situationId := chi.URLParam(r, "situationId")
+	idSituation, err := strconv.ParseInt(situationId, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error on parsing situation id", zap.String("situationID", situationId), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeTag, permissions.All, permissions.ActionList)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	templateInstancesTags, err := tag.R().GetSituationInstanceTags(idSituation)
+	if err != nil {
+		zap.L().Error("Error getting all template instances tags", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	// Convert map[int64][]Tag to map[string][]Tag for JSON rendering
+	result := make(map[string][]tag.Tag)
+	for situationID, tags := range templateInstancesTags {
+		result[strconv.FormatInt(situationID, 10)] = tags
+	}
+
+	httputil.JSON(w, r, templateInstancesTags)
 }

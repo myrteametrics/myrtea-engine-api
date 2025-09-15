@@ -11,6 +11,7 @@ import (
 	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internal/router/oidc"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
 	httputil2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
+	ttlcache "github.com/myrteametrics/myrtea-sdk/v5/cache"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
 	sdkrouter "github.com/myrteametrics/myrtea-sdk/v5/router"
 	sdksecurity "github.com/myrteametrics/myrtea-sdk/v5/security"
@@ -39,6 +40,7 @@ type Services struct {
 	ProcessorHandler *handler.ProcessorHandler
 	ExportHandler    *handler.ExportHandler
 	ServiceHandler   *handler.ServiceHandler
+	ApiKeyHandler    *handler.ApikeyHandler
 }
 
 const (
@@ -117,7 +119,7 @@ func New(config Config, services Services) *chi.Mux {
 	signingKey := []byte(sdksecurity.RandString(128))
 	jwtAuth := jwtauth.New("HS256", signingKey, nil)
 
-	dynamicMiddleware := dynamicAuthMiddleware(config, jwtAuth)
+	dynamicMiddleware := dynamicAuthMiddleware(config, jwtAuth, services.ApiKeyHandler.Cache)
 
 	routes := func(r chi.Router) {
 		// Public routes
@@ -139,7 +141,7 @@ func New(config Config, services Services) *chi.Mux {
 			// Public routes
 			rg.Get("/authmode", handler.GetAuthenticationMode)
 			rg.Get("/engine/issues/unprotected", handler.GetIssuesByStatesByPageUnProtected)
-			rg.Get("/engine/security/apikey/validate", handler.ValidateAPIKey)
+			rg.Get("/engine/security/apikey/validate", services.ApiKeyHandler.ValidateAPIKey)
 			rg.Get("/engine/situations/{id}/instances/unprotected", handler.GetSituationTemplateInstancesUnprotected)
 		})
 
@@ -169,7 +171,7 @@ func New(config Config, services Services) *chi.Mux {
 				rg.Use(dynamicMiddleware)
 			}
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
-			rg.Mount("/admin", adminRouter())
+			rg.Mount("/admin", adminRouter(services))
 		})
 
 		// System intra service Protection routes
@@ -186,43 +188,39 @@ func New(config Config, services Services) *chi.Mux {
 }
 
 // dynamicAuthMiddleware selects the appropriate authentication middleware
-func dynamicAuthMiddleware(config Config, jwtAuth *jwtauth.JWTAuth) func(http.Handler) http.Handler {
+func dynamicAuthMiddleware(config Config, jwtAuth *jwtauth.JWTAuth, apiKeyCache *ttlcache.Cache) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if apiKey := r.Header.Get(HeaderKeyApiKey); apiKey != "" {
 				zap.L().Debug("Using API Key authentication")
-
-				handler := ContextMiddlewareApiKey(next)
-				handler.ServeHTTP(w, r)
+				ContextMiddlewareApiKey(next, apiKeyCache).ServeHTTP(w, r)
 				return
 			}
 
 			switch config.AuthenticationMode {
 			case AuthModeBasic:
 				if config.GatewayMode {
-					handler := sdkrouter.UnverifiedAuthenticator(next)
-					handler.ServeHTTP(w, r)
+					sdkrouter.UnverifiedAuthenticator(next).ServeHTTP(w, r)
 				} else {
-					handler := ContextMiddleware(next)
+					ctxMiddleware := ContextMiddleware(next)
 					jwtVerifier := jwtauth.Verify(jwtAuth,
 						jwtauth.TokenFromQuery,
 						jwtauth.TokenFromHeader,
 						jwtauth.TokenFromCookie)
-					handler = CustomAuthenticator(handler)
-					handler = jwtVerifier(handler)
+					ctxMiddleware = CustomAuthenticator(ctxMiddleware)
+					ctxMiddleware = jwtVerifier(ctxMiddleware)
 
-					handler.ServeHTTP(w, r)
+					ctxMiddleware.ServeHTTP(w, r)
 				}
 
 			case AuthModeOIDC:
 				if config.GatewayMode {
 					zap.L().Warn("Request with OIDC mode in Gateway mode - falling back to BASIC")
-					handler := sdkrouter.UnverifiedAuthenticator(next)
-					handler.ServeHTTP(w, r)
+					sdkrouter.UnverifiedAuthenticator(next).ServeHTTP(w, r)
 				} else {
-					handler := oidcAuth.ContextMiddleware(next)
-					handler = oidcAuth.OIDCMiddleware(handler)
-					handler.ServeHTTP(w, r)
+					ctxMiddleware := oidcAuth.ContextMiddleware(next)
+					ctxMiddleware = oidcAuth.OIDCMiddleware(ctxMiddleware)
+					ctxMiddleware.ServeHTTP(w, r)
 				}
 
 			default:

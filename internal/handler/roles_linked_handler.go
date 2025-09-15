@@ -15,6 +15,8 @@ import (
 
 // GetRolePermissions godoc
 //
+//	@Id				GetRolePermissions
+//
 //	@Summary		Get all permissions associated with a role
 //	@Description	Get all permissions associated with a specified role id
 //	@Tags			Roles

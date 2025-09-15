@@ -869,3 +869,81 @@ func (r *PostgresRepository) GetAllTemplateInstances(situationID int64, parsePar
 
 	return templateInstances, nil
 }
+
+// GetSituationOverview returns an overview of situations + their template instances
+func (r *PostgresRepository) GetSituationOverview() ([]SituationOverview, error) {
+	// Build query using Squirrel
+	query := r.newStatement().
+		Select(
+			"sd.id as situation_id",
+			"sd.name as situation_name",
+			"sd.is_template",
+			"COALESCE(ARRAY_AGG(DISTINCT ts.tag_id) FILTER (WHERE ts.tag_id IS NOT NULL), '{}') as situation_tags",
+			"sti.id as instance_id",
+			"sti.name as instance_name",
+			"COALESCE(ARRAY_AGG(DISTINCT tsti.tag_id) FILTER (WHERE tsti.tag_id IS NOT NULL), '{}') as instance_tags",
+		).
+		From("situation_definition_v1 sd").
+		LeftJoin("tags_situations_v1 ts ON sd.id = ts.situation_id").
+		LeftJoin("situation_template_instances_v1 sti ON sd.id = sti.situation_id").
+		LeftJoin("tags_situation_template_instances_v1 tsti ON sti.id = tsti.situation_template_instance_id").
+		GroupBy("sd.id", "sd.name", "sd.is_template", "sti.id", "sti.name").
+		OrderBy("sd.id", "sti.id")
+
+	rows, err := query.Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Map to build the hierarchical structure
+	situationMap := make(map[int64]*SituationOverview)
+	var result []SituationOverview
+
+	for rows.Next() {
+		var situationID int64
+		var situationName string
+		var isTemplate bool
+		var situationTags pq.Int64Array
+		var instanceID sql.NullInt64
+		var instanceName sql.NullString
+		var instanceTags pq.Int64Array
+
+		err := rows.Scan(&situationID, &situationName, &isTemplate, &situationTags,
+			&instanceID, &instanceName, &instanceTags)
+		if err != nil {
+			return nil, err
+		}
+
+		// Get or create the situation overview
+		situation, exists := situationMap[situationID]
+		if !exists {
+			situation = &SituationOverview{
+				ID:                situationID,
+				Name:              situationName,
+				IsTemplate:        isTemplate,
+				Tags:              situationTags,
+				InstanceTemplates: []SituationOverview{},
+			}
+			situationMap[situationID] = situation
+		}
+
+		// Add template instance if it exists
+		if instanceID.Valid {
+			instance := SituationOverview{
+				ID:         instanceID.Int64,
+				Name:       instanceName.String,
+				IsTemplate: false,
+				Tags:       []int64(instanceTags),
+			}
+			situation.InstanceTemplates = append(situation.InstanceTemplates, instance)
+		}
+	}
+
+	// Convert map to slice
+	for _, situation := range situationMap {
+		result = append(result, *situation)
+	}
+
+	return result, nil
+}

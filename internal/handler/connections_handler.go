@@ -11,6 +11,8 @@ import (
 
 // GetLastConnectorExecutionDateTime godoc
 //
+//	@Id				GetLastConnectorExecutionDateTime
+//
 //	@Summary		Get the DateTime of the last connections readings
 //	@Description	Gets the DateTime of the last connections readings.
 //	@Tags			Admin

@@ -13,6 +13,8 @@ import (
 
 // GetNotifications godoc
 //
+//	@Id				GetNotifications
+//
 //	@Summary		Get all notifications
 //	@Description	Get all notifications of the authentified user
 //	@Tags			Notifications
@@ -71,6 +73,8 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateRead godoc
+//
+//	@Id				UpdateRead
 //
 //	@Summary		Update the "read" status of the notification
 //	@Description	Mark a notification as "read"

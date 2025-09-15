@@ -21,7 +21,7 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 		return history.GetHistorySituationsOptions{}, httputil.ErrAPIParsingInteger, err
 	}
 
-	situationInstanceID, err := QueryParamToOptionalInt64(r, "situationinstanceid", -1)
+	situationInstanceIDs, err := QueryParamToInt64Slice(r, "situationinstanceid")
 	if err != nil {
 		zap.L().Warn("Error on parsing situationinstanceid", zap.String("situationInstanceID", r.URL.Query().Get("situationinstanceid")), zap.Error(err))
 		return history.GetHistorySituationsOptions{}, httputil.ErrAPIParsingInteger, err
@@ -50,11 +50,11 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 	}
 
 	options := history.GetHistorySituationsOptions{
-		SituationID:         situationID,
-		SituationInstanceID: situationInstanceID,
-		ParameterFilters:    parameterFilters,
-		FromTS:              minDate,
-		ToTS:                maxDate,
+		SituationID:          situationID,
+		SituationInstanceIDs: situationInstanceIDs,
+		ParameterFilters:     parameterFilters,
+		FromTS:               minDate,
+		ToTS:                 maxDate,
 	}
 
 	return options, httputil.APIError{}, nil
@@ -62,13 +62,15 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 
 // SearchLast Search godoc
 //
+//	@Id				SearchLast Search
+//
 //	@Summary		query situation history data
 //	@Description	query situation history data
 //	@Tags			Search
 //	@Accept			json
 //	@Produce		json
 //	@Param			situationid			query	int		false	"situationid"
-//	@Param			situationinstanceid	query	int		false	"situationinstanceid"
+//	@Param			situationinstanceid	query	[]int	false	"situationinstanceid"
 //	@Param			maxdate				query	string	false	"time.Time"
 //	@Param			mindate				query	string	false	"time.Time"
 //	@Security		Bearer
@@ -109,13 +111,15 @@ func SearchLast(w http.ResponseWriter, r *http.Request) {
 
 // SearchLastByInterval godoc
 //
+//	@Id				SearchLastByInterval
+//
 //	@Summary		query situation history data
 //	@Description	query situation history data
 //	@Tags			Search
 //	@Accept			json
 //	@Produce		json
 //	@Param			situationid			query	int		false	"situationid"
-//	@Param			situationinstanceid	query	int		false	"situationinstanceid"
+//	@Param			situationinstanceid	query	[]int	false	"situationinstanceid"
 //	@Param			maxdate				query	string	false	"time.Time"
 //	@Param			mindate				query	string	false	"time.Time"
 //	@Param			interval			query	string	true	"year | quarter | month | week | day | hour | minute"
@@ -164,13 +168,15 @@ func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 
 // SearchLastByCustomInterval godoc
 //
+//	@Id				SearchLastByCustomInterval
+//
 //	@Summary		query situation history data
 //	@Description	query situation history data
 //	@Tags			Search
 //	@Accept			json
 //	@Produce		json
 //	@Param			situationid			query	int		false	"situationid"
-//	@Param			situationinstanceid	query	int		false	"situationinstanceid"
+//	@Param			situationinstanceid	query	[]int	false	"situationinstanceid"
 //	@Param			maxdate				query	string	false	"time.Time"
 //	@Param			mindate				query	string	false	"time.Time"
 //	@Param			referencedate		query	string	true	"time.Time"

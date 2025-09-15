@@ -20,6 +20,8 @@ type Repository interface {
 	GetAllForRole(roleUUID uuid.UUID) ([]User, error)
 
 	SetUserRoles(userUUID uuid.UUID, roleUUIDs []uuid.UUID) error
+
+	CreateSuperUserIfNotExists() error
 }
 
 var (

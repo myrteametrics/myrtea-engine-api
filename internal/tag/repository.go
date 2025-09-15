@@ -16,6 +16,8 @@ type Repository interface {
 	DeleteLinkWithSituation(tagID int64, situationID int64) error
 	GetTagsBySituationId(situationId int64) ([]Tag, error)
 
+	GetSituationInstanceTags(situationId int64) (map[int64][]Tag, error)
+
 	CreateLinkWithTemplateInstance(tagID int64, templateInstanceID int64) error
 	DeleteLinkWithTemplateInstance(tagID int64, templateInstanceID int64) error
 	GetTagsByTemplateInstanceId(templateInstanceId int64) ([]Tag, error)

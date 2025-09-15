@@ -19,6 +19,14 @@ type Situation struct {
 	IsObject        bool                   `json:"isObject"`
 }
 
+type SituationOverview struct {
+	ID                int64               `json:"id"`
+	Name              string              `json:"name"`
+	Tags              []int64             `json:"tags"`
+	IsTemplate        bool                `json:"isTemplate"`
+	InstanceTemplates []SituationOverview `json:"instanceTemplates,omitempty"`
+}
+
 // ExpressionFact represent a custom calculated fact based on gval expression
 type ExpressionFact struct {
 	Name       string `json:"name"`

@@ -12,13 +12,17 @@ import (
 	"go.uber.org/zap"
 )
 
-func DraftIssues(idIssues []int64, user users.User, status *model.DraftIssuesStatus) {
+func DraftIssues(idIssues []int64, user users.User, status *model.DraftIssuesStatus, comment *string) {
 	for _, idIssue := range idIssues {
 		issue, _, err := issues.R().Get(idIssue)
 		if err != nil {
 			zap.L().Error("Cannot retrieve issue", zap.Error(err), zap.Int64("Id Issues ", idIssue))
 			DrafHandleError(status, idIssue, err, httputil.ErrAPIDBSelectFailed)
 			continue
+		}
+
+		if comment != nil && *comment != "" {
+			issue.Comment = comment
 		}
 
 		tree, err := GetRecommendationTree(issue)
