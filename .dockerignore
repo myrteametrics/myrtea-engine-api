@@ -3,3 +3,4 @@
 /vendor
 /coverage
 /document
+plugin/*

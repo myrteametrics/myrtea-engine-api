@@ -164,16 +164,16 @@ func (logicalIndex *LogicalIndexCron) putAlias(name, indexPattern, modelName str
 }
 
 func (logicalIndex *LogicalIndexCron) putTemplate(name string, indexPattern string, model modeler.Model) {
-	req := elasticsearch.NewPutTemplateRequestV8([]string{indexPattern}, model)
+	req := elasticsearch.NewPutIndexTemplateRequestV8([]string{indexPattern}, model)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
-	response, err := elasticsearch.C().Indices.PutTemplate(name).Request(req).Do(ctx)
+	response, err := elasticsearch.C().Indices.PutIndexTemplate(name).Request(req).Do(ctx)
 	if err != nil {
-		zap.L().Error("PutTemplate", zap.Error(err))
+		zap.L().Error("PutIndexTemplate", zap.Error(err))
 	}
 	if !response.Acknowledged {
-		zap.L().Error("PutTemplate failed")
+		zap.L().Error("PutIndexTemplate failed")
 	}
 }
 

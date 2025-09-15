@@ -75,6 +75,7 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 	// Build the SQL query and arguments
 	query, args, err := insertBuilder.ToSql()
 	if err != nil {
+		tx.Rollback()
 		return -1, err
 	}
 
@@ -89,6 +90,7 @@ func (r *PostgresRulesRepository) Create(rule Rule) (int64, error) {
 	rule.ID = ruleID
 	ruledata, err := json.Marshal(rule)
 	if err != nil {
+		tx.Rollback()
 		return -1, errors.New("failed to marshall the rule:" + rule.Name +
 			"\nError from Marshal" + err.Error())
 	}

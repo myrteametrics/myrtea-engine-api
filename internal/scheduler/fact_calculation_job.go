@@ -315,7 +315,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 
 		}
 	}
-	// zap.L().Sugar().Info("situationToUpdate ", situationsToUpdate)
+
 	return situationsToUpdate, nil
 }
 
@@ -557,8 +557,6 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 				FactID:             historyFactNew.FactID,
 			})
 		}
-
-		// zap.L().Sugar().Info("historySituationFactNew", historySituationFactNew)
 
 		err = history.S().HistorySituationFactsQuerier.Execute(history.S().HistorySituationFactsQuerier.Builder.InsertBulk(historySituationFactNew))
 		if err != nil {

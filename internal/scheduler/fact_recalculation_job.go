@@ -18,21 +18,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// import (
-// 	"errors"
-// 	"fmt"
-// 	"time"
-
-// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
-// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/evaluator"
-// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
-// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
-// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tasker"
-// 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
-// 	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
-// 	"go.uber.org/zap"
-// )
-
 // FactRecalculationJob represent a scheduler job instance which process a group of facts, and persist the result in postgresql
 // It also generate situations, persists them and notify the rule engine to evaluate them
 type FactRecalculationJob struct {
