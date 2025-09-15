@@ -2,7 +2,7 @@ package scheduler
 
 import (
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
 	"time"
