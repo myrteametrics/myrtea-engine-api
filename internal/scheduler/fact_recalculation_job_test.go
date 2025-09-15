@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8"
 	calendar2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
-	fact2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
@@ -91,7 +91,7 @@ func TestFactRecalculationJobRun(t *testing.T) {
 	db := tests.DBClient(t)
 	postgres.ReplaceGlobals(db)
 	history.ReplaceGlobals(history.New(db))
-	fact2.ReplaceGlobals(fact2.NewPostgresRepository(db))
+	fact.ReplaceGlobals(fact.NewPostgresRepository(db))
 	situation2.ReplaceGlobals(situation2.NewPostgresRepository(db))
 	rule.ReplaceGlobals(rule.NewPostgresRepository(db))
 	calendar2.ReplaceGlobals(calendar2.NewPostgresRepository(db))

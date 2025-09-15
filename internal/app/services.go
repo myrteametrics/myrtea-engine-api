@@ -10,7 +10,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tag"
 	calendar2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/email"
-	fact2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	roles2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
 	users2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
@@ -45,7 +45,7 @@ func initRepositories() {
 	users2.ReplaceGlobals(users2.NewPostgresRepository(dbClient))
 	roles2.ReplaceGlobals(roles2.NewPostgresRepository(dbClient))
 	permissions.ReplaceGlobals(permissions.NewPostgresRepository(dbClient))
-	fact2.ReplaceGlobals(fact2.NewPostgresRepository(dbClient))
+	fact.ReplaceGlobals(fact.NewPostgresRepository(dbClient))
 	situation2.ReplaceGlobals(situation2.NewPostgresRepository(dbClient))
 	scheduler.ReplaceGlobalRepository(scheduler.NewPostgresRepository(dbClient))
 	notification.ReplaceGlobals(notification.NewPostgresRepository(dbClient))
