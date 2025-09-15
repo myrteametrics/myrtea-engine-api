@@ -1,11 +1,11 @@
 package explainer
 
 import (
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/issues"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/history"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
