@@ -259,6 +259,7 @@ func engineRouter(services Services) http.Handler {
 		r.Post("/interval", handler.GetConfigHistoriesByInterval)
 	})
 
+	r.Post("/expression/evaluate", handler.EvaluateExpression)
 	return r
 }
 
