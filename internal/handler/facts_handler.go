@@ -561,7 +561,7 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 // @Tags Facts
 // @Consumme json
 // @Produce json
-// @Param fact body interface{} true "Fact definition (json)"
+// @Param fact body engine.Fact true "Fact definition (json)"
 // @Param time query string true "Timestamp used for the fact execution"
 // @Param nhit query int false "Hit per page"
 // @Param offset query int false "Offset number"
