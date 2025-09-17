@@ -195,6 +195,14 @@ func engineRouter(services Services) http.Handler {
 	r.Put("/calendars/{id}", handler.PutCalendar)
 	r.Delete("/calendars/{id}", handler.DeleteCalendar)
 
+	// Email Templates
+	r.Get("/templates", handler.GetTemplates)
+	r.Get("/templates/{id}", handler.GetTemplate)
+	r.Get("/templates/name/{name}", handler.GetTemplateByName)
+	r.Post("/templates", handler.PostTemplate)
+	r.Put("/templates/{id}", handler.PutTemplate)
+	r.Delete("/templates/{id}", handler.DeleteTemplate)
+
 	r.Get("/connector/{id}/executions/last", handler.GetLastConnectorExecutionDateTime)
 
 	// exports
