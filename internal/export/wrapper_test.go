@@ -36,34 +36,34 @@ func TestFactsEquals(t *testing.T) {
 }
 
 func TestNewWrapperItem(t *testing.T) {
-	// Test with gzipped = false (default)
-	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test", CSVParameters{Gzipped: false}, users.User{Login: "test"}, make(map[string]interface{}), false)
+	// Test with UncompressedOutput = false (default, gzip enabled)
+	item := NewWrapperItem([]engine.Fact{{ID: 1}}, "test", CSVParameters{UncompressedOutput: false}, users.User{Login: "test"}, make(map[string]interface{}), false)
 	expression.AssertNotEqual(t, item.Id, "")
 	expression.AssertEqual(t, factsEquals(item.Facts, []engine.Fact{{ID: 1}}), true)
-	expression.AssertEqual(t, item.Params.Equals(CSVParameters{Gzipped: false}), true)
+	expression.AssertEqual(t, item.Params.Equals(CSVParameters{UncompressedOutput: false}), true)
 	expression.AssertEqual(t, item.Status, StatusPending)
-	expression.AssertEqual(t, item.FileName, "test.csv")
+	expression.AssertEqual(t, item.FileName, "test.csv.gz")
 	expression.AssertNotEqual(t, len(item.Users), 0)
 	expression.AssertEqual(t, item.Users[0], "test")
 
-	// Test with gzipped = true
-	item = NewWrapperItem([]engine.Fact{{ID: 1}}, "test", CSVParameters{Gzipped: true}, users.User{Login: "test"}, make(map[string]interface{}), false)
-	expression.AssertEqual(t, item.FileName, "test.csv.gz")
-
-	// Test with existing .csv.gz extension and gzipped = true
-	item = NewWrapperItem([]engine.Fact{{ID: 1}}, "test.csv.gz", CSVParameters{Gzipped: true}, users.User{Login: "test"}, make(map[string]interface{}), false)
-	expression.AssertEqual(t, item.FileName, "test.csv.gz")
-
-	// Test with existing .csv extension and gzipped = false
-	item = NewWrapperItem([]engine.Fact{{ID: 1}}, "test.csv", CSVParameters{Gzipped: false}, users.User{Login: "test"}, make(map[string]interface{}), false)
+	// Test with UncompressedOutput = true (no gzip)
+	item = NewWrapperItem([]engine.Fact{{ID: 1}}, "test", CSVParameters{UncompressedOutput: true}, users.User{Login: "test"}, make(map[string]interface{}), false)
 	expression.AssertEqual(t, item.FileName, "test.csv")
 
-	// test file name formatting with hash prefix and gzipped = true
-	item = NewWrapperItem([]engine.Fact{{ID: 1}}, "test", CSVParameters{Gzipped: true}, users.User{Login: "test"}, make(map[string]interface{}), true)
+	// Test with existing .csv.gz extension and UncompressedOutput = false
+	item = NewWrapperItem([]engine.Fact{{ID: 1}}, "test.csv.gz", CSVParameters{UncompressedOutput: false}, users.User{Login: "test"}, make(map[string]interface{}), false)
+	expression.AssertEqual(t, item.FileName, "test.csv.gz")
+
+	// Test with existing .csv extension and UncompressedOutput = true
+	item = NewWrapperItem([]engine.Fact{{ID: 1}}, "test.csv", CSVParameters{UncompressedOutput: true}, users.User{Login: "test"}, make(map[string]interface{}), false)
+	expression.AssertEqual(t, item.FileName, "test.csv")
+
+	// test file name formatting with hash prefix and UncompressedOutput = false (gzip enabled)
+	item = NewWrapperItem([]engine.Fact{{ID: 1}}, "test", CSVParameters{UncompressedOutput: false}, users.User{Login: "test"}, make(map[string]interface{}), true)
 	expression.AssertEqual(t, strings.HasSuffix(item.FileName, "test.csv.gz"), true, "Expected file name to end with test.csv.gz")
 
-	// test file name formatting with hash prefix and gzipped = false
-	item = NewWrapperItem([]engine.Fact{{ID: 1}}, "test", CSVParameters{Gzipped: false}, users.User{Login: "test"}, make(map[string]interface{}), true)
+	// test file name formatting with hash prefix and UncompressedOutput = true (no gzip)
+	item = NewWrapperItem([]engine.Fact{{ID: 1}}, "test", CSVParameters{UncompressedOutput: true}, users.User{Login: "test"}, make(map[string]interface{}), true)
 	expression.AssertEqual(t, strings.HasSuffix(item.FileName, "test.csv"), true, "Expected file name to end with test.csv")
 }
 
@@ -495,24 +495,24 @@ func TestWrapper_GetUserExport(t *testing.T) {
 }
 
 func TestNewWrapperItem_GzippedFilenames(t *testing.T) {
-	// Test that filename generation respects the Gzipped setting
+	// Test that filename generation respects the UncompressedOutput setting
 
-	// Test with Gzipped = true
-	paramsGzipped := CSVParameters{Gzipped: true}
+	// Test with UncompressedOutput = false (gzip enabled by default)
+	paramsGzipped := CSVParameters{UncompressedOutput: false}
 	item1 := NewWrapperItem(nil, "export_data", paramsGzipped, mockUser(), nil, false)
-	expression.AssertEqual(t, item1.FileName, "export_data.csv.gz", "Gzipped export should have .csv.gz extension")
+	expression.AssertEqual(t, item1.FileName, "export_data.csv.gz", "Compressed export should have .csv.gz extension")
 
-	// Test with Gzipped = false
-	paramsUncompressed := CSVParameters{Gzipped: false}
+	// Test with UncompressedOutput = true (no gzip)
+	paramsUncompressed := CSVParameters{UncompressedOutput: true}
 	item2 := NewWrapperItem(nil, "export_data", paramsUncompressed, mockUser(), nil, false)
 	expression.AssertEqual(t, item2.FileName, "export_data.csv", "Uncompressed export should have .csv extension")
 
-	// Test with hash prefix and Gzipped = true
+	// Test with hash prefix and UncompressedOutput = false (gzip enabled)
 	item3 := NewWrapperItem(nil, "export_data", paramsGzipped, mockUser(), nil, true)
 	expression.AssertEqual(t, len(item3.FileName) > len("export_data.csv.gz"), true, "Hash prefix should make filename longer")
-	expression.AssertEqual(t, item3.FileName[len(item3.FileName)-7:], ".csv.gz", "Gzipped export with hash should end with .csv.gz")
+	expression.AssertEqual(t, item3.FileName[len(item3.FileName)-7:], ".csv.gz", "Compressed export with hash should end with .csv.gz")
 
-	// Test with hash prefix and Gzipped = false
+	// Test with hash prefix and UncompressedOutput = true (no gzip)
 	item4 := NewWrapperItem(nil, "export_data", paramsUncompressed, mockUser(), nil, true)
 	expression.AssertEqual(t, len(item4.FileName) > len("export_data.csv"), true, "Hash prefix should make filename longer")
 	expression.AssertEqual(t, item4.FileName[len(item4.FileName)-4:], ".csv", "Uncompressed export with hash should end with .csv")

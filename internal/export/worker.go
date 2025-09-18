@@ -136,8 +136,9 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 	var csvWriter *csv.Writer
 	var gzipWriter *gzip.Writer
 
-	// Conditionally apply gzip compression based on the Gzipped parameter
-	if item.Params.Gzipped {
+	// Conditionally apply gzip compression based on the UncompressedOutput parameter
+	// Gzip is enabled by default unless UncompressedOutput is true
+	if !item.Params.UncompressedOutput {
 		// opens a gzip writer
 		gzipWriter = gzip.NewWriter(file)
 		defer gzipWriter.Close()

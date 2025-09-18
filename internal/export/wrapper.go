@@ -98,7 +98,7 @@ func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, use
 
 	var fileName string
 	extension := ".csv"
-	if params.Gzipped {
+	if !params.UncompressedOutput {
 		extension = ".csv.gz"
 	}
 
@@ -106,9 +106,9 @@ func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, use
 		// add random string to avoid multiple files with same name
 		fileName = sdksecurity.RandStringWithCharset(5, randCharSet) + "_" +
 			strings.ReplaceAll(title, " ", "_") + extension
-	} else if params.Gzipped && !strings.HasSuffix(title, ".csv.gz") {
+	} else if !params.UncompressedOutput && !strings.HasSuffix(title, ".csv.gz") {
 		fileName = strings.ReplaceAll(title, " ", "_") + extension
-	} else if !params.Gzipped && !strings.HasSuffix(title, ".csv") {
+	} else if params.UncompressedOutput && !strings.HasSuffix(title, ".csv") {
 		fileName = strings.ReplaceAll(title, " ", "_") + extension
 	} else {
 		fileName = strings.ReplaceAll(title, " ", "_")
