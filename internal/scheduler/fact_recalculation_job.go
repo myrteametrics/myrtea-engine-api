@@ -3,12 +3,12 @@ package scheduler
 import (
 	"encoding/json"
 	"errors"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tasker"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/history"

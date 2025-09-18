@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
@@ -12,7 +13,6 @@ import (
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tasker"
