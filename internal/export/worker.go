@@ -133,11 +133,20 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 	}
 	defer file.Close()
 
-	// opens a gzip writer
-	gzipWriter := gzip.NewWriter(file)
-	defer gzipWriter.Close()
+	var csvWriter *csv.Writer
+	var gzipWriter *gzip.Writer
 
-	csvWriter := csv.NewWriter(gzipWriter)
+	// Conditionally apply gzip compression based on the Gzipped parameter
+	if item.Params.Gzipped {
+		// opens a gzip writer
+		gzipWriter = gzip.NewWriter(file)
+		defer gzipWriter.Close()
+		csvWriter = csv.NewWriter(gzipWriter)
+	} else {
+		// write directly to file without compression
+		csvWriter = csv.NewWriter(file)
+	}
+
 	streamedExport := NewStreamedExport()
 	var wg sync.WaitGroup
 	var writerErr error
@@ -154,7 +163,7 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 	 *    - Export goroutine: each fact is processed one by one
 	 *      Each bulk of data is sent through a channel to the receiver
 	 *    - The receiver handles the incoming channel data and converts them to the CSV format
-	 *      After the conversion, the data is written and gzipped to a local file
+	 *      After the conversion, the data is written to a local file (optionally gzipped)
 	 */
 
 	go func() {
@@ -239,7 +248,9 @@ loop:
 		}
 
 		// close writer and file access before trying to delete file
-		_ = gzipWriter.Close()
+		if gzipWriter != nil {
+			_ = gzipWriter.Close()
+		}
 		_ = file.Close()
 
 		err = os.Remove(path)

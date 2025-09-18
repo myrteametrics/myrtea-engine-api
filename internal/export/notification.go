@@ -2,8 +2,9 @@ package export
 
 import (
 	"encoding/json"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier/notification"
 	"reflect"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier/notification"
 )
 
 const (

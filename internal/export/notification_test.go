@@ -1,10 +1,11 @@
 package export
 
 import (
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier/notification"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
-	"testing"
 )
 
 func TestExportNotification(t *testing.T) {

@@ -1,11 +1,12 @@
 package export
 
 import (
+	"testing"
+
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
-	"testing"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/coordinator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/modeler"

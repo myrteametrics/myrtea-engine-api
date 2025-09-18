@@ -2,14 +2,15 @@ package export
 
 import (
 	"context"
-	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
-	sdksecurity "github.com/myrteametrics/myrtea-sdk/v5/security"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
+	sdksecurity "github.com/myrteametrics/myrtea-sdk/v5/security"
 
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier"
@@ -96,13 +97,19 @@ func NewWrapperItem(facts []engine.Fact, title string, params CSVParameters, use
 	}
 
 	var fileName string
+	extension := ".csv"
+	if params.Gzipped {
+		extension = ".csv.gz"
+	}
+
 	if addHashPrefix {
-		// file extension should be gz
 		// add random string to avoid multiple files with same name
 		fileName = sdksecurity.RandStringWithCharset(5, randCharSet) + "_" +
-			strings.ReplaceAll(title, " ", "_") + ".csv.gz"
-	} else if !strings.HasSuffix(title, ".csv.gz") {
-		fileName = strings.ReplaceAll(title, " ", "_") + ".csv.gz"
+			strings.ReplaceAll(title, " ", "_") + extension
+	} else if params.Gzipped && !strings.HasSuffix(title, ".csv.gz") {
+		fileName = strings.ReplaceAll(title, " ", "_") + extension
+	} else if !params.Gzipped && !strings.HasSuffix(title, ".csv") {
+		fileName = strings.ReplaceAll(title, " ", "_") + extension
 	} else {
 		fileName = strings.ReplaceAll(title, " ", "_")
 	}

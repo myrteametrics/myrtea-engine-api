@@ -7,6 +7,7 @@ type CSVParameters struct {
 	Separator     string   `json:"separator"`
 	Limit         int64    `json:"limit"`
 	ListSeparator string   `json:"listSeparator"`
+	Gzipped       bool     `json:"gzipped"`
 }
 
 type Column struct {
@@ -35,6 +36,9 @@ func (p CSVParameters) Equals(params CSVParameters) bool {
 		return false
 	}
 	if p.Limit != params.Limit {
+		return false
+	}
+	if p.Gzipped != params.Gzipped {
 		return false
 	}
 	for i, column := range p.Columns {
