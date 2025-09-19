@@ -3,10 +3,11 @@ package export
 import (
 	"context"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"strings"
 	"time"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 
 	es "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
