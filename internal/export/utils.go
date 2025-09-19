@@ -3,10 +3,11 @@ package export
 import "github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier/notification"
 
 type CSVParameters struct {
-	Columns       []Column `json:"columns"`
-	Separator     string   `json:"separator"`
-	Limit         int64    `json:"limit"`
-	ListSeparator string   `json:"listSeparator"`
+	Columns            []Column `json:"columns"`
+	Separator          string   `json:"separator"`
+	Limit              int64    `json:"limit"`
+	ListSeparator      string   `json:"listSeparator"`
+	UncompressedOutput bool     `json:"uncompressedOutput"`
 }
 
 type Column struct {
@@ -35,6 +36,9 @@ func (p CSVParameters) Equals(params CSVParameters) bool {
 		return false
 	}
 	if p.Limit != params.Limit {
+		return false
+	}
+	if p.UncompressedOutput != params.UncompressedOutput {
 		return false
 	}
 	for i, column := range p.Columns {

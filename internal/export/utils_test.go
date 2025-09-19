@@ -1,8 +1,9 @@
 package export
 
 import (
-	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"testing"
+
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 )
 
 func TestColumnEquals_WithDifferentName(t *testing.T) {
@@ -65,4 +66,31 @@ func TestGetColumnsLabel_WithColumns(t *testing.T) {
 	expression.AssertEqual(t, len(labels), 2)
 	expression.AssertEqual(t, labels[0], "label1")
 	expression.AssertEqual(t, labels[1], "label2")
+}
+
+func TestCSVParametersEquals_WithUncompressedOutputDifference(t *testing.T) {
+	// Test that CSVParameters.Equals considers the UncompressedOutput field
+	params1 := CSVParameters{
+		Separator:          ",",
+		Limit:              1000,
+		UncompressedOutput: true,
+	}
+
+	params2 := CSVParameters{
+		Separator:          ",",
+		Limit:              1000,
+		UncompressedOutput: false,
+	}
+
+	params3 := CSVParameters{
+		Separator:          ",",
+		Limit:              1000,
+		UncompressedOutput: true,
+	}
+
+	// Should be different when UncompressedOutput differs
+	expression.AssertEqual(t, params1.Equals(params2), false, "CSVParameters with different UncompressedOutput values should not be equal")
+
+	// Should be equal when all fields including UncompressedOutput are the same
+	expression.AssertEqual(t, params1.Equals(params3), true, "CSVParameters with same UncompressedOutput values should be equal")
 }
