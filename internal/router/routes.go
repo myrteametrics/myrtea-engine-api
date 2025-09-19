@@ -260,6 +260,7 @@ func engineRouter(services Services) http.Handler {
 	})
 
 	r.Post("/expression/evaluate", handler.EvaluateExpression)
+	r.Post("/expression/scan", handler.ScanExpression)
 	return r
 }
 
