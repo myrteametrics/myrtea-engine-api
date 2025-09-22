@@ -46,20 +46,23 @@ func EvaluateExpression(w http.ResponseWriter, r *http.Request) {
 
 	exprInterface, ok := request["expression"]
 	if !ok {
-		body = "Invalid parameter expression"
+		body = "Missing parameter expression"
+		httputil.Error(w, r, httputil.ErrAPIMissingParam, err)
 	}
 	expr, ok := exprInterface.(string)
 	if !ok {
 		body = "Invalid parameter expression"
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 	}
 
 	varsInterface, ok := request["variables"]
 	if !ok {
-		body = "Invalid parameter variables"
+		varsInterface = make(map[string]interface{})
 	}
 	vars, ok := varsInterface.(map[string]interface{})
 	if !ok {
 		body = "Invalid parameter variables"
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 	}
 
 	if body == "" {
@@ -67,11 +70,12 @@ func EvaluateExpression(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			zap.L().Error("Error evaluating expression", zap.Error(err), zap.String("expression", expr), zap.Any("variables", vars))
 			body = "Unable to evaluate this expression"
+			httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		}
 	}
 
 	response := map[string]interface{}{}
-	response["body"] = fmt.Sprintf("%v", body)
+	response["body"] = body
 	httputil.JSON(w, r, response)
 	return
 }
