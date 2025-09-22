@@ -2,8 +2,8 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS mail_templates_v1
 (
-    id          BIGINT PRIMARY KEY NOT NULL,
-    name        VARCHAR(255) NOT NULL,
+    id          serial PRIMARY KEY,
+    name        VARCHAR(255) UNIQUE NOT NULL,
     description TEXT DEFAULT '',
     subject     VARCHAR(255) NOT NULL,
     body_html   TEXT NOT NULL

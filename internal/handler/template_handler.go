@@ -40,7 +40,7 @@ func GetTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sort.SliceStable(templates, func(i, j int) bool {
-		return templates[i].ID < templates[j].ID
+		return templates[i].Id < templates[j].Id
 	})
 
 	httputil.JSON(w, r, templates)
@@ -162,7 +162,7 @@ func PostTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl.ID = id
+	tmpl.Id = id
 	httputil.JSON(w, r, tmpl)
 }
 
@@ -204,7 +204,7 @@ func PutTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl.ID = idTemplate
+	tmpl.Id = idTemplate
 	if err := tmpl.Validate(); err != nil {
 		zap.L().Warn("Template validation failed", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)

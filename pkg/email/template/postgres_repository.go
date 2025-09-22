@@ -3,6 +3,7 @@ package template
 import (
 	"errors"
 	"github.com/jmoiron/sqlx"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 )
 
 // PostgresRepository is a repository containing the email template definitions based on a PSQL database
@@ -10,6 +11,8 @@ import (
 type PostgresRepository struct {
 	conn *sqlx.DB
 }
+
+const table = "mail_templates_v1"
 
 // NewPostgresRepository returns a new instance of PostgresRepository
 func NewPostgresRepository(dbClient *sqlx.DB) Repository {
@@ -25,14 +28,22 @@ func (r *PostgresRepository) Create(template Template) (int64, error) {
 	if err := template.Validate(); err != nil {
 		return -1, err
 	}
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 
-	insertStatement := newStatement().
-		Insert("mail_templates_v1").
-		Columns("id", "name", "description", "subject", "body_html").
-		Values(template.ID, template.Name, template.Description, template.Subject, template.BodyHTML).
-		Suffix("RETURNING id")
+	statement := newStatement().
+		Insert(table).
+		Suffix("RETURNING \"id\"")
+	if template.Id != 0 {
+		statement = statement.
+			Columns("id", "name", "description", "subject", "body_html").
+			Values(template.Id, template.Name, template.Description, template.Subject, template.BodyHTML)
+	} else {
+		statement = statement.
+			Columns("name", "description", "subject", "body_html").
+			Values(template.Name, template.Description, template.Subject, template.BodyHTML)
+	}
 
-	rows, err := insertStatement.RunWith(r.conn.DB).Query()
+	rows, err := statement.RunWith(r.conn.DB).Query()
 	if err != nil {
 		return -1, err
 	}
@@ -54,7 +65,7 @@ func (r *PostgresRepository) Create(template Template) (int64, error) {
 func (r *PostgresRepository) Get(id int64) (Template, error) {
 	getStatement := newStatement().
 		Select("id", "name", "description", "subject", "body_html").
-		From("mail_templates_v1").
+		From(table).
 		Where("id = ?", id)
 
 	rows, err := getStatement.RunWith(r.conn.DB).Query()
@@ -65,7 +76,7 @@ func (r *PostgresRepository) Get(id int64) (Template, error) {
 
 	if rows.Next() {
 		var template Template
-		err = rows.Scan(&template.ID, &template.Name, &template.Description, &template.Subject, &template.BodyHTML)
+		err = rows.Scan(&template.Id, &template.Name, &template.Description, &template.Subject, &template.BodyHTML)
 		if err != nil {
 			return Template{}, err
 		}
@@ -78,7 +89,7 @@ func (r *PostgresRepository) Get(id int64) (Template, error) {
 func (r *PostgresRepository) GetByName(name string) (Template, error) {
 	getStatement := newStatement().
 		Select("id", "name", "description", "subject", "body_html").
-		From("mail_templates_v1").
+		From(table).
 		Where("name = ?", name)
 
 	rows, err := getStatement.RunWith(r.conn.DB).Query()
@@ -89,7 +100,7 @@ func (r *PostgresRepository) GetByName(name string) (Template, error) {
 
 	if rows.Next() {
 		var template Template
-		err = rows.Scan(&template.ID, &template.Name, &template.Description, &template.Subject, &template.BodyHTML)
+		err = rows.Scan(&template.Id, &template.Name, &template.Description, &template.Subject, &template.BodyHTML)
 		if err != nil {
 			return Template{}, err
 		}
@@ -102,7 +113,7 @@ func (r *PostgresRepository) GetByName(name string) (Template, error) {
 func (r *PostgresRepository) GetAll() ([]Template, error) {
 	getStatement := newStatement().
 		Select("id", "name", "description", "subject", "body_html").
-		From("mail_templates_v1").
+		From(table).
 		OrderBy("name ASC")
 
 	rows, err := getStatement.RunWith(r.conn.DB).Query()
@@ -114,7 +125,7 @@ func (r *PostgresRepository) GetAll() ([]Template, error) {
 	templates := make([]Template, 0)
 	for rows.Next() {
 		var template Template
-		err = rows.Scan(&template.ID, &template.Name, &template.Description, &template.Subject, &template.BodyHTML)
+		err = rows.Scan(&template.Id, &template.Name, &template.Description, &template.Subject, &template.BodyHTML)
 		if err != nil {
 			return nil, err
 		}
@@ -130,12 +141,12 @@ func (r *PostgresRepository) Update(template Template) error {
 	}
 
 	updateStatement := newStatement().
-		Update("mail_templates_v1").
+		Update(table).
 		Set("name", template.Name).
 		Set("description", template.Description).
 		Set("subject", template.Subject).
 		Set("body_html", template.BodyHTML).
-		Where("id = ?", template.ID)
+		Where("id = ?", template.Id)
 
 	res, err := updateStatement.RunWith(r.conn.DB).Exec()
 	if err != nil {
@@ -154,7 +165,7 @@ func (r *PostgresRepository) Update(template Template) error {
 // Delete deletes an email template from the repository by its id
 func (r *PostgresRepository) Delete(id int64) error {
 	deleteStatement := newStatement().
-		Delete("mail_templates_v1").
+		Delete(table).
 		Where("id = ?", id)
 
 	res, err := deleteStatement.RunWith(r.conn.DB).Exec()
@@ -168,5 +179,6 @@ func (r *PostgresRepository) Delete(id int64) error {
 	if count != 1 {
 		return errors.New("no row deleted (or multiple rows deleted) instead of 1 row")
 	}
+	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 	return nil
 }

@@ -7,7 +7,7 @@ import (
 
 // Template represents an email template stored in the database
 type Template struct {
-	ID          int64  `json:"id" db:"id"`
+	Id          int64  `json:"id" db:"id"`
 	Name        string `json:"name" db:"name"`
 	Description string `json:"description" db:"description"`
 	Subject     string `json:"subject" db:"subject"`
@@ -17,7 +17,7 @@ type Template struct {
 // NewTemplate creates a new Template instance
 func NewTemplate(id int64, name string, subject string, bodyHTML string, description string) Template {
 	return Template{
-		ID:          id,
+		Id:          id,
 		Name:        name,
 		Subject:     subject,
 		BodyHTML:    bodyHTML,
