@@ -171,8 +171,8 @@ func PostTemplate(w http.ResponseWriter, r *http.Request) {
 //	@Summary		Update an email template
 //	@Description	Update an email template
 //	@Tags			Templates
-//	@Accept			JSON
-//	@Produce		JSON
+//	@Accept			json
+//	@Produce		json
 //	@Param			id			path	string				true	"Template ID"
 //	@Param			template	body	template.Template	true	"Email Template"
 //	@Security		Bearer
