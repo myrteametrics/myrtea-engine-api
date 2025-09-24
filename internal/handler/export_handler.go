@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/spf13/viper"
@@ -38,6 +39,7 @@ func NewExportHandler(exportWrapper *export.Wrapper, directDownload bool, indire
 
 // ExportRequest represents a request for an export
 type ExportRequest struct {
+	model.Params
 	export.CSVParameters
 	FactIDs []int64 `json:"factIDs"`
 	Title   string  `json:"title"`
@@ -95,6 +97,12 @@ func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := request.Params.Process(); err != nil {
+		zap.L().Warn("Invalid fact parameters", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIUnexpectedParamValue, err)
+		return
+	}
+
 	err = handleStreamedExport(r.Context(), w, request)
 	if err != nil {
 		httputil.Error(w, r, httputil.ErrAPIProcessError, err)
@@ -146,7 +154,7 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 		defer close(streamedExport.Data)
 
 		for _, f := range facts {
-			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, request.Limit, make(map[string]interface{}))
+			writerErr = streamedExport.StreamedExportFactHitsFull(ctx, f, request.Limit, request.FactParams)
 			if writerErr != nil {
 				zap.L().Error("Error during export (StreamedExportFactHitsFull)", zap.Error(err))
 				break // break here when error occurs?
@@ -367,10 +375,9 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	factParameters, err := ParseFactParameters(r.URL.Query().Get("factParameters"))
-	if err != nil {
-		zap.L().Error("Parse input Fact Parametres", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("factParameters")))
-		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+	if err := request.Params.Process(); err != nil {
+		zap.L().Warn("Invalid fact parameters", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIUnexpectedParamValue, err)
 		return
 	}
 
@@ -381,7 +388,7 @@ func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User, factParameters, true)
+	item, status := e.exportWrapper.AddToQueue(facts, request.Title, request.CSVParameters, userCtx.User, request.FactParams, true)
 
 	e.handleAddToQueueResponse(w, r, status, item)
 }
