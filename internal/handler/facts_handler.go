@@ -420,7 +420,7 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Facts
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body	model.FactHitsRequest	true	"Request parameters"
+//	@Param			request	body	model.FactHitsReq	true	"Request parameters"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
