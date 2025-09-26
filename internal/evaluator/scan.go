@@ -44,7 +44,7 @@ func mergeMaps(map1, map2 map[string]interface{}) map[string]interface{} {
 		result[k] = v
 	}
 
-	// Ajouter ou remplacer avec les valeurs de la deuxième map
+	// Add or replace with values from the second map
 	for k, v := range map2 {
 		result[k] = v
 	}
