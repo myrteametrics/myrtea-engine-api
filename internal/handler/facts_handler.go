@@ -557,7 +557,6 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 
 // BuildAndExecuteFact godoc
 //
-//	@Summary		Execute a fact with a given timest
 //	@Summary		Execute a fact with a given timestamp
 //	@Description	Execute a fact with a given timestamp
 //	@Tags			Facts
