@@ -39,7 +39,7 @@ func scanExpressionInternal(expressionToScan string, parameters map[string]inter
 func mergeMaps(map1, map2 map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
 
-	// Copier la première map dans le résultat
+	// Copy the first map into the result
 	for k, v := range map1 {
 		result[k] = v
 	}
