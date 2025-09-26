@@ -47,12 +47,12 @@ func EvaluateExpression(w http.ResponseWriter, r *http.Request) {
 	exprInterface, ok := request["expression"]
 	if !ok {
 		body = "Missing parameter expression"
-		httputil.Error(w, r, httputil.ErrAPIMissingParam, err)
+		httputil.Error(w, r, httputil.ErrAPIMissingParam, errors.New("missing parameter: expression"))
 	}
 	expr, ok := exprInterface.(string)
 	if !ok {
 		body = "Invalid parameter expression"
-		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, errors.New("invalid parameter: expression is not a string"))
 	}
 
 	varsInterface, ok := request["variables"]
