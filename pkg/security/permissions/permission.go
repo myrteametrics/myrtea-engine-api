@@ -33,6 +33,7 @@ const (
 	TypeService              = "service"
 	TypeConfig               = "config"
 	TypeAPIKey               = "api_key"
+	TypeTemplate             = "template"
 )
 
 type Permission struct {
