@@ -62,7 +62,7 @@ func EvaluateExpression(w http.ResponseWriter, r *http.Request) {
 	vars, ok := varsInterface.(map[string]interface{})
 	if !ok {
 		body = "Invalid parameter variables"
-		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, errors.New("Invalid parameter variables"))
 	}
 
 	if body == "" {
