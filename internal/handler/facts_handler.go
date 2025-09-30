@@ -420,21 +420,21 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Facts
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body	model.FactHitsRequest	true	"Request parameters"
+//	@Param			request	body	model.FactHitsReq	true	"Request parameters"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
 //	@Failure		400	"Status Bad Request"
 //	@Router			/engine/facts/execute [POST]
 func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
-	var request model.FactHitsRequest
+	var request model.FactHitsReq
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		zap.L().Error("Failed to decode request body", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIUnexpectedParamValue, err)
 		return
 	}
 
-	if err := request.ValidateParseParam(); err != nil {
+	if err := request.Process(); err != nil {
 		zap.L().Error("Failed to validate request body", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIUnexpectedParamValue, err)
 		return
@@ -522,8 +522,8 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if request.FactParameters != nil {
-		for key, param := range request.FactParameters {
+	if request.FactParams != nil {
+		for key, param := range request.FactParams {
 			placeholders[key] = param
 		}
 	}
