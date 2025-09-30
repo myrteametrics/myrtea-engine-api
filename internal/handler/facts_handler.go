@@ -556,22 +556,23 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 }
 
 // BuildAndExecuteFact godoc
-// @Summary Execute a fact with a given timestamp
-// @Description Execute a fact with a given timestamp
-// @Tags Facts
-// @Consumme json
-// @Produce json
-// @Param fact body engine.Fact true "Fact definition (json)"
-// @Param time query string true "Timestamp used for the fact execution"
-// @Param nhit query int false "Hit per page"
-// @Param offset query int false "Offset number"
-// @Param placeholders query string false "Placeholders (format key1:value1,key2:value2)"
-// @Param debug query string false "Debug true/false"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/facts/build-and-execute [post]
+//
+//	@Summary		Execute a fact with a given timestamp
+//	@Description	Execute a fact with a given timestamp
+//	@Tags			Facts
+//	@Consumme		json
+//	@Produce		json
+//	@Param			fact			body	engine.Fact	true	"Fact definition (json)"
+//	@Param			time			query	string		true	"Timestamp used for the fact execution"
+//	@Param			nhit			query	int			false	"Hit per page"
+//	@Param			offset			query	int			false	"Offset number"
+//	@Param			placeholders	query	string		false	"Placeholders (format key1:value1,key2:value2)"
+//	@Param			debug			query	string		false	"Debug true/false"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/facts/build-and-execute [post]
 func BuildAndExecuteFact(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
