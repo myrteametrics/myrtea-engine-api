@@ -62,7 +62,7 @@ func InitEngine(engineID string) error {
 
 	for _, rule := range rules {
 		if rule.Enabled {
-			_globalREngine[engineID].InsertRule(rule)
+			_globalREngine[engineID].InsertRule(&rule)
 		}
 	}
 	return nil
@@ -85,7 +85,7 @@ func UpdateEngine(engineID string) error {
 	_lastUpdate[engineID] = now
 	for _, rule := range rules {
 		if rule.Enabled {
-			_globalREngine[engineID].InsertRule(rule)
+			_globalREngine[engineID].InsertRule(&rule)
 		} else {
 			_globalREngine[engineID].RemoveRule(rule.ID)
 		}

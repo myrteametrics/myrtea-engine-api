@@ -7,7 +7,12 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
 )
 
-// Rule ...
+// Rule represents a business rule
+// It is composed of one or more cases
+// Each case is composed of one or more conditions and one or more actions
+// If all conditions of a case are met, all actions of the case are executed
+// If a rule has multiple cases, the evaluation can stop at the first case that is met or evaluate all cases
+// depending on the EvaluateAllCases field
 type Rule struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -27,15 +32,12 @@ func (r *Rule) IsValid() (bool, error) {
 	if r.Cases == nil {
 		return false, errors.New("missing Cases")
 	}
-	if len(r.Cases) <= 0 {
-		return false, errors.New("missing Cases")
-	}
 
-	return true, nil
+	return r.DefaultRule.IsValid()
 }
 
 // SameCasesAs returns true if the cases of the are equal to the case of the rule passed as parameter or false otherwise
-func (r Rule) SameCasesAs(rule Rule) bool {
+func (r *Rule) SameCasesAs(rule Rule) bool {
 	rCasesData, err := json.Marshal(r.Cases)
 	if err != nil {
 		return false
@@ -48,7 +50,7 @@ func (r Rule) SameCasesAs(rule Rule) bool {
 }
 
 // EqualTo returns true if the rule is equal to the rule passed as parameter or false otherwise
-func (r Rule) EqualTo(rule Rule) bool {
+func (r *Rule) EqualTo(rule Rule) bool {
 	if r.Name != rule.Name {
 		return false
 	}
