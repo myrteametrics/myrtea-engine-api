@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/emailutils"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
@@ -58,8 +59,10 @@ func (r *Rule) IsValid() (bool, error) {
 						}
 					}
 
+					template := strings.ReplaceAll(result.(string), "'", "\"")
+
 					// we check if the template is valid
-					err = emailutils.VerifyMessageBody(result.(string))
+					err = emailutils.VerifyMessageBody(template)
 					if err != nil {
 						return false, fmt.Errorf("invalid bodyTemplate in case '%s': %w", c.Name, err)
 					}
