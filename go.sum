@@ -207,6 +207,8 @@ github.com/myrteametrics/myrtea-sdk/v5 v5.3.2 h1:mGRuO29sq4omG6fP0hWazVpvGvxwpTt
 github.com/myrteametrics/myrtea-sdk/v5 v5.3.2/go.mod h1:z61Epn17PcQueOoIvw+ue5CcPvjs3ddplZwvq/tUle0=
 github.com/myrteametrics/myrtea-sdk/v5 v5.3.3-0.20251013145138-648842f704fe h1:rtpECmKYnvviySRjdlueWWSYDmMRHds296f2UGqmoUI=
 github.com/myrteametrics/myrtea-sdk/v5 v5.3.3-0.20251013145138-648842f704fe/go.mod h1:z61Epn17PcQueOoIvw+ue5CcPvjs3ddplZwvq/tUle0=
+github.com/myrteametrics/myrtea-sdk/v5 v5.3.3-0.20251015142613-802f95093541 h1:A0hHEYC4i6ez0z34cWuIDpZDjjq4PD9dGvmfKi7LuFI=
+github.com/myrteametrics/myrtea-sdk/v5 v5.3.3-0.20251015142613-802f95093541/go.mod h1:z61Epn17PcQueOoIvw+ue5CcPvjs3ddplZwvq/tUle0=
 github.com/ncruces/go-strftime v0.1.9 h1:bY0MQC28UADQmHmaF5dgpLmImcShSi2kHU9XLdhx/f4=
 github.com/ncruces/go-strftime v0.1.9/go.mod h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJmn9CehxcKcls=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=

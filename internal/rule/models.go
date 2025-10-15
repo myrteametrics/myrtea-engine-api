@@ -3,8 +3,12 @@ package rule
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/emailutils"
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
+	"go.uber.org/zap"
 )
 
 // Rule represents a business rule
@@ -33,7 +37,38 @@ func (r *Rule) IsValid() (bool, error) {
 		return false, errors.New("missing Cases")
 	}
 
-	return r.DefaultRule.IsValid()
+	if valid, err := r.DefaultRule.IsValid(); !valid {
+		return false, err
+	}
+
+	// we want to check whether bodyTemplate is a valid template or not
+	for _, c := range r.Cases {
+		for _, action := range c.Actions {
+			for key, param := range action.Parameters {
+				if key == "bodyTemplate" {
+					result, err := expression.Process(expression.LangEval, string(param), map[string]interface{}{})
+					if err != nil {
+						zap.L().Warn("Rule IsValid: bodyTemplate expression syntax is invalid", zap.String("bodyTemplate", string(param)), zap.Error(err))
+						continue
+					}
+
+					if result != nil {
+						if _, ok := result.(string); !ok {
+							continue
+						}
+					}
+
+					// we check if the template is valid
+					err = emailutils.VerifyMessageBody(result.(string))
+					if err != nil {
+						return false, fmt.Errorf("invalid bodyTemplate in case '%s': %w", c.Name, err)
+					}
+				}
+			}
+		}
+	}
+
+	return true, nil
 }
 
 // SameCasesAs returns true if the cases of the are equal to the case of the rule passed as parameter or false otherwise
