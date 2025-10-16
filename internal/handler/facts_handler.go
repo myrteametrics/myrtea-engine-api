@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
@@ -16,7 +17,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
@@ -420,21 +420,21 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Facts
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body	model.FactHitsRequest	true	"Request parameters"
+//	@Param			request	body	model.FactHitsReq	true	"Request parameters"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
 //	@Failure		400	"Status Bad Request"
 //	@Router			/engine/facts/execute [POST]
 func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
-	var request model.FactHitsRequest
+	var request model.FactHitsReq
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		zap.L().Error("Failed to decode request body", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIUnexpectedParamValue, err)
 		return
 	}
 
-	if err := request.ValidateParseParam(); err != nil {
+	if err := request.Process(); err != nil {
 		zap.L().Error("Failed to validate request body", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIUnexpectedParamValue, err)
 		return
@@ -522,8 +522,8 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if request.FactParameters != nil {
-		for key, param := range request.FactParameters {
+	if request.FactParams != nil {
+		for key, param := range request.FactParams {
 			placeholders[key] = param
 		}
 	}
@@ -553,6 +553,94 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, r, data)
+}
+
+// BuildAndExecuteFact godoc
+//
+//	@Summary		Execute a fact with a given timestamp
+//	@Description	Execute a fact with a given timestamp
+//	@Tags			Facts
+//	@Consumme		json
+//	@Produce		json
+//	@Param			fact			body	engine.Fact	true	"Fact definition (json)"
+//	@Param			time			query	string		true	"Timestamp used for the fact execution"
+//	@Param			nhit			query	int			false	"Hit per page"
+//	@Param			offset			query	int			false	"Offset number"
+//	@Param			placeholders	query	string		false	"Placeholders (format key1:value1,key2:value2)"
+//	@Param			debug			query	string		false	"Debug true/false"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/facts/build-and-execute [post]
+func BuildAndExecuteFact(w http.ResponseWriter, r *http.Request) {
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionCreate)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	debug := false
+	_debug := r.URL.Query().Get("debug")
+	if _debug == "true" {
+		debug = true
+	}
+
+	t, err := ParseTime(r.URL.Query().Get("time"))
+	if err != nil {
+		zap.L().Error("Parse input time", zap.Error(err), zap.String("rawTime", r.URL.Query().Get("time")))
+		httputil.Error(w, r, httputil.ErrAPIParsingDateTime, err)
+		return
+	}
+
+	nhit, err := ParseInt(r.URL.Query().Get("nhit"))
+	if err != nil {
+		zap.L().Error("Parse input nhit", zap.Error(err), zap.String("rawNhit", r.URL.Query().Get("nhit")))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	offset, err := ParseInt(r.URL.Query().Get("offset"))
+	if err != nil {
+		zap.L().Error("Parse input offset", zap.Error(err), zap.String("raw offset", r.URL.Query().Get("offset")))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	placeholders, err := QueryParamToOptionalKeyValues(r, "placeholders", make(map[string]interface{}))
+	if err != nil {
+		zap.L().Error("Parse input placeholders", zap.Error(err), zap.String("raw placeholders", r.URL.Query().Get("placeholders")))
+		httputil.Error(w, r, httputil.ErrAPIParsingKeyValue, err)
+		return
+	}
+
+	var newFact engine.Fact
+	err = json.NewDecoder(r.Body).Decode(&newFact)
+	if err != nil {
+		zap.L().Warn("Fact definition json decode", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	if ok, err := newFact.IsValid(); !ok {
+		zap.L().Warn("Fact definition json is invalid", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
+		return
+	}
+
+	if debug {
+		zap.L().Debug("Debugging fact", zap.Any("newFact", newFact))
+	}
+
+	item, err := fact.ExecuteFact(t, newFact, 0, 0, placeholders, nhit, offset, false)
+	if err != nil {
+		zap.L().Error("Cannot execute fact", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIElasticSelectFailed, err)
+		return
+	}
+
+	httputil.JSON(w, r, item)
 }
 
 // GetFactHits godoc

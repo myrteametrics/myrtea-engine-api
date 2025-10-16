@@ -2,11 +2,11 @@ package situation
 
 import (
 	"fmt"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"testing"
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 )

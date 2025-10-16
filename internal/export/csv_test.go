@@ -3,8 +3,9 @@ package export
 import (
 	"bytes"
 	csv2 "encoding/csv"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"testing"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 )
 
 func TestConvertHitsToCSV(t *testing.T) {

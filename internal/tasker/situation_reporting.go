@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 	email2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/email"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"html/template"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/fact"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
