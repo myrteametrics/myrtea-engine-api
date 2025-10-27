@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
-	"strings"
-	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"

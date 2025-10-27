@@ -207,8 +207,10 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/myrteametrics/myrtea-sdk/v5 v5.3.3-0.20250915092337-a91e11f0b860 h1:LErUwIGrs3EMJCClGMWmkLGPQAMa/761/rT0xc/QByk=
-github.com/myrteametrics/myrtea-sdk/v5 v5.3.3-0.20250915092337-a91e11f0b860/go.mod h1:GcPmgpzkSdcIC4PLVtuWW5RhJF8eayoVS0RY+P4uPFQ=
+github.com/myrteametrics/myrtea-sdk/v5 v5.3.3 h1:OpyR0EB1TQ9EjrgeBtLM4gEjxZ9FAjKFTNWsFi5FGBE=
+github.com/myrteametrics/myrtea-sdk/v5 v5.3.3/go.mod h1:z61Epn17PcQueOoIvw+ue5CcPvjs3ddplZwvq/tUle0=
+github.com/myrteametrics/myrtea-sdk/v5 v5.3.4-0.20251027162451-59e44ec2808e h1:OpIHj5Zl+CSntnusB4QM0zwLEofEpHjCYS6PytnX9HU=
+github.com/myrteametrics/myrtea-sdk/v5 v5.3.4-0.20251027162451-59e44ec2808e/go.mod h1:GcPmgpzkSdcIC4PLVtuWW5RhJF8eayoVS0RY+P4uPFQ=
 github.com/ncruces/go-strftime v0.1.9 h1:bY0MQC28UADQmHmaF5dgpLmImcShSi2kHU9XLdhx/f4=
 github.com/ncruces/go-strftime v0.1.9/go.mod h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJmn9CehxcKcls=
 github.com/oklog/run v1.2.0 h1:O8x3yXwah4A73hJdlrwo/2X6J62gE5qTMusH0dvz60E=

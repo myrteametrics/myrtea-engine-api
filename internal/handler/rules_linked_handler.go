@@ -2,11 +2,14 @@ package handler
 
 import (
 	"encoding/json"
-	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
+	"errors"
 	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
@@ -18,8 +21,8 @@ import (
 //
 //	@Id				GetRuleSituations
 //
-//	@Summary		Get the list of situatons associated to a rule
-//	@Description	Get the list of situatons associated to a rule
+//	@Summary		Get the list of situations associated with a rule
+//	@Description	Get the list of situations associated with a rule
 //	@Tags			Rules
 //	@Produce		json
 //	@Param			id	path	string	true	"Rule ID"
@@ -35,6 +38,12 @@ func GetRuleSituations(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Warn("Error on parsing rule id", zap.String("RuleID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionList)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
 
@@ -82,6 +91,12 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionUpdate)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
 	var situationIDs []int64
 	err = json.NewDecoder(r.Body).Decode(&situationIDs)
 	if err != nil {
@@ -103,6 +118,7 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, r, httputil.ErrAPIDBTransactionBegin, err)
 		return
 	}
+	defer func() { _ = tx.Rollback() }()
 
 	for _, situationID := range situationIDs {
 		if _, ok := situationsMap[situationID]; ok {
@@ -110,7 +126,6 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 		} else {
 			err = situation2.R().AddRule(tx, situationID, idRule)
 			if err != nil {
-				tx.Rollback()
 				zap.L().Warn("Error adding the rule to the situation", zap.Int64("situationID", situationID), zap.Error(err))
 				httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 				return
@@ -122,7 +137,6 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 	for situationID := range situationsMap {
 		err = situation2.R().RemoveRule(tx, situationID, idRule)
 		if err != nil {
-			tx.Rollback()
 			zap.L().Warn("Error removing the rule from the situation", zap.Int64("situationID", situationID), zap.Error(err))
 			httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 			return
@@ -131,10 +145,49 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 
 	err = tx.Commit()
 	if err != nil {
-		tx.Rollback()
 		httputil.Error(w, r, httputil.ErrAPIDBTransactionCommit, err)
 		return
 	}
 
 	httputil.OK(w, r)
+}
+
+// GetRuleSituationInstances godoc
+//
+//	@Id				GetRuleSituationInstances
+//
+//	@Summary		Get the list of situation instances associated to a rule
+//	@Description	Get the list of situation instances associated to a rule
+//	@Tags			Rules
+//	@Produce		json
+//	@Param			id	path	string	true	"Rule ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"list of situation instances"
+//	@Failure		400	"Status Bad Request"
+//	@Failure		401	"Status Unauthorized"
+//	@Router			/engine/rules/{id}/situation-instances [get]
+func GetRuleSituationInstances(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	idRule, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error on parsing rule id", zap.String("RuleID", id), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeRule, permissions.All, permissions.ActionList)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	situationInstances, err := situation2.R().GetAllTemplateInstancesByRuleID(idRule, gvalParsingEnabled(r.URL.Query()))
+	if err != nil {
+		zap.L().Error("Error on getting rule situation instances", zap.String("situationID", id), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	httputil.JSON(w, r, situationInstances)
 }

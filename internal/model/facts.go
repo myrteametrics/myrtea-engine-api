@@ -106,28 +106,27 @@ type FrontFactHistory struct {
 	History      map[time.Time]FactValue `json:"history"`
 }
 
-type FactHitsRequest struct {
-	FactId              int64                  `json:"factId"`
-	Nhit                int                    `json:"nhit,omitempty"`
-	Offset              int                    `json:"offset,omitempty"`
-	SituationId         int64                  `json:"situationId,omitempty"`
-	SituationInstanceId int64                  `json:"situationInstanceId,omitempty"`
-	Debug               *bool                  `json:"debug,omitempty"`
-	FactParameters      map[string]interface{} `json:"factParameters,omitempty"`
-	HitsOnly            bool                   `json:"hitsOnly,omitempty"` // If true, forces f.Intent.Operator = engine.Select
+type FactHitsReq struct {
+	Params
+	FactId              int64 `json:"factId"`
+	Nhit                int   `json:"nhit,omitempty"`
+	Offset              int   `json:"offset,omitempty"`
+	SituationId         int64 `json:"situationId,omitempty"`
+	SituationInstanceId int64 `json:"situationInstanceId,omitempty"`
+	Debug               *bool `json:"debug,omitempty"`
+	HitsOnly            bool  `json:"hitsOnly,omitempty"` // If true, forces f.Intent.Operator = engine.Select
 }
 
-// Validate checks if the FactHitsRequest request is valid and transforms some parameters
-func (r *FactHitsRequest) ValidateParseParam() error {
-	if err := r.validateBasicFields(); err != nil {
+// Validate checks if the FactHitsReq request is valid and transforms some parameters
+func (r *FactHitsReq) Process() error {
+	if err := r.validateFields(); err != nil {
 		return err
 	}
-
-	return r.validateAndTransformFactParameters()
+	return r.Params.Process()
 }
 
 // validateBasicFields validates the basic fields of the request
-func (r *FactHitsRequest) validateBasicFields() error {
+func (r *FactHitsReq) validateFields() error {
 	if r.FactId <= 0 {
 		return errors.New("factId parameter is required and must be a positive integer")
 	}
@@ -141,66 +140,70 @@ func (r *FactHitsRequest) validateBasicFields() error {
 	}
 
 	if r.Debug == nil {
-		val := true
-		r.Debug = &val
+		debug := true
+		r.Debug = &debug
 	}
 	return nil
 }
 
-// validateAndTransformFactParameters validates and transforms all fact parameters
-func (r *FactHitsRequest) validateAndTransformFactParameters() error {
-	for key, value := range r.FactParameters {
-		if err := r.validateAndTransformParameter(key, value); err != nil {
+type Params struct {
+	FactParams map[string]interface{} `json:"factParameters,omitempty"`
+}
+
+// Validate validates and transforms all fact parameters
+func (p *Params) Process() error {
+	if p.FactParams == nil {
+		p.FactParams = make(map[string]interface{})
+	}
+
+	for k, v := range p.FactParams {
+		if err := p.transform(k, v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// validateAndTransformParameter validates and transforms a specific parameter
-func (r *FactHitsRequest) validateAndTransformParameter(key string, value interface{}) error {
-	if strVal, ok := value.(string); ok {
-		return r.validateAndTransformStringParameter(key, strVal)
+// transform validates and transforms a single parameter
+func (p *Params) transform(key string, val interface{}) error {
+	if s, ok := val.(string); ok {
+		return p.transformStr(key, s)
 	}
-
-	return r.checkCollectionSize(key, value)
+	return p.checkSize(key, val)
 }
 
-// validateAndTransformStringParameter handles, validates and transforms a string parameter
-func (r *FactHitsRequest) validateAndTransformStringParameter(key, strVal string) error {
-	// Ignore if it's a valid date in RFC3339 format
-	if _, err := time.Parse(time.RFC3339, strVal); err == nil {
+// transformStr handles string parameter transformation
+func (p *Params) transformStr(key, str string) error {
+	// Skip RFC3339 dates
+	if _, err := time.Parse(time.RFC3339, str); err == nil {
 		return nil
 	}
 
 	// Evaluate expression
-	parsed, err := expression.Process(expression.LangEval, strVal, map[string]interface{}{})
+	parsed, err := expression.Process(expression.LangEval, str, map[string]interface{}{})
 	if err != nil {
-		return fmt.Errorf("parameters: the value of the key %s could not be evaluated: %s", key, err.Error())
+		return fmt.Errorf("param %s eval failed: %w", key, err)
 	}
 
-	if err := r.checkCollectionSize(key, parsed); err != nil {
+	if err := p.checkSize(key, parsed); err != nil {
 		return err
 	}
 
-	// Update parameter with evaluated value (transformation)
-	r.FactParameters[key] = parsed
+	// Update with evaluated value
+	p.FactParams[key] = parsed
 	return nil
 }
 
-// checkCollectionSize checks if the size of a collection exceeds the maximum limit
-func (r *FactHitsRequest) checkCollectionSize(key string, value interface{}) error {
-	const maxSliceSize = 500
+// checkSize validates collection size limits
+func (p *Params) checkSize(key string, val interface{}) error {
+	const maxSize = 500
 
-	v := reflect.ValueOf(value)
-	kind := v.Kind()
-
-	if kind == reflect.Slice || kind == reflect.Array || kind == reflect.Map {
-		if v.Len() > maxSliceSize {
-			return fmt.Errorf("parameters: the collection for key %s exceeds the maximum size of %d elements",
-				key, maxSliceSize)
+	v := reflect.ValueOf(val)
+	switch v.Kind() {
+	case reflect.Slice, reflect.Array, reflect.Map:
+		if v.Len() > maxSize {
+			return fmt.Errorf("param %s exceeds max size %d", key, maxSize)
 		}
 	}
-
 	return nil
 }

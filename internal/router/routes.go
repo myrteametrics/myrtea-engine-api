@@ -135,6 +135,8 @@ func engineRouter(services Services) http.Handler {
 	r.Get("/rules/{id}/situations", handler.GetRuleSituations)
 	r.Post("/rules/{id}/situations", handler.PostRuleSituations)
 
+	r.Get("/rules/{id}/situation-instances", handler.GetRuleSituationInstances)
+
 	r.Get("/issues", handler.GetIssuesByStatesByPage)
 	r.Get("/issues/{id}", handler.GetIssue)
 	r.Get("/issues/{id}/history", handler.GetIssueHistory)
@@ -196,6 +198,14 @@ func engineRouter(services Services) http.Handler {
 	r.Put("/calendars/{id}", handler.PutCalendar)
 	r.Delete("/calendars/{id}", handler.DeleteCalendar)
 
+	// Email Templates
+	r.Get("/templates", handler.GetTemplates)
+	r.Get("/templates/{id}", handler.GetTemplate)
+	r.Get("/templates/name/{name}", handler.GetTemplateByName)
+	r.Post("/templates", handler.PostTemplate)
+	r.Put("/templates/{id}", handler.PutTemplate)
+	r.Delete("/templates/{id}", handler.DeleteTemplate)
+
 	r.Get("/connector/{id}/executions/last", handler.GetLastConnectorExecutionDateTime)
 
 	// exports
@@ -252,6 +262,8 @@ func engineRouter(services Services) http.Handler {
 		r.Post("/interval", handler.GetConfigHistoriesByInterval)
 	})
 
+	r.Post("/expression/evaluate", handler.EvaluateExpression)
+	r.Post("/expression/scan", handler.ScanExpression)
 	return r
 }
 

@@ -420,21 +420,21 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Facts
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body	model.FactHitsRequest	true	"Request parameters"
+//	@Param			request	body	model.FactHitsReq	true	"Request parameters"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
 //	@Failure		400	"Status Bad Request"
 //	@Router			/engine/facts/execute [POST]
 func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
-	var request model.FactHitsRequest
+	var request model.FactHitsReq
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		zap.L().Error("Failed to decode request body", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIUnexpectedParamValue, err)
 		return
 	}
 
-	if err := request.ValidateParseParam(); err != nil {
+	if err := request.Process(); err != nil {
 		zap.L().Error("Failed to validate request body", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIUnexpectedParamValue, err)
 		return
@@ -522,8 +522,8 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if request.FactParameters != nil {
-		for key, param := range request.FactParameters {
+	if request.FactParams != nil {
+		for key, param := range request.FactParams {
 			placeholders[key] = param
 		}
 	}
@@ -556,22 +556,23 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 }
 
 // BuildAndExecuteFact godoc
-// @Summary Execute a fact with a given timestamp
-// @Description Execute a fact with a given timestamp
-// @Tags Facts
-// @Consumme json
-// @Produce json
-// @Param fact body engine.Fact true "Fact definition (json)"
-// @Param time query string true "Timestamp used for the fact execution"
-// @Param nhit query int false "Hit per page"
-// @Param offset query int false "Offset number"
-// @Param placeholders query string false "Placeholders (format key1:value1,key2:value2)"
-// @Param debug query string false "Debug true/false"
-// @Security Bearer
-// @Security ApiKeyAuth
-// @Success 200 "Status OK"
-// @Failure 400 "Status Bad Request"
-// @Router /engine/facts/build-and-execute [post]
+//
+//	@Summary		Execute a fact with a given timestamp
+//	@Description	Execute a fact with a given timestamp
+//	@Tags			Facts
+//	@Consumme		json
+//	@Produce		json
+//	@Param			fact			body	engine.Fact	true	"Fact definition (json)"
+//	@Param			time			query	string		true	"Timestamp used for the fact execution"
+//	@Param			nhit			query	int			false	"Hit per page"
+//	@Param			offset			query	int			false	"Offset number"
+//	@Param			placeholders	query	string		false	"Placeholders (format key1:value1,key2:value2)"
+//	@Param			debug			query	string		false	"Debug true/false"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/facts/build-and-execute [post]
 func BuildAndExecuteFact(w http.ResponseWriter, r *http.Request) {
 
 	userCtx, _ := GetUserFromContext(r)
