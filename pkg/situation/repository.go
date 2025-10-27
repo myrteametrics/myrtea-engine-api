@@ -29,8 +29,10 @@ type Repository interface {
 	CreateTemplateInstance(situationID int64, instance TemplateInstance) (int64, error)
 	UpdateTemplateInstance(instanceID int64, instance TemplateInstance) error
 	DeleteTemplateInstance(instanceID int64) error
-	GetTemplateInstance(instanceID int64, parseGlobalVariables ...bool) (TemplateInstance, bool, error)
-	GetAllTemplateInstances(situationID int64, parseGlobalVariables ...bool) (map[int64]TemplateInstance, error)
+	GetTemplateInstance(instanceID int64, parseParameters ...bool) (TemplateInstance, bool, error)
+	GetAllTemplateInstances(situationID int64, parseParameters ...bool) (map[int64]TemplateInstance, error)
+
+	GetAllTemplateInstancesByRuleID(ruleID int64, parseParameters ...bool) (map[int64]TemplateInstance, error)
 
 	GetSituationOverview() ([]SituationOverview, error)
 }
