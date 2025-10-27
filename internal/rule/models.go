@@ -3,11 +3,21 @@ package rule
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
 
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/emailutils"
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
+	"go.uber.org/zap"
 )
 
-// Rule ...
+// Rule represents a business rule
+// It is composed of one or more cases
+// Each case is composed of one or more conditions and one or more actions
+// If all conditions of a case are met, all actions of the case are executed
+// If a rule has multiple cases, the evaluation can stop at the first case that is met or evaluate all cases
+// depending on the EvaluateAllCases field
 type Rule struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -27,15 +37,45 @@ func (r *Rule) IsValid() (bool, error) {
 	if r.Cases == nil {
 		return false, errors.New("missing Cases")
 	}
-	if len(r.Cases) <= 0 {
-		return false, errors.New("missing Cases")
+
+	if valid, err := r.DefaultRule.IsValid(); !valid {
+		return false, err
+	}
+
+	// we want to check whether bodyTemplate is a valid template or not
+	for _, c := range r.Cases {
+		for _, action := range c.Actions {
+			for key, param := range action.Parameters {
+				if key == "bodyTemplate" {
+					result, err := expression.Process(expression.LangEval, string(param), map[string]interface{}{})
+					if err != nil {
+						zap.L().Warn("Rule IsValid: bodyTemplate expression syntax is invalid", zap.String("bodyTemplate", string(param)), zap.Error(err))
+						continue
+					}
+
+					if result != nil {
+						if _, ok := result.(string); !ok {
+							continue
+						}
+					}
+
+					template := strings.ReplaceAll(result.(string), "'", "\"")
+
+					// we check if the template is valid
+					err = emailutils.VerifyMessageBody(template)
+					if err != nil {
+						return false, fmt.Errorf("invalid bodyTemplate in case '%s': %w", c.Name, err)
+					}
+				}
+			}
+		}
 	}
 
 	return true, nil
 }
 
 // SameCasesAs returns true if the cases of the are equal to the case of the rule passed as parameter or false otherwise
-func (r Rule) SameCasesAs(rule Rule) bool {
+func (r *Rule) SameCasesAs(rule Rule) bool {
 	rCasesData, err := json.Marshal(r.Cases)
 	if err != nil {
 		return false
@@ -48,7 +88,7 @@ func (r Rule) SameCasesAs(rule Rule) bool {
 }
 
 // EqualTo returns true if the rule is equal to the rule passed as parameter or false otherwise
-func (r Rule) EqualTo(rule Rule) bool {
+func (r *Rule) EqualTo(rule Rule) bool {
 	if r.Name != rule.Name {
 		return false
 	}

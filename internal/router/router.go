@@ -2,6 +2,11 @@ package router
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"time"
+
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -17,10 +22,6 @@ import (
 	sdksecurity "github.com/myrteametrics/myrtea-sdk/v5/security"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
-	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"time"
 )
 
 // Config wraps common configuration parameters
@@ -32,6 +33,7 @@ type Config struct {
 	VerboseError       bool
 	AuthenticationMode string
 	LogLevel           zap.AtomicLevel
+	JWTSigningKey      string
 }
 
 // Services is a wrapper for service instances, it is passed through router functions
@@ -116,7 +118,21 @@ func New(config Config, services Services) *chi.Mux {
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Timeout(60 * time.Second))
 
-	signingKey := []byte(sdksecurity.RandString(128))
+	// Determine JWT signing key based on configuration
+	var signingKey []byte
+	if config.JWTSigningKey != "" {
+		// Use configured signing key
+		signingKey = []byte(config.JWTSigningKey)
+		zap.L().Info("Using configured JWT signing key")
+	} else if config.Production {
+		// In production, generate a random key on each startup
+		signingKey = []byte(sdksecurity.RandString(128))
+		zap.L().Warn("Using randomly generated JWT signing key (tokens will be invalidated on restart)")
+	} else {
+		// In development, use a fixed key to avoid reconnection
+		signingKey = []byte("dev-fixed-signing-key-for-development-only-do-not-use-in-production-myrtea-engine-api")
+		zap.L().Info("Using fixed development JWT signing key (for convenience in non-production mode)")
+	}
 	jwtAuth := jwtauth.New("HS256", signingKey, nil)
 
 	dynamicMiddleware := dynamicAuthMiddleware(config, jwtAuth, services.ApiKeyHandler.Cache)

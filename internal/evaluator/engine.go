@@ -12,8 +12,8 @@ import (
 
 var (
 	_globalMu      sync.RWMutex
-	_globalREngine = make(map[string]*ruleeng.RuleEngine, 0)
-	_lastUpdate    = make(map[string]time.Time, 0)
+	_globalREngine = make(map[string]*ruleeng.RuleEngine)
+	_lastUpdate    = make(map[string]time.Time)
 )
 
 // GetEngine return a specific engine
@@ -30,7 +30,7 @@ func GetEngine(engineID string) (*ruleeng.RuleEngine, bool) {
 // CloneEngine inits a new engine based on an existing one
 func CloneEngine(engineID string, cloneRuleBase bool, cloneKnowledgeBase bool) (*ruleeng.RuleEngine, error) {
 	if re, ok := GetEngine(engineID); !ok {
-		return nil, fmt.Errorf("Engine with ID %s does not exist", engineID)
+		return nil, fmt.Errorf("engine with ID %s does not exist", engineID)
 	} else {
 		clone := ruleeng.NewRuleEngine()
 		if cloneRuleBase {
@@ -46,7 +46,7 @@ func CloneEngine(engineID string, cloneRuleBase bool, cloneKnowledgeBase bool) (
 // InitEngine inits an engine if it does not exist
 func InitEngine(engineID string) error {
 	if _, ok := GetEngine(engineID); ok {
-		return fmt.Errorf("Engine with ID %s already exists", engineID)
+		return fmt.Errorf("engine with ID %s already exists", engineID)
 	}
 
 	_globalMu.Lock()
@@ -62,7 +62,7 @@ func InitEngine(engineID string) error {
 
 	for _, rule := range rules {
 		if rule.Enabled {
-			_globalREngine[engineID].InsertRule(rule)
+			_globalREngine[engineID].InsertRule(&rule)
 		}
 	}
 	return nil
@@ -71,7 +71,7 @@ func InitEngine(engineID string) error {
 // UpdateEngine updates an engine if it exists
 func UpdateEngine(engineID string) error {
 	if _, ok := GetEngine(engineID); !ok {
-		return fmt.Errorf("Engine with ID %s does not exist", engineID)
+		return fmt.Errorf("engine with ID %s does not exist", engineID)
 	}
 
 	_globalMu.Lock()
@@ -83,11 +83,11 @@ func UpdateEngine(engineID string) error {
 		return errors.New("couldn't read modified rules " + err.Error())
 	}
 	_lastUpdate[engineID] = now
-	for _, rule := range rules {
-		if rule.Enabled {
-			_globalREngine[engineID].InsertRule(rule)
+	for _, r := range rules {
+		if r.Enabled {
+			_globalREngine[engineID].InsertRule(&r)
 		} else {
-			_globalREngine[engineID].RemoveRule(rule.ID)
+			_globalREngine[engineID].RemoveRule(r.ID)
 		}
 	}
 
