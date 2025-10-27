@@ -6,6 +6,7 @@ toolchain go1.24.2
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
+	github.com/PaesslerAG/gval v1.2.4
 	github.com/coreos/go-oidc/v3 v3.14.1
 	github.com/elastic/go-elasticsearch/v8 v8.15.0
 	github.com/go-chi/chi/v5 v5.2.1
@@ -19,7 +20,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/json-iterator/go v1.1.12
 	github.com/lib/pq v1.10.9
-	github.com/myrteametrics/myrtea-sdk/v5 v5.3.3-0.20251015142613-802f95093541
+	github.com/myrteametrics/myrtea-sdk/v5 v5.3.3
 	github.com/pressly/goose/v3 v3.24.2
 	github.com/prometheus/client_golang v1.22.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -37,7 +38,6 @@ require (
 require (
 	github.com/IBM/sarama v1.45.1 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/PaesslerAG/gval v1.2.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
