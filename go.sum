@@ -211,6 +211,8 @@ github.com/myrteametrics/myrtea-sdk/v5 v5.3.3 h1:OpyR0EB1TQ9EjrgeBtLM4gEjxZ9FAjK
 github.com/myrteametrics/myrtea-sdk/v5 v5.3.3/go.mod h1:z61Epn17PcQueOoIvw+ue5CcPvjs3ddplZwvq/tUle0=
 github.com/myrteametrics/myrtea-sdk/v5 v5.3.4-0.20251027162451-59e44ec2808e h1:OpIHj5Zl+CSntnusB4QM0zwLEofEpHjCYS6PytnX9HU=
 github.com/myrteametrics/myrtea-sdk/v5 v5.3.4-0.20251027162451-59e44ec2808e/go.mod h1:GcPmgpzkSdcIC4PLVtuWW5RhJF8eayoVS0RY+P4uPFQ=
+github.com/myrteametrics/myrtea-sdk/v5 v5.3.4-0.20251029143426-f44dc8fb75fc h1:87xYDNJ6P+qyzhgTycPSigtJ/Q0bbysGO/SJRki4n3k=
+github.com/myrteametrics/myrtea-sdk/v5 v5.3.4-0.20251029143426-f44dc8fb75fc/go.mod h1:GcPmgpzkSdcIC4PLVtuWW5RhJF8eayoVS0RY+P4uPFQ=
 github.com/ncruces/go-strftime v0.1.9 h1:bY0MQC28UADQmHmaF5dgpLmImcShSi2kHU9XLdhx/f4=
 github.com/ncruces/go-strftime v0.1.9/go.mod h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJmn9CehxcKcls=
 github.com/oklog/run v1.2.0 h1:O8x3yXwah4A73hJdlrwo/2X6J62gE5qTMusH0dvz60E=
