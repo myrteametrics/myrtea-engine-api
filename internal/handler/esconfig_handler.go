@@ -3,12 +3,13 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
@@ -46,6 +47,7 @@ func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
 
 	elasticSearchConfigsSlice := make([]model.ElasticSearchConfig, 0)
 	for _, elasticSearchConfig := range elasticSearchConfigs {
+		// Password is already excluded from GetAll in the repository
 		elasticSearchConfigsSlice = append(elasticSearchConfigsSlice, elasticSearchConfig)
 	}
 
@@ -99,6 +101,7 @@ func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Password is returned with hashed value from Get - keep it as is for security
 	httputil.JSON(w, r, a)
 }
 

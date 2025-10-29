@@ -13,6 +13,9 @@ type Repository interface {
 	Get(id int64) (model.ElasticSearchConfig, bool, error)
 	GetByName(name string) (model.ElasticSearchConfig, bool, error)
 	GetDefault() (model.ElasticSearchConfig, bool, error)
+	GetForAuth(id int64) (model.ElasticSearchConfig, bool, error)
+	GetByNameForAuth(name string) (model.ElasticSearchConfig, bool, error)
+	GetDefaultForAuth() (model.ElasticSearchConfig, bool, error)
 	Create(config model.ElasticSearchConfig) (int64, error)
 	Update(id int64, config model.ElasticSearchConfig) error
 	Delete(id int64) error

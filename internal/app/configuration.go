@@ -20,6 +20,12 @@ var AllowedConfigKey = [][]helpers.ConfigKey{
 	helpers.GetGeneralConfigKeys(),
 	helpers.GetHTTPServerConfigKeys(),
 	helpers.GetElasticsearchConfigKeys(),
+	{
+		{Type: helpers.StringFlag, Name: "ELASTICSEARCH_AUTH", DefaultValue: "false", Description: "Enable Elasticsearch authentication"},
+		{Type: helpers.StringFlag, Name: "ELASTICSEARCH_INSECURE", DefaultValue: "false", Description: "Disable Elasticsearch TLS verification (insecure mode)"},
+		{Type: helpers.StringFlag, Name: "ELASTICSEARCH_USERNAME", DefaultValue: "", Description: "Elasticsearch username for authentication"},
+		{Type: helpers.StringFlag, Name: "ELASTICSEARCH_PASSWORD", DefaultValue: "", Description: "Elasticsearch password for authentication"},
+	},
 	helpers.GetPostgresqlConfigKeys(),
 	{
 		{Type: helpers.StringFlag, Name: "POSTGRESQL_CONN_POOL_MAX_OPEN", DefaultValue: "6", Description: "PostgreSQL connection pool max open"},

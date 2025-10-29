@@ -2,7 +2,9 @@ package export
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
+	"net/http"
 	"strings"
 	"time"
 
@@ -86,7 +88,7 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, searchRe
 	cli := elasticsearch.C() // defaults to singleton instance
 
 	if params.Client != "" {
-		config, b, err := esconfig.R().GetByName(params.Client)
+		config, b, err := esconfig.R().GetByNameForAuth(params.Client) // Use ForAuth to get cleartext password
 		if err != nil {
 			zap.L().Error("Error when getting esconfig from repository",
 				zap.String("elasticClient", params.Client), zap.Error(err))
@@ -106,9 +108,25 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, searchRe
 			return errors.New("cannot init an elasticsearch client with missing URLs")
 		}
 
-		cli, err = es.NewTypedClient(es.Config{
+		// Build elasticsearch client config with authentication support
+		esClientConfig := es.Config{
 			Addresses: config.URLs,
-		})
+		}
+
+		// Apply authentication if enabled (password is now cleartext from GetByNameForAuth)
+		if config.Auth {
+			esClientConfig.Username = config.Username
+			esClientConfig.Password = config.Password // Now cleartext for authentication
+		}
+
+		// Apply insecure TLS if enabled
+		if config.Insecure {
+			esClientConfig.Transport = &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			}
+		}
+
+		cli, err = es.NewTypedClient(esClientConfig)
 		if err != nil {
 			zap.L().Error("Cannot init new elasticsearch typed client", zap.Error(err))
 			return err
