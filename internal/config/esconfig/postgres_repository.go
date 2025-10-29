@@ -21,7 +21,7 @@ const table = "elasticsearch_config_v1"
 
 // encryptionKey should be 32 bytes for AES-256
 // In production, this should come from environment variable or secure key management
-var encryptionKey = []byte("myrtea-es-config-key-32bytes!!")
+var encryptionKey = []byte("!!myrtea-es-config-key-32bytes!!")
 
 // PostgresRepository is a repository containing the ExternalConfig definition based on a PSQL database and
 // implementing the repository interface
@@ -55,7 +55,7 @@ func (r *PostgresRepository) checkRowsAffected(res sql.Result, nbRows int64) err
 	return nil
 }
 
-// encryptPassword encrypts a password using AES
+// encryptPassword encrypts a password using AES-GCM (AEAD mode)
 func encryptPassword(plaintext string) (string, error) {
 	if plaintext == "" {
 		return "", nil
@@ -66,19 +66,25 @@ func encryptPassword(plaintext string) (string, error) {
 		return "", err
 	}
 
-	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
-	iv := ciphertext[:aes.BlockSize]
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+	// GCM mode (Galois/Counter Mode) - authenticated encryption
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
 		return "", err
 	}
 
-	stream := cipher.NewCFBEncrypter(block, iv)
-	stream.XORKeyStream(ciphertext[aes.BlockSize:], []byte(plaintext))
+	// Create nonce (must never be reused with same key)
+	nonce := make([]byte, aesGCM.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+
+	// Encrypt and authenticate the data
+	ciphertext := aesGCM.Seal(nonce, nonce, []byte(plaintext), nil)
 
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-// decryptPassword decrypts a password using AES
+// decryptPassword decrypts a password using AES-GCM
 func decryptPassword(encrypted string) (string, error) {
 	if encrypted == "" {
 		return "", nil
@@ -94,17 +100,27 @@ func decryptPassword(encrypted string) (string, error) {
 		return "", err
 	}
 
-	if len(ciphertext) < aes.BlockSize {
+	// GCM mode
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	nonceSize := aesGCM.NonceSize()
+	if len(ciphertext) < nonceSize {
 		return "", errors.New("ciphertext too short")
 	}
 
-	iv := ciphertext[:aes.BlockSize]
-	ciphertext = ciphertext[aes.BlockSize:]
+	// Extract nonce and ciphertext
+	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
 
-	stream := cipher.NewCFBDecrypter(block, iv)
-	stream.XORKeyStream(ciphertext, ciphertext)
+	// Decrypt and verify authentication tag
+	plaintext, err := aesGCM.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return "", err
+	}
 
-	return string(ciphertext), nil
+	return string(plaintext), nil
 }
 
 // Get use to retrieve an elasticSearchConfig by id (password masked)
