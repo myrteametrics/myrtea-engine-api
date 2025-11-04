@@ -11,9 +11,10 @@ type CSVParameters struct {
 }
 
 type Column struct {
-	Name   string `json:"name"`
-	Label  string `json:"label"`
-	Format string `json:"format" default:""`
+	Name     string `json:"name"`
+	Label    string `json:"label"`
+	Format   string `json:"format" default:""`
+	FormatTz string `json:"formatTz" default:""`
 }
 
 // Equals compares two Column
@@ -25,6 +26,9 @@ func (p Column) Equals(column Column) bool {
 		return false
 	}
 	if p.Format != column.Format {
+		return false
+	}
+	if p.FormatTz != column.FormatTz {
 		return false
 	}
 	return true
