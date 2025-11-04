@@ -41,11 +41,11 @@ func WriteConvertHitsToCSV(w *csv.Writer, hits []reader.Hit, params CSVParameter
 			switch v := value.(type) {
 			case []interface{}:
 				if params.ListSeparator != "" {
-					value = convertSliceToString(v, column.Format, params.ListSeparator)
+					value = convertSliceToString(v, column.Format, column.FormatTz, params.ListSeparator)
 				}
 			default:
 				if column.Format != "" {
-					value = formatValue(value, column.Format)
+					value = formatValue(value, column.Format, column.FormatTz)
 				}
 			}
 
@@ -91,6 +91,9 @@ func nestedMapLookup(m map[string]interface{}, ks ...string) (rval interface{}, 
 // parseDate parses a date string
 func parseDate(dateStr string) (time.Time, error) {
 	formats := []string{
+		time.RFC3339,
+		time.RFC3339Nano,
+		time.DateOnly,
 		"2006-01-02T15:04:05.999",
 		"2006-01-02T15:4:05.999",
 		"2006-01-02T15:04:5.999",
@@ -107,13 +110,29 @@ func parseDate(dateStr string) (time.Time, error) {
 }
 
 // formatValue Apply the specified format to a given value.
-func formatValue(value interface{}, format string) interface{} {
+func formatValue(value interface{}, format, tz string) interface{} {
+	var location *time.Location
+	var err error
+	if tz != "" {
+		location, err = time.LoadLocation(tz)
+		if err != nil {
+			zap.L().Error("Failed to load location for timezone:", zap.String("tz", tz), zap.Error(err))
+			location = nil
+		}
+	}
+
 	switch v := value.(type) {
 	case time.Time:
+		if location != nil {
+			return v.In(location).Format(format)
+		}
 		return v.Format(format)
 	case string:
 		date, err := parseDate(v)
 		if err == nil {
+			if location != nil {
+				return date.In(location).Format(format)
+			}
 			return date.Format(format)
 		}
 		zap.L().Error("Failed to parse date string:", zap.Any("value", v), zap.Error(err))
@@ -122,11 +141,11 @@ func formatValue(value interface{}, format string) interface{} {
 }
 
 // convertSliceToString Take a slice []interface{}, format and returns the elements separated by custom separator.
-func convertSliceToString(slice []interface{}, format string, separator string) string {
+func convertSliceToString(slice []interface{}, format, formatTz, separator string) string {
 	var strValues []string
 	for _, elem := range slice {
 		if format != "" {
-			elem = formatValue(elem, format)
+			elem = formatValue(elem, format, formatTz)
 		}
 		strValues = append(strValues, fmt.Sprintf("%v", elem))
 	}
