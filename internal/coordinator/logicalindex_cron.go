@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/rollover"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/updatealiases"
@@ -30,7 +31,7 @@ type LogicalIndexCron struct {
 	mu          sync.RWMutex
 }
 
-func NewLogicalIndexCronTemplate(instanceName string, model modeler.Model) (*LogicalIndexCron, bool, error) {
+func NewLogicalIndexCronTemplate(instanceName string, model modeler.Model, updateIfExists bool) (*LogicalIndexCron, bool, error) {
 	logicalIndexName := fmt.Sprintf("%s-%s", instanceName, model.Name)
 
 	zap.L().Info("Initialize logicalIndex (LogicalIndexCron)", zap.String("name", logicalIndexName), zap.String("model", model.Name), zap.Any("options", model.ElasticsearchOptions))
@@ -66,17 +67,19 @@ func NewLogicalIndexCronTemplate(instanceName string, model modeler.Model) (*Log
 		zap.L().Info("Updating missing template", zap.String("templateName", templateName),
 			zap.String("indexPattern", indexPattern), zap.String("model", model.Name))
 	}
-	logicalIndex.putTemplate(templateName, indexPattern, model)
+	if updateIfExists || !templateExists {
+		logicalIndex.putTemplate(templateName, indexPattern, model)
+	}
 
 	return logicalIndex, templateExists, nil
 }
 
-func NewLogicalIndexCron(instanceName string, model modeler.Model) (*LogicalIndexCron, error) {
+func NewLogicalIndexCron(instanceName string, model modeler.Model, updateIfExists bool) (*LogicalIndexCron, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	logicalIndex, templateExists, err := NewLogicalIndexCronTemplate(instanceName, model)
+	logicalIndex, templateExists, err := NewLogicalIndexCronTemplate(instanceName, model, updateIfExists)
 	if err != nil {
 		return nil, err
 	}

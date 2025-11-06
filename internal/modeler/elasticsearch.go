@@ -14,13 +14,13 @@ func UpdateElasticTemplate(model modeler.Model) (string, error) {
 	switch model.ElasticsearchOptions.Rollmode.Type {
 	case modeler.RollmodeCron:
 		var cronIndex *coordinator.LogicalIndexCron
-		cronIndex, err = coordinator.NewLogicalIndexCron(instanceName, model)
+		cronIndex, err = coordinator.NewLogicalIndexCron(instanceName, model, true)
 		if err == nil {
 			logicalIndexName = cronIndex.Name
 		}
 	case modeler.RollmodeTimeBased:
 		var timeBasedIndex *coordinator.LogicalIndexTimeBased
-		timeBasedIndex, err = coordinator.NewLogicalIndexTimeBased(instanceName, model)
+		timeBasedIndex, err = coordinator.NewLogicalIndexTimeBased(instanceName, model, true)
 		if err == nil {
 			logicalIndexName = timeBasedIndex.Name
 		}
