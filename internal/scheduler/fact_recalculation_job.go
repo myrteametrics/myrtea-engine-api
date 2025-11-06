@@ -3,10 +3,11 @@ package scheduler
 import (
 	"encoding/json"
 	"errors"
+	"time"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
-	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
@@ -220,7 +221,7 @@ func (job FactRecalculationJob) RecalculateAndUpdateFacts(factIDs []int64, facts
 				parameters = s.Parameters
 			}
 
-			widgetData, err := fact.ExecuteFact(fh.Ts, f, fh.SituationID, fh.SituationInstanceID, parameters, -1, -1, true)
+			widgetData, err := fact.ExecuteFact(fh.Ts, f, fh.SituationID, fh.SituationInstanceID, parameters, 0, 0, true)
 			if err != nil {
 				zap.L().Error("fact.ExecuteFact", zap.Error(err))
 				continue

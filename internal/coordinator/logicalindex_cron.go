@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/rollover"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/updatealiases"
@@ -54,7 +55,7 @@ func NewLogicalIndexCronTemplate(instanceName string, model modeler.Model) (*Log
 	// First create template if not exists or update it
 
 	templateName := fmt.Sprintf("template-%s", logicalIndexName)
-	templateExists, err := elasticsearch.C().Indices.ExistsTemplate(templateName).IsSuccess(ctx)
+	templateExists, err := elasticsearch.C().Indices.ExistsIndexTemplate(templateName).IsSuccess(ctx)
 	if err != nil {
 		zap.L().Error("IndexTemplateExists()", zap.String("templateName", templateName), zap.Error(err))
 		return nil, false, err
