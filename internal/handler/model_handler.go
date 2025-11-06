@@ -351,7 +351,7 @@ func DeleteModel(w http.ResponseWriter, r *http.Request) {
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
 //	@Failure		400	"Status Bad Request"
-//	@Router			/engine/models/updateTemplate/{id} [put]
+//	@Router			/engine/models/update-template/{id} [put]
 func UpdateModelTemplate(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
