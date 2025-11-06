@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/rollover"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/updatealiases"
@@ -30,14 +31,13 @@ type LogicalIndexCron struct {
 	mu          sync.RWMutex
 }
 
-func NewLogicalIndexCron(instanceName string, model modeler.Model) (*LogicalIndexCron, error) {
-
+func NewLogicalIndexCronTemplate(instanceName string, model modeler.Model, updateIfExists bool) (*LogicalIndexCron, bool, error) {
 	logicalIndexName := fmt.Sprintf("%s-%s", instanceName, model.Name)
 
 	zap.L().Info("Initialize logicalIndex (LogicalIndexCron)", zap.String("name", logicalIndexName), zap.String("model", model.Name), zap.Any("options", model.ElasticsearchOptions))
 
 	if model.ElasticsearchOptions.Rollmode.Type != modeler.RollmodeCron {
-		return nil, errors.New("invalid rollmode for this logicalIndex type")
+		return nil, false, errors.New("invalid rollmode for this logicalIndex type")
 	}
 
 	logicalIndex := &LogicalIndexCron{
@@ -52,19 +52,39 @@ func NewLogicalIndexCron(instanceName string, model modeler.Model) (*LogicalInde
 
 	indexPattern := fmt.Sprintf("%s-active-*", logicalIndexName)
 
-	// First create template if not exists
+	// First create template if not exists or update it
 
 	templateName := fmt.Sprintf("template-%s", logicalIndexName)
 	templateExists, err := elasticsearch.C().Indices.ExistsTemplate(templateName).IsSuccess(ctx)
 	if err != nil {
 		zap.L().Error("IndexTemplateExists()", zap.String("templateName", templateName), zap.Error(err))
-		return nil, err
+		return nil, false, err
 	}
 	if !templateExists {
 		zap.L().Info("Creating missing template", zap.String("templateName", templateName),
 			zap.String("indexPattern", indexPattern), zap.String("model", model.Name))
+	} else {
+		zap.L().Info("Updating missing template", zap.String("templateName", templateName),
+			zap.String("indexPattern", indexPattern), zap.String("model", model.Name))
+	}
+	if updateIfExists || !templateExists {
 		logicalIndex.putTemplate(templateName, indexPattern, model)
 	}
+
+	return logicalIndex, templateExists, nil
+}
+
+func NewLogicalIndexCron(instanceName string, model modeler.Model, updateIfExists bool) (*LogicalIndexCron, error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
+	logicalIndex, templateExists, err := NewLogicalIndexCronTemplate(instanceName, model, updateIfExists)
+	if err != nil {
+		return nil, err
+	}
+
+	logicalIndexName := logicalIndex.Name
 
 	// Then create base index name if not exists
 	baseIndexName := logicalIndexName + "-active-000001"

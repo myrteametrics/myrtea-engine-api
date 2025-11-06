@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+  "fmt"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
@@ -335,4 +336,63 @@ func DeleteModel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//render.OK(w, r)
+}
+
+// UpdateModelTemplate godoc
+//
+//	@Id				UpdateModelTemplate
+//
+//	@Summary		Update the elastic template with the model
+//	@Description	Update the elastic template with the model
+//	@Tags			Models
+//	@Produce		json
+//	@Param			id	path	string	true	"Model ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/models/update-template/{id} [put]
+func UpdateModelTemplate(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeModel, id, permissions.ActionUpdate)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	idModel, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Error("Error on parsing model id", zap.String("modelID", id))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	model2, found, err := model.R().Get(idModel)
+	if err != nil {
+		zap.L().Error("Error while fetching model", zap.String("modelid", id), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Error("Model does not exists", zap.String("modelid", id))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
+		return
+	}
+
+	logicalIndexName, err := model.UpdateElasticTemplate(model2)
+
+	if err != nil {
+		zap.L().Error("Error while creating or updating the template", zap.String("modelid", id), zap.Error(err), zap.String("target template", fmt.Sprintf("template-%s", logicalIndexName)))
+		httputil.Error(w, r, httputil.ErrAPIElasticUpdateTemplate, err)
+		return
+	}
+
+	response := struct {
+		LogicalIndexName string `json:"logicalIndexName"`
+	}{
+		LogicalIndexName: logicalIndexName,
+	}
+
+	httputil.JSON(w, r, response)
 }
