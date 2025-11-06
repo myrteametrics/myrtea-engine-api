@@ -3,14 +3,15 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+	"sort"
+	"strconv"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/myrteametrics/myrtea-sdk/v5/handlers/render"
-	"net/http"
-	"sort"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"

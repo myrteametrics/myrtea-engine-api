@@ -3,11 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"

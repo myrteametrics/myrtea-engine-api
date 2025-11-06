@@ -1,15 +1,15 @@
 package tasker
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	email2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/email"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
-	"html/template"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/emailutils"
+	email2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/email"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
@@ -17,7 +17,7 @@ import (
 )
 
 // Temp solution before proper task condition trigger
-var cache map[string]time.Time = make(map[string]time.Time, 0)
+var cache = make(map[string]time.Time)
 
 func verifyCache(key string, timeout time.Duration) bool {
 	if val, ok := cache[key]; ok && time.Now().UTC().Before(val) {
@@ -191,7 +191,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 	zap.L().Debug("GetSituationKnowledge()", zap.Any("situationData", situationData))
 
 	var body []byte
-	body, err = BuildMessageBody(task.BodyTemplate, situationData)
+	body, err = emailutils.BuildMessageBody(task.BodyTemplate, situationData)
 	if err != nil {
 		zap.L().Error("Error Building MessageBody", zap.Error(err))
 		body = []byte("<p>Error Building MessageBody</p>")
@@ -242,23 +242,4 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 	zap.L().Info("Email sent !")
 
 	return nil
-}
-
-func BuildMessageBody(templateBody string, templateData map[string]interface{}) ([]byte, error) {
-	tmpl, err := template.New("htmlEmail").Funcs(template.FuncMap{
-		"split": func(input string, separator string) []string {
-			return strings.Split(input, separator)
-		},
-	}).Parse(templateBody)
-	if err != nil {
-		return nil, err
-	}
-
-	var body bytes.Buffer
-	err = tmpl.Execute(&body, templateData)
-	if err != nil {
-		return nil, err
-	}
-
-	return body.Bytes(), nil
 }
