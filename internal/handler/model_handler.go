@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/go-chi/chi/v5"
 	model "github.com/myrteametrics/myrtea-engine-api/v5/internal/modeler"
@@ -337,11 +338,25 @@ func DeleteModel(w http.ResponseWriter, r *http.Request) {
 	//render.OK(w, r)
 }
 
+// UpdateModelTemplate godoc
+//
+//	@Id				UpdateModelTemplate
+//
+//	@Summary		Update the elastic template with the model
+//	@Description	Update the elastic template with the model
+//	@Tags			Models
+//	@Produce		json
+//	@Param			id	path	string	true	"Model ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	"Status OK"
+//	@Failure		400	"Status Bad Request"
+//	@Router			/engine/models/updateTemplate/{id} [put]
 func UpdateModelTemplate(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	userCtx, _ := GetUserFromContext(r)
-	if !userCtx.HasPermission(permissions.New(permissions.TypeModel, id, permissions.ActionDelete)) {
+	if !userCtx.HasPermission(permissions.New(permissions.TypeModel, id, permissions.ActionUpdate)) {
 		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
 		return
 	}
