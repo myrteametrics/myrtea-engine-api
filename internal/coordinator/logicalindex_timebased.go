@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 
 	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
 
@@ -25,7 +26,7 @@ type LogicalIndexTimeBased struct {
 	mu          sync.RWMutex
 }
 
-func NewLogicalIndexTimeBased(instanceName string, model modeler.Model) (*LogicalIndexTimeBased, error) {
+func NewLogicalIndexTimeBased(instanceName string, model modeler.Model, updateIfExists bool) (*LogicalIndexTimeBased, error) {
 
 	logicalIndexName := fmt.Sprintf("%s-%s", instanceName, model.Name)
 
@@ -53,12 +54,14 @@ func NewLogicalIndexTimeBased(instanceName string, model modeler.Model) (*Logica
 		return nil, err
 	}
 	if !templateExists {
-		zap.L().Info("index template doesn't exists, creating it", zap.String("logicalIndexName", logicalIndexName))
-	} else {
-		zap.L().Info("index template already exists, updating it", zap.String("logicalIndexName", logicalIndexName))
+		zap.L().Info("template doesn't exists, creating it", zap.String("logicalIndexName", logicalIndexName))
+	} else if updateIfExists {
+		zap.L().Info("template already exists, updating it", zap.String("logicalIndexName", logicalIndexName))
 	}
-	indexPattern := fmt.Sprintf("%s-*", logicalIndexName)
-	logicalIndex.putIndexTemplate(templateName, indexPattern, model)
+	if updateIfExists || !templateExists {
+		indexPattern := fmt.Sprintf("%s-*", logicalIndexName)
+		logicalIndex.putIndexTemplate(templateName, indexPattern, model)
+	}
 
 	logicalIndex.FetchIndices()
 	zap.L().Info("LogicalIndex initialized", zap.String("logicalIndex", logicalIndex.Name))
@@ -126,8 +129,8 @@ func (logicalIndex *LogicalIndexTimeBased) purge() {
 	logicalIndex.FetchIndices()
 }
 
-func (logicalIndex *LogicalIndexTimeBased) putIndexTemplate(name string, indexPattern string, model modeler.Model) {
-	req := elasticsearch.NewPutIndexTemplateRequestV8([]string{indexPattern}, model)
+func (logicalIndex *LogicalIndexTimeBased) putIndexTemplate(name string, indexPatern string, model modeler.Model) {
+	req := elasticsearch.NewPutIndexTemplateRequestV8([]string{indexPatern}, model)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
