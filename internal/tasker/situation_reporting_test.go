@@ -1,10 +1,12 @@
 package tasker
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/emailutils"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 )
 
 func TestBuildSituationReportingTask(t *testing.T) {
@@ -119,7 +121,7 @@ func TestBuildMessageBody(t *testing.T) {
 	`
 
 	templateBody = strings.ReplaceAll(templateBody, "'", "\"")
-	b, err := BuildMessageBody(templateBody, templateData)
+	b, err := emailutils.BuildMessageBody(templateBody, templateData)
 	if err != nil {
 		t.Log(err)
 		t.FailNow()

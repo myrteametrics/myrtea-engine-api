@@ -135,6 +135,13 @@ AGGREGATEINGESTER_QUEUE_BUFFER_SIZE = "100"
 # Default value: "BASIC"
 AUTHENTICATION_MODE = "BASIC"
 
+# Specify the JWT signing key
+# This key is used to sign and verify the JWT (JSON Web Token) used for API
+# Only used if AUTHENTICATION_MODE="BASIC"
+# If we're in production mode and that variable is not set, the application will generate a random key at startup
+# Default value: ""
+JWT_SIGNING_KEY = ""
+
 # Specify the SMTP Username
 # Default value : "smtp@example.com"
 SMTP_USERNAME = "smtp@example.com"

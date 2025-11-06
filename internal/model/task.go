@@ -49,6 +49,8 @@ const (
 	Warning
 	// Critical critical level
 	Critical
+	// Fatal fatal level
+	Fatal
 )
 
 func (s IssueLevel) String() string {
@@ -71,6 +73,7 @@ var issueLevelToString = map[IssueLevel]string{
 	Ok:       "ok",
 	Warning:  "warning",
 	Critical: "critical",
+	Fatal:    "fatal",
 }
 
 var issueLevelToID = map[string]IssueLevel{
@@ -78,6 +81,7 @@ var issueLevelToID = map[string]IssueLevel{
 	"ok":       Ok,
 	"warning":  Warning,
 	"critical": Critical,
+	"fatal":    Fatal,
 }
 
 // MarshalJSON marshals the enum as a quoted json string

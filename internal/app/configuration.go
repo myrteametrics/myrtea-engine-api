@@ -55,6 +55,7 @@ var AllowedConfigKey = [][]helpers.ConfigKey{
 		{Type: helpers.StringFlag, Name: "MAX_CONFIG_HISTORY_RECORDS", DefaultValue: 100, Description: "Maximum number of historical versions to keep for configuration history. When a new version is added, versions exceeding this number will be deleted, starting with the oldest."},
 		{Type: helpers.StringFlag, Name: "API_KEY_CACHE_DURATION", DefaultValue: "1h", Description: "Specify the duration for how long the API token will be cached."},
 		{Type: helpers.StringFlag, Name: "AUTHENTICATION_CREATE_SUPERUSER", DefaultValue: "false", Description: "Create superuser if not exists"},
+		{Type: helpers.StringFlag, Name: "JWT_SIGNING_KEY", DefaultValue: "", Description: "JWT signing key for token generation. If not set, a random key will be generated on startup (in production mode only)."},
 	},
 }
 

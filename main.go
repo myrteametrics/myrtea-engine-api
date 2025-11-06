@@ -3,16 +3,17 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handler"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/metrics"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/service"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handler"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/metrics"
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/service"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
 
 	_ "github.com/lib/pq"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/app"
@@ -76,6 +77,7 @@ func main() {
 		GatewayMode:        viper.GetBool("HTTP_SERVER_API_ENABLE_GATEWAY_MODE"),
 		AuthenticationMode: viper.GetString("AUTHENTICATION_MODE"),
 		LogLevel:           zapConfig.Level,
+		JWTSigningKey:      viper.GetString("JWT_SIGNING_KEY"),
 	}
 
 	// Exports
