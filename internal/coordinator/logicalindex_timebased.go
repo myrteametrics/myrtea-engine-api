@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 
 	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
 
@@ -25,7 +26,7 @@ type LogicalIndexTimeBased struct {
 	mu          sync.RWMutex
 }
 
-func NewLogicalIndexTimeBased(instanceName string, model modeler.Model) (*LogicalIndexTimeBased, error) {
+func NewLogicalIndexTimeBased(instanceName string, model modeler.Model, updateIfExists bool) (*LogicalIndexTimeBased, error) {
 
 	logicalIndexName := fmt.Sprintf("%s-%s", instanceName, model.Name)
 
@@ -54,6 +55,10 @@ func NewLogicalIndexTimeBased(instanceName string, model modeler.Model) (*Logica
 	}
 	if !templateExists {
 		zap.L().Info("template doesn't exists, creating it", zap.String("logicalIndexName", logicalIndexName))
+	} else if updateIfExists {
+		zap.L().Info("template already exists, updating it", zap.String("logicalIndexName", logicalIndexName))
+	}
+	if updateIfExists || !templateExists {
 		indexPatern := fmt.Sprintf("%s-*", logicalIndexName)
 		logicalIndex.putTemplate(templateName, indexPatern, model)
 	}

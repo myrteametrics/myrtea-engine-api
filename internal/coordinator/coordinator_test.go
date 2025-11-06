@@ -1,11 +1,12 @@
 package coordinator
 
 import (
-	"github.com/elastic/go-elasticsearch/v8"
-	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/elastic/go-elasticsearch/v8"
+	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 
 	"github.com/myrteametrics/myrtea-sdk/v5/helpers"
 	"github.com/myrteametrics/myrtea-sdk/v5/modeler"
@@ -157,7 +158,7 @@ func TestPurge(t *testing.T) {
 		EnablePurge:               true,
 		PurgeMaxConcurrentIndices: 30,
 		PatchAliasMaxIndices:      0,
-	}})
+	}}, false)
 	if err != nil {
 		t.Error(err)
 	}
