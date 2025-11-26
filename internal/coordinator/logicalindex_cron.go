@@ -256,11 +256,12 @@ func generateNextIndexName(logicalIndexName string, existingIndices []string, no
 		}
 		
 		// Check if it starts with logicalIndexName followed by "-"
-		if indexName[:len(logicalIndexName)+1] != logicalIndexName+"-" {
+		prefixLength := len(logicalIndexName) + 1
+		if len(indexName) < prefixLength || indexName[:prefixLength] != logicalIndexName+"-" {
 			continue
 		}
 		
-		suffix := indexName[len(logicalIndexName)+1:] // Remove "logicalIndexName-"
+		suffix := indexName[prefixLength:] // Remove "logicalIndexName-"
 		// suffix should be exactly "YYYY-MM-NNNN"
 		expectedSuffixLength := IndexDateLength + 1 + IndexSequenceLength // "YYYY-MM" + "-" + "NNNN"
 		if len(suffix) != expectedSuffixLength {
@@ -268,18 +269,21 @@ func generateNextIndexName(logicalIndexName string, existingIndices []string, no
 		}
 		
 		// Check if the date prefix matches
-		if suffix[:IndexDateLength] != datePrefix {
+		if len(suffix) < IndexDateLength || suffix[:IndexDateLength] != datePrefix {
 			continue
 		}
 		
 		// Check if there's a dash separator after the date
-		if suffix[IndexDateLength] != '-' {
+		if len(suffix) <= IndexDateLength || suffix[IndexDateLength] != '-' {
 			continue
 		}
 		
 		// Extract and parse sequence number (last 4 digits)
 		seqStart := IndexDateLength + 1
 		seqEnd := seqStart + IndexSequenceLength
+		if len(suffix) < seqEnd {
+			continue
+		}
 		seqStr := suffix[seqStart:seqEnd]
 		
 		// Parse sequence number - using Sscanf with %04d format to validate format
