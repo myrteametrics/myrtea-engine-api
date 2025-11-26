@@ -50,7 +50,7 @@ func NewLogicalIndexCronTemplate(instanceName string, model modeler.Model, updat
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	indexPattern := fmt.Sprintf("%s-active-*", logicalIndexName)
+	indexPattern := fmt.Sprintf("%s-*", logicalIndexName)
 
 	// First create template if not exists or update it
 
@@ -87,7 +87,9 @@ func NewLogicalIndexCron(instanceName string, model modeler.Model, updateIfExist
 	logicalIndexName := logicalIndex.Name
 
 	// Then create base index name if not exists
-	baseIndexName := logicalIndexName + "-active-000001"
+	// Use date-based naming: logicalIndexName-YYYY-MM-0001
+	now := time.Now().UTC()
+	baseIndexName := fmt.Sprintf("%s-%s-0001", logicalIndexName, now.Format("2006-01"))
 	baseIndexExists, err := elasticsearch.C().Indices.Exists(baseIndexName).IsSuccess(ctx)
 	if err != nil {
 		zap.L().Error("IndexExists()", zap.String("baseIndexName", baseIndexName), zap.Error(err))
@@ -105,7 +107,7 @@ func NewLogicalIndexCron(instanceName string, model modeler.Model, updateIfExist
 	}
 
 	// Create alias "-current" if not already exists
-	err = logicalIndex.putAlias(logicalIndexName+"-current", logicalIndexName+"-active-*", model.Name, ctx)
+	err = logicalIndex.putAlias(logicalIndexName+"-current", logicalIndexName+"-*", model.Name, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +128,7 @@ func NewLogicalIndexCron(instanceName string, model modeler.Model, updateIfExist
 
 	// We want to persist the index if he has been created
 	if !templateExists {
-		err = logicalIndex.persistTechnicalIndex(logicalIndexName+"-active-000001", time.Now().UTC())
+		err = logicalIndex.persistTechnicalIndex(baseIndexName, now)
 		if err != nil {
 			zap.L().Error("Could not persist technical index data", zap.Error(err))
 		}
@@ -228,8 +230,63 @@ func (logicalIndex *LogicalIndexCron) FindIndices(t time.Time, depthDays int64) 
 	return indices, nil
 }
 
+// generateNextIndexName generates the next index name based on the current date and existing indices
+// Format: logicalIndexName-YYYY-MM-NNNN
+func generateNextIndexName(logicalIndexName string, existingIndices []string, now time.Time) string {
+	datePrefix := now.Format("2006-01")
+	
+	// Find the highest sequence number for the current month
+	highestSeq := 0
+	for _, indexName := range existingIndices {
+		// Expected format: logicalIndexName-YYYY-MM-NNNN
+		if len(indexName) > len(logicalIndexName)+8 {
+			suffix := indexName[len(logicalIndexName)+1:] // Remove "logicalIndexName-"
+			if len(suffix) >= 8 && suffix[:7] == datePrefix {
+				// Extract sequence number (last 4 digits)
+				if len(suffix) >= 12 && suffix[7] == '-' {
+					seqStr := suffix[8:12]
+					seq := 0
+					if _, err := fmt.Sscanf(seqStr, "%d", &seq); err == nil {
+						if seq > highestSeq {
+							highestSeq = seq
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	newSeq := highestSeq + 1
+	return fmt.Sprintf("%s-%s-%04d", logicalIndexName, datePrefix, newSeq)
+}
+
 func (logicalIndex *LogicalIndexCron) rollover() {
 	ctx := context.Background()
+
+	// Generate new index name with current date format: logicalIndexName-YYYY-MM-NNNN
+	now := time.Now().UTC()
+	
+	// Find the latest index with the same date prefix to determine the next sequence number
+	aliasName := logicalIndex.Name + "-current"
+	resAlias, err := elasticsearch.C().Indices.GetAlias().Name(aliasName).Do(ctx)
+	
+	var newIndexName string
+	if err != nil {
+		zap.L().Error("GetIndicesByAlias for rollover", zap.Error(err))
+		// Fallback to 0001 if we can't determine the current index
+		newIndexName = generateNextIndexName(logicalIndex.Name, []string{}, now)
+		zap.L().Warn("Could not determine current index, using fallback", zap.String("newIndex", newIndexName))
+	} else {
+		// Get the current indices
+		currentIndices := make([]string, 0)
+		for indexName := range resAlias {
+			currentIndices = append(currentIndices, indexName)
+		}
+		sort.Strings(currentIndices)
+		
+		newIndexName = generateNextIndexName(logicalIndex.Name, currentIndices, now)
+		zap.L().Info("Generated new index name for rollover", zap.String("newIndex", newIndexName))
+	}
 
 	// Using rollover API to manage alias swap and indices names
 	// TODO: Change this dirty abuse of rollover API (triggered every day "max_docx = 0")
@@ -238,7 +295,10 @@ func (logicalIndex *LogicalIndexCron) rollover() {
 	// req.Conditions.MaxAge = "24 h"
 	// req.Conditions.MaxDocs = some.Int64(0)
 
-	resRollover, err := elasticsearch.C().Indices.Rollover(logicalIndex.Name + "-current").Request(req).Do(ctx)
+	resRollover, err := elasticsearch.C().Indices.Rollover(logicalIndex.Name + "-current").
+		NewIndex(newIndexName).
+		Request(req).
+		Do(ctx)
 	if err != nil {
 		zap.L().Error("RollOverV2", zap.Error(err))
 		return
@@ -246,7 +306,7 @@ func (logicalIndex *LogicalIndexCron) rollover() {
 
 	// Roll patch alias
 	alias := logicalIndex.Name + "-patch"
-	resAlias, err := elasticsearch.C().Indices.GetAlias().Name(alias).Do(ctx)
+	resAlias, err = elasticsearch.C().Indices.GetAlias().Name(alias).Do(ctx)
 	if err != nil {
 		zap.L().Error("GetIndicesByAlias", zap.Error(err))
 		return
