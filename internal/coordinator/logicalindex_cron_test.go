@@ -81,6 +81,26 @@ func TestGenerateNextIndexName(t *testing.T) {
 			now:               time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
 			expectedIndexName: "myrtea-myindex-2025-11-0002",
 		},
+		{
+			name:             "Ignores malformed indices with extra suffix",
+			logicalIndexName: "myrtea-myindex",
+			existingIndices: []string{
+				"myrtea-myindex-2025-11-0001-extra",
+				"myrtea-myindex-2025-11-0002",
+			},
+			now:               time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+			expectedIndexName: "myrtea-myindex-2025-11-0003",
+		},
+		{
+			name:             "Ignores indices with wrong prefix",
+			logicalIndexName: "myrtea-myindex",
+			existingIndices: []string{
+				"other-index-2025-11-0001",
+				"myrtea-myindex-2025-11-0001",
+			},
+			now:               time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+			expectedIndexName: "myrtea-myindex-2025-11-0002",
+		},
 	}
 
 	for _, tt := range tests {

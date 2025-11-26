@@ -239,19 +239,39 @@ func generateNextIndexName(logicalIndexName string, existingIndices []string, no
 	highestSeq := 0
 	for _, indexName := range existingIndices {
 		// Expected format: logicalIndexName-YYYY-MM-NNNN
-		if len(indexName) > len(logicalIndexName)+8 {
-			suffix := indexName[len(logicalIndexName)+1:] // Remove "logicalIndexName-"
-			if len(suffix) >= 8 && suffix[:7] == datePrefix {
-				// Extract sequence number (last 4 digits)
-				if len(suffix) >= 12 && suffix[7] == '-' {
-					seqStr := suffix[8:12]
-					seq := 0
-					if _, err := fmt.Sscanf(seqStr, "%d", &seq); err == nil {
-						if seq > highestSeq {
-							highestSeq = seq
-						}
-					}
-				}
+		// Minimum length: len(logicalIndexName) + 1 ("-") + 7 ("YYYY-MM") + 1 ("-") + 4 ("NNNN") = len(logicalIndexName) + 13
+		expectedLength := len(logicalIndexName) + 13
+		if len(indexName) != expectedLength {
+			continue
+		}
+		
+		// Check if it starts with logicalIndexName followed by "-"
+		if indexName[:len(logicalIndexName)+1] != logicalIndexName+"-" {
+			continue
+		}
+		
+		suffix := indexName[len(logicalIndexName)+1:] // Remove "logicalIndexName-"
+		// suffix should be exactly "YYYY-MM-NNNN" (12 characters)
+		if len(suffix) != 12 {
+			continue
+		}
+		
+		// Check if the date prefix matches
+		if suffix[:7] != datePrefix {
+			continue
+		}
+		
+		// Check if there's a dash separator
+		if suffix[7] != '-' {
+			continue
+		}
+		
+		// Extract and parse sequence number (last 4 digits)
+		seqStr := suffix[8:12]
+		seq := 0
+		if n, err := fmt.Sscanf(seqStr, "%04d", &seq); err == nil && n == 1 {
+			if seq > highestSeq {
+				highestSeq = seq
 			}
 		}
 	}
