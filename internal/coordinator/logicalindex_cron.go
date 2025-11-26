@@ -282,11 +282,6 @@ func generateNextIndexName(logicalIndexName string, existingIndices []string, no
 		seqEnd := seqStart + IndexSequenceLength
 		seqStr := suffix[seqStart:seqEnd]
 		
-		// Validate that seqStr contains exactly 4 digits
-		if len(seqStr) != 4 {
-			continue
-		}
-		
 		// Parse sequence number - using Sscanf with %04d format to validate format
 		var seq int
 		if n, err := fmt.Sscanf(seqStr, "%04d", &seq); err == nil && n == 1 {
