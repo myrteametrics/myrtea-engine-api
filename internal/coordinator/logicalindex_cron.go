@@ -22,6 +22,17 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// IndexDateFormat is the date format used in index names (YYYY-MM)
+	IndexDateFormat = "2006-01"
+	// IndexDateLength is the length of the date part in index names (7 chars: "YYYY-MM")
+	IndexDateLength = 7
+	// IndexSequenceLength is the length of the sequence number (4 chars: "NNNN")
+	IndexSequenceLength = 4
+	// IndexSuffixLength is the total length of the suffix after logical name (13 chars: "-YYYY-MM-NNNN")
+	IndexSuffixLength = 1 + IndexDateLength + 1 + IndexSequenceLength // "-" + "YYYY-MM" + "-" + "NNNN"
+)
+
 // LogicalIndexCron abstracts a group a technical elasticsearchv8 indices, which are accessibles with specific aliases
 type LogicalIndexCron struct {
 	Initialized bool
@@ -89,7 +100,7 @@ func NewLogicalIndexCron(instanceName string, model modeler.Model, updateIfExist
 	// Then create base index name if not exists
 	// Use date-based naming: logicalIndexName-YYYY-MM-0001
 	now := time.Now().UTC()
-	baseIndexName := fmt.Sprintf("%s-%s-0001", logicalIndexName, now.Format("2006-01"))
+	baseIndexName := fmt.Sprintf("%s-%s-0001", logicalIndexName, now.Format(IndexDateFormat))
 	baseIndexExists, err := elasticsearch.C().Indices.Exists(baseIndexName).IsSuccess(ctx)
 	if err != nil {
 		zap.L().Error("IndexExists()", zap.String("baseIndexName", baseIndexName), zap.Error(err))
@@ -233,14 +244,13 @@ func (logicalIndex *LogicalIndexCron) FindIndices(t time.Time, depthDays int64) 
 // generateNextIndexName generates the next index name based on the current date and existing indices
 // Format: logicalIndexName-YYYY-MM-NNNN
 func generateNextIndexName(logicalIndexName string, existingIndices []string, now time.Time) string {
-	datePrefix := now.Format("2006-01")
+	datePrefix := now.Format(IndexDateFormat)
 	
 	// Find the highest sequence number for the current month
 	highestSeq := 0
 	for _, indexName := range existingIndices {
 		// Expected format: logicalIndexName-YYYY-MM-NNNN
-		// Minimum length: len(logicalIndexName) + 1 ("-") + 7 ("YYYY-MM") + 1 ("-") + 4 ("NNNN") = len(logicalIndexName) + 13
-		expectedLength := len(logicalIndexName) + 13
+		expectedLength := len(logicalIndexName) + IndexSuffixLength
 		if len(indexName) != expectedLength {
 			continue
 		}
@@ -251,24 +261,34 @@ func generateNextIndexName(logicalIndexName string, existingIndices []string, no
 		}
 		
 		suffix := indexName[len(logicalIndexName)+1:] // Remove "logicalIndexName-"
-		// suffix should be exactly "YYYY-MM-NNNN" (12 characters)
-		if len(suffix) != 12 {
+		// suffix should be exactly "YYYY-MM-NNNN"
+		expectedSuffixLength := IndexDateLength + 1 + IndexSequenceLength // "YYYY-MM" + "-" + "NNNN"
+		if len(suffix) != expectedSuffixLength {
 			continue
 		}
 		
 		// Check if the date prefix matches
-		if suffix[:7] != datePrefix {
+		if suffix[:IndexDateLength] != datePrefix {
 			continue
 		}
 		
-		// Check if there's a dash separator
-		if suffix[7] != '-' {
+		// Check if there's a dash separator after the date
+		if suffix[IndexDateLength] != '-' {
 			continue
 		}
 		
 		// Extract and parse sequence number (last 4 digits)
-		seqStr := suffix[8:12]
-		seq := 0
+		seqStart := IndexDateLength + 1
+		seqEnd := seqStart + IndexSequenceLength
+		seqStr := suffix[seqStart:seqEnd]
+		
+		// Validate that seqStr contains exactly 4 digits
+		if len(seqStr) != 4 {
+			continue
+		}
+		
+		// Parse sequence number - using Sscanf with %04d format to validate format
+		var seq int
 		if n, err := fmt.Sscanf(seqStr, "%04d", &seq); err == nil && n == 1 {
 			if seq > highestSeq {
 				highestSeq = seq
