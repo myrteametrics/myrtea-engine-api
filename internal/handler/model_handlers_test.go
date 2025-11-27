@@ -2,11 +2,12 @@ package handler
 
 import (
 	"encoding/json"
+	"net/http"
+	"testing"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
-	"net/http"
-	"testing"
 
 	model "github.com/myrteametrics/myrtea-engine-api/v5/internal/modeler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
@@ -38,6 +39,10 @@ func initModelRepository(t *testing.T) []modeler.Model {
 			},
 		})
 
+	strToPtr := func(s string) *string {
+		return &s
+	}
+
 	newModel := modeler.Model{
 		Name:     "test",
 		Synonyms: []string{"model1"},
@@ -48,7 +53,7 @@ func initModelRepository(t *testing.T) []modeler.Model {
 			EnablePurge:               true,
 			PurgeMaxConcurrentIndices: 30,
 			PatchAliasMaxIndices:      2,
-			AdvancedSettings:          types.IndexSettings{NumberOfReplicas: "2", NumberOfShards: "6"},
+			AdvancedSettings:          types.IndexSettings{NumberOfReplicas: strToPtr("2"), NumberOfShards: strToPtr("6")},
 		},
 		Source: "{}",
 	}
@@ -62,7 +67,7 @@ func initModelRepository(t *testing.T) []modeler.Model {
 			EnablePurge:               true,
 			PurgeMaxConcurrentIndices: 30,
 			PatchAliasMaxIndices:      2,
-			AdvancedSettings:          types.IndexSettings{NumberOfReplicas: "2", NumberOfShards: "6"},
+			AdvancedSettings:          types.IndexSettings{NumberOfReplicas: strToPtr("2"), NumberOfShards: strToPtr("6")},
 		},
 		Source: "{}",
 	}
