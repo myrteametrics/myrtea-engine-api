@@ -67,6 +67,26 @@ SWAGGER_BASEPATH = "/api/v4"
 # Default value: "http://localhost:9200"
 ELASTICSEARCH_URLS = ["http://localhost:9200"]
 
+# Enable or disable Elasticsearch authentication
+# If enabled, ELASTICSEARCH_USERNAME and ELASTICSEARCH_PASSWORD must be provided
+# Default value: "false"
+ELASTICSEARCH_AUTH = "false"
+
+# Disable Elasticsearch TLS verification (insecure mode)
+# Warning: Only use this for development/testing environments
+# Default value: "false"
+ELASTICSEARCH_INSECURE = "false"
+
+# Specify the Elasticsearch username for authentication
+# Only used if ELASTICSEARCH_AUTH = "true"
+# Default value: ""
+ELASTICSEARCH_USERNAME = ""
+
+# Specify the Elasticsearch password for authentication
+# Only used if ELASTICSEARCH_AUTH = "true"
+# Default value: ""
+ELASTICSEARCH_PASSWORD = ""
+
 # Specify the postgresql host name
 # Default value: "localhost"
 POSTGRESQL_HOSTNAME = "localhost"
@@ -104,8 +124,3 @@ POSTGRESQL_CONN_MAX_LIFETIME = "0"
 # Warning: Keep this parameter to "true" in production to ensure proper rotation even after a restart
 # Default value: "true"
 ENABLE_CRONS_ON_START = "true"
-
-# Specify the elasticsearch URLS
-# Array of URLS might not work using environment variable (should be fixed soon)
-# Default value: 7
-ELASTICSEARCH_VERSION = 7

@@ -55,7 +55,7 @@ func NewLogicalIndexCronTemplate(instanceName string, model modeler.Model, updat
 	// First create template if not exists or update it
 
 	templateName := fmt.Sprintf("template-%s", logicalIndexName)
-	templateExists, err := elasticsearch.C().Indices.ExistsTemplate(templateName).IsSuccess(ctx)
+	templateExists, err := elasticsearch.C().Indices.ExistsIndexTemplate(templateName).IsSuccess(ctx)
 	if err != nil {
 		zap.L().Error("IndexTemplateExists()", zap.String("templateName", templateName), zap.Error(err))
 		return nil, false, err
@@ -167,16 +167,16 @@ func (logicalIndex *LogicalIndexCron) putAlias(name, indexPattern, modelName str
 }
 
 func (logicalIndex *LogicalIndexCron) putTemplate(name string, indexPattern string, model modeler.Model) {
-	req := elasticsearch.NewPutTemplateRequestV8([]string{indexPattern}, model)
+	req := elasticsearch.NewPutIndexTemplateRequestV8([]string{indexPattern}, model)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
-	response, err := elasticsearch.C().Indices.PutTemplate(name).Request(req).Do(ctx)
+	response, err := elasticsearch.C().Indices.PutIndexTemplate(name).Request(req).Do(ctx)
 	if err != nil {
-		zap.L().Error("PutTemplate", zap.Error(err))
+		zap.L().Error("PutIndexTemplate", zap.Error(err))
 	}
 	if !response.Acknowledged {
-		zap.L().Error("PutTemplate failed")
+		zap.L().Error("PutIndexTemplate failed")
 	}
 }
 
