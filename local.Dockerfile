@@ -1,4 +1,4 @@
-FROM alpine:3.14
+FROM alpine:3.19.1
 LABEL maintainer="Myrtea Metrics <contact@myrteametrics.com>"
 
 RUN apk update
@@ -15,6 +15,9 @@ COPY bin/myrtea-engine-api myrtea-engine-api
 COPY config config
 COPY plugin plugin
 COPY pkg/plugins/config plugins/config
+COPY pkg/plugins/config pkg/plugins/config
+
+# This is needed for the plugin system to work both in local and production environments
 COPY pkg/plugins/config pkg/plugins/config
 
 ENTRYPOINT ["./myrtea-engine-api"]

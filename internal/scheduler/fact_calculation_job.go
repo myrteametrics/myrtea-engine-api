@@ -316,7 +316,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 
 		}
 	}
-	// zap.L().Sugar().Info("situationToUpdate ", situationsToUpdate)
+
 	return situationsToUpdate, nil
 }
 
@@ -346,7 +346,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 
 		if !f.IsTemplate {
 			// execute fact, to get results
-			widgetData, err := fact.ExecuteFact(t, f, 0, 0, make(map[string]interface{}), -1, -1, false)
+			widgetData, err := fact.ExecuteFact(t, f, 0, 0, make(map[string]interface{}), 0, 0, false)
 			if err != nil {
 				zap.L().Error("Fact calculation Error, skipping fact calculation...", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
 				continue
@@ -395,7 +395,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 					continue
 				}
 
-				widgetData, err := fact.ExecuteFact(t, fCopy, sh.SituationID, sh.SituationInstanceID, sh.Parameters, -1, -1, false)
+				widgetData, err := fact.ExecuteFact(t, fCopy, sh.SituationID, sh.SituationInstanceID, sh.Parameters, 0, 0, false)
 				if err != nil {
 					zap.L().Error("Fact calculation Error, skipping fact calculation...", zap.Int64("id", f.ID), zap.Any("fact", f), zap.Error(err))
 					continue
@@ -558,8 +558,6 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 				FactID:             historyFactNew.FactID,
 			})
 		}
-
-		// zap.L().Sugar().Info("historySituationFactNew", historySituationFactNew)
 
 		err = history.S().HistorySituationFactsQuerier.Execute(history.S().HistorySituationFactsQuerier.Builder.InsertBulk(historySituationFactNew))
 		if err != nil {

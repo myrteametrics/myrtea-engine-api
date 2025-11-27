@@ -3,10 +3,11 @@ package scheduler
 import (
 	"encoding/json"
 	"errors"
+	"time"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
-	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
@@ -17,21 +18,6 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
 	"go.uber.org/zap"
 )
-
-// import (
-// 	"errors"
-// 	"fmt"
-// 	"time"
-
-// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/calendar"
-// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/evaluator"
-// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/fact"
-// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/situation"
-// 	"github.com/myrteametrics/myrtea-engine-api/v5/internals/tasker"
-// 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
-// 	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
-// 	"go.uber.org/zap"
-// )
 
 // FactRecalculationJob represent a scheduler job instance which process a group of facts, and persist the result in postgresql
 // It also generate situations, persists them and notify the rule engine to evaluate them
@@ -235,7 +221,7 @@ func (job FactRecalculationJob) RecalculateAndUpdateFacts(factIDs []int64, facts
 				parameters = s.Parameters
 			}
 
-			widgetData, err := fact.ExecuteFact(fh.Ts, f, fh.SituationID, fh.SituationInstanceID, parameters, -1, -1, true)
+			widgetData, err := fact.ExecuteFact(fh.Ts, f, fh.SituationID, fh.SituationInstanceID, parameters, 0, 0, true)
 			if err != nil {
 				zap.L().Error("fact.ExecuteFact", zap.Error(err))
 				continue
