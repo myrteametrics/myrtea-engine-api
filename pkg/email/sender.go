@@ -31,7 +31,7 @@ func (s *Sender) Send(m Message) error {
 		fmt.Sprintf("%s:%s", s.host, s.port),
 		s.auth,
 		s.username,
-		m.To,
+		append(m.To, m.CC...),
 		m.ToBytes(),
 	)
 }

@@ -34,6 +34,7 @@ type SituationReportingTask struct {
 	Subject             string          `json:"subject"`
 	BodyTemplate        string          `json:"bodyTemplate"`
 	To                  []string        `json:"to"`
+	Cc                  []string        `json:"cc,omitempty"`
 	AttachmentFileNames []string        `json:"attachmentFileNames"`
 	AttachmentFactIDs   []int64         `json:"attachmentFactIds"`
 	Columns             []export.Column `json:"columns"`
@@ -70,6 +71,14 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 		task.To = strings.Split(val, ",")
 	} else {
 		return task, errors.New("missing or invalid 'to' parameter (string not empty required)")
+	}
+
+	if val, ok := parameters["cc"].(string); ok && val != "" {
+		task.Cc = strings.Split(val, ",")
+	} else if val == "" {
+		task.Cc = []string{}
+	} else {
+		return task, errors.New("missing or invalid 'cc' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["attachmentFileNames"].(string); ok && val != "" {
@@ -230,6 +239,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 
 	message := email2.NewMessage(task.Subject, "text/html", string(body))
 	message.To = task.To
+	message.CC = task.Cc
 	message.Attachments = attachments
 	zap.L().Debug("Message ready to be sent")
 
