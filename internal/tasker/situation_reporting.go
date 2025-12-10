@@ -78,7 +78,7 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 	} else if val == "" {
 		task.Cc = []string{}
 	} else {
-		return task, errors.New("missing or invalid 'cc' parameter (string not empty required)")
+		return task, errors.New("Invalid 'cc' parameter (string not empty required)")
 	}
 
 	if val, ok := parameters["attachmentFileNames"].(string); ok && val != "" {
