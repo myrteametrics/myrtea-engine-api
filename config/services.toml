@@ -15,10 +15,6 @@
 #name = "assistant"
 #port = 9081
 
-[[plugin]]
-name = "flashdef"
-port = 9082
-
 # For connectors:
 #
 # key should be configured as the same security key in related connectors (ENGINE_API_KEY)
