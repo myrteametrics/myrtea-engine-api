@@ -17,6 +17,8 @@ import (
 
 // GetTemplates godoc
 //
+//	@Id				GetTemplates
+//
 //	@Summary		Get all email templates
 //	@Description	Get all email templates
 //	@Tags			Templates
@@ -123,6 +125,8 @@ func GetTemplateByName(w http.ResponseWriter, r *http.Request) {
 
 // PostTemplate godoc
 //
+// @Id				PostTemplate
+//
 //	@Summary		Create a new email template
 //	@Description	Create a new email template
 //	@Tags			Templates
@@ -168,6 +172,8 @@ func PostTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 // PutTemplate godoc
+//
+//	@Id				PutTemplate
 //
 //	@Summary		Update an email template
 //	@Description	Update an email template
@@ -224,6 +230,8 @@ func PutTemplate(w http.ResponseWriter, r *http.Request) {
 
 // DeleteTemplate godoc
 //
+//	@Id				DeleteTemplate
+//
 //	@Summary		Delete an email template
 //	@Description	Delete an email template
 //	@Tags			Templates
@@ -256,5 +264,5 @@ func DeleteTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, r, nil)
+	httputil.OK(w, r)
 }
