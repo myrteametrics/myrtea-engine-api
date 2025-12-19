@@ -2,11 +2,12 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/connectorconfig"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/connectorconfig"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
@@ -23,8 +24,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	model.ConnectorConfig	"list of all connectorConfigs"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		model.ConnectorConfig	"list of all connectorConfigs"
+//	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/engine/connectorconfigs [get]
 func GetConnectorConfigs(w http.ResponseWriter, r *http.Request) {
 	connectorConfigs, err := connectorconfig.R().GetAll()
@@ -54,11 +55,11 @@ func GetConnectorConfigs(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get an connectorConfig definition
 //	@Tags			ConnectorConfigs
 //	@Produce		json
-//	@Param			id	path	string	true	"ConnectorConfig ID"
+//	@Param			id	path	int	true	"ConnectorConfig ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	model.ConnectorConfig	"connectorConfig"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError		"Bad Request"
 //	@Router			/engine/connectorconfigs/{id} [get]
 func GetConnectorConfig(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -99,8 +100,8 @@ func GetConnectorConfig(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	model.ConnectorConfig	"connectorConfig"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError		"Bad Request"
+//	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/engine/connectorconfigs [post]
 func PostConnectorConfig(w http.ResponseWriter, r *http.Request) {
 	var newExternalConfig model.ConnectorConfig
@@ -142,13 +143,13 @@ func PostConnectorConfig(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ConnectorConfigs
 //	@Accept			json
 //	@Produce		json
-//	@Param			name			path	string					true	"ConnectorConfig ID"
+//	@Param			name			path	int						true	"ConnectorConfig ID"
 //	@Param			connectorConfig	body	model.ConnectorConfig	true	"ConnectorConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	model.ConnectorConfig	"connectorConfig"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError		"Bad Request"
+//	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/engine/connectorconfigs/{name} [put]
 func PutConnectorConfig(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -199,11 +200,11 @@ func PutConnectorConfig(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete an connectorConfig definition
 //	@Tags			ConnectorConfigs
 //	@Produce		json
-//	@Param			name	path	string	true	"ConnectorConfig ID"
+//	@Param			name	path	int	true	"ConnectorConfig ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/connectorconfigs/{name} [delete]
 func DeleteConnectorConfig(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

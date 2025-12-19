@@ -3,11 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+	"sort"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
-	"net/http"
-	"sort"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -24,9 +25,9 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{string}	string	"status OK"
-//	@Failure		400	{string}	string	"Bad Request"
-//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Success		200	{object}	users.UserWithPermissions	"status OK"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/security/myself [get]
 func GetUserSelf(w http.ResponseWriter, r *http.Request) {
 	userCtx, found := GetUserFromContext(r)
@@ -84,10 +85,10 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path	string	true	"user ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	users.User	"user"
-//	@Failure		400	{string}	string		"Bad Request"
-//	@Failure		404	{string}	string		"Not Found"
-//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Success		200	{object}	users.User			"user"
+//	@Failure		400	{string}	string				"Bad Request"
+//	@Failure		404	{object}	httputil.APIError	"Status Not Found"
+//	@Failure		500	{string}	string				"Internal Server Error"
 //	@Router			/admin/security/users/{id} [get]
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -292,9 +293,9 @@ func PutUser(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path	string	true	"user ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{string}	string	"status OK"
-//	@Failure		400	{string}	string	"Bad Request"
-//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Success		200	{string}	string				"status OK"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/users/{id} [delete]
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

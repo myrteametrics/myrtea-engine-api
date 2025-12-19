@@ -3,14 +3,15 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/service"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 type ServiceHandler struct {
@@ -35,7 +36,7 @@ func NewServiceHandler(manager *service.Manager) *ServiceHandler {
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}	service.Definition
 //	@Failure		401	"missing permission"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/services [get]
 func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -65,7 +66,7 @@ func (sh *ServiceHandler) GetServices(w http.ResponseWriter, r *http.Request) {
 //	@Success		200	"service was restarted successfully"
 //	@Failure		401	"missing permission"
 //	@Failure		429	"too recently"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/services/{id}/restart [post]
 func (sh *ServiceHandler) Restart(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -172,7 +173,7 @@ func (sh *ServiceHandler) Reload(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path		string	true	"Component to get status from"
 //	@Success		200	{object}	service.Status
 //	@Failure		401	"missing permission"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/services/{id}/status [get]
 func (sh *ServiceHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)

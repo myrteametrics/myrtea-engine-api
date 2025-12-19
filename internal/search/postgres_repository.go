@@ -3,9 +3,10 @@ package search
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"sort"
 	"time"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"

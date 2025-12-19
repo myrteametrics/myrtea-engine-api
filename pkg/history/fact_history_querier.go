@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"time"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"

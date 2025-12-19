@@ -2,10 +2,11 @@ package users
 
 import (
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
 	"strconv"
 	"time"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
 
 	"github.com/google/uuid"
 )

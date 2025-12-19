@@ -3,11 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+	"sort"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
-	"net/http"
-	"sort"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -24,7 +25,7 @@ import (
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		permissions.Permission	"list of permissions"
-//	@Failure		500	{string}	string					"Internal Server Error"
+//	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/admin/security/permissions [get]
 func GetPermissions(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -60,8 +61,8 @@ func GetPermissions(w http.ResponseWriter, r *http.Request) {
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	permissions.Permission	"permission"
 //	@Failure		400	{string}	string					"Bad Request"
-//	@Failure		404	{string}	string					"Not Found"
-//	@Failure		500	{string}	string					"Internal Server Error"
+//	@Failure		404	{object}	httputil.APIError		"Status Not Found"
+//	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/admin/security/permissions/{id} [get]
 func GetPermission(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -107,7 +108,7 @@ func GetPermission(w http.ResponseWriter, r *http.Request) {
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	permissions.Permission	"permission"
 //	@Failure		400	{string}	string					"Bad Request"
-//	@Failure		500	{string}	string					"Internal Server Error"
+//	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/admin/security/permissions/validate [post]
 func ValidatePermission(w http.ResponseWriter, r *http.Request) {
 	var newPermission permissions.Permission
@@ -141,7 +142,7 @@ func ValidatePermission(w http.ResponseWriter, r *http.Request) {
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	permissions.Permission	"permission"
 //	@Failure		400	{string}	string					"Bad Request"
-//	@Failure		500	{string}	string					"Internal Server Error"
+//	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/admin/security/permissions [post]
 func PostPermission(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -201,7 +202,7 @@ func PostPermission(w http.ResponseWriter, r *http.Request) {
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	permissions.Permission	"permission"
 //	@Failure		400	{string}	string					"Bad Request"
-//	@Failure		500	{string}	string					"Internal Server Error"
+//	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/admin/security/permissions/{id} [put]
 func PutPermission(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -266,9 +267,9 @@ func PutPermission(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path	string	true	"permission ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{string}	string	"status OK"
-//	@Failure		400	{string}	string	"Bad Request"
-//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Success		200	{string}	string				"status OK"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/permissions/{id} [delete]
 func DeletePermission(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

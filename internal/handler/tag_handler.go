@@ -3,14 +3,15 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+	"sort"
+	"strconv"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tag"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"go.uber.org/zap"
-	"net/http"
-	"sort"
-	"strconv"
 )
 
 // GetTags godoc
@@ -23,8 +24,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	tag.Tag	"list of all tags"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		tag.Tag				"list of all tags"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/tags [get]
 func GetTags(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -55,11 +56,11 @@ func GetTags(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get a tag definition
 //	@Tags			Tags
 //	@Produce		json
-//	@Param			id	path	string	true	"Tag ID"
+//	@Param			id	path	int	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	tag.Tag	"tag"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{object}	tag.Tag				"tag"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/tags/{id} [get]
 func GetTag(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -103,9 +104,9 @@ func GetTag(w http.ResponseWriter, r *http.Request) {
 //	@Param			tag	body	tag.Tag	true	"Tag definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	tag.Tag	"tag"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	tag.Tag				"tag"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/tags/validate [post]
 func ValidateTag(w http.ResponseWriter, r *http.Request) {
 	var newTag tag.Tag
@@ -137,9 +138,9 @@ func ValidateTag(w http.ResponseWriter, r *http.Request) {
 //	@Param			tag	body	tag.Tag	true	"Tag definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	tag.Tag	"tag"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	tag.Tag				"tag"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/tags [post]
 func PostTag(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -193,13 +194,13 @@ func PostTag(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Tags
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path	string	true	"Tag ID"
+//	@Param			id	path	int		true	"Tag ID"
 //	@Param			tag	body	tag.Tag	true	"Tag definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	tag.Tag	"tag"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	tag.Tag				"tag"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/tags/{id} [put]
 func PutTag(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -261,11 +262,11 @@ func PutTag(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete a tag definition
 //	@Tags			Tags
 //	@Produce		json
-//	@Param			id	path	string	true	"Tag ID"
+//	@Param			id	path	int	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/tags/{id} [delete]
 func DeleteTag(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -300,12 +301,12 @@ func DeleteTag(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get all tags associated with a specific situation
 //	@Tags			Tags
 //	@Produce		json
-//	@Param			situationId	path	string	true	"Situation ID"
+//	@Param			situationId	path	int	true	"Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	tag.Tag	"list of tags"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		tag.Tag				"list of tags"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/tags/situations/{situationId} [get]
 func GetTagsBySituation(w http.ResponseWriter, r *http.Request) {
 	situationId := chi.URLParam(r, "situationId")
@@ -340,13 +341,13 @@ func GetTagsBySituation(w http.ResponseWriter, r *http.Request) {
 //	@Description	Create a link between a tag and a situation
 //	@Tags			Tags
 //	@Produce		json
-//	@Param			situationId	path	string	true	"Situation ID"
-//	@Param			tagId		path	string	true	"Tag ID"
+//	@Param			situationId	path	int	true	"Situation ID"
+//	@Param			tagId		path	int	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"internal server error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/tags/{tagId}/situations/{situationId} [post]
 func AddTagToSituation(w http.ResponseWriter, r *http.Request) {
 	situationId := chi.URLParam(r, "situationId")
@@ -405,13 +406,13 @@ func AddTagToSituation(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete the link between a tag and a situation
 //	@Tags			Tags
 //	@Produce		json
-//	@Param			situationId	path	string	true	"Situation ID"
-//	@Param			tagId		path	string	true	"Tag ID"
+//	@Param			situationId	path	int	true	"Situation ID"
+//	@Param			tagId		path	int	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"internal server error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/tags/{tagId}/situations/{situationId} [delete]
 func RemoveTagFromSituation(w http.ResponseWriter, r *http.Request) {
 	situationId := chi.URLParam(r, "situationId")
@@ -457,12 +458,12 @@ func RemoveTagFromSituation(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get all tags associated with a specific template instance
 //	@Tags			Tags
 //	@Produce		json
-//	@Param			instanceId	path	string	true	"Template Instance ID"
+//	@Param			instanceId	path	int	true	"Template Instance ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	tag.Tag	"list of tags"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		tag.Tag				"list of tags"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/tags/situationinstances/{instanceId} [get]
 func GetTagsByTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	instanceId := chi.URLParam(r, "instanceId")
@@ -498,13 +499,13 @@ func GetTagsByTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Description	Create a link between a tag and a template instance
 //	@Tags			Tags
 //	@Produce		json
-//	@Param			instanceId	path	string	true	"Template Instance ID"
-//	@Param			tagId		path	string	true	"Tag ID"
+//	@Param			instanceId	path	int	true	"Template Instance ID"
+//	@Param			tagId		path	int	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"internal server error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/tags/{tagId}/situationinstances/{instanceId} [post]
 func AddTagToTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	instanceId := chi.URLParam(r, "instanceId")
@@ -568,8 +569,8 @@ func AddTagToTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"internal server error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/tags/{tagId}/situationinstances/{instanceId} [delete]
 func RemoveTagFromTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	instanceId := chi.URLParam(r, "instanceId")
@@ -618,7 +619,7 @@ func RemoveTagFromTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	map[string][]tag.Tag	"map of situation IDs to tags"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/engine/tags/situations [get]
 func GetAllSituationsTags(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)

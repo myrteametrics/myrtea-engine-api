@@ -4,6 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"sort"
+	"strconv"
+	"time"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
@@ -11,10 +16,6 @@ import (
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
-	"net/http"
-	"sort"
-	"strconv"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
@@ -32,8 +33,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		engine.Fact			"List of fact definitions"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/facts [get]
 func GetFacts(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -57,8 +58,8 @@ func GetFacts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	factsSlice := make([]engine.Fact, 0)
-	for _, fact := range facts {
-		factsSlice = append(factsSlice, fact)
+	for _, f := range facts {
+		factsSlice = append(factsSlice, f)
 	}
 
 	sort.SliceStable(factsSlice, func(i, j int) bool {
@@ -76,11 +77,11 @@ func GetFacts(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get a fact definition
 //	@Tags			Facts
 //	@Produce		json
-//	@Param			id	path	string	true	"Fact ID"
+//	@Param			id	path	int	true	"Fact ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{object}	engine.Fact			"Fact definition"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/facts/{id} [get]
 func GetFact(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -124,9 +125,9 @@ func GetFact(w http.ResponseWriter, r *http.Request) {
 //	@Param			fact	body	interface{}	true	"Fact definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	engine.Fact			"Fact definition"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/facts/validate [post]
 func ValidateFact(w http.ResponseWriter, r *http.Request) {
 
@@ -159,9 +160,9 @@ func ValidateFact(w http.ResponseWriter, r *http.Request) {
 //	@Param			fact	body	interface{}	true	"Fact definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	engine.Fact			"Fact definition"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/facts [post]
 func PostFact(w http.ResponseWriter, r *http.Request) {
 
@@ -216,13 +217,13 @@ func PostFact(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Facts
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path	string		true	"Fact ID"
+//	@Param			id		path	int			true	"Fact ID"
 //	@Param			fact	body	interface{}	true	"Fact definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	engine.Fact			"Fact definition"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/facts/{id} [put]
 func PutFact(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -284,11 +285,11 @@ func PutFact(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete a fact definition
 //	@Tags			Facts
 //	@Produce		json
-//	@Param			id	path	string	true	"Fact ID"
+//	@Param			id	path	int	true	"Fact ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/facts/{id} [delete]
 func DeleteFact(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -323,7 +324,7 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 //	@Description	Execute a fact with a given timestamp (This route is deprecated. Please use POST /engine/facts/execute instead.)
 //	@Tags			Facts
 //	@Produce		json
-//	@Param			id				path	string	true	"Fact ID"
+//	@Param			id				path	int		true	"Fact ID"
 //	@Param			byName			query	string	false	"Find fact by it's name"
 //	@Param			time			query	string	false	"Timestamp used for the fact execution"
 //	@Param			nhit			query	int		false	"Hit per page"
@@ -332,8 +333,8 @@ func DeleteFact(w http.ResponseWriter, r *http.Request) {
 //	@Param			debug			query	string	false	"Debug true/false"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{object}	reader.WidgetData	"Widget Data"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Deprecated		true
 //	@Router			/engine/facts/{id}/execute [get]
 //
@@ -423,8 +424,8 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 //	@Param			request	body	model.FactHitsReq	true	"Request parameters"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{object}	reader.WidgetData	"Widget Data"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/facts/execute [POST]
 func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 	var request model.FactHitsReq
@@ -570,8 +571,8 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 //	@Param			debug			query	string		false	"Debug true/false"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{object}	reader.WidgetData	"Widget Data"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/facts/build-and-execute [post]
 func BuildAndExecuteFact(w http.ResponseWriter, r *http.Request) {
 
@@ -660,8 +661,8 @@ func BuildAndExecuteFact(w http.ResponseWriter, r *http.Request) {
 //	@Param			debug				query	string	false	"Debug true/false"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{object}	reader.WidgetData	"Widget Data"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Deprecated		true
 //	@Router			/engine/facts/{id}/hits [get]
 //
@@ -833,8 +834,8 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 //	@Param			debug			query	string	false	"Debug true/false"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{object}	map[string]interface{}	"Status OK"
+//	@Failure		400	{object}	httputil.APIError		"Bad Request"
 //	@Router			/engine/facts/{id}/es [get]
 func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 

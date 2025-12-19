@@ -2,9 +2,10 @@ package history
 
 import (
 	"errors"
-	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"sort"
 	"time"
+
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/search"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"

@@ -3,11 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/scheduler"
@@ -51,7 +52,7 @@ func StartScheduler(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/scheduler/trigger [post]
 func TriggerJobSchedule(w http.ResponseWriter, r *http.Request) {
 
@@ -90,8 +91,8 @@ func TriggerJobSchedule(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	scheduler.InternalSchedule	"list of schedules"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		scheduler.InternalSchedule	"list of schedules"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/scheduler/jobs [get]
 func GetJobSchedules(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -127,11 +128,11 @@ func GetJobSchedules(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get a specific JobSchedule by it's ID
 //	@Tags			Scheduler
 //	@Produce		json
-//	@Param			id	path	string	true	"job ID"
+//	@Param			id	path	int	true	"job ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	scheduler.InternalSchedule	"schedule"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/scheduler/jobs/{id} [get]
 func GetJobSchedule(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -176,7 +177,7 @@ func GetJobSchedule(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	scheduler.InternalSchedule	"schedule"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Router			/engine/scheduler/jobs/validate [post]
 func ValidateJobSchedule(w http.ResponseWriter, r *http.Request) {
 	var newSchedule scheduler.InternalSchedule
@@ -209,8 +210,8 @@ func ValidateJobSchedule(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	scheduler.InternalSchedule	"schedule"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/scheduler/jobs [post]
 func PostJobSchedule(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -277,13 +278,13 @@ func PostJobSchedule(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Scheduler
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path	string		true	"JobSchedule ID"
+//	@Param			id		path	int			true	"JobSchedule ID"
 //	@Param			rule	body	interface{}	true	"JobSchedule (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	scheduler.InternalSchedule	"schedule"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/scheduler/jobs/{id} [put]
 func PutJobSchedule(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -352,12 +353,12 @@ func PutJobSchedule(w http.ResponseWriter, r *http.Request) {
 //	@Description	delete JobSchedule
 //	@Tags			Scheduler
 //	@Produce		json
-//	@Param			id	path	string	true	"JobSchedule ID"
+//	@Param			id	path	int	true	"JobSchedule ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/scheduler/jobs/{id} [delete]
 func DeleteJobSchedule(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

@@ -3,12 +3,13 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -24,8 +25,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	calendar.Calendar	"list of calendars"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		calendar.Calendar	"list of calendars"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/calendars [get]
 func GetCalendars(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -61,11 +62,11 @@ func GetCalendars(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get an calendar
 //	@Tags			Calendars
 //	@Produce		json
-//	@Param			id	path	string	true	"Calendar ID"
+//	@Param			id	path	int	true	"Calendar ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	calendar.Calendar	"calendar"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/calendars/{id} [get]
 func GetCalendar(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -105,11 +106,11 @@ func GetCalendar(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get a resolved Calendar
 //	@Tags			Calendars
 //	@Produce		json
-//	@Param			id	path	string	true	"Calendar ID"
+//	@Param			id	path	int	true	"Calendar ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	calendar.Calendar	"calendar"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/calendars/resolved/{id} [get]
 func GetResolvedCalendar(w http.ResponseWriter, r *http.Request) {
 	calendar.CBase().Update()
@@ -151,12 +152,12 @@ func GetResolvedCalendar(w http.ResponseWriter, r *http.Request) {
 //	@Description	Determines wether a timestamp is within a valid calendar period
 //	@Tags			Calendars
 //	@Produce		json
-//	@Param			id		path	string	true	"Calendar ID"
+//	@Param			id		path	int		true	"Calendar ID"
 //	@Param			time	query	string	true	"Timestamp to be found within a calendar period"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	calendar.InPeriodContains	"InPeriodContains"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Router			/engine/calendars/{id}/contains [get]
 func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
 	calendar.CBase().Update()
@@ -210,8 +211,8 @@ func IsInCalendarPeriod(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	calendar.Calendar	"calendar"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/calendars [post]
 func PostCalendar(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -259,7 +260,7 @@ func PostCalendar(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Calendars
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path	string		true	"Calendar ID"
+//	@Param			id		path	int			true	"Calendar ID"
 //	@Param			user	body	interface{}	true	"calendar (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
@@ -320,12 +321,12 @@ func PutCalendar(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete calendar
 //	@Tags			Calendars
 //	@Produce		json
-//	@Param			id	path	string	true	"Calendar ID"
+//	@Param			id	path	int	true	"Calendar ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/calendars/{id} [delete]
 func DeleteCalendar(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

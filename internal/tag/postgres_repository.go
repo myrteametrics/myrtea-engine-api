@@ -3,13 +3,14 @@ package tag
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
 	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const table = "tags_v1"

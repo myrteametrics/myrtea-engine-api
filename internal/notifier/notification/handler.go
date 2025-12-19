@@ -2,9 +2,10 @@ package notification
 
 import (
 	"context"
-	"go.uber.org/zap"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 var (

@@ -2,12 +2,13 @@ package handler
 
 import (
 	"errors"
+	"net/http"
+	"sort"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
-	"net/http"
-	"sort"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -26,8 +27,8 @@ import (
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		permissions.Permission	"permission"
 //	@Failure		400	{string}	string					"Bad Request"
-//	@Failure		404	{string}	string					"Not Found"
-//	@Failure		500	{string}	string					"Internal Server Error"
+//	@Failure		404	{object}	httputil.APIError		"Status Not Found"
+//	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/admin/security/roles/{id}/permissions [get]
 func GetRolePermissions(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

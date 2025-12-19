@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
+	plugin "github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
 )
 
 type PluginService struct {

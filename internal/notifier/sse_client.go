@@ -2,9 +2,10 @@ package notifier
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/google/uuid"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
-	"net/http"
 )
 
 // SSEClient represents a single specific server-sent event connection

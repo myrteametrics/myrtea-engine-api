@@ -1,10 +1,11 @@
 package processor
 
 import (
+	"time"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
-	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"

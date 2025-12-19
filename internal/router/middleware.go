@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/apikey"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	roles2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
 	users2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	ttlcache "github.com/myrteametrics/myrtea-sdk/v5/cache"
-	"net/http"
 
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/google/uuid"

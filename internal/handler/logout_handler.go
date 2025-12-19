@@ -1,9 +1,10 @@
 package handler
 
 import (
+	"net/http"
+
 	routerauth "github.com/myrteametrics/myrtea-engine-api/v5/internal/router/auth"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
-	"net/http"
 
 	"go.uber.org/zap"
 )
@@ -18,8 +19,8 @@ import (
 //	@Produce		plain
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{string}	string	"Logged out successfully."
-//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Success		200	{string}	string				"Logged out successfully."
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/logout [post]
 func LogoutHandler(deleteSessionMiddleware func(http.Handler) http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,8 +46,8 @@ func LogoutHandler(deleteSessionMiddleware func(http.Handler) http.Handler) http
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	routerauth.AuthenticationMode
-//	@Failure		400	{string}	string	"Bad Request"
-//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/authmode [get]
 func GetAuthenticationMode(w http.ResponseWriter, r *http.Request) {
 	mode, err := routerauth.GetMode()

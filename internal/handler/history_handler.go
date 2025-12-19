@@ -2,25 +2,26 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/history"
 	"go.uber.org/zap"
 )
 
-//	@Summary		Get Today's Fact Result by Criteria
-//	@Description	Fetches the result of a historical fact based on provided criteria for today's date.
-//	@Tags			Facts_history
-//	@Accept			json
-//	@Produce		json
-//	@Param			factHistory	body	history.ParamGetFactHistory	true	"JSON payload containing criteria for fetching today's history fact result."
-//	@Security		Bearer
-//	@Security		ApiKeyAuth
-//	@Success		200	{object}	history.FactResult	"Successfully fetched result"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
-//	@Router			/engine/history/facts/today/result [post]
+// @Summary		Get Today's Fact Result by Criteria
+// @Description	Fetches the result of a historical fact based on provided criteria for today's date.
+// @Tags			Facts_history
+// @Accept			json
+// @Produce		json
+// @Param			factHistory	body	history.ParamGetFactHistory	true	"JSON payload containing criteria for fetching today's history fact result."
+// @Security		Bearer
+// @Security		ApiKeyAuth
+// @Success		200	{object}	history.FactResult	"Successfully fetched result"
+// @Failure		400	"Status Bad Request"
+// @Failure		500	{object}	httputil.APIError	"Internal Server Error"
+// @Router			/engine/history/facts/today/result [post]
 func GetFactResultForTodayByCriteria(w http.ResponseWriter, r *http.Request) {
 
 	var param history.ParamGetFactHistory
@@ -48,18 +49,18 @@ func GetFactResultForTodayByCriteria(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, r, resulat)
 }
 
-//	@Summary		Get Fact Result by Date Criteria
-//	@Description	Fetches the result of a historical fact based on provided criteria within specified date range. The dates should be in the format "2006-01-02 15:04:05".
-//	@Tags			Facts_history
-//	@Accept			json
-//	@Produce		json
-//	@Param			factHistory	body	history.ParamGetFactHistoryByDate	true	"JSON payload containing criteria and date range for fetching history fact result, with dates in '2006-01-02 15:04:05' format."
-//	@Security		Bearer
-//	@Security		ApiKeyAuth
-//	@Success		200	{object}	history.FactResult	"Successfully fetched result"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
-//	@Router			/engine/history/facts/date/result [post]
+// @Summary		Get Fact Result by Date Criteria
+// @Description	Fetches the result of a historical fact based on provided criteria within specified date range. The dates should be in the format "2006-01-02 15:04:05".
+// @Tags			Facts_history
+// @Accept			json
+// @Produce		json
+// @Param			factHistory	body	history.ParamGetFactHistoryByDate	true	"JSON payload containing criteria and date range for fetching history fact result, with dates in '2006-01-02 15:04:05' format."
+// @Security		Bearer
+// @Security		ApiKeyAuth
+// @Success		200	{object}	history.FactResult	"Successfully fetched result"
+// @Failure		400	"Status Bad Request"
+// @Failure		500	"Status Internal Server Error"
+// @Router			/engine/history/facts/date/result [post]
 func GetFactResultByDateCriteria(w http.ResponseWriter, r *http.Request) {
 
 	var param history.ParamGetFactHistoryByDate
@@ -86,18 +87,18 @@ func GetFactResultByDateCriteria(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, r, result)
 }
 
-//	@Summary		Get Today's Fact Expression Result by Criteria
-//	@Description	Fetches the result of a historical fact expression based on provided criteria for today's date.
-//	@Tags			situation_history
-//	@Accept			json
-//	@Produce		json
-//	@Param			factExprHistory	body	history.ParamGetFactExprHistory	true	"JSON payload containing criteria for fetching today's history fact expression result."
-//	@Security		Bearer
-//	@Security		ApiKeyAuth
-//	@Success		200	{object}	history.FactExprResult	"Successfully fetched result"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
-//	@Router			/engine/history/factexpr/today/result [post]
+// @Summary		Get Today's Fact Expression Result by Criteria
+// @Description	Fetches the result of a historical fact expression based on provided criteria for today's date.
+// @Tags			situation_history
+// @Accept			json
+// @Produce		json
+// @Param			factExprHistory	body	history.ParamGetFactExprHistory	true	"JSON payload containing criteria for fetching today's history fact expression result."
+// @Security		Bearer
+// @Security		ApiKeyAuth
+// @Success		200	{object}	history.FactExprResult	"Successfully fetched result"
+// @Failure		400	"Status Bad Request"
+// @Failure		500	{object}	httputil.APIError	"Internal Server Error"
+// @Router			/engine/history/factexpr/today/result [post]
 func GetFactExprResultForTodayByCriteria(w http.ResponseWriter, r *http.Request) {
 
 	var param history.ParamGetFactExprHistory
@@ -137,8 +138,8 @@ func GetFactExprResultForTodayByCriteria(w http.ResponseWriter, r *http.Request)
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	history.FactExprResult	"Successfully fetched result"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError		"Bad Request"
+//	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/engine/history/factexpr/date/result [post]
 func GetFactExprResultByDateCriteria(w http.ResponseWriter, r *http.Request) {
 

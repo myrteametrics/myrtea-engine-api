@@ -3,13 +3,14 @@ package routeroidc
 import (
 	"context"
 	"errors"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	roles2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
-	"net/http"
-	"strings"
-	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/google/uuid"

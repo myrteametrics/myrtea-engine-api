@@ -2,10 +2,11 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer/action"
@@ -23,8 +24,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	model.Action	"list of all actions"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		model.Action		"list of all actions"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/actions [get]
 func GetActions(w http.ResponseWriter, r *http.Request) {
 	actions, err := action.R().GetAll()
@@ -54,11 +55,11 @@ func GetActions(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get a action definition
 //	@Tags			Actions
 //	@Produce		json
-//	@Param			id	path	string	true	"Action ID"
+//	@Param			id	path	int	true	"Action ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	model.Action	"action"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{object}	model.Action		"action"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/actions/{id} [get]
 func GetAction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -96,9 +97,9 @@ func GetAction(w http.ResponseWriter, r *http.Request) {
 //	@Param			action	body	model.Action	true	"Action definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	model.Action	"action"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	model.Action		"action"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/actions/validate [post]
 func ValidateAction(w http.ResponseWriter, r *http.Request) {
 
@@ -131,9 +132,9 @@ func ValidateAction(w http.ResponseWriter, r *http.Request) {
 //	@Param			action	body	model.Action	true	"Action definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	model.Action	"action"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	model.Action		"action"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/actions [post]
 func PostAction(w http.ResponseWriter, r *http.Request) {
 
@@ -182,13 +183,13 @@ func PostAction(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Actions
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path	string			true	"Action ID"
+//	@Param			id		path	int				true	"Action ID"
 //	@Param			action	body	model.Action	true	"Action definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	model.Action	"action"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	model.Action		"action"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/actions/{id} [put]
 func PutAction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -244,11 +245,11 @@ func PutAction(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete a action definition
 //	@Tags			Actions
 //	@Produce		json
-//	@Param			id	path	string	true	"Action ID"
+//	@Param			id	path	int	true	"Action ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/actions/{id} [delete]
 func DeleteAction(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

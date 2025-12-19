@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/deletebyquery"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/conflicts"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
-	"strings"
-	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/coordinator"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"

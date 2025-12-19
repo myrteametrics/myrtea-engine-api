@@ -27,8 +27,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	model.ElasticSearchConfig	"list of all elasticSearchConfigs"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		model.ElasticSearchConfig	"list of all elasticSearchConfigs"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/esconfigs [get]
 func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
 
@@ -66,11 +66,11 @@ func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get an elasticSearchConfig definition
 //	@Tags			ElasticSearchConfigs
 //	@Produce		json
-//	@Param			id	path	string	true	"ElasticSearchConfig ID"
+//	@Param			id	path	int	true	"ElasticSearchConfig ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	model.ElasticSearchConfig	"elasticSearchConfig"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Router			/engine/esconfigs/{id} [get]
 func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -117,7 +117,7 @@ func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	model.ElasticSearchConfig	"elasticSearchConfig"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Router			/engine/esconfigs/name/{name} [get]
 func GetElasticSearchConfigByName(w http.ResponseWriter, r *http.Request) {
 
@@ -162,7 +162,7 @@ func GetElasticSearchConfigByName(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	model.ElasticSearchConfig	"elasticSearchConfig"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Router			/engine/esconfigs/default [get]
 func GetDefaultElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
@@ -201,8 +201,8 @@ func GetDefaultElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	model.ElasticSearchConfig	"elasticSearchConfig"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/esconfigs [post]
 func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
@@ -251,13 +251,13 @@ func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ElasticSearchConfigs
 //	@Accept			json
 //	@Produce		json
-//	@Param			id					path	string						true	"ElasticSearchConfig ID"
+//	@Param			id					path	int							true	"ElasticSearchConfig ID"
 //	@Param			elasticSearchConfig	body	model.ElasticSearchConfig	true	"ElasticSearchConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	model.ElasticSearchConfig	"elasticSearchConfig"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/esconfigs/{id} [put]
 func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
@@ -315,11 +315,11 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete an elasticSearchConfig definition
 //	@Tags			ElasticSearchConfigs
 //	@Produce		json
-//	@Param			id	path	string	true	"ElasticSearchConfig ID"
+//	@Param			id	path	int	true	"ElasticSearchConfig ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/esconfigs/{id} [delete]
 func DeleteElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
