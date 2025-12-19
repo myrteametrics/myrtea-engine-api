@@ -60,7 +60,7 @@ func GetPermissions(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	permissions.Permission	"permission"
-//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		400	{object}	httputil.APIError		"Bad Request"
 //	@Failure		404	{object}	httputil.APIError		"Status Not Found"
 //	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/admin/security/permissions/{id} [get]
@@ -107,7 +107,7 @@ func GetPermission(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	permissions.Permission	"permission"
-//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		400	{object}	httputil.APIError		"Bad Request"
 //	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/admin/security/permissions/validate [post]
 func ValidatePermission(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +141,7 @@ func ValidatePermission(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	permissions.Permission	"permission"
-//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		400	{object}	httputil.APIError		"Bad Request"
 //	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/admin/security/permissions [post]
 func PostPermission(w http.ResponseWriter, r *http.Request) {
@@ -201,7 +201,7 @@ func PostPermission(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	permissions.Permission	"permission"
-//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		400	{object}	httputil.APIError		"Bad Request"
 //	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/admin/security/permissions/{id} [put]
 func PutPermission(w http.ResponseWriter, r *http.Request) {

@@ -16,6 +16,8 @@ import (
 
 // EvaluateExpression godoc
 //
+//	@Id				EvaluateExpression
+//
 //	@Summary		EvaluateExpression an expression with variables
 //	@Description	EvaluateExpression an expression with variables and return the result
 //	@Tags			Expressions
@@ -82,6 +84,8 @@ func EvaluateExpression(w http.ResponseWriter, r *http.Request) {
 }
 
 // ScanExpression godoc
+//
+//	@Id				ScanExpression
 //
 //	@Summary		ScanExpression an expression with variables
 //	@Description	ScanExpression an expression with variables and return the result

@@ -125,7 +125,7 @@ func GetTemplateByName(w http.ResponseWriter, r *http.Request) {
 
 // PostTemplate godoc
 //
-// @Id				PostTemplate
+//	@Id				PostTemplate
 //
 //	@Summary		Create a new email template
 //	@Description	Create a new email template

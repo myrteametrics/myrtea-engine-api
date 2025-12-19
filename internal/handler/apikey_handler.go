@@ -115,10 +115,10 @@ func (a *ApikeyHandler) GetAPIKey(w http.ResponseWriter, r *http.Request) {
 //	@Tags			APIKeys
 //	@Accept			json
 //	@Produce		json
-//	@Param			X-API-Key	header		string			true	"API Key"
-//	@Success		200			{object}	apikey.APIKey	"API key information"
-//	@Failure		401			{string}	string			"Unauthorized - Invalid API key"
-//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
+//	@Param			X-API-Key	header		string				true	"API Key"
+//	@Success		200			{object}	apikey.APIKey		"API key information"
+//	@Failure		401			{string}	string				"Unauthorized - Invalid API key"
+//	@Failure		500			{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/security/apikey/validate [get]
 func (a *ApikeyHandler) ValidateAPIKey(w http.ResponseWriter, r *http.Request) {
 	apiKeyValue := r.Header.Get("X-API-Key")

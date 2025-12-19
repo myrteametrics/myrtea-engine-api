@@ -223,6 +223,7 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 //
 //	@Summary		Get user exports
 //	@Description	Get in memory user exports
+//	@Tags			Exports
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth

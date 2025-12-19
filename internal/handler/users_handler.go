@@ -50,7 +50,7 @@ func GetUserSelf(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}		users.User	"list of users"
+//	@Success		200	{array}		users.User			"list of users"
 //	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/users [get]
 func GetUsers(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +132,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 //	@Param			user	body	users.User	true	"user (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	users.User	"user"
+//	@Success		200	{object}	users.User			"user"
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/users/validate [post]
@@ -166,7 +166,7 @@ func ValidateUser(w http.ResponseWriter, r *http.Request) {
 //	@Param			user	body	users.User	true	"user (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	users.User	"user"
+//	@Success		200	{object}	users.User			"user"
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/users [post]
@@ -226,7 +226,7 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 //	@Param			user	body	users.User	true	"user (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	users.User	"user"
+//	@Success		200	{object}	users.User			"user"
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/users/{id} [put]
@@ -335,7 +335,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 //	@Param			user	body	[]string	true	"List of roles UUIDs"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	users.User	"user"
+//	@Success		200	{object}	users.User			"user"
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/users/{id}/roles [put]

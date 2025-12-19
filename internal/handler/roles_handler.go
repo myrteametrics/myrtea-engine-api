@@ -25,7 +25,7 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}		roles.Role	"list of roles"
+//	@Success		200	{array}		roles.Role			"list of roles"
 //	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/roles [get]
 func GetRoles(w http.ResponseWriter, r *http.Request) {
@@ -107,7 +107,7 @@ func GetRole(w http.ResponseWriter, r *http.Request) {
 //	@Param			role	body	roles.Role	true	"role (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	roles.Role	"role"
+//	@Success		200	{object}	roles.Role			"role"
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/roles/validate [post]
@@ -141,7 +141,7 @@ func ValidateRole(w http.ResponseWriter, r *http.Request) {
 //	@Param			role	body	roles.Role	true	"role (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	roles.Role	"role"
+//	@Success		200	{object}	roles.Role			"role"
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/roles [post]
@@ -201,7 +201,7 @@ func PostRole(w http.ResponseWriter, r *http.Request) {
 //	@Param			role	body	roles.Role	true	"role (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	roles.Role	"role"
+//	@Success		200	{object}	roles.Role			"role"
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/roles/{id} [put]
@@ -310,7 +310,7 @@ func DeleteRole(w http.ResponseWriter, r *http.Request) {
 //	@Param			role	body	[]string	true	"List of permissions UUIDs"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	roles.Role	"role"
+//	@Success		200	{object}	roles.Role			"role"
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/roles/{id}/permissions [put]
