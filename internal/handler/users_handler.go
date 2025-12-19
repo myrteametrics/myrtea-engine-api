@@ -51,7 +51,7 @@ func GetUserSelf(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		users.User	"list of users"
-//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/users [get]
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -86,9 +86,9 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	users.User			"user"
-//	@Failure		400	{string}	string				"Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		404	{object}	httputil.APIError	"Status Not Found"
-//	@Failure		500	{string}	string				"Internal Server Error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/users/{id} [get]
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -133,8 +133,8 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	users.User	"user"
-//	@Failure		400	{string}	string		"Bad Request"
-//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/users/validate [post]
 func ValidateUser(w http.ResponseWriter, r *http.Request) {
 	var newUser users.UserWithPassword
@@ -167,8 +167,8 @@ func ValidateUser(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	users.User	"user"
-//	@Failure		400	{string}	string		"Bad Request"
-//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/users [post]
 func PostUser(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -227,8 +227,8 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	users.User	"user"
-//	@Failure		400	{string}	string		"Bad Request"
-//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/users/{id} [put]
 func PutUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -336,8 +336,8 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	users.User	"user"
-//	@Failure		400	{string}	string		"Bad Request"
-//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/users/{id}/roles [put]
 func SetUserRoles(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

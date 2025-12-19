@@ -26,7 +26,7 @@ import (
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		permissions.Permission	"permission"
-//	@Failure		400	{string}	string					"Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		404	{object}	httputil.APIError		"Status Not Found"
 //	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
 //	@Router			/admin/security/roles/{id}/permissions [get]

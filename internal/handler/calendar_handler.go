@@ -265,8 +265,8 @@ func PostCalendar(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	calendar.Calendar	"calendar"
-//	@Failure		400	{string}	string				"Bad Request"
-//	@Failure		500	{string}	string				"Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/calendars/{id} [put]
 func PutCalendar(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
