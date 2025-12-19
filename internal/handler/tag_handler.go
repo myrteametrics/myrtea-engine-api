@@ -654,7 +654,7 @@ func GetAllSituationsTags(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Param			situationId	path		string					true	"Situation ID"
+//	@Param			situationId	path		int					true	"Situation ID"
 //	@Success		200			{object}	map[string][]tag.Tag	"map of template instance IDs to tags"
 //	@Failure		500			"internal server error"
 //	@Router			/engine/tags/situations/{situationId}/instances [get]
