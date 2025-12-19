@@ -2,10 +2,11 @@ package esconfig
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
-	"testing"
 )
 
 func dbInitRepo(dbClient *sqlx.DB, t *testing.T) {

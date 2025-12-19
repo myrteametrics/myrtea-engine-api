@@ -1,11 +1,12 @@
 package connectorconfig
 
 import (
+	"testing"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
-	"testing"
 )
 
 // SQL scripts for testing

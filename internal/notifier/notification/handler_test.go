@@ -1,8 +1,9 @@
 package notification
 
 import (
-	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"testing"
+
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 )
 
 func TestNewHandler(t *testing.T) {

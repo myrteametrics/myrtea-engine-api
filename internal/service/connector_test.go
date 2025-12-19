@@ -2,9 +2,10 @@ package service
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/myrteametrics/myrtea-sdk/v5/connector"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
-	"testing"
 )
 
 type mockConnectorCaller struct {
