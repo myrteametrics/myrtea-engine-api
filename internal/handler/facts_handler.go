@@ -823,10 +823,10 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 //	@Description	Execute a fact with a given timestamp
 //	@Tags			Facts
 //	@Produce		json
-//	@Param			id				path	string	true	"Fact ID"
+//	@Param			id				path	int	true	"Fact ID"
 //	@Param			byName			query	string	false	"Find fact by it's name"
-//	@Param			situationid		query	string	false	"Optional SituationID"
-//	@Param			instanceid		query	string	false	"Optional InstanceID"
+//	@Param			situationid		query	int	false	"Optional SituationID"
+//	@Param			instanceid		query	int	false	"Optional InstanceID"
 //	@Param			time			query	string	true	"Timestamp used for the fact execution"
 //	@Param			nhit			query	int		false	"Hit per page"
 //	@Param			offset			query	int		false	"Offset number"

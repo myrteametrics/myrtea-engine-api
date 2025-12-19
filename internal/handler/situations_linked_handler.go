@@ -25,8 +25,8 @@ import (
 //	@Description	Get the last evaluation of a situation
 //	@Tags			Situations
 //	@Produce		json
-//	@Param			id			path	string	true	"Situation ID"
-//	@Param			instanceid	path	string	true	"Situation Template Instance ID"
+//	@Param			id			path	int	true	"Situation ID"
+//	@Param			instanceid	path	int	true	"Situation Template Instance ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
@@ -345,7 +345,7 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Situations
 //	@Accept			json
 //	@Produce		json
-//	@Param			id					path	string						true	"Situation ID"
+//	@Param			id					path	int						true	"Situation ID"
 //	@Param			templateInstance	body	situation.TemplateInstance	true	"Situation template instance (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
@@ -380,8 +380,8 @@ func ValidateSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Situations
 //	@Accept			json
 //	@Produce		json
-//	@Param			id					path	string						true	"Situation ID"
-//	@Param			instanceid			path	string						true	"Situation Template Instance ID"
+//	@Param			id					path	int						true	"Situation ID"
+//	@Param			instanceid			path	int						true	"Situation Template Instance ID"
 //	@Param			templateInstance	body	situation.TemplateInstance	true	"Situation template instance (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
@@ -471,7 +471,7 @@ func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Situations
 //	@Accept			json
 //	@Produce		json
-//	@Param			id					path	string							true	"Situation ID"
+//	@Param			id					path	int							true	"Situation ID"
 //	@Param			templateInstances	body	[]situation.TemplateInstance	true	"Situation template instance list (json array)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
@@ -585,8 +585,8 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 //	@Summary		Delete a situation template instance
 //	@Description	Delete a situation template instance
 //	@Tags			Situations
-//	@Param			id			path	string	true	"Situation ID"
-//	@Param			instanceid	path	string	true	"Situation Template Instance ID"
+//	@Param			id			path	int	true	"Situation ID"
+//	@Param			instanceid	path	int	true	"Situation Template Instance ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
@@ -643,7 +643,7 @@ func DeleteSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get the list of situation template instances
 //	@Tags			Situations
 //	@Produce		json
-//	@Param			id	path	string	true	"Situation ID"
+//	@Param			id	path	int	true	"Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		situation.TemplateInstance
@@ -701,7 +701,7 @@ func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get the list of situation template instances
 //	@Tags			Situations
 //	@Produce		json
-//	@Param			id	path	string	true	"Situation ID"
+//	@Param			id	path	int	true	"Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		situation.TemplateInstance

@@ -72,7 +72,7 @@ func GetModels(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get a model definition
 //	@Tags			Models
 //	@Produce		json
-//	@Param			id		path	string	true	"Model ID"
+//	@Param			id		path	int	true	"Model ID"
 //	@Param			byName	query	string	false	"Find model by it's name"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth

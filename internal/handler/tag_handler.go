@@ -564,8 +564,8 @@ func AddTagToTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete the link between a tag and a template instance
 //	@Tags			Tags
 //	@Produce		json
-//	@Param			instanceId	path	string	true	"Template Instance ID"
-//	@Param			tagId		path	string	true	"Tag ID"
+//	@Param			instanceId	path	int	true	"Template Instance ID"
+//	@Param			tagId		path	int	true	"Tag ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
