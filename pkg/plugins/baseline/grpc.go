@@ -1,9 +1,10 @@
 package baseline
 
 import (
+	"time"
+
 	proto2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"time"
 
 	"github.com/hashicorp/go-plugin"
 	"go.uber.org/zap"

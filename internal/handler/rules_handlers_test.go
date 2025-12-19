@@ -3,12 +3,13 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
-	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"net/http"
 	"strconv"
 	"testing"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"

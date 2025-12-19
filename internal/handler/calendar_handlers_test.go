@@ -2,12 +2,13 @@ package handler
 
 import (
 	"encoding/json"
-	calendar2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"net/http"
 	"strconv"
 	"testing"
+
+	calendar2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"

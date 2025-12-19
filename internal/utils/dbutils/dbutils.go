@@ -3,10 +3,11 @@ package dbutils
 import (
 	"database/sql"
 	"errors"
+	"time"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
-	"time"
 )
 
 var ErrNoRowDeleted = errors.New("no row deleted (or multiple row deleted) instead of 1 row")

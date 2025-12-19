@@ -3,8 +3,9 @@ package users
 import (
 	"context"
 	"database/sql"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
 	"time"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"

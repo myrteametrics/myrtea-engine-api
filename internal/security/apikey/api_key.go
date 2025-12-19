@@ -2,10 +2,11 @@ package apikey
 
 import (
 	"errors"
+	"time"
+
 	"github.com/google/uuid"
 	sdksecurity "github.com/myrteametrics/myrtea-sdk/v5/security"
 	"golang.org/x/crypto/bcrypt"
-	"time"
 )
 
 const ApiKeyLength = 48

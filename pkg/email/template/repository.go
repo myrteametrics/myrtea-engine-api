@@ -1,8 +1,9 @@
 package template
 
 import (
-	sq "github.com/Masterminds/squirrel"
 	"sync"
+
+	sq "github.com/Masterminds/squirrel"
 )
 
 // Repository is a storage interface which can be implemented by multiple backends

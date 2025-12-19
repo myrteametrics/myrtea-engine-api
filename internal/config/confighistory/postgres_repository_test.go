@@ -1,11 +1,12 @@
 package confighistory
 
 import (
+	"testing"
+	"time"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
 	"github.com/spf13/viper"
-	"testing"
-	"time"
 )
 
 func init() {

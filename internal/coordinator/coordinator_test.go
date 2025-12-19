@@ -24,7 +24,7 @@ var EnvPrefix = "MYRTEA"
 
 // AllowedConfigKey list every allowed configuration key
 var AllowedConfigKey = [][]helpers.ConfigKey{
-	[]helpers.ConfigKey{
+	{
 		{Type: helpers.StringFlag, Name: "DEBUG_MODE", DefaultValue: "false", Description: "Enable debug mode"},
 		{Type: helpers.StringFlag, Name: "LOGGER_PRODUCTION", DefaultValue: "true", Description: "Enable or disable production log"},
 		{Type: helpers.StringFlag, Name: "SERVER_PORT", DefaultValue: "9000", Description: "Server port"},

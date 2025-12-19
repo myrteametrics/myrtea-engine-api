@@ -3,13 +3,14 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/ingester"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/processor"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/scheduler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/myrteametrics/myrtea-sdk/v5/models"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 // ProcessorHandler is a basic struct allowing to set up a single aggregateIngester instance for all handlers
@@ -36,7 +37,7 @@ func NewProcessorHandler() *ProcessorHandler {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/service/objects [post]
 func PostObjects(w http.ResponseWriter, r *http.Request) {
 	//TODO: What to do from groups ?
@@ -80,7 +81,7 @@ func PostObjects(w http.ResponseWriter, r *http.Request) {
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
 //	@Failure		429	"Processing queue is full please retry later"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/service/aggregates [post]
 func (handler *ProcessorHandler) PostAggregates(w http.ResponseWriter, r *http.Request) {
 	var aggregates []scheduler.ExternalAggregate

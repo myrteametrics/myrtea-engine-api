@@ -1,9 +1,10 @@
 package search
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"sync"
 	"time"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend

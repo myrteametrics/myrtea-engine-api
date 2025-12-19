@@ -3,15 +3,16 @@ package standalone
 import (
 	"errors"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/hashicorp/go-plugin"
-	pluginutils2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/pluginutils"
-	"go.uber.org/zap"
 	"net/http"
 	"net/rpc"
 	"os"
 	"os/exec"
 	"runtime"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/hashicorp/go-plugin"
+	pluginutils2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/pluginutils"
+	"go.uber.org/zap"
 )
 
 // Handshake is a common handshake that is shared by plugin and host.

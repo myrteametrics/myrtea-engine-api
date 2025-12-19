@@ -2,9 +2,10 @@ package search
 
 import (
 	"encoding/json"
+	"sort"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
-	"sort"
 )
 
 func extractFactHistoryRecordValues(rawResults []byte, out *FactHistoryRecord, downSamplingOperation string) error {

@@ -1,9 +1,10 @@
 package confighistory
 
 import (
-	"github.com/spf13/viper"
 	"sync"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 // Repository is a storage interface which can be implemented by multiple backends

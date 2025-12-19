@@ -2,11 +2,12 @@ package plugin
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/pluginutils"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/standalone"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 // MyrteaPlugin is a standard interface for any myrtea plugins

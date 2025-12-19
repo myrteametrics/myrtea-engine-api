@@ -2,11 +2,12 @@ package handler
 
 import (
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )

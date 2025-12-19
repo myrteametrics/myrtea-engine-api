@@ -3,6 +3,7 @@ package reader
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"

@@ -2,6 +2,7 @@ package template
 
 import (
 	"errors"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/email"
 )
 

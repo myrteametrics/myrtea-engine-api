@@ -25,11 +25,11 @@ import (
 //	@Description	Get the list of situations associated with a rule
 //	@Tags			Rules
 //	@Produce		json
-//	@Param			id	path	string	true	"Rule ID"
+//	@Param			id	path	int	true	"Rule ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"list of situations"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		401	"Status Unauthorized"
 //	@Router			/engine/rules/{id}/situations [get]
 func GetRuleSituations(w http.ResponseWriter, r *http.Request) {
@@ -74,12 +74,12 @@ func GetRuleSituations(w http.ResponseWriter, r *http.Request) {
 //	@Description	Add the rule at the end of the rules list of each situation
 //	@Tags			Rules
 //	@Produce		json
-//	@Param			id				path	string	true	"Rule ID"
+//	@Param			id				path	int		true	"Rule ID"
 //	@Param			situationIds	body	[]int64	true	"Situation association"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		401	"Status Unauthorized"
 //	@Router			/engine/rules/{id}/situations [post]
 func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
@@ -160,11 +160,11 @@ func PostRuleSituations(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get the list of situation instances associated to a rule
 //	@Tags			Rules
 //	@Produce		json
-//	@Param			id	path	string	true	"Rule ID"
+//	@Param			id	path	int	true	"Rule ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"list of situation instances"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		401	"Status Unauthorized"
 //	@Router			/engine/rules/{id}/situation-instances [get]
 func GetRuleSituationInstances(w http.ResponseWriter, r *http.Request) {

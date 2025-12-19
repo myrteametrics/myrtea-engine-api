@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"reflect"
 	"time"
+
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 )
 
 // FactValue the current value of a fact

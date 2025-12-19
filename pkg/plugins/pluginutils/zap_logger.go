@@ -3,10 +3,11 @@ package pluginutils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/go-hclog"
 	"io"
 	"log"
 	"strings"
+
+	"github.com/hashicorp/go-hclog"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

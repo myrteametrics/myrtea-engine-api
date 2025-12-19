@@ -15,8 +15,8 @@ func (i dateTimeInterval) containsWithTz(t time.Time, tz *time.Location) bool {
 }
 
 type monthInterval struct {
-	From time.Month `json:"from"`
-	To   time.Month `json:"to"`
+	From time.Month `json:"from" swaggertype:"integer"`
+	To   time.Month `json:"to" swaggertype:"integer"`
 }
 
 func (i monthInterval) containsWithTz(t time.Time, tz *time.Location) bool {
@@ -35,8 +35,8 @@ func (i dayInterval) containsWithTz(t time.Time, tz *time.Location) bool {
 }
 
 type dayWeekInterval struct {
-	From time.Weekday `json:"from"`
-	To   time.Weekday `json:"to"`
+	From time.Weekday `json:"from" swaggertype:"integer"`
+	To   time.Weekday `json:"to" swaggertype:"integer"`
 }
 
 func (i dayWeekInterval) containsWithTz(t time.Time, tz *time.Location) bool {

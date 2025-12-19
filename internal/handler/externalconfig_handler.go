@@ -3,13 +3,14 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
-	"github.com/myrteametrics/myrtea-sdk/v5/repositories/externalconfig"
 	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/externalconfig"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -25,8 +26,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	externalconfig.ExternalConfig	"list of all externalConfigs"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		externalconfig.ExternalConfig	"list of all externalConfigs"
+//	@Failure		500	{object}	httputil.APIError				"Internal Server Error"
 //	@Router			/engine/externalconfigs [get]
 func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 
@@ -63,11 +64,11 @@ func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get an externalConfig definition
 //	@Tags			ExternalConfigs
 //	@Produce		json
-//	@Param			id	path	string	true	"ExternalConfig ID"
+//	@Param			id	path	int	true	"ExternalConfig ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	externalconfig.ExternalConfig	"externalConfig"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError				"Bad Request"
 //	@Router			/engine/externalconfigs/{id} [get]
 func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
 
@@ -108,7 +109,7 @@ func GetExternalConfig(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	externalconfig.ExternalConfig	"externalConfig"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError				"Bad Request"
 //	@Router			/engine/externalconfigs/name/{name} [get]
 func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
 
@@ -149,8 +150,8 @@ func GetExternalConfigByName(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	externalconfig.ExternalConfig	"externalConfig"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError				"Bad Request"
+//	@Failure		500	{object}	httputil.APIError				"Internal Server Error"
 //	@Router			/engine/externalconfigs [post]
 func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 
@@ -199,13 +200,13 @@ func PostExternalConfig(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ExternalConfigs
 //	@Accept			json
 //	@Produce		json
-//	@Param			name			path	string							true	"ExternalConfig ID"
+//	@Param			name			path	int								true	"ExternalConfig ID"
 //	@Param			externalConfig	body	externalconfig.ExternalConfig	true	"ExternalConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	externalconfig.ExternalConfig	"externalConfig"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError				"Bad Request"
+//	@Failure		500	{object}	httputil.APIError				"Internal Server Error"
 //	@Router			/engine/externalconfigs/{name} [put]
 func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 
@@ -263,11 +264,11 @@ func PutExternalConfig(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete an externalConfig definition
 //	@Tags			ExternalConfigs
 //	@Produce		json
-//	@Param			name	path	string	true	"ExternalConfig ID"
+//	@Param			name	path	int	true	"ExternalConfig ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/externalconfigs/{name} [delete]
 func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 
@@ -310,7 +311,7 @@ func DeleteExternalConfig(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path	int								true	"ExternalConfig ID"
 //	@Success		200	{array}	externalconfig.ExternalConfig	"list of all old versions of the externalConfig"
 //	@Failure		400	"bad request"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/externalconfigs/{id}/alloldversions [get]
 func GetAllOldVersions(w http.ResponseWriter, r *http.Request) {
 

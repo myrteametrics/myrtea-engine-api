@@ -28,8 +28,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		modeler.Model		"List of Models"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/models [get]
 func GetModels(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -72,12 +72,12 @@ func GetModels(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get a model definition
 //	@Tags			Models
 //	@Produce		json
-//	@Param			id		path	string	true	"Model ID"
+//	@Param			id		path	int	true	"Model ID"
 //	@Param			byName	query	string	false	"Find model by it's name"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{object}	modeler.Model
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/models/{id} [get]
 func GetModel(w http.ResponseWriter, r *http.Request) {
 	byName := false
@@ -145,9 +145,9 @@ func GetModel(w http.ResponseWriter, r *http.Request) {
 //	@Param			model	body	interface{}	true	"Model definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	modeler.Model		"Model definition"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/models/validate [post]
 func ValidateModel(w http.ResponseWriter, r *http.Request) {
 	var newModel modeler.Model
@@ -179,9 +179,9 @@ func ValidateModel(w http.ResponseWriter, r *http.Request) {
 //	@Param			model	body	interface{}	true	"Model definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	modeler.Model		"Created Model"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/models [post]
 func PostModel(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -239,13 +239,13 @@ func PostModel(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Models
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path	string		true	"Model ID"
+//	@Param			id		path	int			true	"Model ID"
 //	@Param			model	body	interface{}	true	"Model definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	modeler.Model		"Status OK"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/models/{id} [put]
 func PutModel(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -307,11 +307,11 @@ func PutModel(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete a model definition
 //	@Tags			Models
 //	@Produce		json
-//	@Param			id	path	string	true	"Model ID"
+//	@Param			id	path	int	true	"Model ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/models/{id} [delete]
 func DeleteModel(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -346,11 +346,11 @@ func DeleteModel(w http.ResponseWriter, r *http.Request) {
 //	@Description	Update the elastic template with the model
 //	@Tags			Models
 //	@Produce		json
-//	@Param			id	path	string	true	"Model ID"
+//	@Param			id	path	int	true	"Model ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{object}	object
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/models/update-template/{id} [put]
 func UpdateModelTemplate(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

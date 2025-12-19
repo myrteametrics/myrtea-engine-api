@@ -1,11 +1,12 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 // NotificationsWSRegister godoc
@@ -20,7 +21,7 @@ import (
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/notifications/ws [get]
 func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 
@@ -75,7 +76,7 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/notifications/sse [get]
 func NotificationsSSERegister(w http.ResponseWriter, r *http.Request) {
 
@@ -138,8 +139,8 @@ func NotificationsSSERegister(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/notifications/trigger [post]
 func TriggerNotification(w http.ResponseWriter, r *http.Request) {
 

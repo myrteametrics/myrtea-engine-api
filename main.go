@@ -13,7 +13,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handler"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/metrics"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/service"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
+	plugin "github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
 
 	_ "github.com/lib/pq"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/app"

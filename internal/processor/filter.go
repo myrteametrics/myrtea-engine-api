@@ -1,8 +1,9 @@
 package processor
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"strings"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	sdk_models "github.com/myrteametrics/myrtea-sdk/v5/models"

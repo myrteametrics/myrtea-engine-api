@@ -2,15 +2,16 @@ package scheduler
 
 import (
 	"fmt"
+	"log"
+	"testing"
+	"time"
+
 	"github.com/elastic/go-elasticsearch/v8"
 	calendar2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
-	"log"
-	"testing"
-	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"

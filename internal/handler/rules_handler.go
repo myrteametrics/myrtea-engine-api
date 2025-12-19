@@ -25,8 +25,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	rule.Rule	"list of rules"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		rule.Rule			"list of rules"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/rules [get]
 func GetRules(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -73,11 +73,11 @@ func GetRules(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get a specific rule by it's ID
 //	@Tags			Rules
 //	@Produce		json
-//	@Param			id	path	string	true	"Rule ID"
+//	@Param			id	path	int	true	"Rule ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	rule.Rule	"rule"
-//	@Failure		500	"internal server error"
+//	@Success		200	{object}	rule.Rule			"rule"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/rules/{id} [get]
 func GetRule(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -125,7 +125,7 @@ func GetRule(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400	"bad request - invalid parameters"
 //	@Failure		403	"forbidden - insufficient permissions"
 //	@Failure		404	"not found - rule does not exist"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/rules/{id}/versions/{versionId} [get]
 func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -177,9 +177,9 @@ func GetRuleByVersion(w http.ResponseWriter, r *http.Request) {
 //	@Param			rule	body	rule.Rule	true	"Rule definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	rule.Rule	"rule"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
+//	@Success		200	{object}	rule.Rule			"rule"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/rules/validate [post]
 func ValidateRule(w http.ResponseWriter, r *http.Request) {
 	var newRule rule.Rule
@@ -211,9 +211,9 @@ func ValidateRule(w http.ResponseWriter, r *http.Request) {
 //	@Param			rule	body	rule.Rule	true	"Rule definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	rule.Rule	"rule"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
+//	@Success		200	{object}	rule.Rule			"rule"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/rules [post]
 func PostRule(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -279,13 +279,13 @@ func PostRule(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Rules
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path	string		true	"Rule ID"
+//	@Param			id		path	int			true	"Rule ID"
 //	@Param			rule	body	rule.Rule	true	"Rule definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	rule.Rule	"rule"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Success		200	{object}	rule.Rule			"rule"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/rules/{id} [put]
 func PutRule(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -347,12 +347,12 @@ func PutRule(w http.ResponseWriter, r *http.Request) {
 //	@Description	delete rule
 //	@Tags			Rules
 //	@Produce		json
-//	@Param			id	path	string	true	"Rule ID"
+//	@Param			id	path	int	true	"Rule ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/rules/{id} [delete]
 func DeleteRule(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

@@ -3,14 +3,15 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/confighistory"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"go.uber.org/zap"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 // GetConfigHistories godoc
@@ -23,8 +24,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	confighistory.ConfigHistory	"list of all config histories"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		confighistory.ConfigHistory	"list of all config histories"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/config-histories [get]
 func GetConfigHistories(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -57,12 +58,12 @@ func GetConfigHistories(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get a config history entry by ID
 //	@Tags			ConfigHistory
 //	@Produce		json
-//	@Param			id	path	string	true	"Config History ID"
+//	@Param			id	path	int	true	"Config History ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	confighistory.ConfigHistory	"config history"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		404	"Status Not Found"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
+//	@Failure		404	{object}	httputil.APIError			"Status Not Found
 //	@Router			/engine/config-histories/{id} [get]
 func GetConfigHistory(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -105,8 +106,8 @@ func GetConfigHistory(w http.ResponseWriter, r *http.Request) {
 //	@Param			type	path	string	true	"History Type"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	confighistory.ConfigHistory	"list of config histories by type"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{array}		confighistory.ConfigHistory	"list of config histories by type"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Router			/engine/config-histories/type/{type} [get]
 func GetConfigHistoriesByType(w http.ResponseWriter, r *http.Request) {
 	historyType := chi.URLParam(r, "type")
@@ -144,8 +145,8 @@ func GetConfigHistoriesByType(w http.ResponseWriter, r *http.Request) {
 //	@Param			user	path	string	true	"Username"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	confighistory.ConfigHistory	"list of config histories by user"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{array}		confighistory.ConfigHistory	"list of config histories by user"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Router			/engine/config-histories/user/{user} [get]
 func GetConfigHistoriesByUser(w http.ResponseWriter, r *http.Request) {
 	user := chi.URLParam(r, "user")
@@ -183,8 +184,8 @@ func GetConfigHistoriesByUser(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	confighistory.ConfigHistory	"list of config histories in interval"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{array}		confighistory.ConfigHistory	"list of config histories in interval"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Router			/engine/config-histories/interval [post]
 func GetConfigHistoriesByInterval(w http.ResponseWriter, r *http.Request) {
 	var interval struct {
@@ -247,8 +248,8 @@ func GetConfigHistoriesByInterval(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	confighistory.ConfigHistory	"created config history"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"internal server error"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/config-histories [post]
 func CreateConfigHistory(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -310,11 +311,11 @@ func CreateConfigHistory(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete a config history entry by ID
 //	@Tags			ConfigHistory
 //	@Produce		json
-//	@Param			id	path	string	true	"Config History ID"
+//	@Param			id	path	int	true	"Config History ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/config-histories/{id} [delete]
 func DeleteConfigHistory(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -352,7 +353,7 @@ func DeleteConfigHistory(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/config-histories/oldest [delete]
 func DeleteOldestConfigHistory(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)

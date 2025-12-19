@@ -1,8 +1,9 @@
 package service
 
 import (
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Definition struct {

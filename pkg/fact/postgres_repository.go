@@ -3,8 +3,9 @@ package fact
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 	"time"
+
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"

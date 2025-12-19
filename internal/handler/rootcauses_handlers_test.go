@@ -3,11 +3,12 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
+
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
