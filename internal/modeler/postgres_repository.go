@@ -3,6 +3,7 @@ package modeler
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 
 	sq "github.com/Masterminds/squirrel"

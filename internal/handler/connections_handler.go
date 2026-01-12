@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/connector"
@@ -22,9 +23,9 @@ import (
 //	@Param			maxage		query	string	false	"maximum age of data (duration)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{string}	string	"Status OK"
-//	@Failure		400	{string}	string	"Bad Request"
-//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Success		200	{string}	string				"Status OK"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/connector/{id}/executions/last [get]
 func GetLastConnectorExecutionDateTime(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

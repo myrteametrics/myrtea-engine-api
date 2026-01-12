@@ -2,18 +2,21 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"go.uber.org/zap"
-	"net/http"
 
 	"encoding/json"
 	"errors"
 )
 
 // EvaluateExpression godoc
+//
+//	@Id				EvaluateExpression
 //
 //	@Summary		EvaluateExpression an expression with variables
 //	@Description	EvaluateExpression an expression with variables and return the result
@@ -23,9 +26,9 @@ import (
 //	@Param			request	body	any	true	"Expression and variables"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	string	"evaluated expression"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
+//	@Success		200	{object}	string				"evaluated expression"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/expression/evaluate [post]
 func EvaluateExpression(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -82,6 +85,8 @@ func EvaluateExpression(w http.ResponseWriter, r *http.Request) {
 
 // ScanExpression godoc
 //
+//	@Id				ScanExpression
+//
 //	@Summary		ScanExpression an expression with variables
 //	@Description	ScanExpression an expression with variables and return the result
 //	@Tags			Expressions
@@ -90,9 +95,9 @@ func EvaluateExpression(w http.ResponseWriter, r *http.Request) {
 //	@Param			request	body	any	true	"Expression and optional variables"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	string	"evaluated expression and list of variables"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
+//	@Success		200	{object}	string				"evaluated expression and list of variables"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/expression/scan [post]
 func ScanExpression(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)

@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/myrteametrics/myrtea-sdk/v5/connector"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
+
+	"github.com/myrteametrics/myrtea-sdk/v5/connector"
+	"go.uber.org/zap"
 )
 
 // ConnectorCaller is an interface to call a connector (mockable)

@@ -3,6 +3,7 @@ package explainer
 import (
 	"errors"
 	"fmt"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 
 	"github.com/jmoiron/sqlx"

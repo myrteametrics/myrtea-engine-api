@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
+	plugin "github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/pluginutils"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"

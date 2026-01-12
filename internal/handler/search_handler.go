@@ -3,11 +3,12 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/history"
 	"go.uber.org/zap"
@@ -75,8 +76,8 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 //	@Param			mindate				query	string	false	"time.Time"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	search.QueryResult	"query result"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		search.QueryResult	"query result"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/search/last [get]
 func SearchLast(w http.ResponseWriter, r *http.Request) {
 
@@ -125,8 +126,8 @@ func SearchLast(w http.ResponseWriter, r *http.Request) {
 //	@Param			interval			query	string	true	"year | quarter | month | week | day | hour | minute"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	search.QueryResult	"query result"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		search.QueryResult	"query result"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/search/last/byinterval [get]
 func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 
@@ -183,8 +184,8 @@ func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 //	@Param			interval			query	string	true	"time.Duration"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	search.QueryResult	"query result"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		search.QueryResult	"query result"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/search/last/bycustominterval [get]
 func SearchLastByCustomInterval(w http.ResponseWriter, r *http.Request) {
 

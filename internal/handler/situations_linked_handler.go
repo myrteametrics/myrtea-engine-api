@@ -3,12 +3,13 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
-	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
+	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/rule"
@@ -24,12 +25,12 @@ import (
 //	@Description	Get the last evaluation of a situation
 //	@Tags			Situations
 //	@Produce		json
-//	@Param			id			path	string	true	"Situation ID"
-//	@Param			instanceid	path	string	true	"Situation Template Instance ID"
+//	@Param			id			path	int	true	"Situation ID"
+//	@Param			instanceid	path	int	true	"Situation Template Instance ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/situations/{id}/evaluation/{instanceid} [get]
 func GetSituationEvaluation(w http.ResponseWriter, r *http.Request) {
 
@@ -71,11 +72,11 @@ func GetSituationEvaluation(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get the list of facts for the evaluation of a situation
 //	@Tags			Situations
 //	@Produce		json
-//	@Param			id	path	string	true	"Situation ID"
+//	@Param			id	path	int	true	"Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{array}		engine.Fact
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		401	"Status Unauthorized"
 //	@Router			/engine/situations/{id}/facts [get]
 func GetSituationFacts(w http.ResponseWriter, r *http.Request) {
@@ -137,11 +138,11 @@ func GetSituationFacts(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get the list of rules for the evaluation of a situation
 //	@Tags			Situations
 //	@Produce		json
-//	@Param			id	path	string	true	"Situation ID"
+//	@Param			id	path	int	true	"Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	rule.Rule
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{array}		rule.Rule
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		401	"Status Unauthorized"
 //	@Router			/engine/situations/{id}/rules [get]
 func GetSituationRules(w http.ResponseWriter, r *http.Request) {
@@ -203,12 +204,12 @@ func GetSituationRules(w http.ResponseWriter, r *http.Request) {
 //	@Summary		Set the list of rules for the evaluation of a situation
 //	@Description	Set the list of rules for the evaluation of a situation
 //	@Tags			Situations
-//	@Param			id		path	string	true	"Situation ID"
+//	@Param			id		path	int		true	"Situation ID"
 //	@Param			ruleIds	body	[]int64	true	"Situation Rules"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		401	"Status Unauthorized"
 //	@Router			/engine/situations/{id}/rules [put]
 func SetSituationRules(w http.ResponseWriter, r *http.Request) {
@@ -262,13 +263,13 @@ func SetSituationRules(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Situations
 //	@Accept			json
 //	@Produce		json
-//	@Param			id					path	string						true	"Situation ID"
+//	@Param			id					path	int							true	"Situation ID"
 //	@Param			templateInstance	body	situation.TemplateInstance	true	"Situation template instance (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	situation.TemplateInstance	"situation template instance"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/situations/{id}/instances [post]
 func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -344,13 +345,13 @@ func PostSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Situations
 //	@Accept			json
 //	@Produce		json
-//	@Param			id					path	string						true	"Situation ID"
+//	@Param			id					path	int						true	"Situation ID"
 //	@Param			templateInstance	body	situation.TemplateInstance	true	"Situation template instance (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	situation.TemplateInstance	"Situation template instance"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/situations/{id}/instances/validate [post]
 func ValidateSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	var newInstance situation2.TemplateInstance
@@ -379,14 +380,14 @@ func ValidateSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Situations
 //	@Accept			json
 //	@Produce		json
-//	@Param			id					path	string						true	"Situation ID"
-//	@Param			instanceid			path	string						true	"Situation Template Instance ID"
+//	@Param			id					path	int						true	"Situation ID"
+//	@Param			instanceid			path	int						true	"Situation Template Instance ID"
 //	@Param			templateInstance	body	situation.TemplateInstance	true	"Situation template instance (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	situation.TemplateInstance	"situation template instance"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/situations/{id}/instances/{instanceid} [put]
 func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -470,13 +471,13 @@ func PutSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Situations
 //	@Accept			json
 //	@Produce		json
-//	@Param			id					path	string							true	"Situation ID"
+//	@Param			id					path	int							true	"Situation ID"
 //	@Param			templateInstances	body	[]situation.TemplateInstance	true	"Situation template instance list (json array)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/situations/{id}/instances [put]
 func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -584,12 +585,12 @@ func PutSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 //	@Summary		Delete a situation template instance
 //	@Description	Delete a situation template instance
 //	@Tags			Situations
-//	@Param			id			path	string	true	"Situation ID"
-//	@Param			instanceid	path	string	true	"Situation Template Instance ID"
+//	@Param			id			path	int	true	"Situation ID"
+//	@Param			instanceid	path	int	true	"Situation Template Instance ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/situations/{id}/instances/{instanceid} [delete]
 func DeleteSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -642,11 +643,11 @@ func DeleteSituationTemplateInstance(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get the list of situation template instances
 //	@Tags			Situations
 //	@Produce		json
-//	@Param			id	path	string	true	"Situation ID"
+//	@Param			id	path	int	true	"Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	situation.TemplateInstance
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{array}		situation.TemplateInstance
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		401	"Status Unauthorized"
 //	@Router			/engine/situations/{id}/instances [get]
 func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
@@ -700,11 +701,11 @@ func GetSituationTemplateInstances(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get the list of situation template instances
 //	@Tags			Situations
 //	@Produce		json
-//	@Param			id	path	string	true	"Situation ID"
+//	@Param			id	path	int	true	"Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	situation.TemplateInstance
-//	@Failure		400	"Status Bad Request"
+//	@Success		200	{array}		situation.TemplateInstance
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		401	"Status Unauthorized"
 //	@Router			/engine/situations/{id}/instances/unprotected [get]
 func GetSituationTemplateInstancesUnprotected(w http.ResponseWriter, r *http.Request) {

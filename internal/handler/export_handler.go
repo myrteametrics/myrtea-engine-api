@@ -5,17 +5,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
+	"path/filepath"
+	"strconv"
+	"sync"
+
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/spf13/viper"
-	"net/http"
-	"net/url"
-	"path/filepath"
-	"strconv"
-	"sync"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
@@ -68,7 +69,7 @@ type CustomExportRequest struct {
 //	@Security		ApiKeyAuth
 //	@Param			request	body		handler.ExportRequest	true	"request (json)"
 //	@Success		200		{file}		result					file
-//	@Failure		500		{object}	render.APIError			"internal server error"
+//	@Failure		500		{object}	httputil.APIError		"internal server error"
 //	@Router			/engine/facts/streamedexport [post]
 func ExportFactStreamed(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -222,12 +223,13 @@ func handleStreamedExport(requestContext context.Context, w http.ResponseWriter,
 //
 //	@Summary		Get user exports
 //	@Description	Get in memory user exports
+//	@Tags			Exports
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		export.WrapperItem	"Returns a list of exports"
-//	@Failure		403	{object}	render.APIError		"Status Forbidden: missing permission"
-//	@Failure		500	{object}	render.APIError		"internal server error"
+//	@Failure		403	{object}	httputil.APIError	"Status Forbidden: missing permission"
+//	@Failure		500	{object}	httputil.APIError	"internal server error"
 //	@Router			/engine/exports [get]
 func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -250,10 +252,10 @@ func (e *ExportHandler) GetExports(w http.ResponseWriter, r *http.Request) {
 //	@Security		ApiKeyAuth
 //	@Param			id	path		string				true	"Export ID"
 //	@Success		200	{object}	export.WrapperItem	"Status OK"
-//	@Failure		400	{object}	render.APIError		"Bad Request: missing export id"
-//	@Failure		403	{object}	render.APIError		"Status Forbidden: missing permission"
-//	@Failure		404	{object}	render.APIError		"Status Not Found: export not found"
-//	@Failure		500	{object}	render.APIError		"internal server error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request: missing export id"
+//	@Failure		403	{object}	httputil.APIError	"Status Forbidden: missing permission"
+//	@Failure		404	{object}	httputil.APIError	"Status Not Found: export not found"
+//	@Failure		500	{object}	httputil.APIError	"internal server error"
 //	@Router			/engine/exports/{id} [get]
 func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -287,13 +289,13 @@ func (e *ExportHandler) GetExport(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Param			id	path		string			true	"Export ID"
-//	@Success		202	{string}	string			"Status Accepted: export found, cancellation request has been taken into account and will be processed"
-//	@Success		204	{string}	string			"Status OK: export was found and deleted"
-//	@Failure		400	{object}	render.APIError	"Bad Request: missing export id"
-//	@Failure		403	{object}	render.APIError	"Status Forbidden: missing permission"
-//	@Failure		404	{object}	render.APIError	"Status Not Found: export not found"
-//	@Failure		500	{object}	render.APIError	"internal server error"
+//	@Param			id	path		string				true	"Export ID"
+//	@Success		202	{string}	string				"Status Accepted: export found, cancellation request has been taken into account and will be processed"
+//	@Success		204	{string}	string				"Status OK: export was found and deleted"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request: missing export id"
+//	@Failure		403	{object}	httputil.APIError	"Status Forbidden: missing permission"
+//	@Failure		404	{object}	httputil.APIError	"Status Not Found: export not found"
+//	@Failure		500	{object}	httputil.APIError	"internal server error"
 //	@Router			/engine/exports/{id} [delete]
 func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -336,11 +338,11 @@ func (e *ExportHandler) DeleteExport(w http.ResponseWriter, r *http.Request) {
 //	@Param			request	body		handler.ExportRequest	true	"request (json)"
 //	@Success		200		{object}	export.WrapperItem		"Status OK: user was added to existing export in queue"
 //	@Success		201		{object}	export.WrapperItem		"Status Created: new export was added in queue"
-//	@Failure		400		{object}	render.APIError			"Bad Request: missing fact id / fact id is not an integer"
-//	@Failure		403		{object}	render.APIError			"Status Forbidden: missing permission"
+//	@Failure		400		{object}	httputil.APIError		"Bad Request: missing fact id / fact id is not an integer"
+//	@Failure		403		{object}	httputil.APIError		"Status Forbidden: missing permission"
 //	@Failure		409		{object}	export.WrapperItem		"Status Conflict: user already exists in export queue"
-//	@Failure		429		{object}	render.APIError			"Status Too Many Requests: export queue is full"
-//	@Failure		500		{object}	render.APIError			"internal server error"
+//	@Failure		429		{object}	httputil.APIError		"Status Too Many Requests: export queue is full"
+//	@Failure		500		{object}	httputil.APIError		"internal server error"
 //	@Router			/engine/exports/fact [post]
 func (e *ExportHandler) ExportFact(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -425,11 +427,11 @@ func (e *ExportHandler) handleAddToQueueResponse(w http.ResponseWriter, r *http.
 //	@Param			request	body		handler.ExportRequest	true	"request (json)"
 //	@Success		200		{object}	export.WrapperItem		"Status OK: user was added to existing export in queue"
 //	@Success		201		{object}	export.WrapperItem		"Status Created: new export was added in queue"
-//	@Failure		400		{object}	render.APIError			"Bad Request: missing fact id / fact id is not an integer"
-//	@Failure		403		{object}	render.APIError			"Status Forbidden: missing permission"
+//	@Failure		400		{object}	httputil.APIError		"Bad Request: missing fact id / fact id is not an integer"
+//	@Failure		403		{object}	httputil.APIError		"Status Forbidden: missing permission"
 //	@Failure		409		{object}	export.WrapperItem		"Status Conflict: user already exists in export queue"
-//	@Failure		429		{object}	render.APIError			"Status Too Many Requests: export queue is full"
-//	@Failure		500		{object}	render.APIError			"internal server error"
+//	@Failure		429		{object}	httputil.APIError		"Status Too Many Requests: export queue is full"
+//	@Failure		500		{object}	httputil.APIError		"internal server error"
 //	@Router			/engine/exports/custom [post]
 func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -513,13 +515,13 @@ func (e *ExportHandler) ExportCustom(w http.ResponseWriter, r *http.Request) {
 //	@Produce		octet-stream
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Param			id	path		string			true	"Export ID"
-//	@Success		200	{file}		result			file
-//	@Success		308	{object}	render.APIError	"Redirects	to		the		export	file	location
-//	@Failure		400	{object}	render.APIError	"Bad Request: missing export id"
-//	@Failure		403	{object}	render.APIError	"Status Forbidden: missing permission"
-//	@Failure		404	{object}	render.APIError	"Status Not Found: export not found"
-//	@Failure		500	{object}	render.APIError	"internal server error"
+//	@Param			id	path		string				true	"Export ID"
+//	@Success		200	{file}		result				file
+//	@Success		308	{object}	httputil.APIError	"Redirects	to		the		export	file	location
+//	@Failure		400	{object}	httputil.APIError	"Bad Request: missing export id"
+//	@Failure		403	{object}	httputil.APIError	"Status Forbidden: missing permission"
+//	@Failure		404	{object}	httputil.APIError	"Status Not Found: export not found"
+//	@Failure		500	{object}	httputil.APIError	"internal server error"
 //	@Router			/engine/exports/{id}/download [get]
 func (e *ExportHandler) DownloadExport(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

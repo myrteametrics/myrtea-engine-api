@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 )
 
 // IsAlive godoc

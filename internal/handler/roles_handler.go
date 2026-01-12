@@ -3,12 +3,13 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+	"sort"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	roles2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
-	"net/http"
-	"sort"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -24,8 +25,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}		roles.Role	"list of roles"
-//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Success		200	{array}		roles.Role			"list of roles"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/roles [get]
 func GetRoles(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -59,10 +60,10 @@ func GetRoles(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path	string	true	"role ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	roles.Role	"role"
-//	@Failure		400	{string}	string		"Bad Request"
-//	@Failure		404	{string}	string		"Not Found"
-//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Success		200	{object}	roles.Role			"role"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		404	{object}	httputil.APIError	"Status Not Found"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/roles/{id} [get]
 func GetRole(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -106,9 +107,9 @@ func GetRole(w http.ResponseWriter, r *http.Request) {
 //	@Param			role	body	roles.Role	true	"role (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	roles.Role	"role"
-//	@Failure		400	{string}	string		"Bad Request"
-//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Success		200	{object}	roles.Role			"role"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/roles/validate [post]
 func ValidateRole(w http.ResponseWriter, r *http.Request) {
 	var newRole roles2.Role
@@ -140,9 +141,9 @@ func ValidateRole(w http.ResponseWriter, r *http.Request) {
 //	@Param			role	body	roles.Role	true	"role (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	roles.Role	"role"
-//	@Failure		400	{string}	string		"Bad Request"
-//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Success		200	{object}	roles.Role			"role"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/roles [post]
 func PostRole(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -200,9 +201,9 @@ func PostRole(w http.ResponseWriter, r *http.Request) {
 //	@Param			role	body	roles.Role	true	"role (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	roles.Role	"role"
-//	@Failure		400	{string}	string		"Bad Request"
-//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Success		200	{object}	roles.Role			"role"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/roles/{id} [put]
 func PutRole(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -267,9 +268,9 @@ func PutRole(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path	string	true	"role ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{string}	string	"status OK"
-//	@Failure		400	{string}	string	"Bad Request"
-//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Success		200	{string}	string				"status OK"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/roles/{id} [delete]
 func DeleteRole(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -309,9 +310,9 @@ func DeleteRole(w http.ResponseWriter, r *http.Request) {
 //	@Param			role	body	[]string	true	"List of permissions UUIDs"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	roles.Role	"role"
-//	@Failure		400	{string}	string		"Bad Request"
-//	@Failure		500	{string}	string		"Internal Server Error"
+//	@Success		200	{object}	roles.Role			"role"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/security/roles/{id}/permissions [put]
 func SetRolePermissions(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

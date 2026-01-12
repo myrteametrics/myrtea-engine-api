@@ -3,12 +3,13 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+	"strconv"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/myrteametrics/myrtea-sdk/v5/handlers/render"
 	"github.com/myrteametrics/myrtea-sdk/v5/repositories/variablesconfig"
-	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -24,8 +25,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	variablesconfig.VariablesConfig	"list of all Variables with it's config"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		variablesconfig.VariablesConfig	"list of all Variables with it's config"
+//	@Failure		500	{object}	httputil.APIError				"Internal Server Error"
 //	@Router			/engine/variablesconfig [get]
 func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
 
@@ -55,8 +56,8 @@ func GetVariablesConfig(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			scope	path	string	false	"Variable Config scope, default is 'global'"
 //	@Security		Bearer
-//	@Success		200	{array}	variablesconfig.VariablesConfig	"list of all Variables with it's config"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		variablesconfig.VariablesConfig	"list of all Variables with it's config"
+//	@Failure		500	{object}	httputil.APIError				"Internal Server Error"
 //	@Router			/engine/variablesconfig/{scope} [get]
 func GetVariablesConfigByScope(w http.ResponseWriter, r *http.Request) {
 
@@ -85,11 +86,11 @@ func GetVariablesConfigByScope(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get an Variable Config definition
 //	@Tags			VariablesConfig
 //	@Produce		json
-//	@Param			id	path	string	true	"Variable Config ID"
+//	@Param			id	path	int	true	"Variable Config ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	variablesconfig.VariablesConfig	"One Variable Config getted by id"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError				"Bad Request"
 //	@Router			/engine/variablesconfig/{id} [get]
 func GetVariableConfig(w http.ResponseWriter, r *http.Request) {
 
@@ -136,7 +137,7 @@ func GetVariableConfig(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	variablesconfig.VariablesConfig	" One Variable Config getted by key"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError				"Bad Request"
 //	@Router			/engine/variablesconfig/key/{key} [get]
 func GetVariableConfigByKey(w http.ResponseWriter, r *http.Request) {
 
@@ -177,8 +178,8 @@ func GetVariableConfigByKey(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	variablesconfig.VariablesConfig	"Ppost VariableConfig"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError				"Bad Request"
+//	@Failure		500	{object}	httputil.APIError				"Internal Server Error"
 //	@Router			/engine/variablesconfig [post]
 func PostVariableConfig(w http.ResponseWriter, r *http.Request) {
 
@@ -227,13 +228,13 @@ func PostVariableConfig(w http.ResponseWriter, r *http.Request) {
 //	@Tags			VariablesConfig
 //	@Accept			json
 //	@Produce		json
-//	@Param			id				path	string							true	"VariableConfig ID"
+//	@Param			id				path	int								true	"VariableConfig ID"
 //	@Param			VariableConfig	body	variablesconfig.VariablesConfig	true	"VariableConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	variablesconfig.VariablesConfig	"VariableConfig"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError				"Bad Request"
+//	@Failure		500	{object}	httputil.APIError				"Internal Server Error"
 //	@Router			/engine/variablesconfig/{id} [put]
 func PutVariableConfig(w http.ResponseWriter, r *http.Request) {
 
@@ -291,11 +292,11 @@ func PutVariableConfig(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete an Variable Config definition
 //	@Tags			VariablesConfig
 //	@Produce		json
-//	@Param			id	path	string	true	"VariableConfig ID"
+//	@Param			id	path	int	true	"VariableConfig ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/variablesconfig/{id} [delete]
 func DeleteVariableConfig(w http.ResponseWriter, r *http.Request) {
 

@@ -1,14 +1,15 @@
 package handler
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/notifier/notification"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"go.uber.org/zap"
-	"net/http"
-	"strconv"
 )
 
 // GetNotifications godoc
@@ -24,7 +25,7 @@ import (
 //	@Param			offset	query	int		false	"Offset number for pagination"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/notifications [get]
 func GetNotifications(w http.ResponseWriter, r *http.Request) {
 
@@ -85,8 +86,8 @@ func GetNotifications(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		500	"internal server error"
-//	@Failure		400	"Status bad request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/notifications/{id}/read [put]
 func UpdateRead(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

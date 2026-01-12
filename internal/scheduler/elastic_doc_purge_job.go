@@ -2,10 +2,11 @@ package scheduler
 
 import (
 	"errors"
+	"time"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
-	"time"
 )
 
 type ElasticDocPurgeJob struct {

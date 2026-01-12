@@ -2,6 +2,8 @@ package app
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/confighistory"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/connectorconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
@@ -18,7 +20,6 @@ import (
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"github.com/myrteametrics/myrtea-sdk/v5/repositories/externalconfig"
 	"github.com/myrteametrics/myrtea-sdk/v5/repositories/variablesconfig"
-	"strings"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/connector"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/coordinator"
@@ -61,7 +62,7 @@ func initRepositories() {
 	modeler.ReplaceGlobals(modeler.NewPostgresRepository(dbClient))
 	tag.ReplaceGlobals(tag.NewPostgresRepository(dbClient))
 
- // Configs
+	// Configs
 	externalconfig.ReplaceGlobals(externalconfig.NewPostgresRepository(dbClient))
 	connectorconfig.ReplaceGlobals(connectorconfig.NewPostgresRepository(dbClient))
 	esconfig.ReplaceGlobals(esconfig.NewPostgresRepository(dbClient))

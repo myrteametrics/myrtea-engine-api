@@ -2,10 +2,11 @@ package service
 
 import (
 	"errors"
-	"github.com/google/uuid"
-	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"net/http"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 )
 
 type MyrteaPluginMock struct {

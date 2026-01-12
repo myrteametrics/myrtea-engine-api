@@ -27,8 +27,8 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	situation.Situation	"list of situations"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		situation.Situation	"list of situations"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/situations [get]
 func GetSituations(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -70,11 +70,11 @@ func GetSituations(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get a situation definition
 //	@Tags			Situations
 //	@Produce		json
-//	@Param			id	path	string	true	"Situation ID"
+//	@Param			id	path	int	true	"Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	situation.Situation	"situation"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/situations/{id} [get]
 func GetSituation(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -116,8 +116,8 @@ func GetSituation(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	situation.SituationOverview	"situation overview"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		situation.SituationOverview	"situation overview"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/situations/overview [get]
 func GetSituationOverview(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -149,8 +149,8 @@ func GetSituationOverview(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	situation.Situation	"situation"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/situations/validate [post]
 func ValidateSituation(w http.ResponseWriter, r *http.Request) {
 	var newSituation situation2.Situation
@@ -184,8 +184,8 @@ func ValidateSituation(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	situation.Situation	"situation"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/situations [post]
 func PostSituation(w http.ResponseWriter, r *http.Request) {
 
@@ -290,13 +290,13 @@ func PostSituation(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Situations
 //	@Accept			json
 //	@Produce		json
-//	@Param			id			path	string				true	"Situation ID"
+//	@Param			id			path	int					true	"Situation ID"
 //	@Param			situation	body	situation.Situation	true	"Situation definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	situation.Situation	"situation"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/situations/{id} [put]
 func PutSituation(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -357,11 +357,11 @@ func PutSituation(w http.ResponseWriter, r *http.Request) {
 //	@Summary		Delete a situation definition
 //	@Description	Delete a situation definition
 //	@Tags			Situations
-//	@Param			id	path	string	true	"Situation ID"
+//	@Param			id	path	int	true	"Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/situations/{id} [delete]
 func DeleteSituation(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

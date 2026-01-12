@@ -3,11 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/explainer"
@@ -30,7 +31,7 @@ var allowedSortByFields = []string{"id", "created_at", "last_modified"}
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/admin/engine/issues_all [get]
 func GetIssues(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -71,7 +72,7 @@ func GetIssues(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/issues/unprotected [get]
 func GetIssuesByStatesByPageUnProtected(w http.ResponseWriter, r *http.Request) {
 
@@ -148,7 +149,7 @@ func GetIssuesByStatesByPageUnProtected(w http.ResponseWriter, r *http.Request) 
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		500	"internal server error"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/issues [get]
 func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 
@@ -228,11 +229,11 @@ func GetIssuesByStatesByPage(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get an issue
 //	@Tags			Issues
 //	@Produce		json
-//	@Param			id	path	string	true	"Issue ID"
+//	@Param			id	path	int	true	"Issue ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/issues/{id} [get]
 func GetIssue(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -272,11 +273,11 @@ func GetIssue(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get an issue history
 //	@Tags			Issues
 //	@Produce		json
-//	@Param			id	path	string	true	"Issue ID"
+//	@Param			id	path	int	true	"Issue ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Router			/engine/issues/{id}/history [get]
 func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 
@@ -367,12 +368,12 @@ func GetIssueHistory(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get the facts history for an issue
 //	@Tags			Issues
 //	@Produce		json
-//	@Param			id	path	string	true	"Issue ID"
+//	@Param			id	path	int	true	"Issue ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		500	"Status Internal Server Error"
-//	@Failure		404	"Status Not Found"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
+//	@Failure		404	{object}	httputil.APIError	"Status Not Found
 //	@Router			/engine/issues/{id}/facts_history [get]
 func GetIssueFactsHistory(w http.ResponseWriter, r *http.Request) {
 
@@ -430,8 +431,8 @@ func GetIssueFactsHistory(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/issues [post]
 func PostIssue(w http.ResponseWriter, r *http.Request) {
 	var newIssue model.Issue
@@ -468,12 +469,12 @@ func PostIssue(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Issues
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path	string	true	"Issue ID"
+//	@Param			id	path	int	true	"Issue ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	model.FrontRecommendation	"recommendation"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/issues/{id}/recommendation [get]
 func GetIssueFeedbackTree(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -521,13 +522,13 @@ func GetIssueFeedbackTree(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Issues
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path	string						true	"Issue ID"
+//	@Param			id		path	int							true	"Issue ID"
 //	@Param			issue	body	model.FrontRecommendation	true	"Draft Recommendation tree (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/issues/{id}/draft [post]
 func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -587,8 +588,8 @@ func PostIssueDraft(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/issues/draft [post]
 func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 	var issueIdsToDraft model.IssuesIdsToDraft
@@ -645,14 +646,14 @@ func PostIssuesDraft(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Issues
 //	@Accept			json
 //	@Produce		json
-//	@Param			id			path	string		true	"Issue ID"
+//	@Param			id			path	int			true	"Issue ID"
 //	@Param			issue		body	interface{}	true	"Recommendation tree (json)"
 //	@Param			isFakeAlert	path	bool		true	"Indicates if the closed issue was a real alert (true) or false positive (false)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/issues/{id}/feedback/{isFakeAlert} [post]
 func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -716,14 +717,14 @@ func PostIssueCloseWithFeedback(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Issues
 //	@Accept			json
 //	@Produce		json
-//	@Param			id			path	string		true	"Issue ID"
+//	@Param			id			path	int			true	"Issue ID"
 //	@Param			isFakeAlert	query	bool		true	"Indicates if the closed issue was a real alert (true) or false positive (false)"
 //	@Param			reason		body	interface{}	false	"Close reason (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/issues/{id}/close [post]
 func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -803,8 +804,8 @@ func PostIssueCloseWithoutFeedback(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/issues/{id}/detection/feedback [post]
 func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -870,8 +871,8 @@ func PostIssueDetectionFeedback(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status"	internal	server	error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/issues/{id}/comment [put]
 func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
 

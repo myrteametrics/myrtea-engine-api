@@ -1,8 +1,9 @@
 package apikey
 
 import (
-	"github.com/google/uuid"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type Repository interface {

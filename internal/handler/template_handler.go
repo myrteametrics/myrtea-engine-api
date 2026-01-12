@@ -3,12 +3,13 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/email/template"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"sort"
 	"strconv"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/email/template"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -16,14 +17,16 @@ import (
 
 // GetTemplates godoc
 //
+//	@Id				GetTemplates
+//
 //	@Summary		Get all email templates
 //	@Description	Get all email templates
 //	@Tags			Templates
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}	template.Template	"list of email templates"
-//	@Failure		500	"internal server error"
+//	@Success		200	{array}		template.Template	"list of email templates"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/templates [get]
 func GetTemplates(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -54,12 +57,12 @@ func GetTemplates(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get an email template by ID
 //	@Tags			Templates
 //	@Produce		json
-//	@Param			id	path	string	true	"Template ID"
+//	@Param			id	path	int	true	"Template ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	template.Template	"template"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		404	"Status Not Found"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		404	{object}	httputil.APIError	"Status Not Found
 //	@Router			/engine/templates/{id} [get]
 func GetTemplate(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -98,8 +101,8 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	template.Template	"template"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		404	"Status Not Found"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		404	{object}	httputil.APIError	"Status Not Found
 //	@Router			/engine/templates/name/{name} [get]
 func GetTemplateByName(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
@@ -122,6 +125,8 @@ func GetTemplateByName(w http.ResponseWriter, r *http.Request) {
 
 // PostTemplate godoc
 //
+//	@Id				PostTemplate
+//
 //	@Summary		Create a new email template
 //	@Description	Create a new email template
 //	@Tags			Templates
@@ -131,8 +136,8 @@ func GetTemplateByName(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	template.Template	"created template with ID"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/templates [post]
 func PostTemplate(w http.ResponseWriter, r *http.Request) {
 	userCtx, _ := GetUserFromContext(r)
@@ -168,18 +173,20 @@ func PostTemplate(w http.ResponseWriter, r *http.Request) {
 
 // PutTemplate godoc
 //
+//	@Id				PutTemplate
+//
 //	@Summary		Update an email template
 //	@Description	Update an email template
 //	@Tags			Templates
 //	@Accept			json
 //	@Produce		json
-//	@Param			id			path	string				true	"Template ID"
+//	@Param			id			path	int					true	"Template ID"
 //	@Param			template	body	template.Template	true	"Email Template"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	template.Template	"updated template"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/templates/{id} [put]
 func PutTemplate(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -223,15 +230,17 @@ func PutTemplate(w http.ResponseWriter, r *http.Request) {
 
 // DeleteTemplate godoc
 //
+//	@Id				DeleteTemplate
+//
 //	@Summary		Delete an email template
 //	@Description	Delete an email template
 //	@Tags			Templates
-//	@Param			id	path	string	true	"Template ID"
+//	@Param			id	path	int	true	"Template ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
-//	@Failure		400	"Status Bad Request"
-//	@Failure		500	"Status Internal Server Error"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
 //	@Router			/engine/templates/{id} [delete]
 func DeleteTemplate(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -255,5 +264,5 @@ func DeleteTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, r, nil)
+	httputil.OK(w, r)
 }

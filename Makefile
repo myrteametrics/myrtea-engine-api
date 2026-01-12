@@ -74,7 +74,7 @@ swag-version: $(SWAG) # Check the swag tool version
 	swag --version
 
 swag: swag-version # Generate swagger documentation
-	swag init --parseDependency --generalInfo main.go
+	swag init --parseDependency --generalInfo --st main.go
 
 test-integration: # Test the code
 	mkdir -p reporting

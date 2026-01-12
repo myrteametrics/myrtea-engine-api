@@ -1,9 +1,10 @@
 package notification
 
 import (
-	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 	"testing"
 	"time"
+
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 )
 
 func TestBaseNotificationToBytes(t *testing.T) {

@@ -3,9 +3,10 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"net/http"
 	"net/url"
+
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internal/router/oidc"

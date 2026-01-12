@@ -3,11 +3,12 @@ package evaluator
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/PaesslerAG/gval"
 	"github.com/myrteametrics/myrtea-sdk/v5/connector"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
-	"strings"
-	"time"
 )
 
 func scanExpressionInternal(expressionToScan string, parameters map[string]interface{}) ([]string, interface{}, error) {
