@@ -12,7 +12,7 @@ import (
 
 const table = "roles_v4"
 
-var fields = []string{"id", "name"}
+var fields = []string{"id", "name", "home_page"}
 
 // PostgresRepository is a repository containing the user roles data based on a PSQL database and
 // implementing the repository interface
