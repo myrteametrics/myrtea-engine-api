@@ -63,7 +63,7 @@ func (r *PostgresRepository) Create(role Role) (uuid.UUID, error) {
 	_, err := r.newStatement().
 		Insert(table).
 		Columns(fields...).
-		Values(newUUID, role.Name).
+		Values(newUUID, role.Name, role.HomePage).
 		Exec()
 	if err != nil {
 		return uuid.UUID{}, err
@@ -77,6 +77,7 @@ func (r *PostgresRepository) Update(role Role) error {
 	result, err := r.newStatement().
 		Update(table).
 		Set("name", role.Name).
+		Set("home_page", role.HomePage).
 		Where("id = ?", role.ID).
 		Exec()
 	if err != nil {
@@ -191,7 +192,7 @@ func (r *PostgresRepository) checkRowAffected(result sql.Result, nbRows int64) e
 
 func (r *PostgresRepository) scan(rows *sql.Rows) (Role, error) {
 	role := Role{}
-	err := rows.Scan(&role.ID, &role.Name)
+	err := rows.Scan(&role.ID, &role.Name, &role.HomePage)
 	if err != nil {
 		return Role{}, errors.New("couldn't scan the retrieved data: " + err.Error())
 	}
