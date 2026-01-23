@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/functionalsituation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"go.uber.org/zap"
 )
@@ -181,7 +182,37 @@ func GetFunctionalSituationTree(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, r, tree)
+	httputil.JSON(w, r, EnsureSlice(tree))
+}
+
+// GetFunctionalSituationEnrichedTree godoc
+//
+//	@Id				GetFunctionalSituationEnrichedTree
+//	@Summary		Get enriched functional situation tree
+//	@Description	Get the complete hierarchical tree with all template instances and situations included
+//	@Tags			FunctionalSituations
+//	@Produce		json
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}		functionalsituation.FunctionalSituationTreeNode
+//	@Failure		403	{object}	httputil.APIError	"Forbidden"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
+//	@Router			/engine/functionalsituations/tree/enriched [get]
+func GetFunctionalSituationEnrichedTree(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeFunctionalSituation, permissions.All, permissions.ActionList)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	tree, err := functionalsituation.R().GetEnrichedTree()
+	if err != nil {
+		zap.L().Error("Error getting functional situation enriched tree", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	httputil.JSON(w, r, EnsureSlice(tree))
 }
 
 // GetFunctionalSituationOverview godoc
@@ -394,13 +425,13 @@ func DeleteFunctionalSituation(w http.ResponseWriter, r *http.Request) {
 //
 //	@Id				GetFSInstances
 //	@Summary		Get template instances for a functional situation
-//	@Description	Get all template instance IDs associated with a functional situation
+//	@Description	Get all template instances associated with a functional situation
 //	@Tags			FunctionalSituations
 //	@Produce		json
 //	@Param			id	path	int	true	"Functional Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}		int64
+//	@Success		200	{array}		situation.TemplateInstance
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		403	{object}	httputil.APIError	"Forbidden"
 //	@Failure		404	{object}	httputil.APIError	"Not Found"
@@ -434,11 +465,27 @@ func GetFSInstances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instances, err := functionalsituation.R().GetTemplateInstances(fsID)
+	instanceIDs, err := functionalsituation.R().GetTemplateInstances(fsID)
 	if err != nil {
 		zap.L().Error("Error getting template instances", zap.Int64("fsID", fsID), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
+	}
+
+	// Get full template instance objects
+	instancesMap, err := situation.R().GetAllTemplateInstancesByIDs(instanceIDs, gvalParsingEnabled(r.URL.Query()))
+	if err != nil {
+		zap.L().Error("Error getting template instance details", zap.Int64("fsID", fsID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	// Convert map to slice maintaining order
+	instances := make([]situation.TemplateInstance, 0, len(instancesMap))
+	for _, instanceID := range instanceIDs {
+		if instance, ok := instancesMap[instanceID]; ok {
+			instances = append(instances, instance)
+		}
 	}
 
 	httputil.JSON(w, r, EnsureSlice(instances))
@@ -581,13 +628,13 @@ func RemoveFSInstance(w http.ResponseWriter, r *http.Request) {
 //
 //	@Id				GetFSSituations
 //	@Summary		Get situations for a functional situation
-//	@Description	Get all situation IDs associated with a functional situation
+//	@Description	Get all situations associated with a functional situation
 //	@Tags			FunctionalSituations
 //	@Produce		json
 //	@Param			id	path	int	true	"Functional Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}		int64
+//	@Success		200	{array}		situation.Situation
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		403	{object}	httputil.APIError	"Forbidden"
 //	@Failure		404	{object}	httputil.APIError	"Not Found"
@@ -621,11 +668,27 @@ func GetFSSituations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	situations, err := functionalsituation.R().GetSituations(fsID)
+	situationIDs, err := functionalsituation.R().GetSituations(fsID)
 	if err != nil {
 		zap.L().Error("Error getting situations", zap.Int64("fsID", fsID), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
 		return
+	}
+
+	// Get full situation objects
+	situationsMap, err := situation.R().GetAllByIDs(situationIDs, gvalParsingEnabled(r.URL.Query()))
+	if err != nil {
+		zap.L().Error("Error getting situation details", zap.Int64("fsID", fsID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	// Convert map to slice maintaining order
+	situations := make([]situation.Situation, 0, len(situationsMap))
+	for _, situationID := range situationIDs {
+		if sit, ok := situationsMap[situationID]; ok {
+			situations = append(situations, sit)
+		}
 	}
 
 	httputil.JSON(w, r, EnsureSlice(situations))

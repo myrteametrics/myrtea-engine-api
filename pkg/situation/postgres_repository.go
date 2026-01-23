@@ -800,6 +800,43 @@ func (r *PostgresRepository) GetAllTemplateInstances(situationID int64, parsePar
 	return templateInstances, nil
 }
 
+// GetAllTemplateInstancesByIDs returns a map of template instances by their IDs
+// If parseParameters is true, the situation instance parameters are evaluated using Gval.
+func (r *PostgresRepository) GetAllTemplateInstancesByIDs(ids []int64, parseParameters ...bool) (map[int64]TemplateInstance, error) {
+	if len(ids) == 0 {
+		return make(map[int64]TemplateInstance), nil
+	}
+
+	rows, err := r.newStatement().
+		Select(
+			"id",
+			"name",
+			"situation_id",
+			"parameters",
+			"calendar_id",
+			"enable_depends_on",
+			"depends_on_parameters",
+		).
+		From("situation_template_instances_v1").
+		Where(sq.Eq{"id": ids}).
+		Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	templateInstances := make(map[int64]TemplateInstance)
+	for rows.Next() {
+		templateInstance, err := r.scanTemplateInstance(rows, shouldParseForEvaluation(parseParameters...))
+		if err != nil {
+			return nil, err
+		}
+		templateInstances[templateInstance.ID] = templateInstance
+	}
+
+	return templateInstances, nil
+}
+
 // GetSituationOverview returns an overview of situations + their template instances
 func (r *PostgresRepository) GetSituationOverview() ([]SituationOverview, error) {
 	// Build query using Squirrel

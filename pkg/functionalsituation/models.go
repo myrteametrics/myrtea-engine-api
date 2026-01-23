@@ -39,6 +39,37 @@ type FunctionalSituationOverview struct {
 	Children         []FunctionalSituationOverview `json:"children,omitempty"`
 }
 
+// FunctionalSituationTreeNode represents a node in the enriched tree with full instance/situation data
+type FunctionalSituationTreeNode struct {
+	ID                int64                         `json:"id"`
+	Name              string                        `json:"name"`
+	Description       string                        `json:"description"`
+	ParentID          *int64                        `json:"parentId,omitempty"`
+	Color             string                        `json:"color"`
+	Icon              string                        `json:"icon"`
+	Metadata          map[string]interface{}        `json:"metadata,omitempty"`
+	CreatedAt         time.Time                     `json:"createdAt"`
+	UpdatedAt         time.Time                     `json:"updatedAt"`
+	CreatedBy         string                        `json:"createdBy"`
+	TemplateInstances []TreeTemplateInstance        `json:"templateInstances"`
+	Situations        []TreeSituation               `json:"situations"`
+	Children          []FunctionalSituationTreeNode `json:"children,omitempty"`
+}
+
+// TreeTemplateInstance is a lightweight representation of a template instance for the tree view
+type TreeTemplateInstance struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	SituationID int64  `json:"situationId"`
+}
+
+// TreeSituation is a lightweight representation of a situation for the tree view
+type TreeSituation struct {
+	ID         int64  `json:"id"`
+	Name       string `json:"name"`
+	IsTemplate bool   `json:"isTemplate"`
+}
+
 // FunctionalSituationCreate represents the payload for creating a new FS
 type FunctionalSituationCreate struct {
 	Name        string                 `json:"name"`

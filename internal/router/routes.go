@@ -267,6 +267,7 @@ func engineRouter(services Services) http.Handler {
 		r.Get("/", handler.GetFunctionalSituations)
 		r.Post("/", handler.CreateFunctionalSituation)
 		r.Get("/tree", handler.GetFunctionalSituationTree)
+		r.Get("/tree/enriched", handler.GetFunctionalSituationEnrichedTree)
 		r.Get("/overview", handler.GetFunctionalSituationOverview)
 
 		r.Route("/{id}", func(r chi.Router) {

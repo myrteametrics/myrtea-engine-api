@@ -36,6 +36,9 @@ type Repository interface {
 	// Vue d'ensemble
 	GetOverview() ([]FunctionalSituationOverview, error)
 	GetOverviewByID(id int64) (FunctionalSituationOverview, bool, error)
+
+	// Arbre enrichi avec instances et situations
+	GetEnrichedTree() ([]FunctionalSituationTreeNode, error)
 }
 
 var (

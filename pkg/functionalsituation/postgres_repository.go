@@ -9,6 +9,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/dbutils"
 	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 	"go.uber.org/zap"
@@ -550,4 +551,164 @@ func (r *PostgresRepository) GetOverviewByID(id int64) (FunctionalSituationOverv
 	o.AggregatedStatus = "unknown"
 
 	return o, true, nil
+}
+
+// GetEnrichedTree retrieves the complete hierarchy with all template instances and situations
+func (r *PostgresRepository) GetEnrichedTree() ([]FunctionalSituationTreeNode, error) {
+	// Step 1: Get all functional situations ordered by hierarchy
+	query := `
+		WITH RECURSIVE fs_tree AS (
+			SELECT id, name, description, parent_id, color, icon, metadata, created_at, updated_at, created_by, 0 as depth
+			FROM functional_situation_v1
+			WHERE parent_id IS NULL
+			UNION ALL
+			SELECT fs.id, fs.name, fs.description, fs.parent_id, fs.color, fs.icon, fs.metadata, fs.created_at, fs.updated_at, fs.created_by, ft.depth + 1
+			FROM functional_situation_v1 fs
+			INNER JOIN fs_tree ft ON fs.parent_id = ft.id
+		)
+		SELECT id, name, description, parent_id, color, icon, created_at, updated_at, created_by, metadata
+		FROM fs_tree
+		ORDER BY depth, name
+	`
+
+	rows, err := r.conn.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	fsList, err := dbutils.ScanAll(rows, r.scan)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(fsList) == 0 {
+		return []FunctionalSituationTreeNode{}, nil
+	}
+
+	// Collect all FS IDs
+	fsIDs := make([]int64, len(fsList))
+	for i, fs := range fsList {
+		fsIDs[i] = fs.ID
+	}
+
+	// Step 2: Get all template instance associations in one query
+	instanceAssocQuery := `
+		SELECT fsi.functional_situation_id, ti.id, ti.name, ti.situation_id
+		FROM functional_situation_instances_v1 fsi
+		INNER JOIN situation_template_instances_v1 ti ON ti.id = fsi.template_instance_id
+		WHERE fsi.functional_situation_id = ANY($1)
+		ORDER BY fsi.functional_situation_id, ti.name
+	`
+
+	instanceRows, err := r.conn.Query(instanceAssocQuery, pq.Array(fsIDs))
+	if err != nil {
+		return nil, fmt.Errorf("error fetching template instances: %w", err)
+	}
+	defer instanceRows.Close()
+
+	instancesByFS := make(map[int64][]TreeTemplateInstance)
+	for instanceRows.Next() {
+		var fsID int64
+		var ti TreeTemplateInstance
+		if err := instanceRows.Scan(&fsID, &ti.ID, &ti.Name, &ti.SituationID); err != nil {
+			return nil, err
+		}
+		instancesByFS[fsID] = append(instancesByFS[fsID], ti)
+	}
+	if err := instanceRows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Step 3: Get all situation associations in one query
+	situationAssocQuery := `
+		SELECT fss.functional_situation_id, s.id, s.name, s.is_template
+		FROM functional_situation_situations_v1 fss
+		INNER JOIN situation_definition_v1 s ON s.id = fss.situation_id
+		WHERE fss.functional_situation_id = ANY($1)
+		ORDER BY fss.functional_situation_id, s.name
+	`
+
+	situationRows, err := r.conn.Query(situationAssocQuery, pq.Array(fsIDs))
+	if err != nil {
+		return nil, fmt.Errorf("error fetching situations: %w", err)
+	}
+	defer situationRows.Close()
+
+	situationsByFS := make(map[int64][]TreeSituation)
+	for situationRows.Next() {
+		var fsID int64
+		var s TreeSituation
+		if err := situationRows.Scan(&fsID, &s.ID, &s.Name, &s.IsTemplate); err != nil {
+			return nil, err
+		}
+		situationsByFS[fsID] = append(situationsByFS[fsID], s)
+	}
+	if err := situationRows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Step 4: Build flat nodes map and parent-to-children map
+	nodeDataMap := make(map[int64]FunctionalSituation)
+	childrenMap := make(map[int64][]int64)
+	var rootIDs []int64
+
+	for _, fs := range fsList {
+		nodeDataMap[fs.ID] = fs
+		if fs.ParentID == nil {
+			rootIDs = append(rootIDs, fs.ID)
+		} else {
+			childrenMap[*fs.ParentID] = append(childrenMap[*fs.ParentID], fs.ID)
+		}
+	}
+
+	// Step 5: Recursive function to build tree node with children
+	var buildNode func(id int64) FunctionalSituationTreeNode
+	buildNode = func(id int64) FunctionalSituationTreeNode {
+		fs := nodeDataMap[id]
+
+		instances := instancesByFS[fs.ID]
+		if instances == nil {
+			instances = []TreeTemplateInstance{}
+		}
+		situations := situationsByFS[fs.ID]
+		if situations == nil {
+			situations = []TreeSituation{}
+		}
+
+		node := FunctionalSituationTreeNode{
+			ID:                fs.ID,
+			Name:              fs.Name,
+			Description:       fs.Description,
+			ParentID:          fs.ParentID,
+			Color:             fs.Color,
+			Icon:              fs.Icon,
+			Metadata:          fs.Metadata,
+			CreatedAt:         fs.CreatedAt,
+			UpdatedAt:         fs.UpdatedAt,
+			CreatedBy:         fs.CreatedBy,
+			TemplateInstances: instances,
+			Situations:        situations,
+			Children:          []FunctionalSituationTreeNode{},
+		}
+
+		// Recursively build children
+		for _, childID := range childrenMap[id] {
+			node.Children = append(node.Children, buildNode(childID))
+		}
+
+		return node
+	}
+
+	// Step 6: Build the tree from roots
+	result := make([]FunctionalSituationTreeNode, 0, len(rootIDs))
+	for _, rootID := range rootIDs {
+		result = append(result, buildNode(rootID))
+	}
+
+	if result == nil {
+		return []FunctionalSituationTreeNode{}, nil
+	}
+
+	return result, nil
 }
