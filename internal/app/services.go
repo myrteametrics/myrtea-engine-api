@@ -14,6 +14,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/email"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/email/template"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/functionalsituation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	roles2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/roles"
 	users2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
@@ -61,6 +62,7 @@ func initRepositories() {
 	rule.ReplaceGlobals(rule.NewPostgresRepository(dbClient))
 	modeler.ReplaceGlobals(modeler.NewPostgresRepository(dbClient))
 	tag.ReplaceGlobals(tag.NewPostgresRepository(dbClient))
+	functionalsituation.ReplaceGlobals(functionalsituation.NewPostgresRepository(dbClient))
 
 	// Configs
 	externalconfig.ReplaceGlobals(externalconfig.NewPostgresRepository(dbClient))

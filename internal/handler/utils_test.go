@@ -226,3 +226,26 @@ func TestVerifyEncryptedState(t *testing.T) {
 		t.Error("must be empty")
 	}
 }
+
+func TestEnsureSlice(t *testing.T) {
+	// nil input should become a non-nil empty slice
+	var nilSlice []int
+	res := EnsureSlice[int](nilSlice)
+	if res == nil || len(res) != 0 {
+		t.Errorf("EnsureSlice(nil) should return empty non-nil slice, got nil=%v len=%d", res == nil, len(res))
+	}
+
+	// non-nil empty slice should be preserved (remain non-nil)
+	empty := make([]int, 0)
+	res2 := EnsureSlice[int](empty)
+	if res2 == nil || len(res2) != 0 {
+		t.Errorf("EnsureSlice(empty) should return non-nil empty slice, got nil=%v len=%d", res2 == nil, len(res2))
+	}
+
+	// non-empty slice should keep its contents
+	filled := []int{1, 2, 3}
+	res3 := EnsureSlice[int](filled)
+	if len(res3) != 3 || res3[0] != 1 || res3[2] != 3 {
+		t.Errorf("EnsureSlice should preserve content, got %v", res3)
+	}
+}

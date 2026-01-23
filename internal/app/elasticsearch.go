@@ -74,6 +74,6 @@ func initElasticsearch() {
 		zap.Bool("auth", config.Auth), zap.Bool("insecure", config.Insecure))
 	err = elasticsearchsdk.ReplaceGlobals(esClientConfig)
 	if err != nil {
-		zap.L().Error("Could not init elasticsearch", zap.Error(err), zap.Strings("urls", config.URLs))
+		zap.L().Panic("Could not init elasticsearch", zap.Error(err), zap.Strings("urls", config.URLs))
 	}
 }

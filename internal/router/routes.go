@@ -262,6 +262,32 @@ func engineRouter(services Services) http.Handler {
 		r.Post("/interval", handler.GetConfigHistoriesByInterval)
 	})
 
+	// Functional Situations routes
+	r.Route("/functionalsituations", func(r chi.Router) {
+		r.Get("/", handler.GetFunctionalSituations)
+		r.Post("/", handler.CreateFunctionalSituation)
+		r.Get("/tree", handler.GetFunctionalSituationTree)
+		r.Get("/overview", handler.GetFunctionalSituationOverview)
+
+		r.Route("/{id}", func(r chi.Router) {
+			r.Get("/", handler.GetFunctionalSituation)
+			r.Put("/", handler.UpdateFunctionalSituation)
+			r.Delete("/", handler.DeleteFunctionalSituation)
+
+			r.Route("/instances", func(r chi.Router) {
+				r.Get("/", handler.GetFSInstances)
+				r.Post("/", handler.AddFSInstance)
+				r.Delete("/{instanceId}", handler.RemoveFSInstance)
+			})
+
+			r.Route("/situations", func(r chi.Router) {
+				r.Get("/", handler.GetFSSituations)
+				r.Post("/", handler.AddFSSituation)
+				r.Delete("/{situationId}", handler.RemoveFSSituation)
+			})
+		})
+	})
+
 	r.Post("/expression/evaluate", handler.EvaluateExpression)
 	r.Post("/expression/scan", handler.ScanExpression)
 	return r
