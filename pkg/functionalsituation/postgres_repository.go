@@ -594,9 +594,10 @@ func (r *PostgresRepository) GetEnrichedTree() ([]FunctionalSituationTreeNode, e
 
 	// Step 2: Get all template instance associations in one query
 	instanceAssocQuery := `
-		SELECT fsi.functional_situation_id, ti.id, ti.name, ti.situation_id
+		SELECT fsi.functional_situation_id, ti.id, ti.name, ti.situation_id, s.name
 		FROM functional_situation_instances_v1 fsi
 		INNER JOIN situation_template_instances_v1 ti ON ti.id = fsi.template_instance_id
+		INNER JOIN situation_definition_v1 s ON s.id = ti.situation_id
 		WHERE fsi.functional_situation_id = ANY($1)
 		ORDER BY fsi.functional_situation_id, ti.name
 	`
@@ -611,7 +612,7 @@ func (r *PostgresRepository) GetEnrichedTree() ([]FunctionalSituationTreeNode, e
 	for instanceRows.Next() {
 		var fsID int64
 		var ti TreeTemplateInstance
-		if err := instanceRows.Scan(&fsID, &ti.ID, &ti.Name, &ti.SituationID); err != nil {
+		if err := instanceRows.Scan(&fsID, &ti.ID, &ti.Name, &ti.SituationID, &ti.SituationName); err != nil {
 			return nil, err
 		}
 		instancesByFS[fsID] = append(instancesByFS[fsID], ti)

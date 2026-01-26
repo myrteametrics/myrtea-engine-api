@@ -58,9 +58,10 @@ type FunctionalSituationTreeNode struct {
 
 // TreeTemplateInstance is a lightweight representation of a template instance for the tree view
 type TreeTemplateInstance struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	SituationID int64  `json:"situationId"`
+	ID            int64  `json:"id"`
+	Name          string `json:"name"`
+	SituationID   int64  `json:"situationId"`
+	SituationName string `json:"situationName"`
 }
 
 // TreeSituation is a lightweight representation of a situation for the tree view
