@@ -270,6 +270,18 @@ func engineRouter(services Services) http.Handler {
 		r.Get("/tree/enriched", handler.GetFunctionalSituationEnrichedTree)
 		r.Get("/overview", handler.GetFunctionalSituationOverview)
 
+		// Instance reference parameter routes
+		r.Route("/instances/{instanceId}/parameters", func(r chi.Router) {
+			r.Get("/", handler.GetInstanceReferenceParameters)
+			r.Put("/", handler.UpdateInstanceReferenceParameters)
+		})
+
+		// Situation reference parameter routes
+		r.Route("/situations/{situationId}/parameters", func(r chi.Router) {
+			r.Get("/", handler.GetSituationReferenceParameters)
+			r.Put("/", handler.UpdateSituationReferenceParameters)
+		})
+
 		r.Route("/{id}", func(r chi.Router) {
 			r.Get("/", handler.GetFunctionalSituation)
 			r.Put("/", handler.UpdateFunctionalSituation)

@@ -16,12 +16,14 @@ import (
 
 // InstanceIDPayload represents the payload for adding an instance
 type InstanceIDPayload struct {
-	InstanceID int64 `json:"instanceId"`
+	InstanceID int64                  `json:"instanceId"`
+	Parameters map[string]interface{} `json:"parameters,omitempty"`
 }
 
 // SituationIDPayload represents the payload for adding a situation
 type SituationIDPayload struct {
-	SituationID int64 `json:"situationId"`
+	SituationID int64                  `json:"situationId"`
+	Parameters  map[string]interface{} `json:"parameters,omitempty"`
 }
 
 // GetFunctionalSituations godoc
@@ -130,7 +132,7 @@ func CreateFunctionalSituation(w http.ResponseWriter, r *http.Request) {
 		ParentID:    fsCreate.ParentID,
 		Color:       fsCreate.Color,
 		Icon:        fsCreate.Icon,
-		Metadata:    fsCreate.Metadata,
+		Parameters:  fsCreate.Parameters,
 	}
 
 	id, err := functionalsituation.R().Create(fs, userCtx.User.Login)
@@ -480,11 +482,23 @@ func GetFSInstances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Convert map to slice maintaining order
-	instances := make([]situation.TemplateInstance, 0, len(instancesMap))
+	// Get all instance references with parameters in one call
+	instanceRefs, err := functionalsituation.R().GetTemplateInstancesWithParameters(fsID)
+	if err != nil {
+		zap.L().Error("Error getting instance parameters", zap.Int64("fsID", fsID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	// Convert map to slice maintaining order and including parameters
+	instances := make([]functionalsituation.TemplateInstanceWithParameters, 0, len(instancesMap))
 	for _, instanceID := range instanceIDs {
 		if instance, ok := instancesMap[instanceID]; ok {
-			instances = append(instances, instance)
+			instanceWithParams := functionalsituation.TemplateInstanceWithParameters{
+				Instance:   instance,
+				Parameters: instanceRefs[instanceID],
+			}
+			instances = append(instances, instanceWithParams)
 		}
 	}
 
@@ -551,7 +565,7 @@ func AddFSInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = functionalsituation.R().AddTemplateInstance(fsID, payload.InstanceID, userCtx.User.Login)
+	err = functionalsituation.R().AddTemplateInstance(fsID, payload.InstanceID, payload.Parameters, userCtx.User.Login)
 	if err != nil {
 		zap.L().Error("Error adding template instance", zap.Int64("fsID", fsID), zap.Int64("instanceID", payload.InstanceID), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
@@ -634,7 +648,7 @@ func RemoveFSInstance(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path	int	true	"Functional Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}		situation.Situation
+//	@Success		200	{array}		functionalsituation.SituationWithParameters
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		403	{object}	httputil.APIError	"Forbidden"
 //	@Failure		404	{object}	httputil.APIError	"Not Found"
@@ -683,11 +697,23 @@ func GetFSSituations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Convert map to slice maintaining order
-	situations := make([]situation.Situation, 0, len(situationsMap))
+	// Get all situation references with parameters in one call
+	situationRefs, err := functionalsituation.R().GetSituationsWithParameters(fsID)
+	if err != nil {
+		zap.L().Error("Error getting situation parameters", zap.Int64("fsID", fsID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	// Convert map to slice maintaining order and including parameters
+	situations := make([]functionalsituation.SituationWithParameters, 0, len(situationsMap))
 	for _, situationID := range situationIDs {
 		if sit, ok := situationsMap[situationID]; ok {
-			situations = append(situations, sit)
+			situationWithParams := functionalsituation.SituationWithParameters{
+				Situation:  sit,
+				Parameters: situationRefs[situationID],
+			}
+			situations = append(situations, situationWithParams)
 		}
 	}
 
@@ -754,7 +780,7 @@ func AddFSSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = functionalsituation.R().AddSituation(fsID, payload.SituationID, userCtx.User.Login)
+	err = functionalsituation.R().AddSituation(fsID, payload.SituationID, payload.Parameters, userCtx.User.Login)
 	if err != nil {
 		zap.L().Error("Error adding situation", zap.Int64("fsID", fsID), zap.Int64("situationID", payload.SituationID), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
@@ -825,4 +851,255 @@ func RemoveFSSituation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, r, map[string]interface{}{"removed": true, "fsId": fsID, "situationId": situationID})
+}
+
+// GetInstanceReferenceParameters godoc
+//
+//	@Id				GetInstanceReferenceParameters
+//	@Summary		Get parameters for a template instance reference
+//	@Description	Get the parameters associated with a template instance reference
+//	@Tags			FunctionalSituations
+//	@Produce		json
+//	@Param			instanceId	path	int	true	"Template Instance ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	functionalsituation.InstanceReference
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		403	{object}	httputil.APIError	"Forbidden"
+//	@Failure		404	{object}	httputil.APIError	"Not Found"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
+//	@Router			/engine/functionalsituations/instances/{instanceId}/parameters [get]
+func GetInstanceReferenceParameters(w http.ResponseWriter, r *http.Request) {
+	instanceIDStr := chi.URLParam(r, "instanceId")
+	instanceID, err := strconv.ParseInt(instanceIDStr, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error parsing instance id", zap.String("instanceId", instanceIDStr), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeFunctionalSituationInstance, strconv.FormatInt(instanceID, 10), permissions.ActionGet)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	ref, found, err := functionalsituation.R().GetInstanceReference(instanceID)
+	if err != nil {
+		zap.L().Error("Error getting instance reference", zap.Int64("instanceId", instanceID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("Instance reference not found", zap.Int64("instanceId", instanceID))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("instance reference not found"))
+		return
+	}
+
+	httputil.JSON(w, r, ref)
+}
+
+// UpdateInstanceReferenceParameters godoc
+//
+//	@Id				UpdateInstanceReferenceParameters
+//	@Summary		Update parameters for a template instance reference
+//	@Description	Update the parameters associated with a template instance reference
+//	@Tags			FunctionalSituations
+//	@Accept			json
+//	@Produce		json
+//	@Param			instanceId	path	int						true	"Template Instance ID"
+//	@Param			parameters	body	map[string]interface{}	true	"Parameters (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	functionalsituation.InstanceReference
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		403	{object}	httputil.APIError	"Forbidden"
+//	@Failure		404	{object}	httputil.APIError	"Not Found"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
+//	@Router			/engine/functionalsituations/instances/{instanceId}/parameters [put]
+func UpdateInstanceReferenceParameters(w http.ResponseWriter, r *http.Request) {
+	instanceIDStr := chi.URLParam(r, "instanceId")
+	instanceID, err := strconv.ParseInt(instanceIDStr, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error parsing instance id", zap.String("instanceId", instanceIDStr), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeFunctionalSituationInstance, strconv.FormatInt(instanceID, 10), permissions.ActionUpdate)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	// Check if instance reference exists
+	_, found, err := functionalsituation.R().GetInstanceReference(instanceID)
+	if err != nil {
+		zap.L().Error("Error getting instance reference", zap.Int64("instanceId", instanceID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("Instance reference not found", zap.Int64("instanceId", instanceID))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("instance reference not found"))
+		return
+	}
+
+	var parameters map[string]interface{}
+	err = json.NewDecoder(r.Body).Decode(&parameters)
+	if err != nil {
+		zap.L().Warn("Parameters json decoding", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	err = functionalsituation.R().UpdateInstanceReferenceParameters(instanceID, parameters)
+	if err != nil {
+		zap.L().Error("Error updating instance reference parameters", zap.Int64("instanceId", instanceID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
+		return
+	}
+
+	updated, found, err := functionalsituation.R().GetInstanceReference(instanceID)
+	if err != nil {
+		zap.L().Error("Error getting updated instance reference", zap.Int64("instanceId", instanceID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Error("Instance reference not found after update", zap.Int64("instanceId", instanceID))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, errors.New("resource not found after update"))
+		return
+	}
+
+	httputil.JSON(w, r, updated)
+}
+
+// GetSituationReferenceParameters godoc
+//
+//	@Id				GetSituationReferenceParameters
+//	@Summary		Get parameters for a situation reference
+//	@Description	Get the parameters associated with a situation reference
+//	@Tags			FunctionalSituations
+//	@Produce		json
+//	@Param			situationId	path	int	true	"Situation ID"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	functionalsituation.SituationReference
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		403	{object}	httputil.APIError	"Forbidden"
+//	@Failure		404	{object}	httputil.APIError	"Not Found"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
+//	@Router			/engine/functionalsituations/situations/{situationId}/parameters [get]
+func GetSituationReferenceParameters(w http.ResponseWriter, r *http.Request) {
+	situationIDStr := chi.URLParam(r, "situationId")
+	situationID, err := strconv.ParseInt(situationIDStr, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error parsing situation id", zap.String("situationId", situationIDStr), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeFunctionalSituationContent, strconv.FormatInt(situationID, 10), permissions.ActionGet)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	ref, found, err := functionalsituation.R().GetSituationReference(situationID)
+	if err != nil {
+		zap.L().Error("Error getting situation reference", zap.Int64("situationId", situationID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("Situation reference not found", zap.Int64("situationId", situationID))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("situation reference not found"))
+		return
+	}
+
+	httputil.JSON(w, r, ref)
+}
+
+// UpdateSituationReferenceParameters godoc
+//
+//	@Id				UpdateSituationReferenceParameters
+//	@Summary		Update parameters for a situation reference
+//	@Description	Update the parameters associated with a situation reference
+//	@Tags			FunctionalSituations
+//	@Accept			json
+//	@Produce		json
+//	@Param			situationId	path	int						true	"Situation ID"
+//	@Param			parameters	body	map[string]interface{}	true	"Parameters (json)"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	functionalsituation.SituationReference
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		403	{object}	httputil.APIError	"Forbidden"
+//	@Failure		404	{object}	httputil.APIError	"Not Found"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
+//	@Router			/engine/functionalsituations/situations/{situationId}/parameters [put]
+func UpdateSituationReferenceParameters(w http.ResponseWriter, r *http.Request) {
+	situationIDStr := chi.URLParam(r, "situationId")
+	situationID, err := strconv.ParseInt(situationIDStr, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error parsing situation id", zap.String("situationId", situationIDStr), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeFunctionalSituationContent, strconv.FormatInt(situationID, 10), permissions.ActionUpdate)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	// Check if situation reference exists
+	_, found, err := functionalsituation.R().GetSituationReference(situationID)
+	if err != nil {
+		zap.L().Error("Error getting situation reference", zap.Int64("situationId", situationID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("Situation reference not found", zap.Int64("situationId", situationID))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("situation reference not found"))
+		return
+	}
+
+	var parameters map[string]interface{}
+	err = json.NewDecoder(r.Body).Decode(&parameters)
+	if err != nil {
+		zap.L().Warn("Parameters json decoding", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	// Validate parameters
+	if ok, err := functionalsituation.ValidateParameters(parameters); !ok {
+		zap.L().Warn("Invalid parameters", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
+		return
+	}
+
+	err = functionalsituation.R().UpdateSituationReferenceParameters(situationID, parameters)
+	if err != nil {
+		zap.L().Error("Error updating situation reference parameters", zap.Int64("situationId", situationID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
+		return
+	}
+
+	updated, found, err := functionalsituation.R().GetSituationReference(situationID)
+	if err != nil {
+		zap.L().Error("Error getting updated situation reference", zap.Int64("situationId", situationID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Error("Situation reference not found after update", zap.Int64("situationId", situationID))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, errors.New("resource not found after update"))
+		return
+	}
+
+	httputil.JSON(w, r, updated)
 }

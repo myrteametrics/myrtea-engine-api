@@ -18,8 +18,10 @@ import (
 const table = "functional_situation_v1"
 const tableInstances = "functional_situation_instances_v1"
 const tableSituations = "functional_situation_situations_v1"
+const tableInstanceRef = "functional_situation_instance_ref_v1"
+const tableSituationRef = "functional_situation_situation_ref_v1"
 
-var fields = []string{"id", "name", "description", "parent_id", "color", "icon", "created_at", "updated_at", "created_by", "metadata"}
+var fields = []string{"id", "name", "description", "parent_id", "color", "icon", "created_at", "updated_at", "created_by", "parameters"}
 
 // PostgresRepository is a repository containing the Functional Situation data based on a PSQL database
 // and implementing the repository interface
@@ -44,18 +46,18 @@ func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
 // scan scans a row into a FunctionalSituation struct
 func (r *PostgresRepository) scan(rows *sql.Rows) (FunctionalSituation, error) {
 	var fs FunctionalSituation
-	var metadataJSON []byte
+	var parametersJSON []byte
 	err := rows.Scan(&fs.ID, &fs.Name, &fs.Description, &fs.ParentID, &fs.Color, &fs.Icon,
-		&fs.CreatedAt, &fs.UpdatedAt, &fs.CreatedBy, &metadataJSON)
+		&fs.CreatedAt, &fs.UpdatedAt, &fs.CreatedBy, &parametersJSON)
 	if err != nil {
 		return FunctionalSituation{}, err
 	}
 
-	if len(metadataJSON) > 0 {
-		err = json.Unmarshal(metadataJSON, &fs.Metadata)
+	if len(parametersJSON) > 0 {
+		err = json.Unmarshal(parametersJSON, &fs.Parameters)
 		if err != nil {
-			zap.L().Error("Error unmarshaling metadata", zap.Error(err))
-			fs.Metadata = make(map[string]interface{})
+			zap.L().Error("Error unmarshaling parameters", zap.Error(err))
+			fs.Parameters = make(map[string]interface{})
 		}
 	}
 
@@ -73,15 +75,15 @@ func (r *PostgresRepository) Create(fs FunctionalSituation, createdBy string) (i
 	var id int64
 	now := time.Now()
 
-	metadataJSON, err := json.Marshal(fs.Metadata)
+	parametersJSON, err := json.Marshal(fs.Parameters)
 	if err != nil {
-		return -1, fmt.Errorf("error marshaling metadata: %w", err)
+		return -1, fmt.Errorf("error marshaling parameters: %w", err)
 	}
 
 	statement := r.newStatement().
 		Insert(table).
-		Columns("name", "description", "parent_id", "color", "icon", "created_at", "updated_at", "created_by", "metadata").
-		Values(fs.Name, fs.Description, fs.ParentID, fs.Color, fs.Icon, now, now, createdBy, metadataJSON).
+		Columns("name", "description", "parent_id", "color", "icon", "created_at", "updated_at", "created_by", "parameters").
+		Values(fs.Name, fs.Description, fs.ParentID, fs.Color, fs.Icon, now, now, createdBy, parametersJSON).
 		Suffix("RETURNING \"id\"")
 
 	err = statement.QueryRow().Scan(&id)
@@ -154,12 +156,12 @@ func (r *PostgresRepository) Update(id int64, fs FunctionalSituationUpdate, upda
 	if fs.Icon != nil {
 		statement = statement.Set("icon", *fs.Icon)
 	}
-	if fs.Metadata != nil {
-		metadataJSON, err := json.Marshal(*fs.Metadata)
+	if fs.Parameters != nil {
+		parametersJSON, err := json.Marshal(*fs.Parameters)
 		if err != nil {
-			return fmt.Errorf("error marshaling metadata: %w", err)
+			return fmt.Errorf("error marshaling parameters: %w", err)
 		}
-		statement = statement.Set("metadata", metadataJSON)
+		statement = statement.Set("parameters", parametersJSON)
 	}
 
 	statement = statement.Set("updated_at", time.Now())
@@ -233,15 +235,15 @@ func (r *PostgresRepository) GetRoots() ([]FunctionalSituation, error) {
 func (r *PostgresRepository) GetTree() ([]FunctionalSituation, error) {
 	query := `
 		WITH RECURSIVE fs_tree AS (
-			SELECT id, name, description, parent_id, color, icon, metadata, created_at, updated_at, created_by, 0 as depth
+			SELECT id, name, description, parent_id, color, icon, parameters, created_at, updated_at, created_by, 0 as depth
 			FROM functional_situation_v1
 			WHERE parent_id IS NULL
 			UNION ALL
-			SELECT fs.id, fs.name, fs.description, fs.parent_id, fs.color, fs.icon, fs.metadata, fs.created_at, fs.updated_at, fs.created_by, ft.depth + 1
+			SELECT fs.id, fs.name, fs.description, fs.parent_id, fs.color, fs.icon, fs.parameters, fs.created_at, fs.updated_at, fs.created_by, ft.depth + 1
 			FROM functional_situation_v1 fs
 			INNER JOIN fs_tree ft ON fs.parent_id = ft.id
 		)
-		SELECT id, name, description, parent_id, color, icon, created_at, updated_at, created_by, metadata
+		SELECT id, name, description, parent_id, color, icon, created_at, updated_at, created_by, parameters
 		FROM fs_tree
 		ORDER BY depth, name
 	`
@@ -259,15 +261,15 @@ func (r *PostgresRepository) GetTree() ([]FunctionalSituation, error) {
 func (r *PostgresRepository) GetAncestors(id int64) ([]FunctionalSituation, error) {
 	query := `
 		WITH RECURSIVE ancestors AS (
-			SELECT id, name, description, parent_id, color, icon, metadata, created_at, updated_at, created_by, 0 as depth
+			SELECT id, name, description, parent_id, color, icon, parameters, created_at, updated_at, created_by, 0 as depth
 			FROM functional_situation_v1
 			WHERE id = $1
 			UNION ALL
-			SELECT fs.id, fs.name, fs.description, fs.parent_id, fs.color, fs.icon, fs.metadata, fs.created_at, fs.updated_at, fs.created_by, a.depth + 1
+			SELECT fs.id, fs.name, fs.description, fs.parent_id, fs.color, fs.icon, fs.parameters, fs.created_at, fs.updated_at, fs.created_by, a.depth + 1
 			FROM functional_situation_v1 fs
 			INNER JOIN ancestors a ON fs.id = a.parent_id
 		)
-		SELECT id, name, description, parent_id, color, icon, created_at, updated_at, created_by, metadata
+		SELECT id, name, description, parent_id, color, icon, created_at, updated_at, created_by, parameters
 		FROM ancestors
 		WHERE id != $1
 		ORDER BY depth DESC
@@ -307,8 +309,17 @@ func (r *PostgresRepository) MoveToParent(id int64, newParentID *int64) error {
 }
 
 // AddTemplateInstance creates an association between a functional situation and a template instance
-func (r *PostgresRepository) AddTemplateInstance(fsID int64, instanceID int64, addedBy string) error {
-	_, err := r.newStatement().
+// If the instance already has a reference, it links to the existing reference
+// If not, it creates a new reference with the provided parameters
+func (r *PostgresRepository) AddTemplateInstance(fsID int64, instanceID int64, parameters map[string]interface{}, addedBy string) error {
+	// First, ensure the reference exists (create if not)
+	err := r.ensureInstanceReference(instanceID, parameters, addedBy)
+	if err != nil {
+		return err
+	}
+
+	// Then create the link
+	_, err = r.newStatement().
 		Insert(tableInstances).
 		Columns("functional_situation_id", "template_instance_id", "added_at", "added_by").
 		Values(fsID, instanceID, time.Now(), addedBy).
@@ -316,13 +327,105 @@ func (r *PostgresRepository) AddTemplateInstance(fsID int64, instanceID int64, a
 	return err
 }
 
+// ensureInstanceReference creates a reference for a template instance if it doesn't exist
+func (r *PostgresRepository) ensureInstanceReference(instanceID int64, parameters map[string]interface{}, createdBy string) error {
+	// Check if reference already exists
+	var exists bool
+	err := r.conn.QueryRow("SELECT EXISTS(SELECT 1 FROM "+tableInstanceRef+" WHERE template_instance_id = $1)", instanceID).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		// Reference already exists - nothing to do (parameters are already set)
+		return nil
+	}
+
+	// Create new reference
+	parametersJSON, err := json.Marshal(parameters)
+	if err != nil {
+		return fmt.Errorf("error marshaling parameters: %w", err)
+	}
+
+	_, err = r.newStatement().
+		Insert(tableInstanceRef).
+		Columns("template_instance_id", "parameters", "created_at", "created_by").
+		Values(instanceID, parametersJSON, time.Now(), createdBy).
+		Exec()
+	return err
+}
+
+// GetInstanceReference retrieves the parameters for a template instance reference
+func (r *PostgresRepository) GetInstanceReference(instanceID int64) (InstanceReference, bool, error) {
+	var ref InstanceReference
+	var parametersJSON []byte
+
+	err := r.conn.QueryRow("SELECT template_instance_id, parameters FROM "+tableInstanceRef+" WHERE template_instance_id = $1", instanceID).
+		Scan(&ref.TemplateInstanceID, &parametersJSON)
+	if errors.Is(err, sql.ErrNoRows) {
+		return InstanceReference{}, false, nil
+	}
+	if err != nil {
+		return InstanceReference{}, false, err
+	}
+
+	if len(parametersJSON) > 0 {
+		err = json.Unmarshal(parametersJSON, &ref.Parameters)
+		if err != nil {
+			zap.L().Error("Error unmarshaling instance parameters", zap.Error(err))
+			ref.Parameters = make(map[string]interface{})
+		}
+	}
+
+	return ref, true, nil
+}
+
+// UpdateInstanceReferenceParameters updates the parameters for an instance reference
+func (r *PostgresRepository) UpdateInstanceReferenceParameters(instanceID int64, parameters map[string]interface{}) error {
+	parametersJSON, err := json.Marshal(parameters)
+	if err != nil {
+		return fmt.Errorf("error marshaling parameters: %w", err)
+	}
+
+	_, err = r.newStatement().
+		Update(tableInstanceRef).
+		Set("parameters", parametersJSON).
+		Where(sq.Eq{"template_instance_id": instanceID}).
+		Exec()
+	return err
+}
+
 // RemoveTemplateInstance removes an association between a functional situation and a template instance
+// If no other functional situation references this instance, the reference is also deleted
 func (r *PostgresRepository) RemoveTemplateInstance(fsID int64, instanceID int64) error {
+	// First, remove the link
 	_, err := r.newStatement().
 		Delete(tableInstances).
 		Where(sq.Eq{"functional_situation_id": fsID, "template_instance_id": instanceID}).
 		Exec()
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Check if any other functional situation still references this instance
+	var count int
+	err = r.conn.QueryRow("SELECT COUNT(*) FROM "+tableInstances+" WHERE template_instance_id = $1", instanceID).Scan(&count)
+	if err != nil {
+		return err
+	}
+
+	// If no more references, delete the instance reference
+	if count == 0 {
+		_, err = r.newStatement().
+			Delete(tableInstanceRef).
+			Where(sq.Eq{"template_instance_id": instanceID}).
+			Exec()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // GetTemplateInstances retrieves all template instance IDs associated with a functional situation
@@ -349,6 +452,44 @@ func (r *PostgresRepository) GetTemplateInstances(fsID int64) ([]int64, error) {
 	return ids, rows.Err()
 }
 
+// GetTemplateInstancesWithParameters retrieves all template instance IDs with their parameters for a functional situation in one query
+func (r *PostgresRepository) GetTemplateInstancesWithParameters(fsID int64) (map[int64]map[string]interface{}, error) {
+	rows, err := r.newStatement().
+		Select("fsi.template_instance_id", "COALESCE(ref.parameters, '{}'::jsonb)").
+		From(tableInstances + " fsi").
+		InnerJoin(tableInstanceRef + " ref ON ref.template_instance_id = fsi.template_instance_id").
+		Where(sq.Eq{"fsi.functional_situation_id": fsID}).
+		OrderBy("fsi.template_instance_id").
+		Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[int64]map[string]interface{})
+	for rows.Next() {
+		var instanceID int64
+		var parametersJSON []byte
+
+		if err := rows.Scan(&instanceID, &parametersJSON); err != nil {
+			return nil, err
+		}
+
+		var parameters map[string]interface{}
+		if len(parametersJSON) > 0 {
+			err = json.Unmarshal(parametersJSON, &parameters)
+			if err != nil {
+				zap.L().Error("Error unmarshaling instance parameters", zap.Error(err))
+				parameters = make(map[string]interface{})
+			}
+		}
+
+		result[instanceID] = parameters
+	}
+
+	return result, rows.Err()
+}
+
 // GetFunctionalSituationsByInstance retrieves all functional situations associated with a template instance
 func (r *PostgresRepository) GetFunctionalSituationsByInstance(instanceID int64) ([]FunctionalSituation, error) {
 	fieldsWithPrefix := make([]string, len(fields))
@@ -371,9 +512,53 @@ func (r *PostgresRepository) GetFunctionalSituationsByInstance(instanceID int64)
 	return dbutils.ScanAll(rows, r.scan)
 }
 
+// GetAllInstanceReferences retrieves all template instance references with their parameters
+func (r *PostgresRepository) GetAllInstanceReferences() ([]InstanceReference, error) {
+	rows, err := r.newStatement().
+		Select("template_instance_id", "parameters").
+		From(tableInstanceRef).
+		OrderBy("template_instance_id").
+		Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var refs []InstanceReference
+	for rows.Next() {
+		var ref InstanceReference
+		var parametersJSON []byte
+
+		if err := rows.Scan(&ref.TemplateInstanceID, &parametersJSON); err != nil {
+			return nil, err
+		}
+
+		if len(parametersJSON) > 0 {
+			err = json.Unmarshal(parametersJSON, &ref.Parameters)
+			if err != nil {
+				zap.L().Error("Error unmarshaling instance parameters", zap.Error(err))
+				ref.Parameters = make(map[string]interface{})
+			}
+		}
+
+		refs = append(refs, ref)
+	}
+
+	return refs, rows.Err()
+}
+
 // AddSituation creates an association between a functional situation and a situation
-func (r *PostgresRepository) AddSituation(fsID int64, situationID int64, addedBy string) error {
-	_, err := r.newStatement().
+// If the situation already has a reference, it links to the existing reference
+// If not, it creates a new reference with the provided parameters
+func (r *PostgresRepository) AddSituation(fsID int64, situationID int64, parameters map[string]interface{}, addedBy string) error {
+	// First, ensure the reference exists (create if not)
+	err := r.ensureSituationReference(situationID, parameters, addedBy)
+	if err != nil {
+		return err
+	}
+
+	// Then create the link
+	_, err = r.newStatement().
 		Insert(tableSituations).
 		Columns("functional_situation_id", "situation_id", "added_at", "added_by").
 		Values(fsID, situationID, time.Now(), addedBy).
@@ -381,13 +566,105 @@ func (r *PostgresRepository) AddSituation(fsID int64, situationID int64, addedBy
 	return err
 }
 
+// ensureSituationReference creates a reference for a situation if it doesn't exist
+func (r *PostgresRepository) ensureSituationReference(situationID int64, parameters map[string]interface{}, createdBy string) error {
+	// Check if reference already exists
+	var exists bool
+	err := r.conn.QueryRow("SELECT EXISTS(SELECT 1 FROM "+tableSituationRef+" WHERE situation_id = $1)", situationID).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		// Reference already exists - nothing to do (parameters are already set)
+		return nil
+	}
+
+	// Create new reference
+	parametersJSON, err := json.Marshal(parameters)
+	if err != nil {
+		return fmt.Errorf("error marshaling parameters: %w", err)
+	}
+
+	_, err = r.newStatement().
+		Insert(tableSituationRef).
+		Columns("situation_id", "parameters", "created_at", "created_by").
+		Values(situationID, parametersJSON, time.Now(), createdBy).
+		Exec()
+	return err
+}
+
+// GetSituationReference retrieves the parameters for a situation reference
+func (r *PostgresRepository) GetSituationReference(situationID int64) (SituationReference, bool, error) {
+	var ref SituationReference
+	var parametersJSON []byte
+
+	err := r.conn.QueryRow("SELECT situation_id, parameters FROM "+tableSituationRef+" WHERE situation_id = $1", situationID).
+		Scan(&ref.SituationID, &parametersJSON)
+	if errors.Is(err, sql.ErrNoRows) {
+		return SituationReference{}, false, nil
+	}
+	if err != nil {
+		return SituationReference{}, false, err
+	}
+
+	if len(parametersJSON) > 0 {
+		err = json.Unmarshal(parametersJSON, &ref.Parameters)
+		if err != nil {
+			zap.L().Error("Error unmarshaling situation parameters", zap.Error(err))
+			ref.Parameters = make(map[string]interface{})
+		}
+	}
+
+	return ref, true, nil
+}
+
+// UpdateSituationReferenceParameters updates the parameters for a situation reference
+func (r *PostgresRepository) UpdateSituationReferenceParameters(situationID int64, parameters map[string]interface{}) error {
+	parametersJSON, err := json.Marshal(parameters)
+	if err != nil {
+		return fmt.Errorf("error marshaling parameters: %w", err)
+	}
+
+	_, err = r.newStatement().
+		Update(tableSituationRef).
+		Set("parameters", parametersJSON).
+		Where(sq.Eq{"situation_id": situationID}).
+		Exec()
+	return err
+}
+
 // RemoveSituation removes an association between a functional situation and a situation
+// If no other functional situation references this situation, the reference is also deleted
 func (r *PostgresRepository) RemoveSituation(fsID int64, situationID int64) error {
+	// First, remove the link
 	_, err := r.newStatement().
 		Delete(tableSituations).
 		Where(sq.Eq{"functional_situation_id": fsID, "situation_id": situationID}).
 		Exec()
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Check if any other functional situation still references this situation
+	var count int
+	err = r.conn.QueryRow("SELECT COUNT(*) FROM "+tableSituations+" WHERE situation_id = $1", situationID).Scan(&count)
+	if err != nil {
+		return err
+	}
+
+	// If no more references, delete the situation reference
+	if count == 0 {
+		_, err = r.newStatement().
+			Delete(tableSituationRef).
+			Where(sq.Eq{"situation_id": situationID}).
+			Exec()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // GetSituations retrieves all situation IDs associated with a functional situation
@@ -414,6 +691,44 @@ func (r *PostgresRepository) GetSituations(fsID int64) ([]int64, error) {
 	return ids, rows.Err()
 }
 
+// GetSituationsWithParameters retrieves all situation IDs with their parameters for a functional situation in one query
+func (r *PostgresRepository) GetSituationsWithParameters(fsID int64) (map[int64]map[string]interface{}, error) {
+	rows, err := r.newStatement().
+		Select("fss.situation_id", "COALESCE(ref.parameters, '{}'::jsonb)").
+		From(tableSituations + " fss").
+		InnerJoin(tableSituationRef + " ref ON ref.situation_id = fss.situation_id").
+		Where(sq.Eq{"fss.functional_situation_id": fsID}).
+		OrderBy("fss.situation_id").
+		Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[int64]map[string]interface{})
+	for rows.Next() {
+		var situationID int64
+		var parametersJSON []byte
+
+		if err := rows.Scan(&situationID, &parametersJSON); err != nil {
+			return nil, err
+		}
+
+		var parameters map[string]interface{}
+		if len(parametersJSON) > 0 {
+			err = json.Unmarshal(parametersJSON, &parameters)
+			if err != nil {
+				zap.L().Error("Error unmarshaling situation parameters", zap.Error(err))
+				parameters = make(map[string]interface{})
+			}
+		}
+
+		result[situationID] = parameters
+	}
+
+	return result, rows.Err()
+}
+
 // GetFunctionalSituationsBySituation retrieves all functional situations associated with a situation
 func (r *PostgresRepository) GetFunctionalSituationsBySituation(situationID int64) ([]FunctionalSituation, error) {
 	fieldsWithPrefix := make([]string, len(fields))
@@ -434,6 +749,41 @@ func (r *PostgresRepository) GetFunctionalSituationsBySituation(situationID int6
 	defer rows.Close()
 
 	return dbutils.ScanAll(rows, r.scan)
+}
+
+// GetAllSituationReferences retrieves all situation references with their parameters
+func (r *PostgresRepository) GetAllSituationReferences() ([]SituationReference, error) {
+	rows, err := r.newStatement().
+		Select("situation_id", "parameters").
+		From(tableSituationRef).
+		OrderBy("situation_id").
+		Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var refs []SituationReference
+	for rows.Next() {
+		var ref SituationReference
+		var parametersJSON []byte
+
+		if err := rows.Scan(&ref.SituationID, &parametersJSON); err != nil {
+			return nil, err
+		}
+
+		if len(parametersJSON) > 0 {
+			err = json.Unmarshal(parametersJSON, &ref.Parameters)
+			if err != nil {
+				zap.L().Error("Error unmarshaling situation parameters", zap.Error(err))
+				ref.Parameters = make(map[string]interface{})
+			}
+		}
+
+		refs = append(refs, ref)
+	}
+
+	return refs, rows.Err()
 }
 
 // GetOverview retrieves an overview of all functional situations with aggregated counts
@@ -558,15 +908,15 @@ func (r *PostgresRepository) GetEnrichedTree() ([]FunctionalSituationTreeNode, e
 	// Step 1: Get all functional situations ordered by hierarchy
 	query := `
 		WITH RECURSIVE fs_tree AS (
-			SELECT id, name, description, parent_id, color, icon, metadata, created_at, updated_at, created_by, 0 as depth
+			SELECT id, name, description, parent_id, color, icon, parameters, created_at, updated_at, created_by, 0 as depth
 			FROM functional_situation_v1
 			WHERE parent_id IS NULL
 			UNION ALL
-			SELECT fs.id, fs.name, fs.description, fs.parent_id, fs.color, fs.icon, fs.metadata, fs.created_at, fs.updated_at, fs.created_by, ft.depth + 1
+			SELECT fs.id, fs.name, fs.description, fs.parent_id, fs.color, fs.icon, fs.parameters, fs.created_at, fs.updated_at, fs.created_by, ft.depth + 1
 			FROM functional_situation_v1 fs
 			INNER JOIN fs_tree ft ON fs.parent_id = ft.id
 		)
-		SELECT id, name, description, parent_id, color, icon, created_at, updated_at, created_by, metadata
+		SELECT id, name, description, parent_id, color, icon, created_at, updated_at, created_by, parameters
 		FROM fs_tree
 		ORDER BY depth, name
 	`
@@ -592,10 +942,11 @@ func (r *PostgresRepository) GetEnrichedTree() ([]FunctionalSituationTreeNode, e
 		fsIDs[i] = fs.ID
 	}
 
-	// Step 2: Get all template instance associations in one query
+	// Step 2: Get all template instance associations with parameters in one query
 	instanceAssocQuery := `
-		SELECT fsi.functional_situation_id, ti.id, ti.name, ti.situation_id, s.name
+		SELECT fsi.functional_situation_id, ti.id, ti.name, ti.situation_id, s.name, COALESCE(ref.parameters, '{}'::jsonb)
 		FROM functional_situation_instances_v1 fsi
+		INNER JOIN functional_situation_instance_ref_v1 ref ON ref.template_instance_id = fsi.template_instance_id
 		INNER JOIN situation_template_instances_v1 ti ON ti.id = fsi.template_instance_id
 		INNER JOIN situation_definition_v1 s ON s.id = ti.situation_id
 		WHERE fsi.functional_situation_id = ANY($1)
@@ -612,8 +963,12 @@ func (r *PostgresRepository) GetEnrichedTree() ([]FunctionalSituationTreeNode, e
 	for instanceRows.Next() {
 		var fsID int64
 		var ti TreeTemplateInstance
-		if err := instanceRows.Scan(&fsID, &ti.ID, &ti.Name, &ti.SituationID, &ti.SituationName); err != nil {
+		var parametersJSON []byte
+		if err := instanceRows.Scan(&fsID, &ti.ID, &ti.Name, &ti.SituationID, &ti.SituationName, &parametersJSON); err != nil {
 			return nil, err
+		}
+		if len(parametersJSON) > 0 {
+			_ = json.Unmarshal(parametersJSON, &ti.Parameters)
 		}
 		instancesByFS[fsID] = append(instancesByFS[fsID], ti)
 	}
@@ -621,10 +976,11 @@ func (r *PostgresRepository) GetEnrichedTree() ([]FunctionalSituationTreeNode, e
 		return nil, err
 	}
 
-	// Step 3: Get all situation associations in one query
+	// Step 3: Get all situation associations with parameters in one query
 	situationAssocQuery := `
-		SELECT fss.functional_situation_id, s.id, s.name, s.is_template
+		SELECT fss.functional_situation_id, s.id, s.name, s.is_template, COALESCE(ref.parameters, '{}'::jsonb)
 		FROM functional_situation_situations_v1 fss
+		INNER JOIN functional_situation_situation_ref_v1 ref ON ref.situation_id = fss.situation_id
 		INNER JOIN situation_definition_v1 s ON s.id = fss.situation_id
 		WHERE fss.functional_situation_id = ANY($1)
 		ORDER BY fss.functional_situation_id, s.name
@@ -640,8 +996,12 @@ func (r *PostgresRepository) GetEnrichedTree() ([]FunctionalSituationTreeNode, e
 	for situationRows.Next() {
 		var fsID int64
 		var s TreeSituation
-		if err := situationRows.Scan(&fsID, &s.ID, &s.Name, &s.IsTemplate); err != nil {
+		var parametersJSON []byte
+		if err := situationRows.Scan(&fsID, &s.ID, &s.Name, &s.IsTemplate, &parametersJSON); err != nil {
 			return nil, err
+		}
+		if len(parametersJSON) > 0 {
+			_ = json.Unmarshal(parametersJSON, &s.Parameters)
 		}
 		situationsByFS[fsID] = append(situationsByFS[fsID], s)
 	}
@@ -684,7 +1044,7 @@ func (r *PostgresRepository) GetEnrichedTree() ([]FunctionalSituationTreeNode, e
 			ParentID:          fs.ParentID,
 			Color:             fs.Color,
 			Icon:              fs.Icon,
-			Metadata:          fs.Metadata,
+			Parameters:        fs.Parameters,
 			CreatedAt:         fs.CreatedAt,
 			UpdatedAt:         fs.UpdatedAt,
 			CreatedBy:         fs.CreatedBy,
