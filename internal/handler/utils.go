@@ -375,3 +375,11 @@ func ParseFactParameters(factParameters string) (map[string]interface{}, error) 
 
 	return paramsMap, nil
 }
+
+// EnsureSlice ensures that a slice is not nil
+func EnsureSlice[T any](s []T) []T {
+	if s == nil {
+		return make([]T, 0)
+	}
+	return s
+}
