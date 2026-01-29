@@ -9,7 +9,6 @@ type Repository interface {
 	// Basic CRUD operations
 	Create(fs FunctionalSituation, createdBy string) (int64, error)
 	Get(id int64) (FunctionalSituation, bool, error)
-	GetByName(name string, parentID *int64) (FunctionalSituation, bool, error)
 	Update(id int64, fs FunctionalSituationUpdate, updatedBy string) error
 	Delete(id int64) error
 	GetAll() ([]FunctionalSituation, error)
@@ -18,32 +17,25 @@ type Repository interface {
 	GetChildren(parentID int64) ([]FunctionalSituation, error)
 	GetRoots() ([]FunctionalSituation, error)
 	GetTree() ([]FunctionalSituation, error)
-	GetAncestors(id int64) ([]FunctionalSituation, error)
-	MoveToParent(id int64, newParentID *int64) error
 
 	// Template Instance associations
 	AddTemplateInstance(fsID int64, instanceID int64, parameters map[string]interface{}, addedBy string) error
+	AddTemplateInstancesBulk(fsID int64, instances []InstanceReference, addedBy string) error
 	RemoveTemplateInstance(fsID int64, instanceID int64) error
+	RemoveTemplateInstancesBySituation(fsID int64, situationID int64) error
 	GetTemplateInstances(fsID int64) ([]int64, error)
 	GetTemplateInstancesWithParameters(fsID int64) (map[int64]map[string]interface{}, error)
-	GetFunctionalSituationsByInstance(instanceID int64) ([]FunctionalSituation, error)
 	GetInstanceReference(instanceID int64) (InstanceReference, bool, error)
 	UpdateInstanceReferenceParameters(instanceID int64, parameters map[string]interface{}) error
-	GetAllInstanceReferences() ([]InstanceReference, error)
 
 	// Situation associations
 	AddSituation(fsID int64, situationID int64, parameters map[string]interface{}, addedBy string) error
+	AddSituationsBulk(fsID int64, situations []SituationReference, addedBy string) error
 	RemoveSituation(fsID int64, situationID int64) error
 	GetSituations(fsID int64) ([]int64, error)
 	GetSituationsWithParameters(fsID int64) (map[int64]map[string]interface{}, error)
-	GetFunctionalSituationsBySituation(situationID int64) ([]FunctionalSituation, error)
 	GetSituationReference(situationID int64) (SituationReference, bool, error)
 	UpdateSituationReferenceParameters(situationID int64, parameters map[string]interface{}) error
-	GetAllSituationReferences() ([]SituationReference, error)
-
-	// Overview operations
-	GetOverview() ([]FunctionalSituationOverview, error)
-	GetOverviewByID(id int64) (FunctionalSituationOverview, bool, error)
 
 	// Enriched tree with instances and situations
 	GetEnrichedTree() ([]FunctionalSituationTreeNode, error)

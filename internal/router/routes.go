@@ -268,7 +268,6 @@ func engineRouter(services Services) http.Handler {
 		r.Post("/", handler.CreateFunctionalSituation)
 		r.Get("/tree", handler.GetFunctionalSituationTree)
 		r.Get("/tree/enriched", handler.GetFunctionalSituationEnrichedTree)
-		r.Get("/overview", handler.GetFunctionalSituationOverview)
 
 		// Instance reference parameter routes
 		r.Route("/instances/{instanceId}/parameters", func(r chi.Router) {
@@ -290,12 +289,14 @@ func engineRouter(services Services) http.Handler {
 			r.Route("/instances", func(r chi.Router) {
 				r.Get("/", handler.GetFSInstances)
 				r.Post("/", handler.AddFSInstance)
+				r.Post("/bulk", handler.AddFSInstancesBulk)
 				r.Delete("/{instanceId}", handler.RemoveFSInstance)
 			})
 
 			r.Route("/situations", func(r chi.Router) {
 				r.Get("/", handler.GetFSSituations)
 				r.Post("/", handler.AddFSSituation)
+				r.Post("/bulk", handler.AddFSSituationsBulk)
 				r.Delete("/{situationId}", handler.RemoveFSSituation)
 			})
 		})

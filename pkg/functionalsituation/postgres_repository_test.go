@@ -122,7 +122,7 @@ func TestPostgresCreate(t *testing.T) {
 		Description: "Test description",
 		Color:       "#FF0000",
 		Icon:        "folder",
-		Metadata:    map[string]interface{}{"key": "value"},
+		Parameters:  map[string]interface{}{"key": "value"},
 	}
 
 	id, err := r.Create(fs, "testuser")
@@ -177,58 +177,6 @@ func TestPostgresGet(t *testing.T) {
 	}
 	if retrieved.Color != fs.Color {
 		t.Errorf("Expected color %s, got %s", fs.Color, retrieved.Color)
-	}
-}
-
-func TestPostgresGetByName(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping postgresql test in short mode")
-	}
-	db := tests.DBClient(t)
-	defer dbDestroyRepo(db, t)
-	dbInitRepo(db, t)
-	r := NewPostgresRepository(db)
-
-	// Create root FS
-	fs1 := FunctionalSituation{
-		Name:  "Root FS",
-		Color: "#FF0000",
-	}
-	id1, err := r.Create(fs1, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Create child FS with same name
-	fs2 := FunctionalSituation{
-		Name:     "Child FS",
-		Color:    "#00FF00",
-		ParentID: &id1,
-	}
-	_, err = r.Create(fs2, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Get by name (root)
-	retrieved, found, err := r.GetByName("Root FS", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !found {
-		t.Error("Should find root FS by name")
-	}
-	if retrieved.Name != "Root FS" {
-		t.Errorf("Expected name 'Root FS', got %s", retrieved.Name)
-	}
-
-	// Get by name (child)
-	retrieved, found, err = r.GetByName("Child FS", &id1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !found {
-		t.Error("Should find child FS by name and parent")
 	}
 }
 
@@ -482,108 +430,6 @@ func TestPostgresGetTree(t *testing.T) {
 	}
 }
 
-func TestPostgresGetAncestors(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping postgresql test in short mode")
-	}
-	db := tests.DBClient(t)
-	defer dbDestroyRepo(db, t)
-	dbInitRepo(db, t)
-	r := NewPostgresRepository(db)
-
-	// Create hierarchy
-	root := FunctionalSituation{
-		Name:  "Root",
-		Color: "#FF0000",
-	}
-	rootID, err := r.Create(root, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	child := FunctionalSituation{
-		Name:     "Child",
-		Color:    "#00FF00",
-		ParentID: &rootID,
-	}
-	childID, err := r.Create(child, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	grandchild := FunctionalSituation{
-		Name:     "Grandchild",
-		Color:    "#0000FF",
-		ParentID: &childID,
-	}
-	grandchildID, err := r.Create(grandchild, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ancestors, err := r.GetAncestors(grandchildID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(ancestors) != 2 {
-		t.Errorf("Expected 2 ancestors, got %d", len(ancestors))
-	}
-}
-
-func TestPostgresMoveToParent(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping postgresql test in short mode")
-	}
-	db := tests.DBClient(t)
-	defer dbDestroyRepo(db, t)
-	dbInitRepo(db, t)
-	r := NewPostgresRepository(db)
-
-	// Create nodes
-	parent1 := FunctionalSituation{
-		Name:  "Parent 1",
-		Color: "#FF0000",
-	}
-	parent1ID, err := r.Create(parent1, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	parent2 := FunctionalSituation{
-		Name:  "Parent 2",
-		Color: "#00FF00",
-	}
-	parent2ID, err := r.Create(parent2, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	child := FunctionalSituation{
-		Name:     "Child",
-		Color:    "#0000FF",
-		ParentID: &parent1ID,
-	}
-	childID, err := r.Create(child, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Move child to parent2
-	err = r.MoveToParent(childID, &parent2ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Verify move
-	retrieved, _, err := r.Get(childID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if retrieved.ParentID == nil || *retrieved.ParentID != parent2ID {
-		t.Error("Child was not moved to new parent")
-	}
-}
-
 func TestPostgresAddRemoveTemplateInstance(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping postgresql test in short mode")
@@ -610,7 +456,7 @@ func TestPostgresAddRemoveTemplateInstance(t *testing.T) {
 	}
 
 	// Add association
-	err = r.AddTemplateInstance(fsID, 100, "testuser")
+	err = r.AddTemplateInstance(fsID, 100, map[string]interface{}{}, "testuser")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -665,7 +511,7 @@ func TestPostgresAddRemoveSituation(t *testing.T) {
 	}
 
 	// Add association
-	err = r.AddSituation(fsID, 200, "testuser")
+	err = r.AddSituation(fsID, 200, make(map[string]interface{}), "testuser")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -691,111 +537,6 @@ func TestPostgresAddRemoveSituation(t *testing.T) {
 	}
 	if len(situations) != 0 {
 		t.Error("Situation not removed correctly")
-	}
-}
-
-func TestPostgresGetOverview(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping postgresql test in short mode")
-	}
-	db := tests.DBClient(t)
-	defer dbDestroyRepo(db, t)
-	dbInitRepo(db, t)
-	r := NewPostgresRepository(db)
-
-	// Create FS hierarchy
-	root := FunctionalSituation{
-		Name:  "Root",
-		Color: "#FF0000",
-	}
-	rootID, err := r.Create(root, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	child := FunctionalSituation{
-		Name:     "Child",
-		Color:    "#00FF00",
-		ParentID: &rootID,
-	}
-	_, err = r.Create(child, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Create template instance and associate
-	_, err = db.Exec("INSERT INTO situation_template_instances_v1 (id, name) VALUES (100, 'Template 1')")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = r.AddTemplateInstance(rootID, 100, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Get overview
-	overviews, err := r.GetOverview()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(overviews) != 2 {
-		t.Errorf("Expected 2 overviews, got %d", len(overviews))
-	}
-
-	// Find root overview
-	var rootOverview *FunctionalSituationOverview
-	for i := range overviews {
-		if overviews[i].Name == "Root" {
-			rootOverview = &overviews[i]
-			break
-		}
-	}
-	if rootOverview == nil {
-		t.Fatal("Root overview not found")
-	}
-	if rootOverview.InstanceCount != 1 {
-		t.Errorf("Expected 1 instance, got %d", rootOverview.InstanceCount)
-	}
-	if rootOverview.ChildrenCount != 1 {
-		t.Errorf("Expected 1 child, got %d", rootOverview.ChildrenCount)
-	}
-	if rootOverview.AggregatedStatus != "unknown" {
-		t.Errorf("Expected status 'unknown', got %s", rootOverview.AggregatedStatus)
-	}
-}
-
-func TestPostgresGetOverviewByID(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping postgresql test in short mode")
-	}
-	db := tests.DBClient(t)
-	defer dbDestroyRepo(db, t)
-	dbInitRepo(db, t)
-	r := NewPostgresRepository(db)
-
-	// Create FS
-	fs := FunctionalSituation{
-		Name:  "Test FS",
-		Color: "#FF0000",
-	}
-	fsID, err := r.Create(fs, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Get overview
-	overview, found, err := r.GetOverviewByID(fsID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !found {
-		t.Error("Overview not found")
-	}
-	if overview.Name != "Test FS" {
-		t.Errorf("Expected name 'Test FS', got %s", overview.Name)
-	}
-	if overview.AggregatedStatus != "unknown" {
-		t.Errorf("Expected status 'unknown', got %s", overview.AggregatedStatus)
 	}
 }
 
@@ -826,41 +567,5 @@ func TestPostgresUniqueConstraint(t *testing.T) {
 	_, err = r.Create(fs2, "testuser")
 	if err == nil {
 		t.Error("Expected error for duplicate name at same level, got nil")
-	}
-}
-
-func TestPostgresCircularReference(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping postgresql test in short mode")
-	}
-	db := tests.DBClient(t)
-	defer dbDestroyRepo(db, t)
-	dbInitRepo(db, t)
-	r := NewPostgresRepository(db)
-
-	// Create parent and child
-	parent := FunctionalSituation{
-		Name:  "Parent",
-		Color: "#FF0000",
-	}
-	parentID, err := r.Create(parent, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	child := FunctionalSituation{
-		Name:     "Child",
-		Color:    "#00FF00",
-		ParentID: &parentID,
-	}
-	childID, err := r.Create(child, "testuser")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Try to move parent under child (should fail)
-	err = r.MoveToParent(parentID, &childID)
-	if err == nil {
-		t.Error("Expected error for circular reference, got nil")
 	}
 }

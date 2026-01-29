@@ -284,30 +284,6 @@ func (r *PostgresRepository) GetAncestors(id int64) ([]FunctionalSituation, erro
 	return dbutils.ScanAll(rows, r.scan)
 }
 
-// MoveToParent changes the parent of a functional situation
-func (r *PostgresRepository) MoveToParent(id int64, newParentID *int64) error {
-	// Check for circular reference if newParentID is not nil
-	if newParentID != nil {
-		ancestors, err := r.GetAncestors(*newParentID)
-		if err != nil {
-			return err
-		}
-		for _, ancestor := range ancestors {
-			if ancestor.ID == id {
-				return fmt.Errorf("circular reference detected: cannot move to descendant")
-			}
-		}
-	}
-
-	_, err := r.newStatement().
-		Update(table).
-		Set("parent_id", newParentID).
-		Set("updated_at", time.Now()).
-		Where(sq.Eq{"id": id}).
-		Exec()
-	return err
-}
-
 // AddTemplateInstance creates an association between a functional situation and a template instance
 // If the instance already has a reference, it links to the existing reference
 // If not, it creates a new reference with the provided parameters
@@ -327,10 +303,47 @@ func (r *PostgresRepository) AddTemplateInstance(fsID int64, instanceID int64, p
 	return err
 }
 
+// AddTemplateInstancesBulk creates associations between a functional situation and multiple template instances
+// This is more efficient than calling AddTemplateInstance multiple times
+func (r *PostgresRepository) AddTemplateInstancesBulk(fsID int64, instances []InstanceReference, addedBy string) error {
+	if len(instances) == 0 {
+		return nil
+	}
+
+	// Validate all instances first
+	for _, instance := range instances {
+		if ok, err := instance.IsValid(); !ok {
+			return err
+		}
+	}
+
+	// First, ensure all references exist
+	for _, instance := range instances {
+		err := r.ensureInstanceReference(instance.TemplateInstanceID, instance.Parameters, addedBy)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Then create all links in bulk
+	insertStatement := r.newStatement().
+		Insert(tableInstances).
+		Columns("functional_situation_id", "template_instance_id", "added_at", "added_by")
+
+	now := time.Now()
+	for _, instance := range instances {
+		insertStatement = insertStatement.Values(fsID, instance.TemplateInstanceID, now, addedBy)
+	}
+
+	_, err := insertStatement.Exec()
+	return err
+}
+
 // ensureInstanceReference creates a reference for a template instance if it doesn't exist
 func (r *PostgresRepository) ensureInstanceReference(instanceID int64, parameters map[string]interface{}, createdBy string) error {
 	// Check if reference already exists
 	var exists bool
+	r.newStatement().Select()
 	err := r.conn.QueryRow("SELECT EXISTS(SELECT 1 FROM "+tableInstanceRef+" WHERE template_instance_id = $1)", instanceID).Scan(&exists)
 	if err != nil {
 		return err
@@ -360,11 +373,19 @@ func (r *PostgresRepository) GetInstanceReference(instanceID int64) (InstanceRef
 	var ref InstanceReference
 	var parametersJSON []byte
 
-	err := r.conn.QueryRow("SELECT template_instance_id, parameters FROM "+tableInstanceRef+" WHERE template_instance_id = $1", instanceID).
-		Scan(&ref.TemplateInstanceID, &parametersJSON)
-	if errors.Is(err, sql.ErrNoRows) {
+	rows, err := r.newStatement().Select("template_instance_id", "parameters").
+		From(tableInstanceRef).
+		Where(sq.Eq{"template_instance_id": instanceID}).
+		Query()
+	if err != nil {
+		return InstanceReference{}, false, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
 		return InstanceReference{}, false, nil
 	}
+
+	err = rows.Scan(&ref.TemplateInstanceID, &parametersJSON)
 	if err != nil {
 		return InstanceReference{}, false, err
 	}
@@ -409,9 +430,21 @@ func (r *PostgresRepository) RemoveTemplateInstance(fsID int64, instanceID int64
 
 	// Check if any other functional situation still references this instance
 	var count int
-	err = r.conn.QueryRow("SELECT COUNT(*) FROM "+tableInstances+" WHERE template_instance_id = $1", instanceID).Scan(&count)
+	rows, err := r.newStatement().
+		Select("COUNT(*)").
+		From(tableInstances).
+		Where(sq.Eq{"template_instance_id": instanceID}).
+		Query()
 	if err != nil {
 		return err
+	}
+
+	defer rows.Close()
+	if rows.Next() {
+		err = rows.Scan(&count)
+		if err != nil {
+			return err
+		}
 	}
 
 	// If no more references, delete the instance reference
@@ -419,6 +452,98 @@ func (r *PostgresRepository) RemoveTemplateInstance(fsID int64, instanceID int64
 		_, err = r.newStatement().
 			Delete(tableInstanceRef).
 			Where(sq.Eq{"template_instance_id": instanceID}).
+			Exec()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// RemoveTemplateInstancesBySituation removes all template instances of a given situation from a functional situation
+// This is more efficient than calling RemoveTemplateInstance multiple times
+// It also handles cleanup of orphaned references
+func (r *PostgresRepository) RemoveTemplateInstancesBySituation(fsID int64, situationID int64) error {
+	// First, get all template instance IDs for this situation that are linked to this FS
+	var instanceIDs []int64
+	rows, err := r.newStatement().Select("fsi.template_instance_id").
+		From(fmt.Sprintf("%s fsi", tableInstances)).
+		InnerJoin("situation_template_instances_v1 sti ON fsi.template_instance_id = sti.id").
+		Where(sq.And{
+			sq.Eq{"fsi.functional_situation_id": fsID},
+			sq.Eq{"sti.situation_id": situationID},
+		}).Query()
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var instanceID int64
+		if err := rows.Scan(&instanceID); err != nil {
+			return err
+		}
+		instanceIDs = append(instanceIDs, instanceID)
+	}
+
+	if err = rows.Err(); err != nil {
+		return err
+	}
+
+	// If no instances found, nothing to do
+	if len(instanceIDs) == 0 {
+		return nil
+	}
+
+	// Delete all links from functional_situation_instances_v1 in one query
+	_, err = r.newStatement().
+		Delete(tableInstances).
+		Where(sq.And{
+			sq.Eq{"functional_situation_id": fsID},
+			sq.Eq{"template_instance_id": instanceIDs},
+		}).
+		Exec()
+	if err != nil {
+		return err
+	}
+
+	// Clean up orphaned references
+	// Find instance IDs that are no longer referenced by any functional situation
+	orphanedRows, err := r.newStatement().Select("fsi.template_instance_id").
+		From(fmt.Sprintf("%s fsi", tableInstances)).
+		Where(sq.And{
+			sq.Eq{"fsi.template_instance_id": instanceIDs},
+			r.newStatement().
+				Select("1").
+				From(fmt.Sprintf("%s fsi", tableInstances)).
+				Where("fsi.template_instance_id = fir.template_instance_id").
+				Prefix("NOT EXISTS (").
+				Suffix(")"),
+		}).Query()
+	if err != nil {
+		return err
+	}
+	defer orphanedRows.Close()
+
+	var orphanedIDs []int64
+	for orphanedRows.Next() {
+		var orphanedID int64
+		if err = orphanedRows.Scan(&orphanedID); err != nil {
+			return err
+		}
+		orphanedIDs = append(orphanedIDs, orphanedID)
+	}
+
+	if err = orphanedRows.Err(); err != nil {
+		return err
+	}
+
+	// Delete orphaned references
+	if len(orphanedIDs) > 0 {
+		_, err = r.newStatement().
+			Delete(tableInstanceRef).
+			Where(sq.Eq{"template_instance_id": orphanedIDs}).
 			Exec()
 		if err != nil {
 			return err
@@ -490,63 +615,6 @@ func (r *PostgresRepository) GetTemplateInstancesWithParameters(fsID int64) (map
 	return result, rows.Err()
 }
 
-// GetFunctionalSituationsByInstance retrieves all functional situations associated with a template instance
-func (r *PostgresRepository) GetFunctionalSituationsByInstance(instanceID int64) ([]FunctionalSituation, error) {
-	fieldsWithPrefix := make([]string, len(fields))
-	for i, field := range fields {
-		fieldsWithPrefix[i] = "fs." + field
-	}
-
-	rows, err := r.newStatement().
-		Select(fieldsWithPrefix...).
-		From(table + " fs").
-		InnerJoin(tableInstances + " fsi ON fs.id = fsi.functional_situation_id").
-		Where(sq.Eq{"fsi.template_instance_id": instanceID}).
-		OrderBy("fs.name").
-		Query()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	return dbutils.ScanAll(rows, r.scan)
-}
-
-// GetAllInstanceReferences retrieves all template instance references with their parameters
-func (r *PostgresRepository) GetAllInstanceReferences() ([]InstanceReference, error) {
-	rows, err := r.newStatement().
-		Select("template_instance_id", "parameters").
-		From(tableInstanceRef).
-		OrderBy("template_instance_id").
-		Query()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var refs []InstanceReference
-	for rows.Next() {
-		var ref InstanceReference
-		var parametersJSON []byte
-
-		if err := rows.Scan(&ref.TemplateInstanceID, &parametersJSON); err != nil {
-			return nil, err
-		}
-
-		if len(parametersJSON) > 0 {
-			err = json.Unmarshal(parametersJSON, &ref.Parameters)
-			if err != nil {
-				zap.L().Error("Error unmarshaling instance parameters", zap.Error(err))
-				ref.Parameters = make(map[string]interface{})
-			}
-		}
-
-		refs = append(refs, ref)
-	}
-
-	return refs, rows.Err()
-}
-
 // AddSituation creates an association between a functional situation and a situation
 // If the situation already has a reference, it links to the existing reference
 // If not, it creates a new reference with the provided parameters
@@ -563,6 +631,42 @@ func (r *PostgresRepository) AddSituation(fsID int64, situationID int64, paramet
 		Columns("functional_situation_id", "situation_id", "added_at", "added_by").
 		Values(fsID, situationID, time.Now(), addedBy).
 		Exec()
+	return err
+}
+
+// AddSituationsBulk creates associations between a functional situation and multiple situations
+// This is more efficient than calling AddSituation multiple times
+func (r *PostgresRepository) AddSituationsBulk(fsID int64, situations []SituationReference, addedBy string) error {
+	if len(situations) == 0 {
+		return nil
+	}
+
+	// Validate all situations first
+	for _, situation := range situations {
+		if ok, err := situation.IsValid(); !ok {
+			return err
+		}
+	}
+
+	// First, ensure all references exist
+	for _, situation := range situations {
+		err := r.ensureSituationReference(situation.SituationID, situation.Parameters, addedBy)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Then create all links in bulk
+	insertStatement := r.newStatement().
+		Insert(tableSituations).
+		Columns("functional_situation_id", "situation_id", "added_at", "added_by")
+
+	now := time.Now()
+	for _, situation := range situations {
+		insertStatement = insertStatement.Values(fsID, situation.SituationID, now, addedBy)
+	}
+
+	_, err := insertStatement.Exec()
 	return err
 }
 
@@ -727,180 +831,6 @@ func (r *PostgresRepository) GetSituationsWithParameters(fsID int64) (map[int64]
 	}
 
 	return result, rows.Err()
-}
-
-// GetFunctionalSituationsBySituation retrieves all functional situations associated with a situation
-func (r *PostgresRepository) GetFunctionalSituationsBySituation(situationID int64) ([]FunctionalSituation, error) {
-	fieldsWithPrefix := make([]string, len(fields))
-	for i, field := range fields {
-		fieldsWithPrefix[i] = "fs." + field
-	}
-
-	rows, err := r.newStatement().
-		Select(fieldsWithPrefix...).
-		From(table + " fs").
-		InnerJoin(tableSituations + " fss ON fs.id = fss.functional_situation_id").
-		Where(sq.Eq{"fss.situation_id": situationID}).
-		OrderBy("fs.name").
-		Query()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	return dbutils.ScanAll(rows, r.scan)
-}
-
-// GetAllSituationReferences retrieves all situation references with their parameters
-func (r *PostgresRepository) GetAllSituationReferences() ([]SituationReference, error) {
-	rows, err := r.newStatement().
-		Select("situation_id", "parameters").
-		From(tableSituationRef).
-		OrderBy("situation_id").
-		Query()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var refs []SituationReference
-	for rows.Next() {
-		var ref SituationReference
-		var parametersJSON []byte
-
-		if err := rows.Scan(&ref.SituationID, &parametersJSON); err != nil {
-			return nil, err
-		}
-
-		if len(parametersJSON) > 0 {
-			err = json.Unmarshal(parametersJSON, &ref.Parameters)
-			if err != nil {
-				zap.L().Error("Error unmarshaling situation parameters", zap.Error(err))
-				ref.Parameters = make(map[string]interface{})
-			}
-		}
-
-		refs = append(refs, ref)
-	}
-
-	return refs, rows.Err()
-}
-
-// GetOverview retrieves an overview of all functional situations with aggregated counts
-func (r *PostgresRepository) GetOverview() ([]FunctionalSituationOverview, error) {
-	query := `
-		WITH RECURSIVE fs_tree AS (
-			SELECT 
-				fs.id, 
-				fs.name, 
-				fs.description, 
-				fs.parent_id, 
-				fs.color, 
-				fs.icon,
-				0 as depth
-			FROM functional_situation_v1 fs
-			WHERE fs.parent_id IS NULL
-			UNION ALL
-			SELECT 
-				fs.id, 
-				fs.name, 
-				fs.description, 
-				fs.parent_id, 
-				fs.color, 
-				fs.icon,
-				ft.depth + 1
-			FROM functional_situation_v1 fs
-			INNER JOIN fs_tree ft ON fs.parent_id = ft.id
-		),
-		counts AS (
-			SELECT 
-				ft.id,
-				ft.name,
-				ft.description,
-				ft.parent_id,
-				ft.color,
-				ft.icon,
-				ft.depth,
-				COUNT(DISTINCT fsi.template_instance_id) as instance_count,
-				COUNT(DISTINCT fss.situation_id) as situation_count,
-				COUNT(DISTINCT children.id) as children_count
-			FROM fs_tree ft
-			LEFT JOIN functional_situation_instances_v1 fsi ON ft.id = fsi.functional_situation_id
-			LEFT JOIN functional_situation_situations_v1 fss ON ft.id = fss.functional_situation_id
-			LEFT JOIN functional_situation_v1 children ON children.parent_id = ft.id
-			GROUP BY ft.id, ft.name, ft.description, ft.parent_id, ft.color, ft.icon, ft.depth
-		)
-		SELECT 
-			id, 
-			name, 
-			description, 
-			parent_id, 
-			color, 
-			icon,
-			instance_count::int,
-			situation_count::int,
-			children_count::int
-		FROM counts
-		ORDER BY depth, name
-	`
-
-	rows, err := r.conn.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var overviews []FunctionalSituationOverview
-	for rows.Next() {
-		var o FunctionalSituationOverview
-		err := rows.Scan(&o.ID, &o.Name, &o.Description, &o.ParentID, &o.Color, &o.Icon,
-			&o.InstanceCount, &o.SituationCount, &o.ChildrenCount)
-		if err != nil {
-			return nil, err
-		}
-		// Set aggregated status to "unknown" for now (will be implemented with issue integration)
-		o.AggregatedStatus = "unknown"
-		overviews = append(overviews, o)
-	}
-
-	return overviews, rows.Err()
-}
-
-// GetOverviewByID retrieves an overview for a specific functional situation
-func (r *PostgresRepository) GetOverviewByID(id int64) (FunctionalSituationOverview, bool, error) {
-	query := `
-		SELECT 
-			fs.id, 
-			fs.name, 
-			fs.description, 
-			fs.parent_id, 
-			fs.color, 
-			fs.icon,
-			COUNT(DISTINCT fsi.template_instance_id)::int as instance_count,
-			COUNT(DISTINCT fss.situation_id)::int as situation_count,
-			COUNT(DISTINCT children.id)::int as children_count
-		FROM functional_situation_v1 fs
-		LEFT JOIN functional_situation_instances_v1 fsi ON fs.id = fsi.functional_situation_id
-		LEFT JOIN functional_situation_situations_v1 fss ON fs.id = fss.functional_situation_id
-		LEFT JOIN functional_situation_v1 children ON children.parent_id = fs.id
-		WHERE fs.id = $1
-		GROUP BY fs.id, fs.name, fs.description, fs.parent_id, fs.color, fs.icon
-	`
-
-	var o FunctionalSituationOverview
-	err := r.conn.QueryRow(query, id).Scan(&o.ID, &o.Name, &o.Description, &o.ParentID, &o.Color, &o.Icon,
-		&o.InstanceCount, &o.SituationCount, &o.ChildrenCount)
-	if errors.Is(err, sql.ErrNoRows) {
-		return FunctionalSituationOverview{}, false, nil
-	}
-	if err != nil {
-		return FunctionalSituationOverview{}, false, err
-	}
-
-	// Set aggregated status to "unknown" for now
-	o.AggregatedStatus = "unknown"
-
-	return o, true, nil
 }
 
 // GetEnrichedTree retrieves the complete hierarchy with all template instances and situations

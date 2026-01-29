@@ -217,36 +217,6 @@ func GetFunctionalSituationEnrichedTree(w http.ResponseWriter, r *http.Request) 
 	httputil.JSON(w, r, EnsureSlice(tree))
 }
 
-// GetFunctionalSituationOverview godoc
-//
-//	@Id				GetFunctionalSituationOverview
-//	@Summary		Get functional situation overview
-//	@Description	Get an overview of all functional situations with aggregated counts and status
-//	@Tags			FunctionalSituations
-//	@Produce		json
-//	@Security		Bearer
-//	@Security		ApiKeyAuth
-//	@Success		200	{array}		functionalsituation.FunctionalSituationOverview
-//	@Failure		403	{object}	httputil.APIError	"Forbidden"
-//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
-//	@Router			/engine/functionalsituations/overview [get]
-func GetFunctionalSituationOverview(w http.ResponseWriter, r *http.Request) {
-	userCtx, _ := GetUserFromContext(r)
-	if !userCtx.HasPermission(permissions.New(permissions.TypeFunctionalSituation, permissions.All, permissions.ActionList)) {
-		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
-		return
-	}
-
-	overview, err := functionalsituation.R().GetOverview()
-	if err != nil {
-		zap.L().Error("Error getting functional situation overview", zap.Error(err))
-		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
-		return
-	}
-
-	httputil.JSON(w, r, overview)
-}
-
 // GetFunctionalSituation godoc
 //
 //	@Id				GetFunctionalSituation
@@ -575,6 +545,76 @@ func AddFSInstance(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, r, map[string]interface{}{"added": true, "fsId": fsID, "instanceId": payload.InstanceID})
 }
 
+// AddFSInstancesBulk godoc
+//
+//	@Id				AddFSInstancesBulk
+//	@Summary		Add multiple template instances to a functional situation
+//	@Description	Associate multiple template instances with a functional situation in bulk
+//	@Tags			FunctionalSituations
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path	int										true	"Functional Situation ID"
+//	@Param			payload	body	[]functionalsituation.InstanceReference	true	"Array of instance references"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	object	"Added"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		403	{object}	httputil.APIError	"Forbidden"
+//	@Failure		404	{object}	httputil.APIError	"Not Found"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
+//	@Router			/engine/functionalsituations/{id}/instances/bulk [post]
+func AddFSInstancesBulk(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	fsID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error parsing functional situation id", zap.String("id", id), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeFunctionalSituationInstance, strconv.FormatInt(fsID, 10), permissions.ActionCreate)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	// Check if functional situation exists
+	_, found, err := functionalsituation.R().Get(fsID)
+	if err != nil {
+		zap.L().Error("Error getting functional situation", zap.Int64("id", fsID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("Functional situation not found", zap.Int64("id", fsID))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("functional situation not found"))
+		return
+	}
+
+	var instances []functionalsituation.InstanceReference
+	err = json.NewDecoder(r.Body).Decode(&instances)
+	if err != nil {
+		zap.L().Warn("Instances payload json decoding", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	if len(instances) == 0 {
+		zap.L().Warn("Empty instances array")
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, errors.New("instances array cannot be empty"))
+		return
+	}
+
+	err = functionalsituation.R().AddTemplateInstancesBulk(fsID, instances, userCtx.User.Login)
+	if err != nil {
+		zap.L().Error("Error adding template instances in bulk", zap.Int64("fsID", fsID), zap.Int("count", len(instances)), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
+		return
+	}
+
+	httputil.JSON(w, r, map[string]interface{}{"added": true, "fsId": fsID, "count": len(instances)})
+}
+
 // RemoveFSInstance godoc
 //
 //	@Id				RemoveFSInstance
@@ -790,6 +830,76 @@ func AddFSSituation(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, r, map[string]interface{}{"added": true, "fsId": fsID, "situationId": payload.SituationID})
 }
 
+// AddFSSituationsBulk godoc
+//
+//	@Id				AddFSSituationsBulk
+//	@Summary		Add multiple situations to a functional situation
+//	@Description	Associate multiple situations with a functional situation in bulk
+//	@Tags			FunctionalSituations
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path	int											true	"Functional Situation ID"
+//	@Param			payload	body	[]functionalsituation.SituationReference	true	"Array of situation references"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	object	"Added"
+//	@Failure		400	{object}	httputil.APIError	"Bad Request"
+//	@Failure		403	{object}	httputil.APIError	"Forbidden"
+//	@Failure		404	{object}	httputil.APIError	"Not Found"
+//	@Failure		500	{object}	httputil.APIError	"Internal Server Error"
+//	@Router			/engine/functionalsituations/{id}/situations/bulk [post]
+func AddFSSituationsBulk(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	fsID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error parsing functional situation id", zap.String("id", id), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeFunctionalSituationContent, strconv.FormatInt(fsID, 10), permissions.ActionCreate)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	// Check if functional situation exists
+	_, found, err := functionalsituation.R().Get(fsID)
+	if err != nil {
+		zap.L().Error("Error getting functional situation", zap.Int64("id", fsID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("Functional situation not found", zap.Int64("id", fsID))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("functional situation not found"))
+		return
+	}
+
+	var situations []functionalsituation.SituationReference
+	err = json.NewDecoder(r.Body).Decode(&situations)
+	if err != nil {
+		zap.L().Warn("Situations payload json decoding", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	if len(situations) == 0 {
+		zap.L().Warn("Empty situations array")
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, errors.New("situations array cannot be empty"))
+		return
+	}
+
+	err = functionalsituation.R().AddSituationsBulk(fsID, situations, userCtx.User.Login)
+	if err != nil {
+		zap.L().Error("Error adding situations in bulk", zap.Int64("fsID", fsID), zap.Int("count", len(situations)), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
+		return
+	}
+
+	httputil.JSON(w, r, map[string]interface{}{"added": true, "fsId": fsID, "count": len(situations)})
+}
+
 // RemoveFSSituation godoc
 //
 //	@Id				RemoveFSSituation
@@ -841,6 +951,25 @@ func RemoveFSSituation(w http.ResponseWriter, r *http.Request) {
 		zap.L().Warn("Functional situation not found", zap.Int64("id", fsID))
 		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("functional situation not found"))
 		return
+	}
+
+	// Check if the situation is a template
+	situationObj, found, err := situation.R().Get(situationID, false)
+	if err != nil {
+		zap.L().Error("Error getting situation", zap.Int64("situationID", situationID), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if found && situationObj.IsTemplate {
+		// If it's a template situation, delete all its template instances from the functional situation
+		// Use the efficient bulk removal method
+		err = functionalsituation.R().RemoveTemplateInstancesBySituation(fsID, situationID)
+		if err != nil {
+			zap.L().Error("Error removing template instances", zap.Int64("fsID", fsID), zap.Int64("situationID", situationID), zap.Error(err))
+			httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
+			return
+		}
+		zap.L().Info("Removed template situation and its instances", zap.Int64("fsID", fsID), zap.Int64("situationID", situationID))
 	}
 
 	err = functionalsituation.R().RemoveSituation(fsID, situationID)
