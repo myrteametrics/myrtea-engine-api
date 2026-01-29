@@ -5,7 +5,7 @@ CREATE TABLE functional_situation_v1 (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT DEFAULT ''::text,
-    parent_id INTEGER REFERENCES functional_situation_v1 (id) ON DELETE SET NULL,
+    parent_id INTEGER REFERENCES functional_situation_v1 (id) ON DELETE CASCADE,
     color VARCHAR(7) DEFAULT '#0066CC',
     icon VARCHAR(50) DEFAULT 'folder',
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
