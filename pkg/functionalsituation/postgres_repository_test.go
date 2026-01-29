@@ -200,11 +200,9 @@ func TestPostgresUpdate(t *testing.T) {
 	}
 
 	// Update
-	newName := "Updated Name"
-	newColor := "#00FF00"
-	update := FunctionalSituationUpdate{
-		Name:  &newName,
-		Color: &newColor,
+	update := FunctionalSituation{
+		Name:  "Updated Name",
+		Color: "#00FF00",
 	}
 	err = r.Update(id, update, "updater")
 	if err != nil {
@@ -216,11 +214,11 @@ func TestPostgresUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if retrieved.Name != newName {
-		t.Errorf("Expected name %s, got %s", newName, retrieved.Name)
+	if retrieved.Name != "Updated Name" {
+		t.Errorf("Expected name %s, got %s", "Updated Name", retrieved.Name)
 	}
-	if retrieved.Color != newColor {
-		t.Errorf("Expected color %s, got %s", newColor, retrieved.Color)
+	if retrieved.Color != "#00FF00" {
+		t.Errorf("Expected color %s, got %s", "#00FF00", retrieved.Color)
 	}
 }
 

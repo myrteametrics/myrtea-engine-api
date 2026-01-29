@@ -133,41 +133,28 @@ func (r *PostgresRepository) GetByName(name string, parentID *int64) (Functional
 }
 
 // Update updates a functional situation
-func (r *PostgresRepository) Update(id int64, fs FunctionalSituationUpdate, updatedBy string) error {
-	statement := r.newStatement().Update(table)
-
-	if fs.Name != nil {
-		statement = statement.Set("name", *fs.Name)
-	}
-	if fs.Description != nil {
-		statement = statement.Set("description", *fs.Description)
-	}
-	if fs.ParentID != nil {
-		// Use -1 as sentinel value to set parent_id to NULL
-		if *fs.ParentID == -1 {
-			statement = statement.Set("parent_id", nil)
-		} else {
-			statement = statement.Set("parent_id", *fs.ParentID)
-		}
-	}
-	if fs.Color != nil {
-		statement = statement.Set("color", *fs.Color)
-	}
-	if fs.Icon != nil {
-		statement = statement.Set("icon", *fs.Icon)
-	}
-	if fs.Parameters != nil {
-		parametersJSON, err := json.Marshal(*fs.Parameters)
-		if err != nil {
-			return fmt.Errorf("error marshaling parameters: %w", err)
-		}
-		statement = statement.Set("parameters", parametersJSON)
+func (r *PostgresRepository) Update(id int64, fs FunctionalSituation, updatedBy string) error {
+	if ok, err := fs.IsValid(); !ok {
+		return err
 	}
 
-	statement = statement.Set("updated_at", time.Now())
-	statement = statement.Set("created_by", updatedBy) // Track who updated
+	parametersJSON, err := json.Marshal(fs.Parameters)
+	if err != nil {
+		return fmt.Errorf("error marshaling parameters: %w", err)
+	}
 
-	_, err := statement.Where(sq.Eq{"id": id}).Exec()
+	statement := r.newStatement().Update(table).
+		Set("name", fs.Name).
+		Set("description", fs.Description).
+		Set("parent_id", fs.ParentID).
+		Set("color", fs.Color).
+		Set("icon", fs.Icon).
+		Set("parameters", parametersJSON).
+		Set("updated_at", time.Now()).
+		Set("created_by", updatedBy). // Track who updated
+		Where(sq.Eq{"id": id})
+
+	_, err = statement.Exec()
 	return err
 }
 
@@ -343,7 +330,6 @@ func (r *PostgresRepository) AddTemplateInstancesBulk(fsID int64, instances []In
 func (r *PostgresRepository) ensureInstanceReference(instanceID int64, parameters map[string]interface{}, createdBy string) error {
 	// Check if reference already exists
 	var exists bool
-	r.newStatement().Select()
 	err := r.conn.QueryRow("SELECT EXISTS(SELECT 1 FROM "+tableInstanceRef+" WHERE template_instance_id = $1)", instanceID).Scan(&exists)
 	if err != nil {
 		return err
@@ -475,6 +461,7 @@ func (r *PostgresRepository) RemoveTemplateInstancesBySituation(fsID int64, situ
 			sq.Eq{"sti.situation_id": situationID},
 		}).Query()
 	if err != nil {
+		zap.L().Error("Error querying situation template instances", zap.Error(err))
 		return err
 	}
 	defer rows.Close()
@@ -505,23 +492,42 @@ func (r *PostgresRepository) RemoveTemplateInstancesBySituation(fsID int64, situ
 		}).
 		Exec()
 	if err != nil {
+		zap.L().Error("Error deleting situation template instances", zap.Error(err))
 		return err
 	}
 
 	// Clean up orphaned references
 	// Find instance IDs that are no longer referenced by any functional situation
-	orphanedRows, err := r.newStatement().Select("fsi.template_instance_id").
+	//orphanedQuery := `
+	//	SELECT fir.template_instance_id
+	//	FROM functional_situation_instance_ref_v1 fir
+	//	WHERE fir.template_instance_id = ANY($1)
+	//	AND NOT EXISTS (
+	//		SELECT 1 FROM functional_situation_instances_v1 fsi
+	//		WHERE fsi.template_instance_id = fir.template_instance_id
+	//	)
+	//`
+	//orphanedRows, err := r.conn.Query(orphanedQuery, pq.Array(instanceIDs))
+	//if err != nil {
+	//	return err
+	//}
+	subQuery := r.newStatement().
+		Select("1").
 		From(fmt.Sprintf("%s fsi", tableInstances)).
+		Where("fsi.template_instance_id = fir.template_instance_id").
+		Prefix("NOT EXISTS (").
+		Suffix(")")
+
+	orphanedRows, err := r.newStatement().
+		Select("fir.template_instance_id").
+		From(fmt.Sprintf("%s fir", tableInstanceRef)).
 		Where(sq.And{
-			sq.Eq{"fsi.template_instance_id": instanceIDs},
-			r.newStatement().
-				Select("1").
-				From(fmt.Sprintf("%s fsi", tableInstances)).
-				Where("fsi.template_instance_id = fir.template_instance_id").
-				Prefix("NOT EXISTS (").
-				Suffix(")"),
+			sq.Eq{"fir.template_instance_id": instanceIDs},
+			subQuery,
+			// todo check if this works as intended
 		}).Query()
 	if err != nil {
+		zap.L().Error("Error querying orphaned instance references", zap.Error(err))
 		return err
 	}
 	defer orphanedRows.Close()
@@ -546,6 +552,7 @@ func (r *PostgresRepository) RemoveTemplateInstancesBySituation(fsID int64, situ
 			Where(sq.Eq{"template_instance_id": orphanedIDs}).
 			Exec()
 		if err != nil {
+			zap.L().Error("Error deleting orphaned instance references", zap.Error(err))
 			return err
 		}
 	}

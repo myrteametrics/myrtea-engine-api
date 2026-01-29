@@ -96,7 +96,7 @@ func GetFunctionalSituations(w http.ResponseWriter, r *http.Request) {
 //	@Tags			FunctionalSituations
 //	@Accept			json
 //	@Produce		json
-//	@Param			functionalSituation	body	functionalsituation.FunctionalSituationCreate	true	"Functional Situation definition (json)"
+//	@Param			functionalSituation	body	functionalsituation.FunctionalSituation	true	"Functional Situation definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	functionalsituation.FunctionalSituation
@@ -111,28 +111,18 @@ func CreateFunctionalSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var fsCreate functionalsituation.FunctionalSituationCreate
-	err := json.NewDecoder(r.Body).Decode(&fsCreate)
+	var fs functionalsituation.FunctionalSituation
+	err := json.NewDecoder(r.Body).Decode(&fs)
 	if err != nil {
 		zap.L().Warn("FunctionalSituation json decoding", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
-	if ok, err := fsCreate.IsValid(); !ok {
+	if ok, err := fs.IsValid(); !ok {
 		zap.L().Warn("FunctionalSituation is not valid", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
-	}
-
-	// Convert create payload to FunctionalSituation
-	fs := functionalsituation.FunctionalSituation{
-		Name:        fsCreate.Name,
-		Description: fsCreate.Description,
-		ParentID:    fsCreate.ParentID,
-		Color:       fsCreate.Color,
-		Icon:        fsCreate.Icon,
-		Parameters:  fsCreate.Parameters,
 	}
 
 	id, err := functionalsituation.R().Create(fs, userCtx.User.Login)
@@ -271,8 +261,8 @@ func GetFunctionalSituation(w http.ResponseWriter, r *http.Request) {
 //	@Tags			FunctionalSituations
 //	@Accept			json
 //	@Produce		json
-//	@Param			id					path	int												true	"Functional Situation ID"
-//	@Param			functionalSituation	body	functionalsituation.FunctionalSituationUpdate	true	"Functional Situation update payload (json)"
+//	@Param			id					path	int										true	"Functional Situation ID"
+//	@Param			functionalSituation	body	functionalsituation.FunctionalSituation	true	"Functional Situation definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	functionalsituation.FunctionalSituation
@@ -296,28 +286,22 @@ func UpdateFunctionalSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if exists
-	_, found, err := functionalsituation.R().Get(fsID)
-	if err != nil {
-		zap.L().Error("Error getting functional situation", zap.Int64("id", fsID), zap.Error(err))
-		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
-		return
-	}
-	if !found {
-		zap.L().Warn("Functional situation not found", zap.Int64("id", fsID))
-		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("functional situation not found"))
-		return
-	}
-
-	var fsUpdate functionalsituation.FunctionalSituationUpdate
-	err = json.NewDecoder(r.Body).Decode(&fsUpdate)
+	var fs functionalsituation.FunctionalSituation
+	err = json.NewDecoder(r.Body).Decode(&fs)
 	if err != nil {
 		zap.L().Warn("FunctionalSituation json decoding", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
+	fs.ID = fsID
 
-	err = functionalsituation.R().Update(fsID, fsUpdate, userCtx.User.Login)
+	if ok, err := fs.IsValid(); !ok {
+		zap.L().Warn("FunctionalSituation is not valid", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
+		return
+	}
+
+	err = functionalsituation.R().Update(fsID, fs, userCtx.User.Login)
 	if err != nil {
 		zap.L().Error("Error updating functional situation", zap.Int64("id", fsID), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
@@ -349,7 +333,7 @@ func UpdateFunctionalSituation(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path	int	true	"Functional Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	object	"Deleted"
+//	@Success		200	"Status OK"
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		403	{object}	httputil.APIError	"Forbidden"
 //	@Failure		404	{object}	httputil.APIError	"Not Found"
@@ -390,7 +374,7 @@ func DeleteFunctionalSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, r, map[string]interface{}{"deleted": true, "id": fsID})
+	httputil.OK(w, r)
 }
 
 // GetFSInstances godoc
@@ -626,7 +610,7 @@ func AddFSInstancesBulk(w http.ResponseWriter, r *http.Request) {
 //	@Param			instanceId	path	int	true	"Template Instance ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	object	"Removed"
+//	@Success		200 "Status OK"
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		403	{object}	httputil.APIError	"Forbidden"
 //	@Failure		404	{object}	httputil.APIError	"Not Found"
@@ -675,7 +659,7 @@ func RemoveFSInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, r, map[string]interface{}{"removed": true, "fsId": fsID, "instanceId": instanceID})
+	httputil.OK(w, r)
 }
 
 // GetFSSituations godoc
@@ -911,7 +895,7 @@ func AddFSSituationsBulk(w http.ResponseWriter, r *http.Request) {
 //	@Param			situationId	path	int	true	"Situation ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	object	"Removed"
+//	@Success		200 "Status OK"
 //	@Failure		400	{object}	httputil.APIError	"Bad Request"
 //	@Failure		403	{object}	httputil.APIError	"Forbidden"
 //	@Failure		404	{object}	httputil.APIError	"Not Found"
@@ -979,7 +963,7 @@ func RemoveFSSituation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, r, map[string]interface{}{"removed": true, "fsId": fsID, "situationId": situationID})
+	httputil.OK(w, r)
 }
 
 // GetInstanceReferenceParameters godoc

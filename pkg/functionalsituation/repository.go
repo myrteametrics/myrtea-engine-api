@@ -9,7 +9,7 @@ type Repository interface {
 	// Basic CRUD operations
 	Create(fs FunctionalSituation, createdBy string) (int64, error)
 	Get(id int64) (FunctionalSituation, bool, error)
-	Update(id int64, fs FunctionalSituationUpdate, updatedBy string) error
+	Update(id int64, fs FunctionalSituation, updatedBy string) error
 	Delete(id int64) error
 	GetAll() ([]FunctionalSituation, error)
 
