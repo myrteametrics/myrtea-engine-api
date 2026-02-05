@@ -36,6 +36,9 @@ type Repository interface {
 	DeleteOldIssues(ts time.Time) error
 	DeleteOldIssueDetections(ts time.Time) error
 	DeleteOldIssueResolutions(ts time.Time) error
+	SearchByName(name string, issueStates []string, options model.SearchOptions) ([]model.Issue, int, error)
+	CountSearchByName(name string, issueStates []string, minDate time.Time) (int, error)
+	SearchByNameBySituationIDs(name string, issueStates []string, options model.SearchOptions, situationIDs []int64) ([]model.Issue, int, error)
 }
 
 var (

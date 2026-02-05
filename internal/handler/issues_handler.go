@@ -918,3 +918,106 @@ func UpdateIssueComment(w http.ResponseWriter, r *http.Request) {
 
 	httputil.OK(w, r)
 }
+
+// SearchIssuesByName godoc
+//
+//	@Id				SearchIssuesByName
+//
+//	@Summary		Search issues by name
+//	@Description	Search issues by name with state filter (limited to 2 years)
+//	@Tags			Issues
+//	@Produce		json
+//	@Param			name	query	string	true	"Issue name to search"
+//	@Param			states	query	string	true	"Issue states (comma separated) (Available: open, draft, closedfeedback, closednofeedback, closedtimeout)"
+//	@Param			limit	query	string	false	"Result limit (default: 50)"
+//	@Param			offset	query	string	false	"Result offset (default: 0)"
+//	@Param			sort_by	query	string	false	"Sort options (example: 'sort_by=desc(last_modified),asc(id)')"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	model.PaginatedResource	"Status OK"
+//	@Failure		400	{object}	httputil.APIError		"Bad Request"
+//	@Failure		500	{object}	httputil.APIError		"Internal Server Error"
+//	@Router			/engine/issues/search [get]
+func SearchIssuesByName(w http.ResponseWriter, r *http.Request) {
+	var err error
+	var limit int
+	var offset int
+	var sortOptions = make([]model.SortOption, 0)
+
+	name := r.URL.Query().Get("name")
+	if name == "" {
+		zap.L().Warn("Missing required parameter: name")
+		httputil.Error(w, r, httputil.ErrAPIMissingParam, errors.New("missing required parameter: name"))
+		return
+	}
+
+	statesParam := r.URL.Query().Get("states")
+	if statesParam == "" {
+		zap.L().Warn("Missing required parameter: states")
+		httputil.Error(w, r, httputil.ErrAPIMissingParam, errors.New("missing required parameter: states"))
+		return
+	}
+	states := strings.Split(statesParam, ",")
+
+	if rawSize := r.URL.Query().Get("limit"); rawSize != "" {
+		limit, err = ParseInt(rawSize)
+		if err != nil {
+			zap.L().Warn("Parse input limit", zap.Error(err), zap.String("rawLimit", rawSize))
+			httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+			return
+		}
+	}
+
+	if rawOffset := r.URL.Query().Get("offset"); rawOffset != "" {
+		offset, err = ParseInt(rawOffset)
+		if err != nil {
+			zap.L().Warn("Parse input offset", zap.Error(err), zap.String("rawOffset", rawOffset))
+			httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+			return
+		}
+	}
+
+	if rawSortBy := r.URL.Query().Get("sort_by"); rawSortBy != "" {
+		sortOptions, err = ParseSortBy(rawSortBy, allowedSortByFields)
+		if err != nil {
+			zap.L().Warn("Parse input sort_by", zap.Error(err), zap.String("rawSortBy", rawSortBy))
+			httputil.Error(w, r, httputil.ErrAPIParsingSortBy, err)
+			return
+		}
+	}
+
+	searchOptions := model.SearchOptions{
+		Limit:  limit,
+		Offset: offset,
+		SortBy: sortOptions,
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionList)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	var issuesSlice []model.Issue
+	var total int
+
+	if userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionGet)) {
+		issuesSlice, total, err = issues.R().SearchByName(name, states, searchOptions)
+	} else {
+		situationIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionGet))
+		issuesSlice, total, err = issues.R().SearchByNameBySituationIDs(name, states, searchOptions, situationIDs)
+	}
+
+	if err != nil {
+		zap.L().Error("Error on searching issues by name", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	paginatedResource := model.PaginatedResource{
+		Total: total,
+		Items: issuesSlice,
+	}
+
+	httputil.JSON(w, r, paginatedResource)
+}
