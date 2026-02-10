@@ -312,6 +312,10 @@ func serviceRouter(services Services) http.Handler {
 
 	r.Post("/objects", handler.PostObjects)
 	r.Post("/aggregates", services.ProcessorHandler.PostAggregates)
+	r.Get("/boost/list", handler.GetBoostList)
+	r.Get("/boost/revert", handler.GetRevertList)
+	r.Post("/boost/{jobId}/ack", handler.AcknowledgeBoost)
+	r.Post("/boost/revert/{jobId}/ack", handler.AcknowledgeRevert)
 
 	r.Get("/externalconfigs", handler.GetExternalConfigs)
 	r.Get("/externalconfigs/{id}", handler.GetExternalConfig)
