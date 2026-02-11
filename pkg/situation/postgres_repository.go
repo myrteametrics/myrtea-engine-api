@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
@@ -946,4 +947,86 @@ func (r *PostgresRepository) GetAllTemplateInstancesByRuleID(ruleID int64, parse
 	}
 
 	return templateInstances, nil
+}
+
+func (r *PostgresRepository) GetSituationsWithInstances(parseParameters ...bool) ([]SituationWithInstances, error) {
+	rows, err := r.conn.NamedQuery(
+		`SELECT id, definition FROM situation_definition_v1 ORDER BY id`,
+		map[string]interface{}{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	parse := shouldParseForEvaluation(parseParameters...)
+
+	situationIDs := make([]int64, 0)
+	situationMap := make(map[int64]*SituationWithInstances)
+
+	for rows.Next() {
+		var id int64
+		var def string
+
+		if err := rows.Scan(&id, &def); err != nil {
+			return nil, err
+		}
+
+		var s Situation
+		if err := json.Unmarshal([]byte(def), &s); err != nil {
+			return nil, err
+		}
+
+		s.ID = id
+		s.Facts = nil
+
+		if parse {
+			evalParameters(s.Parameters)
+		}
+
+		situationIDs = append(situationIDs, s.ID)
+		situationMap[s.ID] = &SituationWithInstances{
+			Situation: s,
+			Instances: []TemplateInstance{},
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	if len(situationIDs) == 0 {
+		return []SituationWithInstances{}, nil
+	}
+
+	instRows, err := r.newStatement().
+		Select("id", "name", "situation_id", "parameters", "calendar_id", "enable_depends_on", "depends_on_parameters").
+		From("situation_template_instances_v1").
+		Where(sq.Eq{"situation_id": situationIDs}).
+		OrderBy("situation_id", "id").
+		Query()
+	if err != nil {
+		return nil, err
+	}
+	defer instRows.Close()
+
+	for instRows.Next() {
+		inst, err := r.scanTemplateInstance(instRows, parse)
+		if err != nil {
+			return nil, err
+		}
+		if parent, ok := situationMap[inst.SituationID]; ok {
+			parent.Instances = append(parent.Instances, inst)
+		}
+	}
+	if err := instRows.Err(); err != nil {
+		return nil, err
+	}
+
+	result := make([]SituationWithInstances, 0, len(situationMap))
+	for _, s := range situationMap {
+		result = append(result, *s)
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].Situation.ID < result[j].Situation.ID })
+
+	return result, nil
 }
