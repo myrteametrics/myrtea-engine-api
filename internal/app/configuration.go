@@ -56,6 +56,7 @@ var AllowedConfigKey = [][]helpers.ConfigKey{
 		{Type: helpers.StringFlag, Name: "API_KEY_CACHE_DURATION", DefaultValue: "1h", Description: "Specify the duration for how long the API token will be cached."},
 		{Type: helpers.StringFlag, Name: "AUTHENTICATION_CREATE_SUPERUSER", DefaultValue: "false", Description: "Create superuser if not exists"},
 		{Type: helpers.StringFlag, Name: "JWT_SIGNING_KEY", DefaultValue: "", Description: "JWT signing key for token generation. If not set, a random key will be generated on startup (in production mode only)."},
+		{Type: helpers.StringFlag, Name: "BOOST_LIFETIME", DefaultValue: "5m", Description: "Time-to-live for boost and revert actions in the BoostManager. Actions older than this duration will be automatically cleaned up."},
 	},
 }
 
