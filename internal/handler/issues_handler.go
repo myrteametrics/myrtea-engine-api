@@ -1001,12 +1001,7 @@ func SearchIssuesByName(w http.ResponseWriter, r *http.Request) {
 	var issuesSlice []model.Issue
 	var total int
 
-	if userCtx.HasPermission(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionGet)) {
-		issuesSlice, total, err = issues.R().SearchByName(name, states, searchOptions)
-	} else {
-		situationIDs := userCtx.GetMatchingResourceIDsInt64(permissions.New(permissions.TypeSituationIssues, permissions.All, permissions.ActionGet))
-		issuesSlice, total, err = issues.R().SearchByNameBySituationIDs(name, states, searchOptions, situationIDs)
-	}
+	issuesSlice, total, err = issues.R().SearchByName(name, states, searchOptions)
 
 	if err != nil {
 		zap.L().Error("Error on searching issues by name", zap.Error(err))

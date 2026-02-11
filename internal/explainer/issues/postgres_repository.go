@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/queryutils"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 
@@ -773,167 +774,94 @@ func (r *PostgresRepository) SearchByName(name string, issueStates []string, opt
 	issues := make([]model.Issue, 0)
 	twoYearsAgo := time.Now().AddDate(-2, 0, 0)
 
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id,
-		i.situation_id, situation_instance_id, i.situation_date,
-		i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
-		i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
-	FROM issues_v1 as i
-	WHERE i.name ILIKE :name_pattern
-	AND i.state = ANY(:states)
-	AND i.created_at >= :min_date`
-
-	params := map[string]interface{}{
-		"name_pattern": "%" + name + "%",
-		"states":       pq.Array(issueStates),
-		"min_date":     twoYearsAgo,
-	}
+	builder := sq.Select(
+		"i.id", "i.key", "i.name", "i.level", "i.situation_history_id",
+		"i.situation_id", "situation_instance_id", "i.situation_date",
+		"i.expiration_date", "i.rule_data", "i.state", "i.created_at", "i.last_modified",
+		"i.detection_rating_avg", "i.assigned_at", "i.assigned_to", "i.closed_at", "i.closed_by", "i.comment",
+		"COUNT(*) OVER() AS total_count",
+	).From("issues_v1 as i").
+		Where(sq.ILike{"i.name": "%" + name + "%"}).
+		Where("i.state = ANY(?)", pq.Array(issueStates)).
+		Where(sq.GtOrEq{"i.created_at": twoYearsAgo})
 
 	if len(options.SortBy) == 0 {
 		options.SortBy = []model.SortOption{{Field: "created_at", Order: model.Desc}}
 	}
 
-	var err error
-	query, params, err = queryutils.AppendSearchOptions(query, params, options, "i")
+	builder, err := queryutils.AppendSearchOptionsToBuilder(builder, options, "i")
 	if err != nil {
 		return nil, 0, err
 	}
 
-	rows, err := r.conn.NamedQuery(query, params)
+	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.conn.Queryx(query, args...)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer rows.Close()
 
+	var total int
 	for rows.Next() {
-		issue, err := scanIssue(rows)
+		issue, rowTotal, err := scanIssueWithTotal(rows)
 		if err != nil {
 			return nil, 0, err
 		}
 		issues = append(issues, issue)
-	}
-
-	total, err := r.CountSearchByName(name, issueStates, twoYearsAgo)
-	if err != nil {
-		return nil, 0, err
+		total = rowTotal
 	}
 
 	return issues, total, nil
 }
 
-// SearchByNameBySituationIDs searches issues by name filtered by situation IDs
-func (r *PostgresRepository) SearchByNameBySituationIDs(name string, issueStates []string, options model.SearchOptions, situationIDs []int64) ([]model.Issue, int, error) {
-	issues := make([]model.Issue, 0)
-	twoYearsAgo := time.Now().AddDate(-2, 0, 0)
+func scanIssueWithTotal(rows *sqlx.Rows) (model.Issue, int, error) {
+	var ruleData string
+	var issueStateString string
+	var issueLevelString string
+	var issue model.Issue
+	var total int
 
-	query := `SELECT i.id, i.key, i.name, i.level, i.situation_history_id,
-		i.situation_id, situation_instance_id, i.situation_date,
-		i.expiration_date, i.rule_data, i.state, i.created_at, i.last_modified,
-		i.detection_rating_avg, i.assigned_at, i.assigned_to, i.closed_at, i.closed_by, i.comment
-	FROM issues_v1 as i
-	INNER JOIN situation_definition_v1 ON situation_definition_v1.id = i.situation_id
-	WHERE i.name ILIKE :name_pattern
-	AND i.state = ANY(:states)
-	AND i.created_at >= :min_date
-	AND situation_definition_v1.id = ANY(:situation_ids)`
-
-	params := map[string]interface{}{
-		"name_pattern":  "%" + name + "%",
-		"states":        pq.Array(issueStates),
-		"min_date":      twoYearsAgo,
-		"situation_ids": pq.Array(situationIDs),
-	}
-
-	if len(options.SortBy) == 0 {
-		options.SortBy = []model.SortOption{{Field: "created_at", Order: model.Desc}}
-	}
-
-	var err error
-	query, params, err = queryutils.AppendSearchOptions(query, params, options, "i")
+	err := rows.Scan(
+		&issue.ID,
+		&issue.Key,
+		&issue.Name,
+		&issueLevelString,
+		&issue.SituationHistoryID,
+		&issue.SituationID,
+		&issue.TemplateInstanceID,
+		&issue.SituationTS,
+		&issue.ExpirationTS,
+		&ruleData,
+		&issueStateString,
+		&issue.CreationTS,
+		&issue.LastModificationTS,
+		&issue.DetectionRatingAvg,
+		&issue.AssignedAt,
+		&issue.AssignedTo,
+		&issue.ClosedAt,
+		&issue.CloseBy,
+		&issue.Comment,
+		&total,
+	)
 	if err != nil {
-		return nil, 0, err
+		return model.Issue{}, 0, err
 	}
 
-	rows, err := r.conn.NamedQuery(query, params)
+	issue.State = model.ToIssueState(issueStateString)
+	issue.Level = model.ToIssueLevel(issueLevelString)
+
+	ruleData = strings.ReplaceAll(ruleData, `"errors":[{}]`, `"errors":[]`)
+	ruleData = strings.ReplaceAll(ruleData, `"errors": [{}]`, `"errors": []`)
+
+	err = json.Unmarshal([]byte(ruleData), &issue.Rule)
 	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		issue, err := scanIssue(rows)
-		if err != nil {
-			return nil, 0, err
-		}
-		issues = append(issues, issue)
+		zap.L().Error("Couldn't unmarshall the issue rule:", zap.Error(err))
+		return model.Issue{}, 0, err
 	}
 
-	total, err := r.CountSearchByNameBySituationIDs(name, issueStates, twoYearsAgo, situationIDs)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return issues, total, nil
-}
-
-// CountSearchByName counts issues matching the name search
-func (r *PostgresRepository) CountSearchByName(name string, issueStates []string, minDate time.Time) (int, error) {
-	query := `SELECT count(*)
-		FROM issues_v1
-		WHERE name ILIKE :name_pattern
-		AND state = ANY(:states)
-		AND created_at >= :min_date`
-
-	params := map[string]interface{}{
-		"name_pattern": "%" + name + "%",
-		"states":       pq.Array(issueStates),
-		"min_date":     minDate,
-	}
-
-	rows, err := r.conn.NamedQuery(query, params)
-	if err != nil {
-		return 0, err
-	}
-	defer rows.Close()
-
-	var count int
-	if rows.Next() {
-		err := rows.Scan(&count)
-		if err != nil {
-			return 0, err
-		}
-	}
-	return count, nil
-}
-
-// CountSearchByNameBySituationIDs counts issues matching the name search filtered by situation IDs
-func (r *PostgresRepository) CountSearchByNameBySituationIDs(name string, issueStates []string, minDate time.Time, situationIDs []int64) (int, error) {
-	query := `SELECT count(*)
-		FROM issues_v1
-		INNER JOIN situation_definition_v1 ON situation_definition_v1.id = issues_v1.situation_id
-		WHERE name ILIKE :name_pattern
-		AND state = ANY(:states)
-		AND created_at >= :min_date
-		AND situation_definition_v1.id = ANY(:situation_ids)`
-
-	params := map[string]interface{}{
-		"name_pattern":  "%" + name + "%",
-		"states":        pq.Array(issueStates),
-		"min_date":      minDate,
-		"situation_ids": pq.Array(situationIDs),
-	}
-
-	rows, err := r.conn.NamedQuery(query, params)
-	if err != nil {
-		return 0, err
-	}
-	defer rows.Close()
-
-	var count int
-	if rows.Next() {
-		err := rows.Scan(&count)
-		if err != nil {
-			return 0, err
-		}
-	}
-	return count, nil
+	return issue, total, nil
 }
