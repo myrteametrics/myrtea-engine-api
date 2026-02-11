@@ -89,6 +89,7 @@ func initServices() {
 func stopServices() {
 	tasker.T().StopBatchProcessor()
 	scheduler.S().C.Stop()
+	scheduler.BM().Stop()
 }
 
 func initNotifier() {
