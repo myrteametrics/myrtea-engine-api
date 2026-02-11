@@ -14,18 +14,18 @@ import (
 
 // BoostAction represents a pending boost or revert action for a job
 type BoostAction struct {
-	JobID     string    `json:"jobId"`
-	CreatedAt time.Time `json:"createdAt"`
-	Read      bool      `json:"read"`
+	JobID     string    `json:"jobId"`     // Deterministic job ID
+	CreatedAt time.Time `json:"createdAt"` // When the action was created
+	Read      bool      `json:"read"`      // Whether the action has been acknowledged
 }
 
 // BoostManager is an in-memory service that tracks which jobs need to be boosted or reverted
 type BoostManager struct {
 	mu         sync.RWMutex
-	boostList  map[string]*BoostAction
-	revertList map[string]*BoostAction
-	ttl        time.Duration
-	stopChan   chan struct{}
+	boostList  map[string]*BoostAction // Jobs that should be boosted
+	revertList map[string]*BoostAction // Jobs that should revert to normal
+	ttl        time.Duration           // Time-to-live for actions
+	stopChan   chan struct{}           // Stop signal for cleanup goroutine
 }
 
 var (

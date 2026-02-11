@@ -258,7 +258,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
 						EnableDependsOn:     sh.EnableDependsOn,
 						DependsOnParameters: sh.DependsOnParameters,
-						BoosInfo:            agg.Boost,
+						BoostInfo:           agg.Boost,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -308,7 +308,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
 						EnableDependsOn:     sh.EnableDependsOn,
 						DependsOnParameters: sh.DependsOnParameters,
-						BoosInfo:            agg.Boost,
+						BoostInfo:           agg.Boost,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -547,8 +547,8 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
 		} else {
-			if situationToUpdate.BoosInfo != nil {
-				BM().Evaluate(metadatas, *situationToUpdate.BoosInfo)
+			if situationToUpdate.BoostInfo != nil {
+				BM().Evaluate(metadatas, *situationToUpdate.BoostInfo)
 			}
 		}
 		// zap.L().Sugar().Info("insert new situation", historySituationNew)
