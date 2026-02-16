@@ -15,6 +15,7 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/handler"
 	oidcAuth "github.com/myrteametrics/myrtea-engine-api/v5/internal/router/oidc"
 	plugin "github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 	httputil2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	ttlcache "github.com/myrteametrics/myrtea-sdk/v5/cache"
 	"github.com/myrteametrics/myrtea-sdk/v5/postgres"
@@ -110,13 +111,24 @@ func New(config Config, services Services) *chi.Mux {
 	r.Use(chimiddleware.RealIP)
 	r.Use(chimiddleware.StripSlashes)
 	r.Use(chimiddleware.RedirectSlashes)
-	if config.Production {
-		r.Use(sdkrouter.CustomZapLogger)
-	} else {
-		r.Use(sdkrouter.CustomLogger)
-	}
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Timeout(60 * time.Second))
+
+	if config.Production && config.Security {
+		// we use a custom zap logger to enrich logs with user information when available
+		sdkrouter.RegisterZapFieldEnricher(func(r *http.Request) []zap.Field {
+			userCtx := r.Context().Value(httputil2.ContextKeyUser)
+			if userCtx != nil {
+				user, ok := userCtx.(users.UserWithPermissions)
+				if ok {
+					return []zap.Field{
+						zap.String("myrtea_user", user.Login),
+					}
+				}
+			}
+			return nil
+		})
+	}
 
 	// Determine JWT signing key based on configuration
 	var signingKey []byte
@@ -137,9 +149,18 @@ func New(config Config, services Services) *chi.Mux {
 
 	dynamicMiddleware := dynamicAuthMiddleware(config, jwtAuth, services.ApiKeyHandler.Cache)
 
+	applyLogger := func(rg chi.Router) {
+		if config.Production {
+			rg.Use(sdkrouter.CustomZapLogger)
+		} else {
+			rg.Use(sdkrouter.CustomLogger)
+		}
+	}
+
 	routes := func(r chi.Router) {
 		// Public routes
 		r.Group(func(rg chi.Router) {
+			applyLogger(rg)
 			rg.Use(SwaggerUICustomizationMiddleware)
 			rg.Get("/isalive", handler.IsAlive)
 			rg.Get("/swagger/*", httpSwagger.WrapHandler)
@@ -166,6 +187,7 @@ func New(config Config, services Services) *chi.Mux {
 			if config.Security {
 				rg.Use(dynamicMiddleware)
 			}
+			applyLogger(rg)
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 
 			rg.HandleFunc("/log_level", config.LogLevel.ServeHTTP)
