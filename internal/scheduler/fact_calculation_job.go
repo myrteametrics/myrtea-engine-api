@@ -146,11 +146,12 @@ func (job FactCalculationJob) Run() {
 
 // ExternalAggregate contains all information to store a new aggregat in postgresql
 type ExternalAggregate struct {
-	FactID              int64       `json:"factId"`
-	SituationID         int64       `json:"situationId"`
-	SituationInstanceID int64       `json:"situationInstanceId"`
-	Time                time.Time   `json:"time"`
-	Value               reader.Item `json:"value"`
+	FactID              int64            `json:"factId"`
+	SituationID         int64            `json:"situationId"`
+	SituationInstanceID int64            `json:"situationInstanceId"`
+	Time                time.Time        `json:"time"`
+	Value               reader.Item      `json:"value"`
+	Boost               *model.BoostInfo `json:"boost,omitempty"`
 }
 
 // ReceiveAndPersistFacts process a slice of ExternalAggregates and trigger all standard fact-situation-rule process
@@ -257,6 +258,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
 						EnableDependsOn:     sh.EnableDependsOn,
 						DependsOnParameters: sh.DependsOnParameters,
+						BoostInfo:           agg.Boost,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -306,6 +308,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
 						EnableDependsOn:     sh.EnableDependsOn,
 						DependsOnParameters: sh.DependsOnParameters,
+						BoostInfo:           agg.Boost,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -543,6 +546,10 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
+		} else {
+			if situationToUpdate.BoostInfo != nil {
+				JBM().Evaluate(metadatas, *situationToUpdate.BoostInfo)
+			}
 		}
 		// zap.L().Sugar().Info("insert new situation", historySituationNew)
 
