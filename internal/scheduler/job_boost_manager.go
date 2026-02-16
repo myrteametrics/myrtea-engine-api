@@ -14,42 +14,42 @@ import (
 )
 
 // BoostAction represents a pending boost or revert action for a job
-type BoostAction struct {
+type JobBoostAction struct {
 	JobID     string    `json:"jobId"`     // Deterministic job ID
 	CreatedAt time.Time `json:"createdAt"` // When the action was created
 	ExpiresAt time.Time `json:"expiresAt"` // When the action will expire (CreatedAt + TTL)
 }
 
-// BoostManager is an in-memory service that tracks which jobs need to be boosted or reverted
-type BoostManager struct {
+// JobBoostManager is an in-memory service that tracks which jobs need to be boosted or reverted
+type JobBoostManager struct {
 	mu         sync.RWMutex
-	boostList  map[string]*BoostAction // Jobs that should be boosted
-	revertList map[string]*BoostAction // Jobs that should revert to normal
-	ttl        time.Duration           // Time-to-live for actions
-	ctx        context.Context         // Application context
-	cancel     context.CancelFunc      // Cancel function for cleanup
-	wg         sync.WaitGroup          // Wait group for graceful shutdown
+	boostList  map[string]*JobBoostAction // Jobs that should be boosted
+	revertList map[string]*JobBoostAction // Jobs that should revert to normal
+	ttl        time.Duration              // Time-to-live for actions
+	ctx        context.Context            // Application context
+	cancel     context.CancelFunc         // Cancel function for cleanup
+	wg         sync.WaitGroup             // Wait group for graceful shutdown
 }
 
 var (
 	_globalBoostManagerMu sync.RWMutex
-	_globalBoostManager   *BoostManager
+	_globalBoostManager   *JobBoostManager
 )
 
-// BM returns the global BoostManager singleton
-func BM() *BoostManager {
+// JBM returns the global JobBoostManager singleton
+func JBM() *JobBoostManager {
 	_globalBoostManagerMu.RLock()
 	defer _globalBoostManagerMu.RUnlock()
 	return _globalBoostManager
 }
 
-// ReplaceGlobalBoostManager sets the global BoostManager singleton
-func ReplaceGlobalBoostManager(bm *BoostManager) func() {
+// ReplaceGlobalJobBoostManager sets the global JobBoostManager singleton
+func ReplaceGlobalJobBoostManager(bm *JobBoostManager) func() {
 	_globalBoostManagerMu.Lock()
 	defer _globalBoostManagerMu.Unlock()
 
 	if _globalBoostManager != nil {
-		zap.L().Info("Stopping previous BoostManager...")
+		zap.L().Info("Stopping previous JobBoostManager...")
 		_globalBoostManager.Stop()
 	}
 
@@ -58,11 +58,11 @@ func ReplaceGlobalBoostManager(bm *BoostManager) func() {
 
 	bm.Start()
 
-	return func() { ReplaceGlobalBoostManager(prev) }
+	return func() { ReplaceGlobalJobBoostManager(prev) }
 }
 
-// NewBoostManager creates a new BoostManager with the given TTL
-func NewBoostManager() *BoostManager {
+// NewJobBoostManager creates a new JobBoostManager with the given TTL
+func NewJobBoostManager() *JobBoostManager {
 	ttl := viper.GetDuration("BOOST_LIFETIME")
 	if ttl == 0 {
 		ttl = 5 * time.Minute
@@ -71,9 +71,9 @@ func NewBoostManager() *BoostManager {
 
 	boostCtx, cancel := context.WithCancel(context.Background())
 
-	bm := &BoostManager{
-		boostList:  make(map[string]*BoostAction),
-		revertList: make(map[string]*BoostAction),
+	bm := &JobBoostManager{
+		boostList:  make(map[string]*JobBoostAction),
+		revertList: make(map[string]*JobBoostAction),
 		ttl:        ttl,
 		ctx:        boostCtx,
 		cancel:     cancel,
@@ -83,16 +83,16 @@ func NewBoostManager() *BoostManager {
 }
 
 // Start begins the background cleanup goroutine
-func (bm *BoostManager) Start() {
+func (bm *JobBoostManager) Start() {
 	bm.wg.Add(1)
 	go bm.cleanupRoutine()
-	zap.L().Info("BoostManager started",
+	zap.L().Info("JobBoostManager started",
 		zap.Duration("ttl", bm.ttl),
 		zap.String("cleanupInterval", "1m"))
 }
 
 // cleanupRoutine runs the periodic cleanup in a goroutine
-func (bm *BoostManager) cleanupRoutine() {
+func (bm *JobBoostManager) cleanupRoutine() {
 	defer bm.wg.Done()
 
 	cleanupInterval := 1 * time.Minute
@@ -106,7 +106,7 @@ func (bm *BoostManager) cleanupRoutine() {
 		case <-ticker.C:
 			bm.cleanup()
 		case <-bm.ctx.Done():
-			zap.L().Info("BoostManager cleanup routine stopping due to context cancellation")
+			zap.L().Info("JobBoostManager cleanup routine stopping due to context cancellation")
 			bm.cleanup()
 			return
 		}
@@ -114,8 +114,8 @@ func (bm *BoostManager) cleanupRoutine() {
 }
 
 // Stop stops the background cleanup goroutine and waits for it to finish
-func (bm *BoostManager) Stop() {
-	zap.L().Info("Stopping BoostManager...")
+func (bm *JobBoostManager) Stop() {
+	zap.L().Info("Stopping JobBoostManager...")
 
 	// Cancel the context to signal goroutine to stop
 	bm.cancel()
@@ -123,11 +123,11 @@ func (bm *BoostManager) Stop() {
 	// Wait for cleanup routine to finish
 	bm.wg.Wait()
 
-	zap.L().Info("BoostManager stopped gracefully")
+	zap.L().Info("JobBoostManager stopped gracefully")
 }
 
 // Evaluate processes metadata and boost info to decide if a job should be boosted or reverted
-func (bm *BoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo model.BoostInfo) {
+func (bm *JobBoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo model.BoostInfo) {
 	var value string
 	for _, md := range metadatas {
 		v, ok := md.Value.(string)
@@ -166,7 +166,7 @@ func (bm *BoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo model.
 }
 
 // addToBoostList removes the job from both lists then adds it to the boost list
-func (bm *BoostManager) addToBoostList(jobID string) {
+func (bm *JobBoostManager) addToBoostList(jobID string) {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 
@@ -174,7 +174,7 @@ func (bm *BoostManager) addToBoostList(jobID string) {
 	delete(bm.revertList, jobID)
 
 	now := time.Now()
-	bm.boostList[jobID] = &BoostAction{
+	bm.boostList[jobID] = &JobBoostAction{
 		JobID:     jobID,
 		CreatedAt: now,
 		ExpiresAt: now.Add(bm.ttl),
@@ -186,7 +186,7 @@ func (bm *BoostManager) addToBoostList(jobID string) {
 }
 
 // addToRevertList removes the job from both lists then adds it to the revert list
-func (bm *BoostManager) addToRevertList(jobID string) {
+func (bm *JobBoostManager) addToRevertList(jobID string) {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 
@@ -194,7 +194,7 @@ func (bm *BoostManager) addToRevertList(jobID string) {
 	delete(bm.revertList, jobID)
 
 	now := time.Now()
-	bm.revertList[jobID] = &BoostAction{
+	bm.revertList[jobID] = &JobBoostAction{
 		JobID:     jobID,
 		CreatedAt: now,
 		ExpiresAt: now.Add(bm.ttl),
@@ -206,11 +206,11 @@ func (bm *BoostManager) addToRevertList(jobID string) {
 }
 
 // GetBoostList returns a copy of the current boost list (only non-read items)
-func (bm *BoostManager) GetBoostList() []BoostAction {
+func (bm *JobBoostManager) GetBoostList() []JobBoostAction {
 	bm.mu.RLock()
 	defer bm.mu.RUnlock()
 
-	result := make([]BoostAction, 0, len(bm.boostList))
+	result := make([]JobBoostAction, 0, len(bm.boostList))
 	for _, action := range bm.boostList {
 		result = append(result, *action)
 	}
@@ -218,11 +218,11 @@ func (bm *BoostManager) GetBoostList() []BoostAction {
 }
 
 // GetRevertList returns a copy of the current revert list (only non-read items)
-func (bm *BoostManager) GetRevertList() []BoostAction {
+func (bm *JobBoostManager) GetRevertList() []JobBoostAction {
 	bm.mu.RLock()
 	defer bm.mu.RUnlock()
 
-	result := make([]BoostAction, 0, len(bm.revertList))
+	result := make([]JobBoostAction, 0, len(bm.revertList))
 	for _, action := range bm.revertList {
 		result = append(result, *action)
 	}
@@ -230,7 +230,7 @@ func (bm *BoostManager) GetRevertList() []BoostAction {
 }
 
 // AcknowledgeBoost marks a job in the boost list as read and removes it
-func (bm *BoostManager) AcknowledgeBoost(jobID string) error {
+func (bm *JobBoostManager) AcknowledgeBoost(jobID string) error {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 
@@ -246,7 +246,7 @@ func (bm *BoostManager) AcknowledgeBoost(jobID string) error {
 }
 
 // AcknowledgeRevert marks a job in the revert list as read and removes it
-func (bm *BoostManager) AcknowledgeRevert(jobID string) error {
+func (bm *JobBoostManager) AcknowledgeRevert(jobID string) error {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 
@@ -262,7 +262,7 @@ func (bm *BoostManager) AcknowledgeRevert(jobID string) error {
 }
 
 // cleanup removes expired items (based on individual ExpiresAt) from both lists
-func (bm *BoostManager) cleanup() {
+func (bm *JobBoostManager) cleanup() {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 
@@ -314,12 +314,12 @@ func (bm *BoostManager) cleanup() {
 }
 
 // IsExpired checks if an action has expired
-func (action *BoostAction) IsExpired() bool {
+func (action *JobBoostAction) IsExpired() bool {
 	return time.Now().After(action.ExpiresAt)
 }
 
 // TimeUntilExpiration returns the duration until this action expires
-func (action *BoostAction) TimeUntilExpiration() time.Duration {
+func (action *JobBoostAction) TimeUntilExpiration() time.Duration {
 	remaining := action.ExpiresAt.Sub(time.Now())
 	if remaining < 0 {
 		return 0

@@ -275,7 +275,7 @@ MAX_CONFIG_HISTORY_RECORDS = 100
 API_KEY_CACHE_DURATION = "1h"  # Example: "168h" (1 week)
 
 
-# Specify the time-to-live for boost and revert actions in the BoostManager.
+# Specify the time-to-live for boost and revert actions in the JobBoostManager.
 # Actions older than this duration will be automatically cleaned up by the background routine.
 # This prevents memory buildup from unacknowledged or expired boost/revert actions.
 # Default value: 5m (5 minutes)

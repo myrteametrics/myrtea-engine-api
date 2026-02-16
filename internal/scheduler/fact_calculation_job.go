@@ -548,7 +548,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			zap.L().Error("", zap.Error(err))
 		} else {
 			if situationToUpdate.BoostInfo != nil {
-				BM().Evaluate(metadatas, *situationToUpdate.BoostInfo)
+				JBM().Evaluate(metadatas, *situationToUpdate.BoostInfo)
 			}
 		}
 		// zap.L().Sugar().Info("insert new situation", historySituationNew)

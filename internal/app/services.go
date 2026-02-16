@@ -51,7 +51,7 @@ func initRepositories() {
 	fact.ReplaceGlobals(fact.NewPostgresRepository(dbClient))
 	situation2.ReplaceGlobals(situation2.NewPostgresRepository(dbClient))
 	scheduler.ReplaceGlobalRepository(scheduler.NewPostgresRepository(dbClient))
-	scheduler.ReplaceGlobalBoostManager(scheduler.NewBoostManager())
+	scheduler.ReplaceGlobalJobBoostManager(scheduler.NewJobBoostManager())
 	notification.ReplaceGlobals(notification.NewPostgresRepository(dbClient))
 	issues.ReplaceGlobals(issues.NewPostgresRepository(dbClient))
 	rootcause.ReplaceGlobals(rootcause.NewPostgresRepository(dbClient))
@@ -89,7 +89,7 @@ func initServices() {
 func stopServices() {
 	tasker.T().StopBatchProcessor()
 	scheduler.S().C.Stop()
-	scheduler.BM().Stop()
+	scheduler.JBM().Stop()
 }
 
 func initNotifier() {
