@@ -208,12 +208,14 @@ func New(config Config, services Services) *chi.Mux {
 				// Same dynamic middleware as admin routes
 				rg.Use(dynamicMiddleware)
 			}
+			applyLogger(rg)
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 			rg.Mount("/admin", adminRouter(services))
 		})
 
 		// System intra service Protection routes
 		r.Group(func(rg chi.Router) {
+			applyLogger(rg)
 			rg.Use(chimiddleware.SetHeader("Content-Type", "application/json"))
 			rg.Mount("/service", serviceRouter(services))
 		})
