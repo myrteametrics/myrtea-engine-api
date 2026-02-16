@@ -950,16 +950,17 @@ func (r *PostgresRepository) GetAllTemplateInstancesByRuleID(ruleID int64, parse
 }
 
 func (r *PostgresRepository) GetSituationsWithInstances(parseParameters ...bool) ([]SituationWithInstances, error) {
-	rows, err := r.conn.NamedQuery(
-		`SELECT id, definition FROM situation_definition_v1 ORDER BY id`,
-		map[string]interface{}{},
-	)
+	parse := shouldParseForEvaluation(parseParameters...)
+
+	rows, err := r.newStatement().
+		Select("id", "definition").
+		From("situation_definition_v1").
+		OrderBy("id").
+		Query()
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
-	parse := shouldParseForEvaluation(parseParameters...)
 
 	situationIDs := make([]int64, 0)
 	situationMap := make(map[int64]*SituationWithInstances)
