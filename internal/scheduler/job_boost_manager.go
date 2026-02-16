@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// BoostAction represents a pending boost or revert action for a job
+// JobBoostAction represents a pending boost or revert action for a job
 type JobBoostAction struct {
 	JobID     string    `json:"jobId"`     // Deterministic job ID
 	CreatedAt time.Time `json:"createdAt"` // When the action was created

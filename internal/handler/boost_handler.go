@@ -16,7 +16,7 @@ import (
 //	@Description	Returns all jobs that need to be boosted
 //	@Tags			Service
 //	@Produce		json
-//	@Success		200	{array}		scheduler.BoostAction
+//	@Success		200	{array}		scheduler.JobBoostAction
 //	@Failure		403	{object}	httputil.APIError	"Forbidden"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
@@ -33,7 +33,7 @@ func GetBoostList(w http.ResponseWriter, r *http.Request) {
 //	@Description	Returns all jobs that need to revert to normal frequency
 //	@Tags			Service
 //	@Produce		json
-//	@Success		200	{array}		scheduler.BoostAction
+//	@Success		200	{array}		scheduler.JobBoostAction
 //	@Failure		403	{object}	httputil.APIError	"Forbidden"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
