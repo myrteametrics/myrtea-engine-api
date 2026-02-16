@@ -387,3 +387,49 @@ func DeleteSituation(w http.ResponseWriter, r *http.Request) {
 
 	httputil.OK(w, r)
 }
+
+// GetSituationsFull godoc
+//
+// @Id          GetSituationsFull
+// @Summary     Get situations with template instances and parameters (no tags)
+// @Description Returns situations + instances + parameters, without tags aggregation
+// @Tags        Situations
+// @Produce     json
+// @Security    Bearer
+// @Security    ApiKeyAuth
+// @Param       parseParameters query bool false "Evaluate parameters expressions (optional)"
+// @Success     200 {array} situation.SituationWithInstances "situations full"
+// @Failure     500 {object} httputil.APIError "Internal Server Error"
+// @Router      /engine/situations/full [get]
+func GetSituationsFull(w http.ResponseWriter, r *http.Request) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeSituation, permissions.All, permissions.ActionList)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	parseParameters := false
+	if v := r.URL.Query().Get("parseParameters"); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			parseParameters = b
+		}
+	}
+
+	var (
+		situations []situation2.SituationWithInstances
+		err        error
+	)
+	if parseParameters {
+		situations, err = situation2.R().GetSituationsWithInstances(true)
+	} else {
+		situations, err = situation2.R().GetSituationsWithInstances(false)
+	}
+
+	if err != nil {
+		zap.L().Warn("Cannot retrieve situations", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	render.JSON(w, r, situations)
+}

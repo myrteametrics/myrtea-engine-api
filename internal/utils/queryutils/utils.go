@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
@@ -54,4 +55,30 @@ func AppendSearchOptions(query string, params map[string]interface{}, options mo
 	}
 
 	return query, params, nil
+}
+
+// AppendSearchOptionsToBuilder applies sort, limit, and offset options to a Squirrel SelectBuilder.
+func AppendSearchOptionsToBuilder(builder sq.SelectBuilder, options model.SearchOptions, sortFieldPrefix string) (sq.SelectBuilder, error) {
+
+	for _, sortBy := range options.SortBy {
+		if !securityCheckSQLField(sortBy.Field) {
+			return builder, fmt.Errorf("unsafe sort field detected : '%s'", sortBy.Field)
+		}
+		orderClause := fmt.Sprintf("%s.%s %s", sortFieldPrefix, sortBy.Field, strings.ToUpper(sortBy.Order.String()))
+		builder = builder.OrderBy(orderClause)
+	}
+
+	if options.Limit > 0 {
+		builder = builder.Limit(uint64(options.Limit))
+	} else {
+		builder = builder.Limit(uint64(defaultLimit))
+	}
+
+	if options.Offset > 0 {
+		builder = builder.Offset(uint64(options.Offset))
+	} else {
+		builder = builder.Offset(uint64(defaultOffset))
+	}
+
+	return builder, nil
 }

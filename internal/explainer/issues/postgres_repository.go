@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/queryutils"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/users"
 
@@ -766,4 +767,101 @@ func (r *PostgresRepository) DeleteOldIssueResolutions(ts time.Time) error {
 	zap.L().Info("Auto purge of the table issue_resolution_v1 ", zap.Int64("Number of rows deleted", affectedRows))
 
 	return nil
+}
+
+// SearchByName searches issues by name with state filter, limited to 2 years
+func (r *PostgresRepository) SearchByName(name string, issueStates []string, options model.SearchOptions) ([]model.Issue, int, error) {
+	issues := make([]model.Issue, 0)
+	twoYearsAgo := time.Now().AddDate(-2, 0, 0)
+
+	builder := sq.Select(
+		"i.id", "i.key", "i.name", "i.level", "i.situation_history_id",
+		"i.situation_id", "situation_instance_id", "i.situation_date",
+		"i.expiration_date", "i.rule_data", "i.state", "i.created_at", "i.last_modified",
+		"i.detection_rating_avg", "i.assigned_at", "i.assigned_to", "i.closed_at", "i.closed_by", "i.comment",
+		"COUNT(*) OVER() AS total_count",
+	).From("issues_v1 as i").
+		Where(sq.ILike{"i.name": "%" + name + "%"}).
+		Where("i.state = ANY(?)", pq.Array(issueStates)).
+		Where(sq.GtOrEq{"i.created_at": twoYearsAgo})
+
+	if len(options.SortBy) == 0 {
+		options.SortBy = []model.SortOption{{Field: "created_at", Order: model.Desc}}
+	}
+
+	builder, err := queryutils.AppendSearchOptionsToBuilder(builder, options, "i")
+	if err != nil {
+		return nil, 0, err
+	}
+
+	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.conn.Queryx(query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var total int
+	for rows.Next() {
+		issue, rowTotal, err := scanIssueWithTotal(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		issues = append(issues, issue)
+		total = rowTotal
+	}
+
+	return issues, total, nil
+}
+
+func scanIssueWithTotal(rows *sqlx.Rows) (model.Issue, int, error) {
+	var ruleData string
+	var issueStateString string
+	var issueLevelString string
+	var issue model.Issue
+	var total int
+
+	err := rows.Scan(
+		&issue.ID,
+		&issue.Key,
+		&issue.Name,
+		&issueLevelString,
+		&issue.SituationHistoryID,
+		&issue.SituationID,
+		&issue.TemplateInstanceID,
+		&issue.SituationTS,
+		&issue.ExpirationTS,
+		&ruleData,
+		&issueStateString,
+		&issue.CreationTS,
+		&issue.LastModificationTS,
+		&issue.DetectionRatingAvg,
+		&issue.AssignedAt,
+		&issue.AssignedTo,
+		&issue.ClosedAt,
+		&issue.CloseBy,
+		&issue.Comment,
+		&total,
+	)
+	if err != nil {
+		return model.Issue{}, 0, err
+	}
+
+	issue.State = model.ToIssueState(issueStateString)
+	issue.Level = model.ToIssueLevel(issueLevelString)
+
+	ruleData = strings.ReplaceAll(ruleData, `"errors":[{}]`, `"errors":[]`)
+	ruleData = strings.ReplaceAll(ruleData, `"errors": [{}]`, `"errors": []`)
+
+	err = json.Unmarshal([]byte(ruleData), &issue.Rule)
+	if err != nil {
+		zap.L().Error("Couldn't unmarshall the issue rule:", zap.Error(err))
+		return model.Issue{}, 0, err
+	}
+
+	return issue, total, nil
 }
