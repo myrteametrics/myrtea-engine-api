@@ -86,6 +86,7 @@ func engineRouter(services Services) http.Handler {
 	r.Get("/situations", handler.GetSituations)
 
 	r.Get("/situations/overview", handler.GetSituationOverview)
+	r.Get("/situations/full", handler.GetSituationsFull)
 
 	r.Get("/situations/{id}", handler.GetSituation)
 	r.Post("/situations/validate", handler.ValidateSituation)
@@ -149,6 +150,7 @@ func engineRouter(services Services) http.Handler {
 	r.Post("/issues/{id}/close", handler.PostIssueCloseWithoutFeedback)
 	r.Post("/issues/{id}/detection/feedback", handler.PostIssueDetectionFeedback)
 	r.Put("/issues/{id}/comment", handler.UpdateIssueComment)
+	r.Get("/issues/search", handler.SearchIssuesByName)
 
 	r.Post("/scheduler/start", handler.StartScheduler)
 	r.Post("/scheduler/trigger", handler.TriggerJobSchedule)

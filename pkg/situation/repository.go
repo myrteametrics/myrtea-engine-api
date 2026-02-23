@@ -36,6 +36,7 @@ type Repository interface {
 	GetAllTemplateInstancesByRuleID(ruleID int64, parseParameters ...bool) (map[int64]TemplateInstance, error)
 
 	GetSituationOverview() ([]SituationOverview, error)
+	GetSituationsWithInstances(parseParameters ...bool) ([]SituationWithInstances, error)
 }
 
 var (

@@ -91,6 +91,11 @@ type TemplateInstance struct {
 	DependsOnParameters map[string]string      `json:"dependsOnParameters"`
 }
 
+type SituationWithInstances struct {
+	Situation Situation          `json:"situation"`
+	Instances []TemplateInstance `json:"instances"`
+}
+
 // IsValid checks if an situation template definition is valid and has no missing mandatory fields
 func (s TemplateInstance) IsValid() (bool, error) {
 	if s.Name == "" {
