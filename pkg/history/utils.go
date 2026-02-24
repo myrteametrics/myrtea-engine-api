@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/search"
@@ -188,6 +189,71 @@ func EvaluateExpressionFacts(expressionFacts []situation2.ExpressionFact, data m
 	return expressionFactsEvaluated
 }
 
+// EnrichWithCalendarPeriodStatus enriches each SituationHistoryRecord with two calendar period flags:
+//
+//   - InCalendarPeriod: historical check — was the record's own timestamp inside the calendar period?
+//     true  => the record timestamp falls within the calendar period
+//     false => the record timestamp is outside the calendar period, or no calendar is defined
+//
+//   - IsCurrentlyOutsideCalendarPeriod: real-time check — at the moment of retrieval (time.Now()),
+//     is the current time outside the calendar period?
+//     true  => we are currently outside the calendar period
+//     false => we are currently inside the calendar period, or no calendar is defined
+//
+// Both evaluations are performed in memory using the CBase cache,
+// without triggering any additional database query.
+func EnrichWithCalendarPeriodStatus(result search.QueryResult) search.QueryResult {
+	now := time.Now()
+
+	for i := range result {
+		for j := range result[i].Situations {
+
+			sit := result[i].Situations[j]
+
+			// Default values: not in period historically, not outside period currently
+			inPeriod := false
+			currentlyOutside := false
+
+			if sit.Calendar != nil {
+				// Historical check: was the record timestamp inside the calendar period?
+				_, period, err := calendar.CBase().InPeriodFromCalendarID(
+					sit.Calendar.Id,
+					sit.DateTime,
+				)
+				if err != nil {
+					zap.L().Warn(
+						"Cannot check historical calendar period",
+						zap.Int64("calendarId", sit.Calendar.Id),
+						zap.Error(err),
+					)
+				} else {
+					inPeriod = period
+				}
+
+				// Real-time check: is the current moment outside the calendar period?
+				_, nowInPeriod, err := calendar.CBase().InPeriodFromCalendarID(
+					sit.Calendar.Id,
+					now,
+				)
+				if err != nil {
+					zap.L().Warn(
+						"Cannot check current calendar period",
+						zap.Int64("calendarId", sit.Calendar.Id),
+						zap.Error(err),
+					)
+				} else {
+					currentlyOutside = !nowInPeriod
+				}
+			}
+
+			result[i].Situations[j].InCalendarPeriod = &inPeriod
+			result[i].Situations[j].IsCurrentlyOutsideCalendarPeriod = &currentlyOutside
+		}
+	}
+
+	return result
+}
+
 func getTodayTimeRange() (string, string) {
 	todayStartDate := time.Now().UTC().Truncate(24 * time.Hour)
 	todayStart := todayStartDate.Format("2006-01-02 15:04:05")
@@ -199,5 +265,4 @@ func getStartDate30DaysAgo() string {
 	now := time.Now().UTC()
 	thirtyDaysAgo := now.AddDate(0, 0, -30)
 	return thirtyDaysAgo.Format("2006-01-02 15:04:05")
-
 }

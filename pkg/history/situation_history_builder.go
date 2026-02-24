@@ -16,6 +16,10 @@ type GetHistorySituationsOptions struct {
 	DeleteBeforeTs       time.Time
 	FromTS               time.Time
 	ToTS                 time.Time
+	// WithCalendarPeriodStatus, if true, enriches each record with:
+	//   - InCalendarPeriod: historical check based on the record's own timestamp
+	//   - IsCurrentlyOutsideCalendarPeriod: real-time check at retrieval time (time.Now())
+	WithCalendarPeriodStatus bool
 }
 
 func (builder HistorySituationsBuilder) newStatement() sq.StatementBuilderType {
