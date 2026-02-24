@@ -23,11 +23,8 @@ type SituationHistoryRecord struct {
 	SituationInstanceID   int64                           `json:"situationInstanceId"`
 	SituationInstanceName string                          `json:"situationInstanceName"`
 	Calendar              *SituationHistoryCalendarRecord `json:"calendar,omitempty"`
-	// InCalendarPeriod indicates whether the historical record's timestamp falls within the calendar period.
-	InCalendarPeriod *bool `json:"inCalendarPeriod,omitempty"`
 	// IsCurrentlyOutsideCalendarPeriod indicates, at the time of retrieval (real-time), whether
-	// the current moment is outside the calendar period. Unlike InCalendarPeriod, this is not
-	// derived from the historical record's timestamp but from time.Now() at the moment of the request.
+	// the current moment is outside the calendar period. Evaluated using time.Now() at the moment of the request.
 	IsCurrentlyOutsideCalendarPeriod *bool                  `json:"isCurrentlyOutsideCalendarPeriod,omitempty"`
 	Parameters                       map[string]interface{} `json:"parameters,omitempty"`
 	ExpressionFacts                  map[string]interface{} `json:"expressionFacts,omitempty"`
