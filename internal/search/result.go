@@ -23,14 +23,21 @@ type SituationHistoryRecord struct {
 	SituationInstanceID   int64                           `json:"situationInstanceId"`
 	SituationInstanceName string                          `json:"situationInstanceName"`
 	Calendar              *SituationHistoryCalendarRecord `json:"calendar,omitempty"`
-	// IsCurrentlyOutsideCalendarPeriod indicates, at the time of retrieval (real-time), whether
-	// the current moment is outside the calendar period. Evaluated using time.Now() at the moment of the request.
-	IsCurrentlyOutsideCalendarPeriod *bool                  `json:"isCurrentlyOutsideCalendarPeriod,omitempty"`
-	Parameters                       map[string]interface{} `json:"parameters,omitempty"`
-	ExpressionFacts                  map[string]interface{} `json:"expressionFacts,omitempty"`
-	MetaData                         map[string]interface{} `json:"metaDatas,omitempty"`
-	Facts                            []FactHistoryRecord    `json:"facts,omitempty"`
-	DateTime                         time.Time              `json:"dateTime"`
+	// IsNowOutsideCalendar indicates, at retrieval time (real-time), whether the current moment
+	// is outside the situation's calendar period. Evaluated using time.Now().
+	IsNowOutsideCalendar *bool `json:"isNowOutsideCalendar,omitempty"`
+	// WereRulesOutsideCalendar indicates, at the record's own DateTime (historical), whether
+	// at least one rule had its calendar inactive at that moment.
+	// Explains why a record may have no metadata (rules skipped due to calendar).
+	WereRulesOutsideCalendar *bool `json:"wereRulesOutsideCalendar,omitempty"`
+	// RuleCalendarIDs holds the calendar IDs of the situation's rules, used internally for enrichment.
+	// Not serialized in the JSON response.
+	RuleCalendarIDs []int64                `json:"-"`
+	Parameters      map[string]interface{} `json:"parameters,omitempty"`
+	ExpressionFacts map[string]interface{} `json:"expressionFacts,omitempty"`
+	MetaData        map[string]interface{} `json:"metaDatas,omitempty"`
+	Facts           []FactHistoryRecord    `json:"facts,omitempty"`
+	DateTime        time.Time              `json:"dateTime"`
 }
 
 // FactHistoryRecord struct to represent a fact history record

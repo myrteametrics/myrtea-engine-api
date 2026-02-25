@@ -50,15 +50,15 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 		minDate = maxDate.Add(-1 * 60 * 24 * time.Hour)
 	}
 
-	withCalendarPeriodStatus := r.URL.Query().Get("withcalendarperiod") == "true"
+	includeCalendarStatus := r.URL.Query().Get("includeCalendarStatus") == "true"
 
 	options := history.GetHistorySituationsOptions{
-		SituationID:              situationID,
-		SituationInstanceIDs:     situationInstanceIDs,
-		ParameterFilters:         parameterFilters,
-		FromTS:                   minDate,
-		ToTS:                     maxDate,
-		WithCalendarPeriodStatus: withCalendarPeriodStatus,
+		SituationID:           situationID,
+		SituationInstanceIDs:  situationInstanceIDs,
+		ParameterFilters:      parameterFilters,
+		FromTS:                minDate,
+		ToTS:                  maxDate,
+		IncludeCalendarStatus: includeCalendarStatus,
 	}
 
 	return options, httputil.APIError{}, nil
@@ -77,7 +77,7 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 //	@Param			situationinstanceid	query	[]int	false	"situationinstanceid"
 //	@Param			maxdate				query	string	false	"time.Time"
 //	@Param			mindate				query	string	false	"time.Time"
-//	@Param			withcalendarperiod	query	bool	false	"if true, enriches each record with inCalendarPeriod (historical check) and isCurrentlyOutsideCalendarPeriod (real-time check at retrieval time)"
+//	@Param			includeCalendarStatus	query	bool	false	"if true, adds outsideCalendar (real-time: is the situation calendar currently inactive?) and rulesOffCalendar (historical: were any rule calendars inactive at the record timestamp?)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		search.QueryResult	"query result"
@@ -111,8 +111,9 @@ func SearchLast(w http.ResponseWriter, r *http.Request) {
 
 	result := history.ExtractHistoryDataSearch(historySituations, historySituationFacts, historyFacts)
 
-	if options.WithCalendarPeriodStatus {
-		result = history.EnrichWithCalendarPeriodStatus(result)
+	if options.IncludeCalendarStatus {
+		result = history.EnrichCalendarStatus(result)
+		result = history.EnrichRuleCalendarStatus(result)
 	}
 
 	httputil.JSON(w, r, result)
@@ -132,7 +133,7 @@ func SearchLast(w http.ResponseWriter, r *http.Request) {
 //	@Param			maxdate				query	string	false	"time.Time"
 //	@Param			mindate				query	string	false	"time.Time"
 //	@Param			interval			query	string	true	"year | quarter | month | week | day | hour | minute"
-//	@Param			withcalendarperiod	query	bool	false	"if true, enriches each record with inCalendarPeriod (historical check) and isCurrentlyOutsideCalendarPeriod (real-time check at retrieval time)"
+//	@Param			includeCalendarStatus	query	bool	false	"if true, adds outsideCalendar (real-time: is the situation calendar currently inactive?) and rulesOffCalendar (historical: were any rule calendars inactive at the record timestamp?)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		search.QueryResult	"query result"
@@ -173,8 +174,9 @@ func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 
 	result := history.ExtractHistoryDataSearch(historySituations, historySituationFacts, historyFacts)
 
-	if options.WithCalendarPeriodStatus {
-		result = history.EnrichWithCalendarPeriodStatus(result)
+	if options.IncludeCalendarStatus {
+		result = history.EnrichCalendarStatus(result)
+		result = history.EnrichRuleCalendarStatus(result)
 	}
 
 	httputil.JSON(w, r, result)
@@ -195,7 +197,7 @@ func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 //	@Param			mindate				query	string	false	"time.Time"
 //	@Param			referencedate		query	string	true	"time.Time"
 //	@Param			interval			query	string	true	"time.Duration"
-//	@Param			withcalendarperiod	query	bool	false	"if true, enriches each record with inCalendarPeriod (historical check) and isCurrentlyOutsideCalendarPeriod (real-time check at retrieval time)"
+//	@Param			includeCalendarStatus	query	bool	false	"if true, adds outsideCalendar (real-time: is the situation calendar currently inactive?) and rulesOffCalendar (historical: were any rule calendars inactive at the record timestamp?)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		search.QueryResult	"query result"
@@ -248,8 +250,9 @@ func SearchLastByCustomInterval(w http.ResponseWriter, r *http.Request) {
 
 	result := history.ExtractHistoryDataSearch(historySituations, historySituationFacts, historyFacts)
 
-	if options.WithCalendarPeriodStatus {
-		result = history.EnrichWithCalendarPeriodStatus(result)
+	if options.IncludeCalendarStatus {
+		result = history.EnrichCalendarStatus(result)
+		result = history.EnrichRuleCalendarStatus(result)
 	}
 
 	httputil.JSON(w, r, result)

@@ -102,6 +102,10 @@ func buildSituationHistoryRecord(historySituation HistorySituationsV4, mapFacts 
 		}
 	}
 
+	if len(historySituation.RuleCalendarIDs) > 0 {
+		situationRecord.RuleCalendarIDs = historySituation.RuleCalendarIDs
+	}
+
 	return situationRecord
 }
 
@@ -189,43 +193,67 @@ func EvaluateExpressionFacts(expressionFacts []situation2.ExpressionFact, data m
 	return expressionFactsEvaluated
 }
 
-// EnrichWithCalendarPeriodStatus enriches each SituationHistoryRecord with the
-// IsCurrentlyOutsideCalendarPeriod flag.
+// EnrichCalendarStatus enriches each SituationHistoryRecord with IsNowOutsideCalendar.
 //
-// This is a real-time check performed at retrieval time using time.Now():
-//   - true  => we are currently outside the calendar period
-//   - false => we are currently inside the calendar period, or no calendar is defined
-//
-// The evaluation is performed in memory using the CBase cache,
-// without triggering any additional database query.
-func EnrichWithCalendarPeriodStatus(result search.QueryResult) search.QueryResult {
+// Real-time check using time.Now():
+//   - true  => current moment is outside the situation's calendar period
+//   - false => inside the period, or no calendar defined
+func EnrichCalendarStatus(result search.QueryResult) search.QueryResult {
 	now := time.Now()
 
 	for i := range result {
 		for j := range result[i].Situations {
-
 			sit := result[i].Situations[j]
 
-			// Default: not outside period (no calendar defined)
-			currentlyOutside := false
+			outsideCalendar := false
 
 			if sit.Calendar != nil {
-				_, nowInPeriod, err := calendar.CBase().InPeriodFromCalendarID(
-					sit.Calendar.Id,
-					now,
-				)
+				_, inPeriod, err := calendar.CBase().InPeriodFromCalendarID(sit.Calendar.Id, now)
 				if err != nil {
-					zap.L().Warn(
-						"Cannot check current calendar period",
+					zap.L().Warn("Cannot check current calendar period",
 						zap.Int64("calendarId", sit.Calendar.Id),
 						zap.Error(err),
 					)
 				} else {
-					currentlyOutside = !nowInPeriod
+					outsideCalendar = !inPeriod
 				}
 			}
 
-			result[i].Situations[j].IsCurrentlyOutsideCalendarPeriod = &currentlyOutside
+			result[i].Situations[j].IsNowOutsideCalendar = &outsideCalendar
+		}
+	}
+
+	return result
+}
+
+// EnrichRuleCalendarStatus enriches each SituationHistoryRecord with WereRulesOutsideCalendar.
+//
+// Historical check at each record's own DateTime:
+//   - true  => at record time, at least one rule calendar was inactive (explains missing metadata)
+//   - false => all rule calendars were active, or no rule calendars defined
+func EnrichRuleCalendarStatus(result search.QueryResult) search.QueryResult {
+	for i := range result {
+		for j := range result[i].Situations {
+			sit := result[i].Situations[j]
+
+			rulesOff := false
+
+			for _, calID := range sit.RuleCalendarIDs {
+				_, inPeriod, err := calendar.CBase().InPeriodFromCalendarID(calID, sit.DateTime)
+				if err != nil {
+					zap.L().Warn("Cannot check rule calendar period",
+						zap.Int64("calendarId", calID),
+						zap.Error(err),
+					)
+					continue
+				}
+				if !inPeriod {
+					rulesOff = true
+					break
+				}
+			}
+
+			result[i].Situations[j].WereRulesOutsideCalendar = &rulesOff
 		}
 	}
 

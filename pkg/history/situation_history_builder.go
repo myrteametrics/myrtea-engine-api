@@ -16,10 +16,10 @@ type GetHistorySituationsOptions struct {
 	DeleteBeforeTs       time.Time
 	FromTS               time.Time
 	ToTS                 time.Time
-	// WithCalendarPeriodStatus, if true, enriches each record with:
-	//   - InCalendarPeriod: historical check based on the record's own timestamp
-	//   - IsCurrentlyOutsideCalendarPeriod: real-time check at retrieval time (time.Now())
-	WithCalendarPeriodStatus bool
+	// IncludeCalendarStatus, if true, enriches each record with:
+	//   - IsNowOutsideCalendar: real-time check at retrieval time (time.Now())
+	//   - WereRulesOutsideCalendar: historical check at the record's own timestamp
+	IncludeCalendarStatus bool
 }
 
 func (builder HistorySituationsBuilder) newStatement() sq.StatementBuilderType {
@@ -79,14 +79,31 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsByCustomInterval(
 		OrderBy("situation_id", "situation_instance_id", "CAST('"+referenceDateStr+"' AS TIMESTAMPTZ) + INTERVAL '1 second' * "+intervalSeconds+" * FLOOR(DATE_PART('epoch', ts- '"+referenceDateStr+"')/"+intervalSeconds+") desc, ts desc")
 }
 
-func (builder HistorySituationsBuilder) GetHistorySituationsDetails(subQueryIds string, subQueryIdsArgs []interface{}) sq.SelectBuilder {
-	return builder.newStatement().
-		Select("sh.*, s.name, coalesce(si.name, ''), c.id, c.name, c.description, c.timezone").
+// GetHistorySituationsDetails builds the detail query for situation history records.
+// When withRuleCalendars is true, it joins situation_rules_v1 and rules_v1 to collect
+// rule calendar IDs via array_agg (needed for EnrichWithRuleCalendarPeriodStatus).
+// When false, the joins and aggregation are skipped for better performance.
+//
+// Note: json columns (parameters, metadatas) are intentionally excluded from GROUP BY.
+// PostgreSQL detects that sh.id (PRIMARY KEY) functionally determines all other sh.* columns.
+func (builder HistorySituationsBuilder) GetHistorySituationsDetails(subQueryIds string, subQueryIdsArgs []interface{}, withRuleCalendars bool) sq.SelectBuilder {
+	base := builder.newStatement().
+		Select("sh.id, sh.situation_id, sh.situation_instance_id, sh.ts, sh.parameters, sh.expression_facts, sh.metadatas, s.name, coalesce(si.name, ''), c.id, c.name, c.description, c.timezone").
 		From("situation_definition_v1 s").
 		LeftJoin("situation_template_instances_v1 si on s.id = si.situation_id").
 		LeftJoin("calendar_v1 c on c.id = COALESCE(si.calendar_id, s.calendar_id)").
 		InnerJoin("situation_history_v5 sh on (s.id = sh.situation_id and (sh.situation_instance_id = si.id OR sh.situation_instance_id = 0))").
 		Where("sh.id = any ("+subQueryIds+")", subQueryIdsArgs...)
+
+	if withRuleCalendars {
+		return base.
+			Columns("array_agg(DISTINCT r.calendar_id) FILTER (WHERE r.calendar_id IS NOT NULL)").
+			LeftJoin("situation_rules_v1 sr on sr.situation_id = s.id").
+			LeftJoin("rules_v1 r on r.id = sr.rule_id").
+			GroupBy("sh.id, sh.situation_id, sh.situation_instance_id, sh.ts, s.name, si.name, c.id, c.name, c.description, c.timezone")
+	}
+
+	return base.Columns("ARRAY[]::bigint[]")
 }
 
 func (builder HistorySituationsBuilder) Insert(history HistorySituationsV4, parametersJSON []byte, expressionFactsJSON []byte, metadatasJSON []byte) sq.InsertBuilder {
