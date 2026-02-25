@@ -32,7 +32,7 @@ type SituationHistoryRecord struct {
 	WereRulesOutsideCalendar *bool `json:"wereRulesOutsideCalendar,omitempty"`
 	// RuleCalendarIDs holds the calendar IDs of the situation's rules, used internally for enrichment.
 	// Not serialized in the JSON response.
-	RuleCalendarIDs []int64                `json:"-"`
+	RuleCalendarIDs []int64                `json:"ruleCalendarIds,omitempty"`
 	Parameters      map[string]interface{} `json:"parameters,omitempty"`
 	ExpressionFacts map[string]interface{} `json:"expressionFacts,omitempty"`
 	MetaData        map[string]interface{} `json:"metaDatas,omitempty"`
