@@ -77,7 +77,7 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 //	@Param			situationinstanceid	query	[]int	false	"situationinstanceid"
 //	@Param			maxdate				query	string	false	"time.Time"
 //	@Param			mindate				query	string	false	"time.Time"
-//	@Param			includeCalendarStatus	query	bool	false	"if true, adds outsideCalendar (real-time: is the situation calendar currently inactive?) and rulesOffCalendar (historical: were any rule calendars inactive at the record timestamp?)"
+//	@Param includeCalendarStatus query bool false "if true, adds calendar status flags (isCurrentlyOutsideCalendar and wereRulesOutsideCalendar)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		search.QueryResult	"query result"
@@ -133,7 +133,7 @@ func SearchLast(w http.ResponseWriter, r *http.Request) {
 //	@Param			maxdate				query	string	false	"time.Time"
 //	@Param			mindate				query	string	false	"time.Time"
 //	@Param			interval			query	string	true	"year | quarter | month | week | day | hour | minute"
-//	@Param			includeCalendarStatus	query	bool	false	"if true, adds outsideCalendar (real-time: is the situation calendar currently inactive?) and rulesOffCalendar (historical: were any rule calendars inactive at the record timestamp?)"
+//	@Param includeCalendarStatus query bool false "if true, adds calendar status flags (isCurrentlyOutsideCalendar and wereRulesOutsideCalendar)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		search.QueryResult	"query result"
@@ -197,7 +197,7 @@ func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 //	@Param			mindate				query	string	false	"time.Time"
 //	@Param			referencedate		query	string	true	"time.Time"
 //	@Param			interval			query	string	true	"time.Duration"
-//	@Param			includeCalendarStatus	query	bool	false	"if true, adds outsideCalendar (real-time: is the situation calendar currently inactive?) and rulesOffCalendar (historical: were any rule calendars inactive at the record timestamp?)"
+//	@Param includeCalendarStatus query bool false "if true, adds calendar status flags (isCurrentlyOutsideCalendar and wereRulesOutsideCalendar)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		search.QueryResult	"query result"
