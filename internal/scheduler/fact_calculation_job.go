@@ -151,7 +151,7 @@ type ExternalAggregate struct {
 	SituationInstanceID int64               `json:"situationInstanceId"`
 	Time                time.Time           `json:"time"`
 	Value               reader.Item         `json:"value"`
-	Boost               *model.JobBoostInfo `json:"boost,omitempty"`
+	JobBoostInfo        *model.JobBoostInfo `json:"jobboostinfo,omitempty"`
 }
 
 // ReceiveAndPersistFacts process a slice of ExternalAggregates and trigger all standard fact-situation-rule process
@@ -258,7 +258,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
 						EnableDependsOn:     sh.EnableDependsOn,
 						DependsOnParameters: sh.DependsOnParameters,
-						JobBoostInfo:        agg.Boost,
+						JobBoostInfo:        agg.JobBoostInfo,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -308,7 +308,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
 						EnableDependsOn:     sh.EnableDependsOn,
 						DependsOnParameters: sh.DependsOnParameters,
-						JobBoostInfo:        agg.Boost,
+						JobBoostInfo:        agg.JobBoostInfo,
 					}
 				} else {
 					situation := situationsToUpdate[key]

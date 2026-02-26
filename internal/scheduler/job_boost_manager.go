@@ -241,7 +241,7 @@ func (bm *JobBoostManager) AcknowledgeJobBoost(jobID string) error {
 
 	delete(bm.boostList, jobID)
 
-	zap.L().Debug("Boost action acknowledged", zap.String("jobId", jobID))
+	zap.L().Debug("JobBoostInfo action acknowledged", zap.String("jobId", jobID))
 	return nil
 }
 
