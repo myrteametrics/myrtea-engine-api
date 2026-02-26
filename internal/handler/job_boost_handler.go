@@ -20,7 +20,7 @@ import (
 //	@Failure		403	{object}	httputil.APIError	"Forbidden"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Router			/service/job/boost/list [get]
+//	@Router			/service/jobs/boost/list [get]
 func GetJobBoostList(w http.ResponseWriter, r *http.Request) {
 	list := scheduler.JBM().GetJobBoostList()
 	httputil.JSON(w, r, list)
@@ -37,7 +37,7 @@ func GetJobBoostList(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403	{object}	httputil.APIError	"Forbidden"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Router			/service/job/boost/revert [get]
+//	@Router			/service/jobs/boost/revert [get]
 func GetJobRevertList(w http.ResponseWriter, r *http.Request) {
 
 	list := scheduler.JBM().GetJobRevertList()

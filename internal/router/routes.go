@@ -314,8 +314,8 @@ func serviceRouter(services Services) http.Handler {
 
 	r.Post("/objects", handler.PostObjects)
 	r.Post("/aggregates", services.ProcessorHandler.PostAggregates)
-	r.Get("/job/boost/list", handler.GetJobBoostList)
-	r.Get("/job/boost/revert", handler.GetJobRevertList)
+	r.Get("/jobs/boost/list", handler.GetJobBoostList)
+	r.Get("/jobs/boost/revert", handler.GetJobRevertList)
 	r.Post("/job/boost/{jobId}/ack", handler.AcknowledgeJobBoost)
 	r.Post("/job/boost/revert/{jobId}/ack", handler.AcknowledgeJobRevert)
 
