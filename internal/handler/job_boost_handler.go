@@ -56,7 +56,7 @@ func GetJobRevertList(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403		{object}	httputil.APIError	"Forbidden"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Router			/service/job/boost/{jobId}/ack [post]
+//	@Router			/service/jobs/boost/{jobId}/ack [post]
 func AcknowledgeJobBoost(w http.ResponseWriter, r *http.Request) {
 	jobID := chi.URLParam(r, "jobId")
 	if jobID == "" {
@@ -85,7 +85,7 @@ func AcknowledgeJobBoost(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403		{object}	httputil.APIError	"Forbidden"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Router			/service/job/boost/revert/{jobId}/ack [post]
+//	@Router			/service/jobs/boost/revert/{jobId}/ack [post]
 func AcknowledgeJobRevert(w http.ResponseWriter, r *http.Request) {
 
 	jobID := chi.URLParam(r, "jobId")
