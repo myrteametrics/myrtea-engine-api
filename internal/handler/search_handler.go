@@ -77,7 +77,7 @@ func baseSearchOptions(w http.ResponseWriter, r *http.Request) (history.GetHisto
 //	@Param			situationinstanceid	query	[]int	false	"situationinstanceid"
 //	@Param			maxdate				query	string	false	"time.Time"
 //	@Param			mindate				query	string	false	"time.Time"
-//	@Param includeCalendarStatus query bool false "if true, adds calendar status flags (isCurrentlyOutsideCalendar and wereRulesOutsideCalendar)"
+//	@Param includeCalendarStatus query bool false "if true, adds calendar status flags (isNowOutsideCalendar and wereRulesOutsideCalendar)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		search.QueryResult	"query result"
