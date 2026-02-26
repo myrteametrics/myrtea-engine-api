@@ -258,7 +258,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
 						EnableDependsOn:     sh.EnableDependsOn,
 						DependsOnParameters: sh.DependsOnParameters,
-						BoostInfo:           agg.Boost,
+						JobBoostInfo:        agg.Boost,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -308,7 +308,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
 						EnableDependsOn:     sh.EnableDependsOn,
 						DependsOnParameters: sh.DependsOnParameters,
-						BoostInfo:           agg.Boost,
+						JobBoostInfo:        agg.Boost,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -547,8 +547,8 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
 		} else {
-			if situationToUpdate.BoostInfo != nil {
-				JBM().Evaluate(metadatas, *situationToUpdate.BoostInfo)
+			if situationToUpdate.JobBoostInfo != nil {
+				JBM().Evaluate(metadatas, *situationToUpdate.JobBoostInfo)
 			}
 		}
 		// zap.L().Sugar().Info("insert new situation", historySituationNew)
@@ -581,7 +581,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 					"situationHistoryID":          historySituationNew.ID,
 				},
 				Agenda:       filteredAgenda,
-				JobBoostInfo: situationToUpdate.BoostInfo,
+				JobBoostInfo: situationToUpdate.JobBoostInfo,
 			}
 			taskBatchs = append(taskBatchs, newTaskBatch)
 			key := fmt.Sprintf("%v-%v", situationToUpdate.SituationID, situationToUpdate.SituationInstanceID)
