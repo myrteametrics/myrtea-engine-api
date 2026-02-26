@@ -3,6 +3,7 @@ package tasker
 import (
 	"time"
 
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-sdk/v5/ruleeng"
 )
 
@@ -17,8 +18,9 @@ const (
 
 // TaskBatch batch of action to be performed
 type TaskBatch struct {
-	Context map[string]interface{}
-	Agenda  []ruleeng.Action
+	Context   map[string]interface{}
+	Agenda    []ruleeng.Action
+	BoostInfo *model.BoostInfo
 }
 
 // ContextData struct to represent the data related to the context in an action perform

@@ -185,7 +185,7 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 	}
 
 	if task.IssueID != "" {
-		isOpen, err := explainer.IsOpenOrDraftIssue(task.IssueID)
+		isOpen, _, err := explainer.IsOpenOrDraftIssue(task.IssueID)
 		if err != nil {
 			zap.L().Error("Cannot search in issue history", zap.String("key", key), zap.Error(err))
 			return err
