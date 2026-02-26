@@ -19,7 +19,7 @@ type CreateIssueTask struct {
 	IsNotification bool   `json:"isNotification"`
 }
 
-func buildCreateIssueTask(parameters map[string]interface{}) (CreateIssueTask, error) {
+func buildCreateIssueTask(parameters map[string]interface{}, boostInfo *model.JobBoostInfo) (CreateIssueTask, error) {
 	task := CreateIssueTask{}
 
 	if val, ok := parameters["id"].(string); ok && val != "" {
@@ -50,6 +50,10 @@ func buildCreateIssueTask(parameters map[string]interface{}) (CreateIssueTask, e
 		task.IsNotification = val
 	} else {
 		return task, errors.New("missing or not valid 'isNotification' parameter (boolean required)")
+	}
+
+	if boostInfo != nil && boostInfo.Quota == boostInfo.Used {
+		task.Level = model.Fatal.String()
 	}
 
 	return task, nil
