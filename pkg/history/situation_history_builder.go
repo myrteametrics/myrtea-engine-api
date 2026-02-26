@@ -81,7 +81,7 @@ func (builder HistorySituationsBuilder) GetHistorySituationsIdsByCustomInterval(
 
 // GetHistorySituationsDetails builds the detail query for situation history records.
 // When withRuleCalendars is true, it joins situation_rules_v1 and rules_v1 to collect
-// rule calendar IDs via array_agg (needed for EnrichWithRuleCalendarPeriodStatus).
+// rule calendar IDs via array_agg (needed for EnrichRuleCalendarStatus).
 // When false, the joins and aggregation are skipped for better performance.
 //
 // Note: json columns (parameters, metadatas) are intentionally excluded from GROUP BY.
