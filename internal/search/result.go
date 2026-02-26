@@ -31,7 +31,6 @@ type SituationHistoryRecord struct {
 	// Explains why a record may have no metadata (rules skipped due to calendar).
 	WereRulesOutsideCalendar *bool `json:"wereRulesOutsideCalendar,omitempty"`
 	// RuleCalendarIDs holds the calendar IDs of the situation's rules, used internally for enrichment.
-	// Not serialized in the JSON response.
 	RuleCalendarIDs []int64                `json:"ruleCalendarIds,omitempty"`
 	Parameters      map[string]interface{} `json:"parameters,omitempty"`
 	ExpressionFacts map[string]interface{} `json:"expressionFacts,omitempty"`
