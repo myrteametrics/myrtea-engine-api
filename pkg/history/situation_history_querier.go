@@ -40,7 +40,7 @@ type HistoryRecordV4 struct {
 	ExpressionFacts     map[string]interface{}
 	EnableDependsOn     bool
 	DependsOnParameters map[string]string
-	BoostInfo           *model.BoostInfo
+	BoostInfo           *model.JobBoostInfo
 }
 
 type ParamGetFactExprHistory struct {

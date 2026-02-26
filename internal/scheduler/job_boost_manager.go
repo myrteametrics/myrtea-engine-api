@@ -127,7 +127,7 @@ func (bm *JobBoostManager) Stop() {
 }
 
 // Evaluate processes metadata and boost info to decide if a job should be boosted or reverted
-func (bm *JobBoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo model.BoostInfo) {
+func (bm *JobBoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo model.JobBoostInfo) {
 	var value string
 	for _, md := range metadatas {
 		v, ok := md.Value.(string)

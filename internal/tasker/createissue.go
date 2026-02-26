@@ -19,7 +19,7 @@ type CreateIssueTask struct {
 	IsNotification bool   `json:"isNotification"`
 }
 
-func buildCreateIssueTask(parameters map[string]interface{}, boostInfo *model.BoostInfo) (CreateIssueTask, error) {
+func buildCreateIssueTask(parameters map[string]interface{}, boostInfo *model.JobBoostInfo) (CreateIssueTask, error) {
 	task := CreateIssueTask{}
 
 	if val, ok := parameters["id"].(string); ok && val != "" {

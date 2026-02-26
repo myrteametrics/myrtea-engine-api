@@ -146,12 +146,12 @@ func (job FactCalculationJob) Run() {
 
 // ExternalAggregate contains all information to store a new aggregat in postgresql
 type ExternalAggregate struct {
-	FactID              int64            `json:"factId"`
-	SituationID         int64            `json:"situationId"`
-	SituationInstanceID int64            `json:"situationInstanceId"`
-	Time                time.Time        `json:"time"`
-	Value               reader.Item      `json:"value"`
-	Boost               *model.BoostInfo `json:"boost,omitempty"`
+	FactID              int64               `json:"factId"`
+	SituationID         int64               `json:"situationId"`
+	SituationInstanceID int64               `json:"situationInstanceId"`
+	Time                time.Time           `json:"time"`
+	Value               reader.Item         `json:"value"`
+	Boost               *model.JobBoostInfo `json:"boost,omitempty"`
 }
 
 // ReceiveAndPersistFacts process a slice of ExternalAggregates and trigger all standard fact-situation-rule process

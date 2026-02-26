@@ -1,6 +1,6 @@
 package model
 
-type BoostInfo struct {
+type JobBoostInfo struct {
 	JobID     string `json:"jobId"`
 	Active    bool   `json:"active"`    // Is boost currently active?
 	Frequency string `json:"frequency"` // Boost cron expression (e.g. "*/1 * * * *")
