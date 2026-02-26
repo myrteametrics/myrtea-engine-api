@@ -197,7 +197,7 @@ func SearchLastByInterval(w http.ResponseWriter, r *http.Request) {
 //	@Param			mindate				query	string	false	"time.Time"
 //	@Param			referencedate		query	string	true	"time.Time"
 //	@Param			interval			query	string	true	"time.Duration"
-//	@Param includeCalendarStatus query bool false "if true, adds calendar status flags (isCurrentlyOutsideCalendar and wereRulesOutsideCalendar)"
+//	@Param includeCalendarStatus query bool false "if true, adds calendar status flags (isNowOutsideCalendar and wereRulesOutsideCalendar)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		search.QueryResult	"query result"
