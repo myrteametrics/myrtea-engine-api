@@ -580,8 +580,8 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 					"historySituationFlattenData": historySituationFlattenData,
 					"situationHistoryID":          historySituationNew.ID,
 				},
-				Agenda:    filteredAgenda,
-				BoostInfo: situationToUpdate.BoostInfo,
+				Agenda:       filteredAgenda,
+				JobBoostInfo: situationToUpdate.BoostInfo,
 			}
 			taskBatchs = append(taskBatchs, newTaskBatch)
 			key := fmt.Sprintf("%v-%v", situationToUpdate.SituationID, situationToUpdate.SituationInstanceID)

@@ -18,9 +18,9 @@ const (
 
 // TaskBatch batch of action to be performed
 type TaskBatch struct {
-	Context   map[string]interface{}
-	Agenda    []ruleeng.Action
-	BoostInfo *model.JobBoostInfo
+	Context      map[string]interface{}
+	Agenda       []ruleeng.Action
+	JobBoostInfo *model.JobBoostInfo
 }
 
 // ContextData struct to represent the data related to the context in an action perform

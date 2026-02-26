@@ -22,7 +22,7 @@ func ApplyTasks(batch TaskBatch) (err error) {
 		switch action.GetName() {
 
 		case ActionCreateIssue:
-			task, err := buildCreateIssueTask(action.GetParameters(), batch.BoostInfo)
+			task, err := buildCreateIssueTask(action.GetParameters(), batch.JobBoostInfo)
 			if err != nil {
 				zap.L().Warn("Error building CreateIssueTask: ", zap.Any("Parameters:", action.GetParameters()), zap.Error(err))
 				continue
