@@ -63,10 +63,10 @@ func ReplaceGlobalJobBoostManager(bm *JobBoostManager) func() {
 
 // NewJobBoostManager creates a new JobBoostManager with the given TTL
 func NewJobBoostManager() *JobBoostManager {
-	ttl := viper.GetDuration("BOOST_LIFETIME")
+	ttl := viper.GetDuration("JOB_BOOST_LIFETIME")
 	if ttl == 0 {
 		ttl = 5 * time.Minute
-		zap.L().Warn("BOOST_LIFETIME not configured, using default", zap.Duration("ttl", ttl))
+		zap.L().Warn("JOB_BOOST_LIFETIME not configured, using default", zap.Duration("ttl", ttl))
 	}
 
 	boostCtx, cancel := context.WithCancel(context.Background())

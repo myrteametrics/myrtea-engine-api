@@ -9,9 +9,9 @@ import (
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 )
 
-// GetBoostList godoc
+// GetJobBoostList godoc
 //
-//	@Id				GetBoostList
+//	@Id				GetJobBoostList
 //	@Summary		Get the list of jobs to boost
 //	@Description	Returns all jobs that need to be boosted
 //	@Tags			Service
@@ -21,14 +21,14 @@ import (
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Router			/service/boost/list [get]
-func GetBoostList(w http.ResponseWriter, r *http.Request) {
+func GetJobBoostList(w http.ResponseWriter, r *http.Request) {
 	list := scheduler.JBM().GetBoostList()
 	httputil.JSON(w, r, list)
 }
 
-// GetRevertList godoc
+// GetJobRevertList godoc
 //
-//	@Id				GetRevertList
+//	@Id				GetJobRevertList
 //	@Summary		Get the list of jobs to revert
 //	@Description	Returns all jobs that need to revert to normal frequency
 //	@Tags			Service
@@ -38,15 +38,15 @@ func GetBoostList(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Router			/service/boost/revert [get]
-func GetRevertList(w http.ResponseWriter, r *http.Request) {
+func GetJobRevertList(w http.ResponseWriter, r *http.Request) {
 
 	list := scheduler.JBM().GetRevertList()
 	httputil.JSON(w, r, list)
 }
 
-// AcknowledgeBoost godoc
+// AcknowledgeJobBoost godoc
 //
-//	@Id				AcknowledgeBoost
+//	@Id				AcknowledgeJobBoost
 //	@Summary		Acknowledge a boost action
 //	@Description	Marks a boost action as read for the given job ID
 //	@Tags			Service
@@ -57,7 +57,7 @@ func GetRevertList(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Router			/service/boost/{jobId}/ack [post]
-func AcknowledgeBoost(w http.ResponseWriter, r *http.Request) {
+func AcknowledgeJobBoost(w http.ResponseWriter, r *http.Request) {
 	jobID := chi.URLParam(r, "jobId")
 	if jobID == "" {
 		httputil.Error(w, r, httputil.ErrAPIMissingParam, errors.New("missing jobId"))
@@ -73,9 +73,9 @@ func AcknowledgeBoost(w http.ResponseWriter, r *http.Request) {
 	httputil.OK(w, r)
 }
 
-// AcknowledgeRevert godoc
+// AcknowledgeJobRevert godoc
 //
-//	@Id				AcknowledgeRevert
+//	@Id				AcknowledgeJobRevert
 //	@Summary		Acknowledge a revert action
 //	@Description	Marks a revert action as read for the given job ID
 //	@Tags			Service
@@ -86,7 +86,7 @@ func AcknowledgeBoost(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Router			/service/boost/revert/{jobId}/ack [post]
-func AcknowledgeRevert(w http.ResponseWriter, r *http.Request) {
+func AcknowledgeJobRevert(w http.ResponseWriter, r *http.Request) {
 
 	jobID := chi.URLParam(r, "jobId")
 	if jobID == "" {

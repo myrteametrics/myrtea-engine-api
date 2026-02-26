@@ -280,4 +280,4 @@ API_KEY_CACHE_DURATION = "1h"  # Example: "168h" (1 week)
 # This prevents memory buildup from unacknowledged or expired boost/revert actions.
 # Default value: 5m (5 minutes)
 # Available units are "ns", "us" (or "µs"), "ms", "s", "m", "h"
-BOOST_LIFETIME = "5m"
+JOB_BOOST_LIFETIME = "5m"
