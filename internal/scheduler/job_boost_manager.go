@@ -205,8 +205,8 @@ func (bm *JobBoostManager) addToRevertList(jobID string) {
 		zap.Time("expiresAt", bm.revertList[jobID].ExpiresAt))
 }
 
-// GetBoostList returns a copy of the current boost list (only non-read items)
-func (bm *JobBoostManager) GetBoostList() []JobBoostAction {
+// GetJobBoostList returns a copy of the current boost list (only non-read items)
+func (bm *JobBoostManager) GetJobBoostList() []JobBoostAction {
 	bm.mu.RLock()
 	defer bm.mu.RUnlock()
 
@@ -217,8 +217,8 @@ func (bm *JobBoostManager) GetBoostList() []JobBoostAction {
 	return result
 }
 
-// GetRevertList returns a copy of the current revert list (only non-read items)
-func (bm *JobBoostManager) GetRevertList() []JobBoostAction {
+// GetJobRevertList returns a copy of the current revert list (only non-read items)
+func (bm *JobBoostManager) GetJobRevertList() []JobBoostAction {
 	bm.mu.RLock()
 	defer bm.mu.RUnlock()
 
@@ -229,8 +229,8 @@ func (bm *JobBoostManager) GetRevertList() []JobBoostAction {
 	return result
 }
 
-// AcknowledgeBoost marks a job in the boost list as read and removes it
-func (bm *JobBoostManager) AcknowledgeBoost(jobID string) error {
+// AcknowledgeJobBoost marks a job in the boost list as read and removes it
+func (bm *JobBoostManager) AcknowledgeJobBoost(jobID string) error {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 
@@ -245,8 +245,8 @@ func (bm *JobBoostManager) AcknowledgeBoost(jobID string) error {
 	return nil
 }
 
-// AcknowledgeRevert marks a job in the revert list as read and removes it
-func (bm *JobBoostManager) AcknowledgeRevert(jobID string) error {
+// AcknowledgeJobRevert marks a job in the revert list as read and removes it
+func (bm *JobBoostManager) AcknowledgeJobRevert(jobID string) error {
 	bm.mu.Lock()
 	defer bm.mu.Unlock()
 

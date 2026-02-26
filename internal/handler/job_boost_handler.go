@@ -22,7 +22,7 @@ import (
 //	@Security		ApiKeyAuth
 //	@Router			/service/boost/list [get]
 func GetJobBoostList(w http.ResponseWriter, r *http.Request) {
-	list := scheduler.JBM().GetBoostList()
+	list := scheduler.JBM().GetJobBoostList()
 	httputil.JSON(w, r, list)
 }
 
@@ -40,7 +40,7 @@ func GetJobBoostList(w http.ResponseWriter, r *http.Request) {
 //	@Router			/service/boost/revert [get]
 func GetJobRevertList(w http.ResponseWriter, r *http.Request) {
 
-	list := scheduler.JBM().GetRevertList()
+	list := scheduler.JBM().GetJobRevertList()
 	httputil.JSON(w, r, list)
 }
 
@@ -64,7 +64,7 @@ func AcknowledgeJobBoost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := scheduler.JBM().AcknowledgeBoost(jobID)
+	err := scheduler.JBM().AcknowledgeJobBoost(jobID)
 	if err != nil {
 		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
@@ -94,7 +94,7 @@ func AcknowledgeJobRevert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := scheduler.JBM().AcknowledgeRevert(jobID)
+	err := scheduler.JBM().AcknowledgeJobRevert(jobID)
 	if err != nil {
 		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
