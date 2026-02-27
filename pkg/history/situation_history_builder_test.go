@@ -74,7 +74,7 @@ func TestGetHistorySituationsDetails(t *testing.T) {
 
 	subQueryIds := ""
 	subQueryIdsArgs := []interface{}{}
-	builder := HistorySituationsBuilder{}.GetHistorySituationsDetails(subQueryIds, subQueryIdsArgs)
+	builder := HistorySituationsBuilder{}.GetHistorySituationsDetails(subQueryIds, subQueryIdsArgs, true)
 
 	t.Fail()
 	t.Log(builder.ToSql())

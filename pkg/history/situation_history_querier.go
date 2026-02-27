@@ -14,6 +14,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 )
 
@@ -28,6 +29,7 @@ type HistorySituationsV4 struct {
 	ExpressionFacts       map[string]interface{}
 	Metadatas             []metadata.MetaData
 	Calendar              *calendar.Calendar
+	RuleCalendarIDs       []int64
 }
 
 // HistoryRecordV4 represents a single and unique situation history entry.
@@ -221,16 +223,18 @@ func (querier HistorySituationsQuerier) scan(rows *sql.Rows) (HistorySituationsV
 		calendarName        sql.NullString
 		calendarDescription sql.NullString
 		calendarTimezone    sql.NullString
+		ruleCalendarIDs     pq.Int64Array
 	)
 
 	item := HistorySituationsV4{}
 
 	err := rows.Scan(&item.ID, &item.SituationID, &item.SituationInstanceID, &item.Ts, &rawParameters,
 		&rawExpressionFacts, &rawMetadatas, &item.SituationName, &item.SituationInstanceName,
-		&calendarId, &calendarName, &calendarDescription, &calendarTimezone)
+		&calendarId, &calendarName, &calendarDescription, &calendarTimezone, &ruleCalendarIDs)
 	if err != nil {
 		return HistorySituationsV4{}, err
 	}
+	item.RuleCalendarIDs = []int64(ruleCalendarIDs)
 
 	if len(rawParameters) > 0 {
 		err = json.Unmarshal(rawParameters, &item.Parameters)

@@ -59,7 +59,7 @@ func (service HistoryService) GetHistorySituationsIdsLast(options GetHistorySitu
 	}
 
 	return service.HistorySituationsQuerier.Query(
-		service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs),
+		service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs, options.IncludeCalendarStatus),
 	)
 }
 
@@ -72,7 +72,7 @@ func (service HistoryService) GetHistorySituationsIdsByStandardInterval(options 
 	}
 
 	return service.HistorySituationsQuerier.Query(
-		service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs),
+		service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs, options.IncludeCalendarStatus),
 	)
 }
 
@@ -85,7 +85,7 @@ func (service HistoryService) GetHistorySituationsIdsByCustomInterval(options Ge
 	}
 
 	return service.HistorySituationsQuerier.Query(
-		service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs),
+		service.HistorySituationsQuerier.Builder.GetHistorySituationsDetails(subQuery, subQueryArgs, options.IncludeCalendarStatus),
 	)
 }
 

@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/search"
@@ -101,6 +102,10 @@ func buildSituationHistoryRecord(historySituation HistorySituationsV4, mapFacts 
 		}
 	}
 
+	if len(historySituation.RuleCalendarIDs) > 0 {
+		situationRecord.RuleCalendarIDs = historySituation.RuleCalendarIDs
+	}
+
 	return situationRecord
 }
 
@@ -188,6 +193,73 @@ func EvaluateExpressionFacts(expressionFacts []situation2.ExpressionFact, data m
 	return expressionFactsEvaluated
 }
 
+// EnrichCalendarStatus enriches each SituationHistoryRecord with IsNowOutsideCalendar.
+//
+// Real-time check using time.Now():
+//   - true  => current moment is outside the situation's calendar period
+//   - false => inside the period, or no calendar defined
+func EnrichCalendarStatus(result search.QueryResult) search.QueryResult {
+	now := time.Now()
+
+	for i := range result {
+		for j := range result[i].Situations {
+			sit := result[i].Situations[j]
+
+			outsideCalendar := false
+
+			if sit.Calendar != nil {
+				_, inPeriod, err := calendar.CBase().InPeriodFromCalendarID(sit.Calendar.Id, now)
+				if err != nil {
+					zap.L().Warn("Cannot check current calendar period",
+						zap.Int64("calendarId", sit.Calendar.Id),
+						zap.Error(err),
+					)
+				} else {
+					outsideCalendar = !inPeriod
+				}
+			}
+
+			result[i].Situations[j].IsNowOutsideCalendar = &outsideCalendar
+		}
+	}
+
+	return result
+}
+
+// EnrichRuleCalendarStatus enriches each SituationHistoryRecord with WereRulesOutsideCalendar.
+//
+// Historical check at each record's own DateTime:
+//   - true  => at record time, at least one rule calendar was inactive (explains missing metadata)
+//   - false => all rule calendars were active, or no rule calendars defined
+func EnrichRuleCalendarStatus(result search.QueryResult) search.QueryResult {
+	for i := range result {
+		for j := range result[i].Situations {
+			sit := result[i].Situations[j]
+
+			rulesOff := false
+
+			for _, calID := range sit.RuleCalendarIDs {
+				_, inPeriod, err := calendar.CBase().InPeriodFromCalendarID(calID, sit.DateTime)
+				if err != nil {
+					zap.L().Warn("Cannot check rule calendar period",
+						zap.Int64("calendarId", calID),
+						zap.Error(err),
+					)
+					continue
+				}
+				if !inPeriod {
+					rulesOff = true
+					break
+				}
+			}
+
+			result[i].Situations[j].WereRulesOutsideCalendar = &rulesOff
+		}
+	}
+
+	return result
+}
+
 func getTodayTimeRange() (string, string) {
 	todayStartDate := time.Now().UTC().Truncate(24 * time.Hour)
 	todayStart := todayStartDate.Format("2006-01-02 15:04:05")
@@ -199,5 +271,4 @@ func getStartDate30DaysAgo() string {
 	now := time.Now().UTC()
 	thirtyDaysAgo := now.AddDate(0, 0, -30)
 	return thirtyDaysAgo.Format("2006-01-02 15:04:05")
-
 }
