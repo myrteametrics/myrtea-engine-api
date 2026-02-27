@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/metadata"
 
@@ -41,6 +42,7 @@ type HistoryRecordV4 struct {
 	ExpressionFacts     map[string]interface{}
 	EnableDependsOn     bool
 	DependsOnParameters map[string]string
+	JobBoostInfo        *model.JobBoostInfo
 }
 
 type ParamGetFactExprHistory struct {

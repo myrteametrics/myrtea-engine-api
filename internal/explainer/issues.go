@@ -31,15 +31,21 @@ func CreateIssue(situationHistoryID int64, situationID int64, templateInstanceID
 	}
 
 	//isNew, err := isNewIssue(issue)
-	isOpen, err := IsOpenOrDraftIssue(issue.Key)
+	isOpen, existingIssues, err := IsOpenOrDraftIssue(issue.Key)
 	if err != nil {
 		zap.L().Error("Cannot search in issue history", zap.String("key", key), zap.Error(err))
 		return -1, err
 	}
+
 	if isOpen {
 		//zap.L().Debug("Issue creation skipped (timeout not reached)")
-		zap.L().Debug("Issue creation skipped - open/draft issue already existed")
-		return 0, nil
+		for _, existingIssue := range existingIssues {
+			if existingIssue.Level == level {
+				zap.L().Debug("Issue creation skipped - same level already exists")
+				return 0, nil
+			}
+		}
+		zap.L().Debug("Existing issues found but with different level - creating new issue")
 	}
 
 	id, err := issues.R().Create(issue)
@@ -60,15 +66,15 @@ func CreateIssue(situationHistoryID int64, situationID int64, templateInstanceID
 //	return false, nil
 //}
 
-func IsOpenOrDraftIssue(issueKey string) (bool, error) {
+func IsOpenOrDraftIssue(issueKey string) (bool, map[int64]model.Issue, error) {
 	issues, err := issues.R().GetOpenAndDraftIssuesByKey(issueKey)
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
 	if len(issues) == 0 {
-		return false, nil
+		return false, nil, nil
 	}
-	return true, nil
+	return true, issues, nil
 }
 
 // GetFactsHistory get the history of facts for an issue
