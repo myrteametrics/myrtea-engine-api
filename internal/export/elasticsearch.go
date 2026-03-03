@@ -261,9 +261,10 @@ func ExportFactHitsFull(f engine.Fact) ([]reader.Hit, error) {
 	}
 	searchRequest.Pit = &types.PointInTimeReference{Id: pit.Id, KeepAlive: "1m"}
 	searchRequest.SearchAfter = []types.FieldValue{}
-	if searchRequest.Sort == nil || len(searchRequest.Sort) == 0 {
-		searchRequest.Sort = []types.SortCombinations{"_shard_doc"}
+	if searchRequest.Sort == nil {
+		searchRequest.Sort = []types.SortCombinations{}
 	}
+	searchRequest.Sort = append(searchRequest.Sort, "_shard_doc")
 	// searchRequest.TrackTotalHits = false // Speeds up pagination (maybe impl?)
 
 	for {
