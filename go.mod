@@ -18,7 +18,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/json-iterator/go v1.1.12
 	github.com/lib/pq v1.11.2
-	github.com/myrteametrics/myrtea-sdk/v5 v5.3.7
+	github.com/myrteametrics/myrtea-sdk/v5 v5.3.8
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/robfig/cron/v3 v3.0.1
