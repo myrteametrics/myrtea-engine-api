@@ -261,6 +261,11 @@ func ExportFactHitsFull(f engine.Fact) ([]reader.Hit, error) {
 	}
 	searchRequest.Pit = &types.PointInTimeReference{Id: pit.Id, KeepAlive: "1m"}
 	searchRequest.SearchAfter = []types.FieldValue{}
+	searchRequest.Sort = append(searchRequest.Sort, types.SortOptions{
+		SortOptions: map[string]types.FieldSort{
+			"_shard_doc": {},
+		},
+	})
 	// searchRequest.TrackTotalHits = false // Speeds up pagination (maybe impl?)
 
 	for {
@@ -268,11 +273,6 @@ func ExportFactHitsFull(f engine.Fact) ([]reader.Hit, error) {
 			//Index(indicesStr).
 			Request(searchRequest).
 			Size(10000).
-			Sort(types.SortOptions{
-				SortOptions: map[string]types.FieldSort{
-					"_shard_doc": {},
-				},
-			}).
 			Do(context.Background())
 		if err != nil {
 			zap.L().Error("ES Search failed", zap.Error(err))
