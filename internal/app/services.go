@@ -6,11 +6,11 @@ import (
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/confighistory"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/connectorconfig"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/export"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/security/apikey"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tag"
 	calendar2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
+	esconfig2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/config/esconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/email"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/email/template"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
@@ -68,7 +68,7 @@ func initRepositories() {
 	// Configs
 	externalconfig.ReplaceGlobals(externalconfig.NewPostgresRepository(dbClient))
 	connectorconfig.ReplaceGlobals(connectorconfig.NewPostgresRepository(dbClient))
-	esconfig.ReplaceGlobals(esconfig.NewPostgresRepository(dbClient))
+	esconfig2.ReplaceGlobals(esconfig2.NewPostgresRepository(dbClient))
 	history.ReplaceGlobals(history.New(dbClient))
 	variablesconfig.ReplaceGlobals(variablesconfig.NewPostgresRepository(dbClient))
 	apikey.ReplaceGlobals(apikey.NewPostgresRepository(dbClient))

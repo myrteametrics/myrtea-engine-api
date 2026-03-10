@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/tests"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/model"
 )
 
 func dbInitRepo(dbClient *sqlx.DB, t *testing.T) {
