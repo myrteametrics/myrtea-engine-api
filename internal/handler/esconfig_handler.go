@@ -251,7 +251,7 @@ func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id					path	int							true	"ElasticSearchConfig ID"
-//	@Param			elasticSearchConfig	body	esconfig.Config	true	"Config definition (json)"
+//	@Param			elasticSearchConfig	body	esconfig.Config	true	"ElasticSearchConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	esconfig.Config	"elasticSearchConfig"
