@@ -65,7 +65,7 @@ func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get an elasticSearchConfig definition
 //	@Tags			ElasticSearchConfigs
 //	@Produce		json
-//	@Param			id	path	int	true	"Config ID"
+//	@Param			id	path	int	true	"ElasticSearchConfig ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	esconfig.Config	"elasticSearchConfig"
@@ -95,7 +95,7 @@ func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !found {
-		zap.L().Warn("Config does not exists", zap.String("elasticSearchConfigId", id))
+		zap.L().Warn("ElasticSearchConfig does not exists", zap.String("elasticSearchConfigId", id))
 		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
@@ -112,7 +112,7 @@ func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get an elasticSearchConfig definition
 //	@Tags			ElasticSearchConfigs
 //	@Produce		json
-//	@Param			name	path	string	true	"Config Name (escaped html accepted)"
+//	@Param			name	path	string	true	"ElasticSearchConfig Name (escaped html accepted)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	esconfig.Config	"elasticSearchConfig"
@@ -142,7 +142,7 @@ func GetElasticSearchConfigByName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !found {
-		zap.L().Warn("Config does not exists", zap.String("elasticSearchConfigName", name))
+		zap.L().Warn("ElasticSearchConfig does not exists", zap.String("elasticSearchConfigName", name))
 		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
@@ -179,7 +179,7 @@ func GetDefaultElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !found {
-		zap.L().Warn("Default Config does not exists")
+		zap.L().Warn("Default ElasticSearchConfig does not exists")
 		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
@@ -196,7 +196,7 @@ func GetDefaultElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ElasticSearchConfigs
 //	@Accept			json
 //	@Produce		json
-//	@Param			elasticSearchConfig	body	esconfig.Config	true	"Config definition (json)"
+//	@Param			elasticSearchConfig	body	esconfig.Config	true	"ElasticSearchConfig definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	esconfig.Config	"elasticSearchConfig"
@@ -214,14 +214,14 @@ func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	var newElasticSearchConfig esconfig.Config
 	err := json.NewDecoder(r.Body).Decode(&newElasticSearchConfig)
 	if err != nil {
-		zap.L().Warn("Config json decoding", zap.Error(err))
+		zap.L().Warn("ElasticSearchConfig json decoding", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
 
 	id, err := esconfig.R().Create(newElasticSearchConfig)
 	if err != nil {
-		zap.L().Error("Error while creating the Config", zap.Error(err))
+		zap.L().Error("Error while creating the ElasticSearchConfig", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBInsertFailed, err)
 		return
 	}
@@ -233,7 +233,7 @@ func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !found {
-		zap.L().Warn("Config does not exists after creation", zap.String("elasticSearchConfigName", newElasticSearchConfig.Name))
+		zap.L().Warn("ElasticSearchConfig does not exists after creation", zap.String("elasticSearchConfigName", newElasticSearchConfig.Name))
 		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFoundAfterInsert, err)
 		return
 	}
@@ -250,7 +250,7 @@ func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ElasticSearchConfigs
 //	@Accept			json
 //	@Produce		json
-//	@Param			id					path	int							true	"Config ID"
+//	@Param			id					path	int							true	"ElasticSearchConfig ID"
 //	@Param			elasticSearchConfig	body	esconfig.Config	true	"Config definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
@@ -278,7 +278,7 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 	var newElasticSearchConfig esconfig.Config
 	err = json.NewDecoder(r.Body).Decode(&newElasticSearchConfig)
 	if err != nil {
-		zap.L().Warn("Config json decoding", zap.Error(err))
+		zap.L().Warn("ElasticSearchConfig json decoding", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
 		return
 	}
@@ -286,7 +286,7 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	err = esconfig.R().Update(idElasticSearchConfig, newElasticSearchConfig)
 	if err != nil {
-		zap.L().Error("Error while updating the Config", zap.String("idElasticSearchConfig", id), zap.Any("elasticSearchConfig", newElasticSearchConfig), zap.Error(err))
+		zap.L().Error("Error while updating the ElasticSearchConfig", zap.String("idElasticSearchConfig", id), zap.Any("elasticSearchConfig", newElasticSearchConfig), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
 		return
 	}
@@ -298,7 +298,7 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !found {
-		zap.L().Warn("Config does not exists after update", zap.String("elasticSearchConfigId", id))
+		zap.L().Warn("ElasticSearchConfig does not exists after update", zap.String("elasticSearchConfigId", id))
 		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
 		return
 	}
@@ -314,7 +314,7 @@ func PutElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 //	@Description	Delete an elasticSearchConfig definition
 //	@Tags			ElasticSearchConfigs
 //	@Produce		json
-//	@Param			id	path	int	true	"Config ID"
+//	@Param			id	path	int	true	"ElasticSearchConfig ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	"Status OK"
@@ -339,7 +339,7 @@ func DeleteElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 
 	err = esconfig.R().Delete(idElasticSearchConfig)
 	if err != nil {
-		zap.L().Error("Error while deleting the Config", zap.String("Config ID", id), zap.Error(err))
+		zap.L().Error("Error while deleting the ElasticSearchConfig", zap.String("ElasticSearchConfig ID", id), zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDBDeleteFailed, err)
 		return
 	}
