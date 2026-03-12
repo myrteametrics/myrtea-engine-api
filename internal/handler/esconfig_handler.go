@@ -26,7 +26,7 @@ import (
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{array}		model.Config	"list of all elasticSearchConfigs"
+//	@Success		200	{array}		esconfig.Config	"list of all elasticSearchConfigs"
 //	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/esconfigs [get]
 func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +68,7 @@ func GetElasticSearchConfigs(w http.ResponseWriter, r *http.Request) {
 //	@Param			id	path	int	true	"Config ID"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	model.Config	"elasticSearchConfig"
+//	@Success		200	{object}	esconfig.Config	"elasticSearchConfig"
 //	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Router			/engine/esconfigs/{id} [get]
 func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +115,7 @@ func GetElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 //	@Param			name	path	string	true	"Config Name (escaped html accepted)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	model.Config	"elasticSearchConfig"
+//	@Success		200	{object}	esconfig.Config	"elasticSearchConfig"
 //	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Router			/engine/esconfigs/name/{name} [get]
 func GetElasticSearchConfigByName(w http.ResponseWriter, r *http.Request) {
@@ -160,7 +160,7 @@ func GetElasticSearchConfigByName(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	model.Config	"elasticSearchConfig"
+//	@Success		200	{object}	esconfig.Config	"elasticSearchConfig"
 //	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Router			/engine/esconfigs/default [get]
 func GetDefaultElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
@@ -196,10 +196,10 @@ func GetDefaultElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 //	@Tags			ElasticSearchConfigs
 //	@Accept			json
 //	@Produce		json
-//	@Param			elasticSearchConfig	body	model.Config	true	"Config definition (json)"
+//	@Param			elasticSearchConfig	body	esconfig.Config	true	"Config definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	model.Config	"elasticSearchConfig"
+//	@Success		200	{object}	esconfig.Config	"elasticSearchConfig"
 //	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/esconfigs [post]
@@ -251,10 +251,10 @@ func PostElasticSearchConfig(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id					path	int							true	"Config ID"
-//	@Param			elasticSearchConfig	body	model.Config	true	"Config definition (json)"
+//	@Param			elasticSearchConfig	body	esconfig.Config	true	"Config definition (json)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
-//	@Success		200	{object}	model.Config	"elasticSearchConfig"
+//	@Success		200	{object}	esconfig.Config	"elasticSearchConfig"
 //	@Failure		400	{object}	httputil.APIError			"Bad Request"
 //	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
 //	@Router			/engine/esconfigs/{id} [put]
