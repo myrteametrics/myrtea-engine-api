@@ -13,7 +13,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-sdk/v5/repositories/utils"
 )
 
@@ -124,14 +123,14 @@ func decryptPassword(encrypted string) (string, error) {
 }
 
 // Get use to retrieve an elasticSearchConfig by id (password masked)
-func (r *PostgresRepository) Get(id int64) (model.ElasticSearchConfig, bool, error) {
+func (r *PostgresRepository) Get(id int64) (Config, bool, error) {
 	rows, err := r.newStatement().
 		Select("name", "urls", `"default"`, "export_activated", "auth", "insecure", "username").
 		From(table).
 		Where(sq.Eq{"id": id}).
 		Query()
 	if err != nil {
-		return model.ElasticSearchConfig{}, false, err
+		return Config{}, false, err
 	}
 	defer rows.Close()
 
@@ -141,13 +140,13 @@ func (r *PostgresRepository) Get(id int64) (model.ElasticSearchConfig, bool, err
 	if rows.Next() {
 		err := rows.Scan(&name, &urls, &isDefault, &exportActivated, &auth, &insecure, &username)
 		if err != nil {
-			return model.ElasticSearchConfig{}, false, fmt.Errorf("couldn't scan the elasticsearch config with id %d: %s", id, err.Error())
+			return Config{}, false, fmt.Errorf("couldn't scan the elasticsearch config with id %d: %s", id, err.Error())
 		}
 	} else {
-		return model.ElasticSearchConfig{}, false, nil
+		return Config{}, false, nil
 	}
 
-	return model.ElasticSearchConfig{
+	return Config{
 		Id:              id,
 		Name:            name,
 		URLs:            strings.Split(urls, ","),
@@ -161,14 +160,14 @@ func (r *PostgresRepository) Get(id int64) (model.ElasticSearchConfig, bool, err
 }
 
 // GetForAuth use to retrieve an elasticSearchConfig by id with cleartext password for authentication
-func (r *PostgresRepository) GetForAuth(id int64) (model.ElasticSearchConfig, bool, error) {
+func (r *PostgresRepository) GetForAuth(id int64) (Config, bool, error) {
 	rows, err := r.newStatement().
 		Select("name", "urls", `"default"`, "export_activated", "auth", "insecure", "username", "password").
 		From(table).
 		Where(sq.Eq{"id": id}).
 		Query()
 	if err != nil {
-		return model.ElasticSearchConfig{}, false, err
+		return Config{}, false, err
 	}
 	defer rows.Close()
 
@@ -178,19 +177,19 @@ func (r *PostgresRepository) GetForAuth(id int64) (model.ElasticSearchConfig, bo
 	if rows.Next() {
 		err := rows.Scan(&name, &urls, &isDefault, &exportActivated, &auth, &insecure, &username, &encryptedPassword)
 		if err != nil {
-			return model.ElasticSearchConfig{}, false, fmt.Errorf("couldn't scan the elasticsearch config with id %d: %s", id, err.Error())
+			return Config{}, false, fmt.Errorf("couldn't scan the elasticsearch config with id %d: %s", id, err.Error())
 		}
 	} else {
-		return model.ElasticSearchConfig{}, false, nil
+		return Config{}, false, nil
 	}
 
 	// Decrypt password for authentication
 	password, err := decryptPassword(encryptedPassword.String)
 	if err != nil {
-		return model.ElasticSearchConfig{}, false, fmt.Errorf("failed to decrypt password: %w", err)
+		return Config{}, false, fmt.Errorf("failed to decrypt password: %w", err)
 	}
 
-	return model.ElasticSearchConfig{
+	return Config{
 		Id:              id,
 		Name:            name,
 		URLs:            strings.Split(urls, ","),
@@ -204,18 +203,18 @@ func (r *PostgresRepository) GetForAuth(id int64) (model.ElasticSearchConfig, bo
 }
 
 // GetByName use to retrieve an elasticSearchConfig by name (password masked)
-func (r *PostgresRepository) GetByName(name string) (model.ElasticSearchConfig, bool, error) {
+func (r *PostgresRepository) GetByName(name string) (Config, bool, error) {
 	rows, err := r.newStatement().
 		Select("id", "urls", `"default"`, "export_activated", "auth", "insecure", "username").
 		From(table).
 		Where(sq.Eq{"name": name}).
 		Query()
 	if err != nil {
-		return model.ElasticSearchConfig{}, false, err
+		return Config{}, false, err
 	}
 	defer rows.Close()
 
-	esConfig := model.ElasticSearchConfig{
+	esConfig := Config{
 		Name: name,
 	}
 	var urls string
@@ -223,10 +222,10 @@ func (r *PostgresRepository) GetByName(name string) (model.ElasticSearchConfig, 
 	if rows.Next() {
 		err = rows.Scan(&esConfig.Id, &urls, &esConfig.Default, &esConfig.ExportActivated, &esConfig.Auth, &esConfig.Insecure, &username)
 		if err != nil {
-			return model.ElasticSearchConfig{}, false, fmt.Errorf("couldn't scan the elasticsearch config with name %s: %s", name, err.Error())
+			return Config{}, false, fmt.Errorf("couldn't scan the elasticsearch config with name %s: %s", name, err.Error())
 		}
 	} else {
-		return model.ElasticSearchConfig{}, false, nil
+		return Config{}, false, nil
 	}
 
 	esConfig.URLs = strings.Split(urls, ",")
@@ -237,18 +236,18 @@ func (r *PostgresRepository) GetByName(name string) (model.ElasticSearchConfig, 
 }
 
 // GetByNameForAuth use to retrieve an elasticSearchConfig by name with cleartext password for authentication
-func (r *PostgresRepository) GetByNameForAuth(name string) (model.ElasticSearchConfig, bool, error) {
+func (r *PostgresRepository) GetByNameForAuth(name string) (Config, bool, error) {
 	rows, err := r.newStatement().
 		Select("id", "urls", `"default"`, "export_activated", "auth", "insecure", "username", "password").
 		From(table).
 		Where(sq.Eq{"name": name}).
 		Query()
 	if err != nil {
-		return model.ElasticSearchConfig{}, false, err
+		return Config{}, false, err
 	}
 	defer rows.Close()
 
-	esConfig := model.ElasticSearchConfig{
+	esConfig := Config{
 		Name: name,
 	}
 	var urls string
@@ -256,10 +255,10 @@ func (r *PostgresRepository) GetByNameForAuth(name string) (model.ElasticSearchC
 	if rows.Next() {
 		err = rows.Scan(&esConfig.Id, &urls, &esConfig.Default, &esConfig.ExportActivated, &esConfig.Auth, &esConfig.Insecure, &username, &encryptedPassword)
 		if err != nil {
-			return model.ElasticSearchConfig{}, false, fmt.Errorf("couldn't scan the elasticsearch config with name %s: %s", name, err.Error())
+			return Config{}, false, fmt.Errorf("couldn't scan the elasticsearch config with name %s: %s", name, err.Error())
 		}
 	} else {
-		return model.ElasticSearchConfig{}, false, nil
+		return Config{}, false, nil
 	}
 
 	esConfig.URLs = strings.Split(urls, ",")
@@ -268,7 +267,7 @@ func (r *PostgresRepository) GetByNameForAuth(name string) (model.ElasticSearchC
 	// Decrypt password for authentication
 	password, err := decryptPassword(encryptedPassword.String)
 	if err != nil {
-		return model.ElasticSearchConfig{}, false, fmt.Errorf("failed to decrypt password: %w", err)
+		return Config{}, false, fmt.Errorf("failed to decrypt password: %w", err)
 	}
 	esConfig.Password = password // Return cleartext password
 
@@ -276,18 +275,18 @@ func (r *PostgresRepository) GetByNameForAuth(name string) (model.ElasticSearchC
 }
 
 // GetDefault use to retrieve the default elasticSearchConfig (password masked)
-func (r *PostgresRepository) GetDefault() (model.ElasticSearchConfig, bool, error) {
+func (r *PostgresRepository) GetDefault() (Config, bool, error) {
 	rows, err := r.newStatement().
 		Select("id", "name", "urls", "export_activated", "auth", "insecure", "username").
 		From(table).
 		Where(sq.Eq{`"default"`: true}).
 		Query()
 	if err != nil {
-		return model.ElasticSearchConfig{}, false, err
+		return Config{}, false, err
 	}
 	defer rows.Close()
 
-	esConfig := model.ElasticSearchConfig{
+	esConfig := Config{
 		Default: true,
 	}
 	var urls string
@@ -295,10 +294,10 @@ func (r *PostgresRepository) GetDefault() (model.ElasticSearchConfig, bool, erro
 	if rows.Next() {
 		err = rows.Scan(&esConfig.Id, &esConfig.Name, &urls, &esConfig.ExportActivated, &esConfig.Auth, &esConfig.Insecure, &username)
 		if err != nil {
-			return model.ElasticSearchConfig{}, false, fmt.Errorf("couldn't scan the default elasticsearch config: %s", err.Error())
+			return Config{}, false, fmt.Errorf("couldn't scan the default elasticsearch config: %s", err.Error())
 		}
 	} else {
-		return model.ElasticSearchConfig{}, false, nil
+		return Config{}, false, nil
 	}
 
 	esConfig.URLs = strings.Split(urls, ",")
@@ -309,18 +308,18 @@ func (r *PostgresRepository) GetDefault() (model.ElasticSearchConfig, bool, erro
 }
 
 // GetDefaultForAuth use to retrieve the default elasticSearchConfig with cleartext password for authentication
-func (r *PostgresRepository) GetDefaultForAuth() (model.ElasticSearchConfig, bool, error) {
+func (r *PostgresRepository) GetDefaultForAuth() (Config, bool, error) {
 	rows, err := r.newStatement().
 		Select("id", "name", "urls", "export_activated", "auth", "insecure", "username", "password").
 		From(table).
 		Where(sq.Eq{`"default"`: true}).
 		Query()
 	if err != nil {
-		return model.ElasticSearchConfig{}, false, err
+		return Config{}, false, err
 	}
 	defer rows.Close()
 
-	esConfig := model.ElasticSearchConfig{
+	esConfig := Config{
 		Default: true,
 	}
 	var urls string
@@ -328,10 +327,10 @@ func (r *PostgresRepository) GetDefaultForAuth() (model.ElasticSearchConfig, boo
 	if rows.Next() {
 		err = rows.Scan(&esConfig.Id, &esConfig.Name, &urls, &esConfig.ExportActivated, &esConfig.Auth, &esConfig.Insecure, &username, &encryptedPassword)
 		if err != nil {
-			return model.ElasticSearchConfig{}, false, fmt.Errorf("couldn't scan the default elasticsearch config: %s", err.Error())
+			return Config{}, false, fmt.Errorf("couldn't scan the default elasticsearch config: %s", err.Error())
 		}
 	} else {
-		return model.ElasticSearchConfig{}, false, nil
+		return Config{}, false, nil
 	}
 
 	esConfig.URLs = strings.Split(urls, ",")
@@ -340,7 +339,7 @@ func (r *PostgresRepository) GetDefaultForAuth() (model.ElasticSearchConfig, boo
 	// Decrypt password for authentication
 	password, err := decryptPassword(encryptedPassword.String)
 	if err != nil {
-		return model.ElasticSearchConfig{}, false, fmt.Errorf("failed to decrypt password: %w", err)
+		return Config{}, false, fmt.Errorf("failed to decrypt password: %w", err)
 	}
 	esConfig.Password = password // Return cleartext password
 
@@ -348,7 +347,7 @@ func (r *PostgresRepository) GetDefaultForAuth() (model.ElasticSearchConfig, boo
 }
 
 // Create method used to create an elasticSearchConfig
-func (r *PostgresRepository) Create(elasticSearchConfig model.ElasticSearchConfig) (int64, error) {
+func (r *PostgresRepository) Create(elasticSearchConfig Config) (int64, error) {
 	_, _, _ = utils.RefreshNextIdGen(r.conn.DB, table)
 
 	// Encrypt password if provided
@@ -382,7 +381,7 @@ func (r *PostgresRepository) Create(elasticSearchConfig model.ElasticSearchConfi
 }
 
 // Update method used to update un elasticSearchConfig
-func (r *PostgresRepository) Update(id int64, elasticSearchConfig model.ElasticSearchConfig) error {
+func (r *PostgresRepository) Update(id int64, elasticSearchConfig Config) error {
 	updateStmt := r.newStatement().
 		Update(table).
 		Set("name", elasticSearchConfig.Name).
@@ -426,8 +425,8 @@ func (r *PostgresRepository) Delete(id int64) error {
 }
 
 // GetAll method used to get all elasticSearchConfigs
-func (r *PostgresRepository) GetAll() (map[int64]model.ElasticSearchConfig, error) {
-	elasticSearchConfigs := make(map[int64]model.ElasticSearchConfig)
+func (r *PostgresRepository) GetAll() (map[int64]Config, error) {
+	elasticSearchConfigs := make(map[int64]Config)
 	// Note: password is excluded from GetAll for security
 	rows, err := r.newStatement().
 		Select("id", "name", "urls", `"default"`, "export_activated", "auth", "insecure", "username").
@@ -440,7 +439,7 @@ func (r *PostgresRepository) GetAll() (map[int64]model.ElasticSearchConfig, erro
 	defer rows.Close()
 
 	for rows.Next() {
-		esConfig := model.ElasticSearchConfig{}
+		esConfig := Config{}
 		var urls string
 		var username sql.NullString
 		err = rows.Scan(&esConfig.Id, &esConfig.Name, &urls, &esConfig.Default, &esConfig.ExportActivated,

@@ -5,8 +5,7 @@ import (
 	"net/http"
 
 	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/config/esconfig"
 	elasticsearchsdk "github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -27,7 +26,7 @@ func initElasticsearch() {
 
 		zap.L().Warn("Default ElasticSearch config does not exists, creating one using environment variables",
 			zap.Strings("urls", urls), zap.Bool("auth", auth), zap.Bool("insecure", insecure))
-		config = model.ElasticSearchConfig{
+		config = esconfig.Config{
 			Name:     "default",
 			URLs:     urls,
 			Default:  true,

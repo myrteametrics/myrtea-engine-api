@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/config/esconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 
 	es "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
 	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/closepointintime"

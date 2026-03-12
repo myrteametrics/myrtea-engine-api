@@ -12,8 +12,8 @@ import (
 	"sync"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/config/esconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
+	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/config/esconfig"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/security/permissions"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/spf13/viper"

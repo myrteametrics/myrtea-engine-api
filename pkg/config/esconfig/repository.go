@@ -2,24 +2,22 @@ package esconfig
 
 import (
 	"sync"
-
-	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 )
 
 // Repository is a storage interface which can be implemented by multiple backend
 // (in-memory map, sql database, in-memory cache, file system, ...)
 // It allows standard CRUD operation on ElasticSearchConfigs
 type Repository interface {
-	Get(id int64) (model.ElasticSearchConfig, bool, error)
-	GetByName(name string) (model.ElasticSearchConfig, bool, error)
-	GetDefault() (model.ElasticSearchConfig, bool, error)
-	GetForAuth(id int64) (model.ElasticSearchConfig, bool, error)
-	GetByNameForAuth(name string) (model.ElasticSearchConfig, bool, error)
-	GetDefaultForAuth() (model.ElasticSearchConfig, bool, error)
-	Create(config model.ElasticSearchConfig) (int64, error)
-	Update(id int64, config model.ElasticSearchConfig) error
+	Get(id int64) (Config, bool, error)
+	GetByName(name string) (Config, bool, error)
+	GetDefault() (Config, bool, error)
+	GetForAuth(id int64) (Config, bool, error)
+	GetByNameForAuth(name string) (Config, bool, error)
+	GetDefaultForAuth() (Config, bool, error)
+	Create(config Config) (int64, error)
+	Update(id int64, config Config) error
 	Delete(id int64) error
-	GetAll() (map[int64]model.ElasticSearchConfig, error)
+	GetAll() (map[int64]Config, error)
 }
 
 var (
