@@ -1,6 +1,6 @@
-package model
+package esconfig
 
-type ElasticSearchConfig struct {
+type Config struct {
 	Id              int64    `json:"id"`
 	Name            string   `json:"name"`
 	URLs            []string `json:"urls"`
