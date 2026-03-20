@@ -23,9 +23,7 @@ type DBQueryOptionnal struct {
 
 // UniqueViolation checks if the error is of code 23505
 func UniqueViolation(err error) *pq.Error {
-	var pqerr *pq.Error
-	if errors.As(err, &pqerr) &&
-		pqerr.Code == "23505" {
+	if pqerr, ok := errors.AsType[*pq.Error](err); ok && pqerr.Code == "23505" {
 		return pqerr
 	}
 	return nil

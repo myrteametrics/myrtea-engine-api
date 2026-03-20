@@ -32,9 +32,7 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 		zap.L().Warn("No context user provided")
 		return
 	}
-	user := _user.(users.UserWithPermissions)
-
-	client, err := notifier.BuildWebsocketClient(w, r, &user)
+	client, err := notifier.BuildWebsocketClient(w, r, new(_user.(users.UserWithPermissions)))
 	if err != nil {
 		zap.L().Error("Build new WS Client", zap.Error(err))
 		return
@@ -87,14 +85,12 @@ func NotificationsSSERegister(w http.ResponseWriter, r *http.Request) {
 		zap.L().Warn("No context user provided")
 		return
 	}
-	user := _user.(users.UserWithPermissions)
-
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Access-Control-Allow-Origin", "*") // Might not stay there
 
-	client, err := notifier.BuildSSEClient(w, &user)
+	client, err := notifier.BuildSSEClient(w, new(_user.(users.UserWithPermissions)))
 	if err != nil {
 		zap.L().Error("Build new SSE Client", zap.Error(err))
 		return

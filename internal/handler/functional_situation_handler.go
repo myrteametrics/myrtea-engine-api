@@ -33,7 +33,7 @@ type SituationIDPayload struct {
 //	@Description	Get all functional situations with optional filtering
 //	@Tags			FunctionalSituations
 //	@Produce		json
-//	@Param			parentId	query	int	false	"Filter by parent ID (use -1 for roots)"
+//	@Param			ParentId	query	int	false	"Filter by parent ID (use -1 for roots)"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		functionalsituation.FunctionalSituation
@@ -48,12 +48,12 @@ func GetFunctionalSituations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if filtering by parentId
-	parentIDStr := r.URL.Query().Get("parentId")
+	// Check if filtering by ParentId
+	parentIDStr := r.URL.Query().Get("ParentId")
 	if parentIDStr != "" {
 		parentID, err := strconv.ParseInt(parentIDStr, 10, 64)
 		if err != nil {
-			zap.L().Warn("Error parsing parentId", zap.String("parentId", parentIDStr), zap.Error(err))
+			zap.L().Warn("Error parsing ParentId", zap.String("ParentId", parentIDStr), zap.Error(err))
 			httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
 			return
 		}
