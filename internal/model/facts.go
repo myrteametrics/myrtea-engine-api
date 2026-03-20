@@ -141,8 +141,7 @@ func (r *FactHitsReq) validateFields() error {
 	}
 
 	if r.Debug == nil {
-		debug := true
-		r.Debug = &debug
+		r.Debug = new(true)
 	}
 	return nil
 }

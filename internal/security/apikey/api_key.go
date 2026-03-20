@@ -58,8 +58,7 @@ func (key *APIKey) IsValidForCreate() error {
 	}
 
 	if key.ExpiresAt == nil {
-		defaultExpiration := time.Now().AddDate(0, 1, 0)
-		key.ExpiresAt = &defaultExpiration
+		key.ExpiresAt = new(time.Now().AddDate(0, 1, 0))
 	}
 
 	if key.CreatedAt.IsZero() {

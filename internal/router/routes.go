@@ -104,13 +104,26 @@ func engineRouter(services Services) http.Handler {
 	r.Delete("/situations/{id}/instances/{instanceid}", handler.DeleteSituationTemplateInstance)
 	r.Post("/situations/{id}/instances/validate", handler.ValidateSituationTemplateInstance)
 
+	// Deprecated: use folder hierarchy instead - kept for retro-compatibility
 	r.Get("/externalconfigs", handler.GetExternalConfigs)
+
 	r.Get("/externalconfigs/{id}", handler.GetExternalConfig)
 	r.Get("/externalconfigs/{id}/alloldversions", handler.GetAllOldVersions)
 	r.Get("/externalconfigs/name/{name}", handler.GetExternalConfigByName)
 	r.Post("/externalconfigs", handler.PostExternalConfig)
 	r.Put("/externalconfigs/{id}", handler.PutExternalConfig)
 	r.Delete("/externalconfigs/{id}", handler.DeleteExternalConfig)
+	r.Post("/externalconfigs/{id}/move", handler.MoveExternalConfigToFolder)
+
+	// External config folder routes
+	r.Route("/externalconfigs/folders", func(r chi.Router) {
+		r.Post("/", handler.PostExternalConfigFolder)
+		r.Get("/hierarchy", handler.GetExternalConfigFolderHierarchy)
+		r.Get("/{id}", handler.GetExternalConfigFolder)
+		r.Put("/{id}", handler.PutExternalConfigFolder)
+		r.Delete("/{id}", handler.DeleteExternalConfigFolder)
+		r.Post("/{id}/move", handler.MoveExternalConfigFolder)
+	})
 
 	r.Get("/connectorconfigs", handler.GetConnectorConfigs)
 	r.Get("/connectorconfigs/{id}", handler.GetConnectorConfig)

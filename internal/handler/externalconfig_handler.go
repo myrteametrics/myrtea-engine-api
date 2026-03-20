@@ -20,14 +20,15 @@ import (
 //
 //	@Id				GetExternalConfigs
 //
-//	@Summary		Get all externalConfig definitions
-//	@Description	Get all externalConfig definitions
+//	@Summary		Get all externalConfig definitions (deprecated)
+//	@Description	Deprecated: use the folder hierarchy endpoint instead. Returns all externalConfig definitions for retro-compatibility.
 //	@Tags			ExternalConfigs
 //	@Produce		json
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		externalconfig.ExternalConfig	"list of all externalConfigs"
 //	@Failure		500	{object}	httputil.APIError				"Internal Server Error"
+//	@Deprecated		true
 //	@Router			/engine/externalconfigs [get]
 func GetExternalConfigs(w http.ResponseWriter, r *http.Request) {
 
