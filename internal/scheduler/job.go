@@ -3,6 +3,7 @@ package scheduler
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
@@ -87,6 +88,9 @@ func UnmarshalInternalJob(t string, b json.RawMessage, scheduleID int64) (Intern
 		var tJob FactCalculationJob
 		err = json.Unmarshal(b, &tJob)
 		tJob.ScheduleID = scheduleID
+		if tJob.JobBoostInfo != nil && tJob.JobBoostInfo.JobID == "" {
+			tJob.JobBoostInfo.JobID = strconv.FormatInt(scheduleID, 10)
+		}
 		job = tJob
 
 	case "baseline":

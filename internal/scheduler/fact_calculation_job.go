@@ -29,12 +29,13 @@ const timeLayout = "2006-01-02T15:04:05.000Z07:00"
 // FactCalculationJob represent a scheduler job instance which process a group of facts, and persist the result in postgresql
 // It also generate situations, persists them and notify the rule engine to evaluate them
 type FactCalculationJob struct {
-	FactIds        []int64 `json:"factIds"`
-	From           string  `json:"from,omitempty"`
-	To             string  `json:"to,omitempty"`
-	LastDailyValue bool    `json:"lastDailyValue,omitempty"`
-	Debug          bool    `json:"debug"`
-	ScheduleID     int64   `json:"-"`
+	FactIds        []int64             `json:"factIds"`
+	From           string              `json:"from,omitempty"`
+	To             string              `json:"to,omitempty"`
+	LastDailyValue bool                `json:"lastDailyValue,omitempty"`
+	JobBoostInfo   *model.JobBoostInfo `json:"jobboostinfo,omitempty"`
+	Debug          bool                `json:"debug"`
+	ScheduleID     int64               `json:"-"`
 }
 
 // ResolveFromAndTo resolves the expressions in parameters From and To
@@ -88,6 +89,17 @@ func (job FactCalculationJob) IsValid() (bool, error) {
 	}
 	if len(job.FactIds) <= 0 {
 		return false, errors.New("missing FactIds")
+	}
+	if job.JobBoostInfo != nil {
+		if job.JobBoostInfo.Quota <= 0 {
+			return false, errors.New("invalid JobBoostInfo.Quota")
+		}
+		if job.JobBoostInfo.Frequency == "" {
+			return false, errors.New("missing JobBoostInfo.Frequency")
+		}
+		if _, err := cronParser.Parse(job.JobBoostInfo.Frequency); err != nil {
+			return false, errors.New("invalid JobBoostInfo.Frequency" + err.Error())
+		}
 	}
 	return true, nil
 }
