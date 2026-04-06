@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/robfig/cron/v3"
@@ -11,9 +12,29 @@ import (
 type InternalScheduler struct {
 	mu          sync.RWMutex
 	C           *cron.Cron
-	Jobs        map[int64]cron.EntryID
+	Jobs        map[int64]RuntimeJobState
 	runningJobs map[int64]bool
 	RuleEngine  chan string
+}
+
+// FrequencyMode defines the active cron profile of a schedule.
+type FrequencyMode string
+
+const (
+	FrequencyModeNormal FrequencyMode = "normal"
+	FrequencyModeBoost  FrequencyMode = "boost"
+)
+
+// RuntimeJobState stores scheduler-only metadata for fast in-memory frequency switching.
+type RuntimeJobState struct {
+	EntryID    cron.EntryID
+	Job        InternalJob
+	JobType    string
+	Mode       FrequencyMode
+	NormalCron string
+	BoostCron  string
+	Quota      int
+	Used       int
 }
 
 var (
@@ -46,7 +67,7 @@ func NewScheduler() *InternalScheduler {
 	c := cron.New()
 	scheduler := &InternalScheduler{
 		C:           c,
-		Jobs:        make(map[int64]cron.EntryID),
+		Jobs:        make(map[int64]RuntimeJobState),
 		runningJobs: make(map[int64]bool),
 	}
 	return scheduler
@@ -56,26 +77,173 @@ func NewScheduler() *InternalScheduler {
 func (s *InternalScheduler) AddJobSchedule(schedule InternalSchedule) error {
 	zap.L().Info("Adding new schedule", zap.Any("schedule", schedule))
 
-	s.RemoveJobSchedule(schedule.ID)
-
-	if schedule.Enabled {
-		entryID, err := s.C.AddJob(schedule.CronExpr, schedule.Job)
-		if err != nil {
-			return err
-		}
-		s.Jobs[schedule.ID] = entryID
+	if !schedule.Enabled {
+		s.RemoveJobSchedule(schedule.ID)
+		return nil
 	}
 
-	return nil
+	if _, err := cronParser.Parse(schedule.CronExpr); err != nil {
+		return err
+	}
+
+	isFactBoostManagedSchedule := isFactBoostManagedSchedule(schedule)
+	if isFactBoostManagedSchedule {
+		if _, err := cronParser.Parse(boostCronFromSchedule(schedule)); err != nil {
+			return err
+		}
+	}
+
+	mode := FrequencyModeNormal
+	if prev, ok := s.Jobs[schedule.ID]; ok {
+		s.C.Remove(prev.EntryID)
+		if isFactBoostManagedSchedule {
+			schedule = mergeBoostRuntimeState(schedule, prev)
+			switch prev.Mode {
+			case FrequencyModeBoost:
+				mode = FrequencyModeBoost
+			}
+		}
+	}
+
+	return s.RescheduleJob(schedule, mode)
 }
 
 // RemoveJobSchedule add a new job to the current scheduler
 func (s *InternalScheduler) RemoveJobSchedule(scheduleID int64) {
 	zap.L().Info("Removing schedule", zap.Any("schedule", scheduleID))
 
-	if entryID, ok := s.Jobs[scheduleID]; ok {
-		s.C.Remove(entryID)
+	if state, ok := s.Jobs[scheduleID]; ok {
+		s.C.Remove(state.EntryID)
 		delete(s.Jobs, scheduleID)
+	}
+}
+
+// RescheduleJob removes an existing schedule and adds it again with a new cron expression
+func (s *InternalScheduler) RescheduleJob(schedule InternalSchedule, mode FrequencyMode) error {
+	newCronExpr := resolveCronExpr(schedule, mode)
+
+	zap.L().Info(
+		"Rescheduling job",
+		zap.Int64("scheduleID", schedule.ID),
+		zap.String("cronExpr", newCronExpr),
+		zap.String("mode", string(mode)),
+	)
+
+	entryID, err := s.C.AddJob(newCronExpr, schedule.Job)
+	if err != nil {
+		return fmt.Errorf("failed to reschedule job %d: %w", schedule.ID, err)
+	}
+
+	s.Jobs[schedule.ID] = buildRuntimeState(schedule, entryID, mode)
+
+	return nil
+}
+
+func resolveCronExpr(schedule InternalSchedule, mode FrequencyMode) string {
+	switch mode {
+	case FrequencyModeBoost:
+		return boostCronFromSchedule(schedule)
+	case FrequencyModeNormal:
+		return schedule.CronExpr
+	default:
+		return schedule.CronExpr
+	}
+}
+
+// SwitchJobFrequency switches a schedule between normal and boost cron frequencies at runtime.
+// Persisted schedule changes remain managed by repository update flows (e.g. PUT handler + AddJobSchedule).
+func (s *InternalScheduler) SwitchJobFrequency(scheduleID int64, mode FrequencyMode) (InternalSchedule, error) {
+	state, ok := s.Jobs[scheduleID]
+	if !ok {
+		return InternalSchedule{}, fmt.Errorf("schedule %d not loaded in runtime scheduler", scheduleID)
+	}
+	if state.Job == nil {
+		return InternalSchedule{}, fmt.Errorf("runtime job not found for schedule %d", scheduleID)
+	}
+
+	runtimeSchedule := InternalSchedule{
+		ID:       scheduleID,
+		Job:      state.Job,
+		Enabled:  true,
+		CronExpr: state.NormalCron,
+		JobType:  state.JobType,
+	}
+
+	s.C.Remove(state.EntryID)
+	if err := s.RescheduleJob(runtimeSchedule, mode); err != nil {
+		return InternalSchedule{}, err
+	}
+
+	return runtimeSchedule, nil
+}
+
+func buildRuntimeState(schedule InternalSchedule, entryID cron.EntryID, mode FrequencyMode) RuntimeJobState {
+	state := RuntimeJobState{
+		EntryID:    entryID,
+		Job:        schedule.Job,
+		JobType:    schedule.JobType,
+		Mode:       mode,
+		NormalCron: schedule.CronExpr,
+	}
+
+	if !isFactBoostManagedSchedule(schedule) {
+		return state
+	}
+
+	factJob := schedule.Job.(FactCalculationJob)
+
+	if factJob.JobBoostInfo.Frequency != "" {
+		state.BoostCron = factJob.JobBoostInfo.Frequency
+	}
+
+	state.Quota = factJob.JobBoostInfo.Quota
+	state.Used = factJob.JobBoostInfo.Used
+
+	return state
+}
+
+func isFactBoostManagedSchedule(schedule InternalSchedule) bool {
+	if schedule.JobType != "fact" {
+		return false
+	}
+	factJob, ok := extractFactCalculationJob(schedule)
+	return ok && factJob.JobBoostInfo != nil
+}
+
+func boostCronFromSchedule(schedule InternalSchedule) string {
+	factJob, ok := extractFactCalculationJob(schedule)
+	if !ok || factJob.JobBoostInfo == nil {
+		return ""
+	}
+	return factJob.JobBoostInfo.Frequency
+}
+
+func mergeBoostRuntimeState(schedule InternalSchedule, previousState RuntimeJobState) InternalSchedule {
+	factJob, ok := extractFactCalculationJob(schedule)
+	if !ok || factJob.JobBoostInfo == nil {
+		return schedule
+	}
+
+	boostCopy := *factJob.JobBoostInfo
+	// Keep runtime execution counters while applying schedule updates.
+	boostCopy.Used = previousState.Used
+
+	factJob.JobBoostInfo = &boostCopy
+	schedule.Job = factJob
+	return schedule
+}
+
+func extractFactCalculationJob(schedule InternalSchedule) (FactCalculationJob, bool) {
+	switch typedJob := schedule.Job.(type) {
+	case FactCalculationJob:
+		return typedJob, true
+	case *FactCalculationJob:
+		if typedJob == nil {
+			return FactCalculationJob{}, false
+		}
+		return *typedJob, true
+	default:
+		return FactCalculationJob{}, false
 	}
 }
 
