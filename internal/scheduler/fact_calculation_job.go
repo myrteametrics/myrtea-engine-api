@@ -623,7 +623,7 @@ func filterTask(situationsToUpdate map[string]history.HistoryRecordV4, situation
 	for key, taskBatch := range taskBatchsMap {
 		info := taskBatch.JobBoostInfo
 
-		if info != nil && info.Active && info.Quota < info.Used {
+		if info != nil && info.Active && info.Used < info.Quota {
 			ignoredActions := extractIgnoredActionNames(taskBatch)
 			zap.L().Info(
 				"Task batch ignored: boost quota reached while boost mode is active",

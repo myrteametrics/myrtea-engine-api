@@ -168,9 +168,6 @@ func (bm *JobBoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo mod
 		if !boostInfo.Active {
 			return
 		}
-		if boostInfo.Quota <= boostInfo.Used {
-			return
-		}
 		if boostInfo.DirectSwitch {
 			go bm.switchWhenJobIdle(boostInfo.JobID, FrequencyModeNormal)
 			return

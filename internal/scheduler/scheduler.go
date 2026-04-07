@@ -209,11 +209,12 @@ func applyModeToScheduleJob(schedule InternalSchedule, mode FrequencyMode) Inter
 	}
 
 	boostCopy := *factJob.JobBoostInfo
-	if !boostCopy.Configured {
-		boostCopy.Active = false
-	} else {
-		boostCopy.Active = mode == FrequencyModeBoost
+	boostCopy.Active = false
+
+	if mode == FrequencyModeBoost {
+		boostCopy.Active = true
 	}
+
 	factJob.JobBoostInfo = &boostCopy
 	schedule.Job = factJob
 
