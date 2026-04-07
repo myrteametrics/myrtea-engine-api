@@ -610,15 +610,21 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		}
 	}
 
-	filteredTaskBatch := filterTaskByDependency(situationsToUpdate, situationHistoryMetadata, taskBatchsMap)
+	filteredTaskBatch := filterTask(situationsToUpdate, situationHistoryMetadata, taskBatchsMap)
 
 	return filteredTaskBatch, nil
 }
 
 // filtration
-func filterTaskByDependency(situationsToUpdate map[string]history.HistoryRecordV4, situationHistoryMetadata map[model.Key]map[string]interface{}, taskBatchsMap map[string]tasker.TaskBatch) []tasker.TaskBatch {
+func filterTask(situationsToUpdate map[string]history.HistoryRecordV4, situationHistoryMetadata map[model.Key]map[string]interface{}, taskBatchsMap map[string]tasker.TaskBatch) []tasker.TaskBatch {
 	filteredTaskBatch := make(map[string]tasker.TaskBatch, len(taskBatchsMap))
 	for key, taskBatch := range taskBatchsMap {
+		info := taskBatch.JobBoostInfo
+
+		if info != nil && info.Active && info.Quota < info.Used {
+			zap.L().Info("Task ignored due to boost mode active and quota not reached", zap.Any("task", taskBatch))
+			continue
+		}
 		filteredTaskBatch[key] = taskBatch
 	}
 
