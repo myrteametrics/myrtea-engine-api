@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 
 	"github.com/robfig/cron/v3"
@@ -151,14 +150,7 @@ func resolveCronExpr(schedule InternalSchedule, mode FrequencyMode) string {
 
 // SwitchJobFrequency switches a schedule between normal and boost cron frequencies at runtime.
 // Persisted schedule changes remain managed by repository update flows (e.g. PUT handler + AddJobSchedule).
-func (s *InternalScheduler) SwitchJobFrequency(id string, mode FrequencyMode) {
-
-	scheduleID, err := strconv.ParseInt(id, 10, 64)
-
-	if err != nil {
-		zap.L().Warn("Cannot switch scheduler frequency directly: invalid schedule ID", zap.String("mode", string(mode)), zap.Error(err))
-		return
-	}
+func (s *InternalScheduler) SwitchJobFrequency(scheduleID int64, mode FrequencyMode) {
 
 	state, ok := s.Jobs[scheduleID]
 	if !ok {

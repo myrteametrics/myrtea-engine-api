@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -128,9 +129,6 @@ func (bm *JobBoostManager) Stop() {
 
 // Evaluate processes metadata and boost info to decide if a job should be boosted or reverted
 func (bm *JobBoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo model.JobBoostInfo) {
-	if !boostInfo.Configured {
-		return
-	}
 
 	var value string
 	for _, md := range metadatas {
@@ -155,13 +153,13 @@ func (bm *JobBoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo mod
 	case model.Critical.String():
 		if boostInfo.Active {
 			if boostInfo.DirectSwitch && boostInfo.Quota <= boostInfo.Used {
-				S().SwitchJobFrequency(boostInfo.JobID, FrequencyModeNormal)
+				go bm.switchWhenJobIdle(boostInfo.JobID, FrequencyModeNormal)
 				return
 			}
 			return
 		}
 		if boostInfo.DirectSwitch {
-			S().SwitchJobFrequency(boostInfo.JobID, FrequencyModeBoost)
+			go bm.switchWhenJobIdle(boostInfo.JobID, FrequencyModeBoost)
 			return
 		}
 		bm.addToBoostList(boostInfo.JobID)
@@ -174,7 +172,7 @@ func (bm *JobBoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo mod
 			return
 		}
 		if boostInfo.DirectSwitch {
-			S().SwitchJobFrequency(boostInfo.JobID, FrequencyModeNormal)
+			go bm.switchWhenJobIdle(boostInfo.JobID, FrequencyModeNormal)
 			return
 		}
 		bm.addToRevertList(boostInfo.JobID)
@@ -341,4 +339,21 @@ func (action *JobBoostAction) TimeUntilExpiration() time.Duration {
 		return 0
 	}
 	return remaining
+}
+
+func (bm *JobBoostManager) switchWhenJobIdle(jobID string, mode FrequencyMode) {
+	scheduleID, err := strconv.ParseInt(jobID, 10, 64)
+	if err != nil {
+		zap.L().Warn("Cannot switch job frequency directly: invalid schedule ID", zap.String("mode", string(mode)), zap.Error(err))
+		return
+	}
+
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		if !S().ExistingRunningJob(scheduleID) {
+			S().SwitchJobFrequency(scheduleID, mode)
+			return
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
 }
