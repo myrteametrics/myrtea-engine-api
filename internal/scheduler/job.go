@@ -87,6 +87,9 @@ func UnmarshalInternalJob(t string, b json.RawMessage, scheduleID int64) (Intern
 	case "fact":
 		var tJob FactCalculationJob
 		err = json.Unmarshal(b, &tJob)
+		if !boostConfigured(tJob.JobBoostInfo) {
+			tJob.JobBoostInfo = nil
+		}
 		tJob.ScheduleID = scheduleID
 		if tJob.JobBoostInfo != nil && tJob.JobBoostInfo.JobID == "" {
 			tJob.JobBoostInfo.JobID = strconv.FormatInt(scheduleID, 10)

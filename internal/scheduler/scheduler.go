@@ -32,9 +32,6 @@ type RuntimeJobState struct {
 	JobType    string
 	Mode       FrequencyMode
 	NormalCron string
-	BoostCron  string
-	Quota      int
-	Used       int
 }
 
 var (
@@ -120,6 +117,7 @@ func (s *InternalScheduler) RemoveJobSchedule(scheduleID int64) {
 
 // RescheduleJob removes an existing schedule and adds it again with a new cron expression
 func (s *InternalScheduler) RescheduleJob(schedule InternalSchedule, mode FrequencyMode) error {
+	schedule = applyModeToScheduleJob(schedule, mode)
 	newCronExpr := resolveCronExpr(schedule, mode)
 
 	zap.L().Info(
@@ -174,6 +172,9 @@ func (s *InternalScheduler) SwitchJobFrequency(scheduleID int64, mode FrequencyM
 		return InternalSchedule{}, err
 	}
 
+	runtimeSchedule = applyModeToScheduleJob(runtimeSchedule, mode)
+	runtimeSchedule.CronExpr = resolveCronExpr(runtimeSchedule, mode)
+
 	return runtimeSchedule, nil
 }
 
@@ -186,19 +187,6 @@ func buildRuntimeState(schedule InternalSchedule, entryID cron.EntryID, mode Fre
 		NormalCron: schedule.CronExpr,
 	}
 
-	if !isFactBoostManagedSchedule(schedule) {
-		return state
-	}
-
-	factJob := schedule.Job.(FactCalculationJob)
-
-	if factJob.JobBoostInfo.Frequency != "" {
-		state.BoostCron = factJob.JobBoostInfo.Frequency
-	}
-
-	state.Quota = factJob.JobBoostInfo.Quota
-	state.Used = factJob.JobBoostInfo.Used
-
 	return state
 }
 
@@ -207,12 +195,12 @@ func isFactBoostManagedSchedule(schedule InternalSchedule) bool {
 		return false
 	}
 	factJob, ok := extractFactCalculationJob(schedule)
-	return ok && factJob.JobBoostInfo != nil
+	return ok && boostConfigured(factJob.JobBoostInfo)
 }
 
 func boostCronFromSchedule(schedule InternalSchedule) string {
 	factJob, ok := extractFactCalculationJob(schedule)
-	if !ok || factJob.JobBoostInfo == nil {
+	if !ok || !boostConfigured(factJob.JobBoostInfo) {
 		return ""
 	}
 	return factJob.JobBoostInfo.Frequency
@@ -220,21 +208,56 @@ func boostCronFromSchedule(schedule InternalSchedule) string {
 
 func mergeBoostRuntimeState(schedule InternalSchedule, previousState RuntimeJobState) InternalSchedule {
 	factJob, ok := extractFactCalculationJob(schedule)
-	if !ok || factJob.JobBoostInfo == nil {
+	if !ok || !boostConfigured(factJob.JobBoostInfo) {
 		return schedule
 	}
 
 	boostCopy := *factJob.JobBoostInfo
-	// Keep runtime execution counters while applying schedule updates.
-	boostCopy.Used = previousState.Used
+	prevFactJob, ok := extractFactCalculationJobFromInternalJob(previousState.Job)
+	if ok && boostConfigured(prevFactJob.JobBoostInfo) {
+		// Keep runtime execution counters while applying schedule updates.
+		boostCopy.Used = prevFactJob.JobBoostInfo.Used
+	}
 
 	factJob.JobBoostInfo = &boostCopy
 	schedule.Job = factJob
 	return schedule
 }
 
+func applyModeToScheduleJob(schedule InternalSchedule, mode FrequencyMode) InternalSchedule {
+	factJob, ok := extractFactCalculationJob(schedule)
+	if !ok || factJob.JobBoostInfo == nil {
+		return schedule
+	}
+
+	boostCopy := *factJob.JobBoostInfo
+	if !boostCopy.Configured {
+		boostCopy.Active = false
+	} else {
+		boostCopy.Active = mode == FrequencyModeBoost
+	}
+	factJob.JobBoostInfo = &boostCopy
+	schedule.Job = factJob
+
+	return schedule
+}
+
 func extractFactCalculationJob(schedule InternalSchedule) (FactCalculationJob, bool) {
 	switch typedJob := schedule.Job.(type) {
+	case FactCalculationJob:
+		return typedJob, true
+	case *FactCalculationJob:
+		if typedJob == nil {
+			return FactCalculationJob{}, false
+		}
+		return *typedJob, true
+	default:
+		return FactCalculationJob{}, false
+	}
+}
+
+func extractFactCalculationJobFromInternalJob(job InternalJob) (FactCalculationJob, bool) {
+	switch typedJob := job.(type) {
 	case FactCalculationJob:
 		return typedJob, true
 	case *FactCalculationJob:

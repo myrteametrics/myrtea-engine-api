@@ -90,7 +90,7 @@ func (job FactCalculationJob) IsValid() (bool, error) {
 	if len(job.FactIds) <= 0 {
 		return false, errors.New("missing FactIds")
 	}
-	if job.JobBoostInfo != nil {
+	if boostConfigured(job.JobBoostInfo) {
 		if job.JobBoostInfo.Quota <= 0 {
 			return false, errors.New("invalid JobBoostInfo.Quota")
 		}
@@ -136,7 +136,7 @@ func (job FactCalculationJob) Run() {
 		return
 	}
 
-	situationsToUpdate, err := CalculateAndPersistFacts(t, job.FactIds)
+	situationsToUpdate, err := CalculateAndPersistFacts(t, job)
 	if err != nil {
 		zap.L().Error("CalculateAndPersistFacts", zap.Error(err))
 		S().RemoveRunningJob(job.ScheduleID)
@@ -335,10 +335,10 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 	return situationsToUpdate, nil
 }
 
-func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.HistoryRecordV4, error) {
+func CalculateAndPersistFacts(t time.Time, job FactCalculationJob) (map[string]history.HistoryRecordV4, error) {
 	situationsToUpdate := make(map[string]history.HistoryRecordV4)
 
-	for _, factID := range factIDs {
+	for _, factID := range job.FactIds {
 		f, found, err := fact.R().Get(factID)
 		if err != nil {
 			zap.L().Error("Error Getting the Fact, skipping fact calculation...", zap.Int64("factID", factID))
@@ -392,6 +392,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
 						EnableDependsOn:     sh.EnableDependsOn,
 						DependsOnParameters: sh.DependsOnParameters,
+						JobBoostInfo:        job.JobBoostInfo,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -440,6 +441,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
 						EnableDependsOn:     sh.EnableDependsOn,
 						DependsOnParameters: sh.DependsOnParameters,
+						JobBoostInfo:        job.JobBoostInfo,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -838,4 +840,11 @@ func (job *FactCalculationJob) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	return nil
+}
+
+func boostConfigured(info *model.JobBoostInfo) bool {
+	if info == nil {
+		return false
+	}
+	return info.Configured
 }
