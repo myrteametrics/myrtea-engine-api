@@ -94,7 +94,9 @@ func (s *InternalScheduler) AddJobSchedule(schedule InternalSchedule) error {
 	if prev, ok := s.Jobs[schedule.ID]; ok {
 		s.C.Remove(prev.EntryID)
 		if isFactBoostManagedSchedule {
-			schedule = mergeBoostRuntimeState(schedule, prev)
+			// Important:
+			// if a schedule is edited while boost mode is active, we keep the runtime Used counter.
+			// Resetting Used here would lose already-consumed quota and could overrun boost executions.
 			switch prev.Mode {
 			case FrequencyModeBoost:
 				mode = FrequencyModeBoost
@@ -198,26 +200,6 @@ func boostCronFromSchedule(schedule InternalSchedule) string {
 		return ""
 	}
 	return factJob.JobBoostInfo.Frequency
-}
-
-func mergeBoostRuntimeState(schedule InternalSchedule, previousState RuntimeJobState) InternalSchedule {
-	factJob, ok := extractFactCalculationJob(schedule)
-	if !ok || !boostConfigured(factJob.JobBoostInfo) {
-		return schedule
-	}
-
-	boostCopy := *factJob.JobBoostInfo
-	prevFactJob, ok := asFactCalculationJob(previousState.Job)
-	if ok && boostConfigured(prevFactJob.JobBoostInfo) {
-		// Important:
-		// if a schedule is edited while boost mode is active, we keep the runtime Used counter.
-		// Resetting Used here would lose already-consumed quota and could overrun boost executions.
-		boostCopy.Used = 0
-	}
-
-	factJob.JobBoostInfo = &boostCopy
-	schedule.Job = factJob
-	return schedule
 }
 
 func applyModeToScheduleJob(schedule InternalSchedule, mode FrequencyMode) InternalSchedule {

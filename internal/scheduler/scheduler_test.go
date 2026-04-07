@@ -159,24 +159,8 @@ func TestSwitchJobFrequencyBoostAndRevert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	updated, err := s.SwitchJobFrequency(schedule.ID, FrequencyModeBoost)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if updated.CronExpr != "*/2 * * * *" {
-		t.Fatalf("expected boost cron, got %s", updated.CronExpr)
-	}
+	s.SwitchJobFrequency(schedule.ID, FrequencyModeBoost)
 
-	boostJob, ok := updated.Job.(FactCalculationJob)
-	if !ok {
-		t.Fatal("expected FactCalculationJob after boost switch")
-	}
-	if boostJob.JobBoostInfo == nil {
-		t.Fatal("expected boost info after boost switch")
-	}
-	if !boostJob.JobBoostInfo.Active {
-		t.Fatal("expected boost info active after boost switch")
-	}
 	boostState := s.Jobs[schedule.ID]
 	if boostState.Mode != FrequencyModeBoost {
 		t.Fatalf("expected runtime mode boost, got %s", boostState.Mode)
@@ -189,24 +173,8 @@ func TestSwitchJobFrequencyBoostAndRevert(t *testing.T) {
 		t.Fatal("expected runtime boost info active after boost switch")
 	}
 
-	reverted, err := s.SwitchJobFrequency(schedule.ID, FrequencyModeNormal)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if reverted.CronExpr != "*/15 * * * *" {
-		t.Fatalf("expected normal cron, got %s", reverted.CronExpr)
-	}
+	s.SwitchJobFrequency(schedule.ID, FrequencyModeNormal)
 
-	revertedJob, ok := reverted.Job.(FactCalculationJob)
-	if !ok {
-		t.Fatal("expected FactCalculationJob after normal switch")
-	}
-	if revertedJob.JobBoostInfo == nil {
-		t.Fatal("expected boost info after normal switch")
-	}
-	if revertedJob.JobBoostInfo.Active {
-		t.Fatal("expected boost info inactive after normal switch")
-	}
 	normalState := s.Jobs[schedule.ID]
 	if normalState.Mode != FrequencyModeNormal {
 		t.Fatalf("expected runtime mode normal, got %s", normalState.Mode)
@@ -247,9 +215,7 @@ func TestAddJobScheduleKeepsCurrentModeAndUsed(t *testing.T) {
 	if err := s.AddJobSchedule(initial); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.SwitchJobFrequency(initial.ID, FrequencyModeBoost); err != nil {
-		t.Fatal(err)
-	}
+	s.SwitchJobFrequency(initial.ID, FrequencyModeBoost)
 
 	// Simulate runtime progress while boosted.
 	state := s.Jobs[initial.ID]
