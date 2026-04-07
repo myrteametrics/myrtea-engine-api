@@ -848,3 +848,39 @@ func boostConfigured(info *model.JobBoostInfo) bool {
 	}
 	return info.Configured
 }
+
+func asFactCalculationJob(job InternalJob) (FactCalculationJob, bool) {
+	switch typedJob := job.(type) {
+	case FactCalculationJob:
+		return typedJob, true
+	case *FactCalculationJob:
+		if typedJob == nil {
+			return FactCalculationJob{}, false
+		}
+		return *typedJob, true
+	default:
+		return FactCalculationJob{}, false
+	}
+}
+
+func extractFactCalculationJob(schedule InternalSchedule) (FactCalculationJob, bool) {
+	switch typedJob := schedule.Job.(type) {
+	case FactCalculationJob:
+		return typedJob, true
+	case *FactCalculationJob:
+		if typedJob == nil {
+			return FactCalculationJob{}, false
+		}
+		return *typedJob, true
+	default:
+		return FactCalculationJob{}, false
+	}
+}
+
+func isFactBoostManagedSchedule(schedule InternalSchedule) bool {
+	if schedule.JobType != "fact" {
+		return false
+	}
+	factJob, ok := extractFactCalculationJob(schedule)
+	return ok && boostConfigured(factJob.JobBoostInfo)
+}

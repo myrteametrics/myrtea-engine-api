@@ -190,14 +190,6 @@ func buildRuntimeState(schedule InternalSchedule, entryID cron.EntryID, mode Fre
 	return state
 }
 
-func isFactBoostManagedSchedule(schedule InternalSchedule) bool {
-	if schedule.JobType != "fact" {
-		return false
-	}
-	factJob, ok := extractFactCalculationJob(schedule)
-	return ok && boostConfigured(factJob.JobBoostInfo)
-}
-
 func boostCronFromSchedule(schedule InternalSchedule) string {
 	factJob, ok := extractFactCalculationJob(schedule)
 	if !ok || !boostConfigured(factJob.JobBoostInfo) {
@@ -213,9 +205,11 @@ func mergeBoostRuntimeState(schedule InternalSchedule, previousState RuntimeJobS
 	}
 
 	boostCopy := *factJob.JobBoostInfo
-	prevFactJob, ok := extractFactCalculationJobFromInternalJob(previousState.Job)
+	prevFactJob, ok := asFactCalculationJob(previousState.Job)
 	if ok && boostConfigured(prevFactJob.JobBoostInfo) {
-		// Keep runtime execution counters while applying schedule updates.
+		// Important:
+		// if a schedule is edited while boost mode is active, we keep the runtime Used counter.
+		// Resetting Used here would lose already-consumed quota and could overrun boost executions.
 		boostCopy.Used = prevFactJob.JobBoostInfo.Used
 	}
 
@@ -240,34 +234,6 @@ func applyModeToScheduleJob(schedule InternalSchedule, mode FrequencyMode) Inter
 	schedule.Job = factJob
 
 	return schedule
-}
-
-func extractFactCalculationJob(schedule InternalSchedule) (FactCalculationJob, bool) {
-	switch typedJob := schedule.Job.(type) {
-	case FactCalculationJob:
-		return typedJob, true
-	case *FactCalculationJob:
-		if typedJob == nil {
-			return FactCalculationJob{}, false
-		}
-		return *typedJob, true
-	default:
-		return FactCalculationJob{}, false
-	}
-}
-
-func extractFactCalculationJobFromInternalJob(job InternalJob) (FactCalculationJob, bool) {
-	switch typedJob := job.(type) {
-	case FactCalculationJob:
-		return typedJob, true
-	case *FactCalculationJob:
-		if typedJob == nil {
-			return FactCalculationJob{}, false
-		}
-		return *typedJob, true
-	default:
-		return FactCalculationJob{}, false
-	}
 }
 
 // Init loads the job schedules from Data Base
