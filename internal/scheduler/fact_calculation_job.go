@@ -466,6 +466,8 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 	taskBatchs := make([]tasker.TaskBatch, 0)
 	taskBatchsMap := make(map[string]tasker.TaskBatch)
 	situationHistoryMetadata := make(map[model.Key]map[string]interface{})
+	allMetadatas := make([]metadata.MetaData, 0)
+	var aggregatedBoostInfo *model.JobBoostInfo
 	for _, situationToUpdate := range situationsToUpdate {
 
 		// zap.L().Sugar().Info(situationToUpdate)
@@ -506,8 +508,6 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			zap.L().Error("", zap.Error(err))
 		}
 
-		// "set" actions are metadata-only; they are intentionally excluded from ignored-actions ,
-		// because dependency and boost filtering decisions app
 		metadatas := make([]metadata.MetaData, 0)
 		agenda := evaluator.EvaluateRules(localRuleEngine, historySituationFlattenData, enabledRuleIDs)
 		var filteredAgenda []ruleeng.Action
@@ -569,10 +569,11 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
-		} else {
-			if situationToUpdate.JobBoostInfo != nil {
-				JBM().Evaluate(metadatas, *situationToUpdate.JobBoostInfo)
-			}
+		}
+		allMetadatas = append(allMetadatas, metadatas...)
+		if aggregatedBoostInfo == nil && situationToUpdate.JobBoostInfo != nil {
+			boostCopy := *situationToUpdate.JobBoostInfo
+			aggregatedBoostInfo = &boostCopy
 		}
 		// zap.L().Sugar().Info("insert new situation", historySituationNew)
 
@@ -610,6 +611,13 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			key := fmt.Sprintf("%v-%v", situationToUpdate.SituationID, situationToUpdate.SituationInstanceID)
 			taskBatchsMap[key] = newTaskBatch
 		}
+	}
+
+	// Evaluate once per scheduler run with aggregated metadata from all updated instance situation.
+	// Attention: if a job updates multiple situation instances in one run, a single "critical"
+	// metadata is enough to trigger boost mode for the whole job.
+	if aggregatedBoostInfo != nil {
+		JBM().Evaluate(allMetadatas, *aggregatedBoostInfo)
 	}
 
 	filteredTaskBatch := filterTask(situationsToUpdate, situationHistoryMetadata, taskBatchsMap)

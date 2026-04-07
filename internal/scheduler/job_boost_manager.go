@@ -127,10 +127,15 @@ func (bm *JobBoostManager) Stop() {
 	zap.L().Info("JobBoostManager stopped gracefully")
 }
 
-// Evaluate processes metadata and boost info to decide if a job should be boosted or reverted
+// Evaluate decides boost/revert for the whole job run, not per situation instance.
+// Metadata is aggregated across all updated situations of the run.
+// Attention: one "critical" value among them is enough to trigger boost mode.
 func (bm *JobBoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo model.JobBoostInfo) {
+	if !boostInfo.Configured {
+		return
+	}
 
-	var value string
+	hasOK := false
 	for _, md := range metadatas {
 		v, ok := md.Value.(string)
 		if !ok {
@@ -139,41 +144,39 @@ func (bm *JobBoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo mod
 
 		normalized := strings.ToLower(strings.TrimSpace(v))
 
-		if normalized == model.Critical.String() || normalized == model.Ok.String() {
-			value = v
-			break
+		if normalized == model.Critical.String() {
+			if boostInfo.Active {
+				if boostInfo.DirectSwitch && boostInfo.Quota <= boostInfo.Used {
+					go bm.switchWhenJobIdle(boostInfo.JobID, FrequencyModeNormal)
+					return
+				}
+				return
+			}
+			if boostInfo.DirectSwitch {
+				go bm.switchWhenJobIdle(boostInfo.JobID, FrequencyModeBoost)
+				return
+			}
+			bm.addToBoostList(boostInfo.JobID)
+			return
+		}
+
+		if normalized == model.Ok.String() {
+			hasOK = true
 		}
 	}
 
-	if value == "" {
+	if !hasOK {
 		return
 	}
 
-	switch value {
-	case model.Critical.String():
-		if boostInfo.Active {
-			if boostInfo.DirectSwitch && boostInfo.Quota <= boostInfo.Used {
-				go bm.switchWhenJobIdle(boostInfo.JobID, FrequencyModeNormal)
-				return
-			}
-			return
-		}
-		if boostInfo.DirectSwitch {
-			go bm.switchWhenJobIdle(boostInfo.JobID, FrequencyModeBoost)
-			return
-		}
-		bm.addToBoostList(boostInfo.JobID)
-
-	case model.Ok.String():
-		if !boostInfo.Active {
-			return
-		}
-		if boostInfo.DirectSwitch {
-			go bm.switchWhenJobIdle(boostInfo.JobID, FrequencyModeNormal)
-			return
-		}
-		bm.addToRevertList(boostInfo.JobID)
+	if !boostInfo.Active {
+		return
 	}
+	if boostInfo.DirectSwitch {
+		go bm.switchWhenJobIdle(boostInfo.JobID, FrequencyModeNormal)
+		return
+	}
+	bm.addToRevertList(boostInfo.JobID)
 }
 
 // addToBoostList removes the job from both lists then adds it to the boost list
