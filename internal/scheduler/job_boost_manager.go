@@ -154,6 +154,14 @@ func (bm *JobBoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo mod
 	switch value {
 	case model.Critical.String():
 		if boostInfo.Active {
+			if boostInfo.DirectSwitch && boostInfo.Quota <= boostInfo.Used {
+				S().SwitchJobFrequency(boostInfo.JobID, FrequencyModeNormal)
+				return
+			}
+			return
+		}
+		if boostInfo.DirectSwitch {
+			S().SwitchJobFrequency(boostInfo.JobID, FrequencyModeBoost)
 			return
 		}
 		bm.addToBoostList(boostInfo.JobID)
@@ -163,6 +171,10 @@ func (bm *JobBoostManager) Evaluate(metadatas []metadata.MetaData, boostInfo mod
 			return
 		}
 		if boostInfo.Quota <= boostInfo.Used {
+			return
+		}
+		if boostInfo.DirectSwitch {
+			S().SwitchJobFrequency(boostInfo.JobID, FrequencyModeNormal)
 			return
 		}
 		bm.addToRevertList(boostInfo.JobID)

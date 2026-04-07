@@ -136,7 +136,15 @@ func (job FactCalculationJob) Run() {
 		return
 	}
 
-	situationsToUpdate, err := CalculateAndPersistFacts(t, job)
+	runtimeJob := job
+	if job.JobBoostInfo != nil {
+		boostCopy := *job.JobBoostInfo
+		boostCopy.DirectSwitch = true
+		boostCopy.Used++
+		runtimeJob.JobBoostInfo = &boostCopy
+	}
+
+	situationsToUpdate, err := CalculateAndPersistFacts(t, runtimeJob)
 	if err != nil {
 		zap.L().Error("CalculateAndPersistFacts", zap.Error(err))
 		S().RemoveRunningJob(job.ScheduleID)

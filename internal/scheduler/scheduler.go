@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 
 	"github.com/robfig/cron/v3"
@@ -150,13 +151,23 @@ func resolveCronExpr(schedule InternalSchedule, mode FrequencyMode) string {
 
 // SwitchJobFrequency switches a schedule between normal and boost cron frequencies at runtime.
 // Persisted schedule changes remain managed by repository update flows (e.g. PUT handler + AddJobSchedule).
-func (s *InternalScheduler) SwitchJobFrequency(scheduleID int64, mode FrequencyMode) (InternalSchedule, error) {
+func (s *InternalScheduler) SwitchJobFrequency(id string, mode FrequencyMode) {
+
+	scheduleID, err := strconv.ParseInt(id, 10, 64)
+
+	if err != nil {
+		zap.L().Warn("Cannot switch scheduler frequency directly: invalid schedule ID", zap.String("mode", string(mode)), zap.Error(err))
+		return
+	}
+
 	state, ok := s.Jobs[scheduleID]
 	if !ok {
-		return InternalSchedule{}, fmt.Errorf("schedule %d not loaded in runtime scheduler", scheduleID)
+		zap.L().Warn("Cannot switch scheduler frequency directly: schedule not found", zap.String("mode", string(mode)))
+		return
 	}
 	if state.Job == nil {
-		return InternalSchedule{}, fmt.Errorf("runtime job not found for schedule %d", scheduleID)
+		zap.L().Warn("Cannot switch scheduler frequency directly: runtime job is nil", zap.String("mode", string(mode)))
+		return
 	}
 
 	runtimeSchedule := InternalSchedule{
@@ -169,13 +180,12 @@ func (s *InternalScheduler) SwitchJobFrequency(scheduleID int64, mode FrequencyM
 
 	s.C.Remove(state.EntryID)
 	if err := s.RescheduleJob(runtimeSchedule, mode); err != nil {
-		return InternalSchedule{}, err
+		zap.L().Warn("Cannot switch scheduler frequency directly", zap.String("mode", string(mode)), zap.Error(err))
 	}
 
 	runtimeSchedule = applyModeToScheduleJob(runtimeSchedule, mode)
 	runtimeSchedule.CronExpr = resolveCronExpr(runtimeSchedule, mode)
 
-	return runtimeSchedule, nil
 }
 
 func buildRuntimeState(schedule InternalSchedule, entryID cron.EntryID, mode FrequencyMode) RuntimeJobState {
@@ -210,7 +220,7 @@ func mergeBoostRuntimeState(schedule InternalSchedule, previousState RuntimeJobS
 		// Important:
 		// if a schedule is edited while boost mode is active, we keep the runtime Used counter.
 		// Resetting Used here would lose already-consumed quota and could overrun boost executions.
-		boostCopy.Used = prevFactJob.JobBoostInfo.Used
+		boostCopy.Used = 0
 	}
 
 	factJob.JobBoostInfo = &boostCopy
