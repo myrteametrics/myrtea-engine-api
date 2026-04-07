@@ -506,6 +506,8 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			zap.L().Error("", zap.Error(err))
 		}
 
+		// "set" actions are metadata-only; they are intentionally excluded from ignored-actions ,
+		// because dependency and boost filtering decisions app
 		metadatas := make([]metadata.MetaData, 0)
 		agenda := evaluator.EvaluateRules(localRuleEngine, historySituationFlattenData, enabledRuleIDs)
 		var filteredAgenda []ruleeng.Action
@@ -622,7 +624,14 @@ func filterTask(situationsToUpdate map[string]history.HistoryRecordV4, situation
 		info := taskBatch.JobBoostInfo
 
 		if info != nil && info.Active && info.Quota < info.Used {
-			zap.L().Info("Task ignored due to boost mode active and quota not reached", zap.Any("task", taskBatch))
+			ignoredActions := extractIgnoredActionNames(taskBatch)
+			zap.L().Info(
+				"Task batch ignored: boost quota reached while boost mode is active",
+				zap.String("taskBatchKey", key),
+				zap.Int("quota", info.Quota),
+				zap.Int("used", info.Used),
+				zap.Strings("ignoredActions", ignoredActions),
+			)
 			continue
 		}
 		filteredTaskBatch[key] = taskBatch
@@ -711,6 +720,19 @@ func filterTask(situationsToUpdate map[string]history.HistoryRecordV4, situation
 	}
 
 	return taskBatchSlice
+}
+
+func extractIgnoredActionNames(taskBatch tasker.TaskBatch) []string {
+	ignored := make([]string, 0, len(taskBatch.Agenda))
+	for _, action := range taskBatch.Agenda {
+		actionName := action.GetName()
+		// "set" actions are metadata-only and intentionally excluded from ignored action logs.
+		if actionName == ActionSetValue || actionName == tasker.ActionSet {
+			continue
+		}
+		ignored = append(ignored, actionName)
+	}
+	return ignored
 }
 
 func filterAgendaAndUpdateHistory(keychild string, DependsOnMetadata string, filteredTaskBatch map[string]tasker.TaskBatch, situationHistoryMetadata map[model.Key]map[string]interface{}, situation history.HistoryRecordV4) error {
