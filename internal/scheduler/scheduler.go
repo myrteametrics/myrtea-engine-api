@@ -92,7 +92,6 @@ func (s *InternalScheduler) AddJobSchedule(schedule InternalSchedule) error {
 
 	mode := FrequencyModeNormal
 	if prev, ok := s.Jobs[schedule.ID]; ok {
-		s.C.Remove(prev.EntryID)
 		if isFactBoostManagedSchedule {
 			// Important:
 			// if a schedule is edited while boost mode is active, we keep the runtime Used counter.
@@ -134,6 +133,9 @@ func (s *InternalScheduler) RescheduleJob(schedule InternalSchedule, mode Freque
 		return fmt.Errorf("failed to reschedule job %d: %w", schedule.ID, err)
 	}
 
+	if prev, ok := s.Jobs[schedule.ID]; ok {
+		s.C.Remove(prev.EntryID)
+	}
 	s.Jobs[schedule.ID] = buildRuntimeState(schedule, entryID, mode)
 
 	return nil
@@ -172,7 +174,6 @@ func (s *InternalScheduler) SwitchJobFrequency(scheduleID int64, mode FrequencyM
 		JobType:  state.JobType,
 	}
 
-	s.C.Remove(state.EntryID)
 	if err := s.RescheduleJob(runtimeSchedule, mode); err != nil {
 		zap.L().Warn("Cannot switch scheduler frequency directly", zap.String("mode", string(mode)), zap.Error(err))
 	}
