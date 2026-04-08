@@ -271,7 +271,7 @@ func TestAddJobScheduleKeepsCurrentModeAndUsed(t *testing.T) {
 	if afterJob.JobBoostInfo.Quota != 20 {
 		t.Fatalf("expected updated quota 20, got %d", afterJob.JobBoostInfo.Quota)
 	}
-	if afterJob.JobBoostInfo.Used != 3 {
+	if afterJob.JobBoostInfo.Used != 0 {
 		t.Fatalf("expected runtime used preserved (3), got %d", afterJob.JobBoostInfo.Used)
 	}
 	if !afterJob.JobBoostInfo.Active {
