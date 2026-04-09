@@ -280,34 +280,34 @@ func dynamicAuthMiddleware(config Config, jwtAuth *jwtauth.JWTAuth, apiKeyCache 
 //   - X-User-Roles:      comma-separated list of role UUIDs
 func ReverseProxy(p plugin.MyrteaPlugin) http.HandlerFunc {
 	pluginUrl, _ := url.Parse(fmt.Sprintf("http://localhost:%d", p.ServicePort()))
-	proxy := httputil.NewSingleHostReverseProxy(pluginUrl)
+	proxy := &httputil.ReverseProxy{
+		Rewrite: func(pr *httputil.ProxyRequest) {
+			pr.SetURL(pluginUrl)
+			pr.Out.Host = pluginUrl.Host
 
-	proxy.Rewrite = func(pr *httputil.ProxyRequest) {
-		pr.SetURL(pluginUrl)
-		pr.Out.Host = pluginUrl.Host
+			// Remove any existing user headers to prevent spoofing from the client
+			pr.Out.Header.Del("X-User-Id")
+			pr.Out.Header.Del("X-User-Login")
+			pr.Out.Header.Del("X-User-Roles")
 
-		// Remove any existing user headers to prevent spoofing from the client
-		pr.Out.Header.Del("X-User-Id")
-		pr.Out.Header.Del("X-User-Login")
-		pr.Out.Header.Del("X-User-Roles")
+			userCtx := pr.In.Context().Value(httputil2.ContextKeyUser)
+			if userCtx == nil {
+				return
+			}
+			user, ok := userCtx.(users.UserWithPermissions)
+			if !ok {
+				return
+			}
 
-		userCtx := pr.In.Context().Value(httputil2.ContextKeyUser)
-		if userCtx == nil {
-			return
-		}
-		user, ok := userCtx.(users.UserWithPermissions)
-		if !ok {
-			return
-		}
+			pr.Out.Header.Set("X-User-Id", user.User.ID.String())
+			pr.Out.Header.Set("X-User-Login", user.User.Login)
 
-		pr.Out.Header.Set("X-User-Id", user.User.ID.String())
-		pr.Out.Header.Set("X-User-Login", user.User.Login)
-
-		roleIDs := make([]string, 0, len(user.Roles))
-		for _, role := range user.Roles {
-			roleIDs = append(roleIDs, role.ID.String())
-		}
-		pr.Out.Header.Set("X-User-Roles", strings.Join(roleIDs, ","))
+			roleIDs := make([]string, 0, len(user.Roles))
+			for _, role := range user.Roles {
+				roleIDs = append(roleIDs, role.ID.String())
+			}
+			pr.Out.Header.Set("X-User-Roles", strings.Join(roleIDs, ","))
+		},
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
