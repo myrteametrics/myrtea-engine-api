@@ -98,7 +98,7 @@ func (job FactCalculationJob) IsValid() (bool, error) {
 			return false, errors.New("missing JobBoostInfo.Frequency")
 		}
 		if _, err := cronParser.Parse(job.JobBoostInfo.Frequency); err != nil {
-			return false, errors.New("invalid JobBoostInfo.Frequency" + err.Error())
+			return false, fmt.Errorf("invalid JobBoostInfo.Frequency: %w", err)
 		}
 	}
 	return true, nil
