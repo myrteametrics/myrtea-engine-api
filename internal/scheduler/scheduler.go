@@ -177,10 +177,6 @@ func (s *InternalScheduler) SwitchJobFrequency(scheduleID int64, mode FrequencyM
 	if err := s.RescheduleJob(runtimeSchedule, mode); err != nil {
 		zap.L().Warn("Cannot switch scheduler frequency directly", zap.String("mode", string(mode)), zap.Error(err))
 	}
-
-	runtimeSchedule = applyModeToScheduleJob(runtimeSchedule, mode)
-	runtimeSchedule.CronExpr = resolveCronExpr(runtimeSchedule, mode)
-
 }
 
 func buildRuntimeState(schedule InternalSchedule, entryID cron.EntryID, mode FrequencyMode) RuntimeJobState {
