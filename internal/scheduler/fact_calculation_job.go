@@ -33,7 +33,7 @@ type FactCalculationJob struct {
 	From           string              `json:"from,omitempty"`
 	To             string              `json:"to,omitempty"`
 	LastDailyValue bool                `json:"lastDailyValue,omitempty"`
-	JobBoostInfo   *model.JobBoostInfo `json:"jobboostinfo,omitempty"`
+	JobBoostInfo   *model.JobBoostInfo `json:"jobBoostInfo,omitempty"`
 	Debug          bool                `json:"debug"`
 	ScheduleID     int64               `json:"-"`
 }
