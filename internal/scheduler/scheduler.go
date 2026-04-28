@@ -94,7 +94,7 @@ func (s *InternalScheduler) AddJobSchedule(schedule InternalSchedule) error {
 	if prev, ok := s.Jobs[schedule.ID]; ok {
 		if isFactBoostManagedSchedule {
 			// Important:
-			// if a schedule is edited while boost mode is active, we keep the runtime Used counter.
+			// If a schedule is edited while boost mode is active, we do not keep the runtime Used counter.
 			// Resetting Used here would lose already-consumed quota and could overrun boost executions.
 			switch prev.Mode {
 			case FrequencyModeBoost:

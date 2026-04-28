@@ -634,7 +634,7 @@ func filterTask(situationsToUpdate map[string]history.HistoryRecordV4, situation
 		if info != nil && info.Active && info.Used < info.Quota {
 			ignoredActions := extractIgnoredActionNames(taskBatch)
 			zap.L().Info(
-				"Task batch ignored: boost quota reached while boost mode is active",
+				"Task batch ignored: boost quota not yet exhausted",
 				zap.String("taskBatchKey", key),
 				zap.Int("quota", info.Quota),
 				zap.Int("used", info.Used),
@@ -885,6 +885,13 @@ func (job *FactCalculationJob) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// boostConfigured returns true only if the job is explicitly configured to allow boost.
+//
+// Note: "Configured" does NOT mean boost is active at runtime.
+// It only indicates that boost is allowed for this job.
+// A value of false (or missing, e.g., legacy configs) means boost is ignored by default.
+//
+// Runtime activation still depends on boost logic (quota, conditions, etc.).
 func boostConfigured(info *model.JobBoostInfo) bool {
 	if info == nil {
 		return false
