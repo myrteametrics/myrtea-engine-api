@@ -944,7 +944,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 	f.ContextualizeDimensions(t)
 	err = f.ContextualizeCondition(t, parameters)
 	if err != nil {
-		httputil.Error(w, r, apiError, err)
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 

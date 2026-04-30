@@ -29,12 +29,13 @@ const timeLayout = "2006-01-02T15:04:05.000Z07:00"
 // FactCalculationJob represent a scheduler job instance which process a group of facts, and persist the result in postgresql
 // It also generate situations, persists them and notify the rule engine to evaluate them
 type FactCalculationJob struct {
-	FactIds        []int64 `json:"factIds"`
-	From           string  `json:"from,omitempty"`
-	To             string  `json:"to,omitempty"`
-	LastDailyValue bool    `json:"lastDailyValue,omitempty"`
-	Debug          bool    `json:"debug"`
-	ScheduleID     int64   `json:"-"`
+	FactIds        []int64             `json:"factIds"`
+	From           string              `json:"from,omitempty"`
+	To             string              `json:"to,omitempty"`
+	LastDailyValue bool                `json:"lastDailyValue,omitempty"`
+	JobBoostInfo   *model.JobBoostInfo `json:"jobBoostInfo,omitempty"`
+	Debug          bool                `json:"debug"`
+	ScheduleID     int64               `json:"-"`
 }
 
 // ResolveFromAndTo resolves the expressions in parameters From and To
@@ -89,6 +90,17 @@ func (job FactCalculationJob) IsValid() (bool, error) {
 	if len(job.FactIds) <= 0 {
 		return false, errors.New("missing FactIds")
 	}
+	if boostConfigured(job.JobBoostInfo) {
+		if job.JobBoostInfo.Quota <= 0 {
+			return false, errors.New("invalid JobBoostInfo.Quota")
+		}
+		if job.JobBoostInfo.Frequency == "" {
+			return false, errors.New("missing JobBoostInfo.Frequency")
+		}
+		if _, err := cronParser.Parse(job.JobBoostInfo.Frequency); err != nil {
+			return false, fmt.Errorf("invalid JobBoostInfo.Frequency: %w", err)
+		}
+	}
 	return true, nil
 }
 
@@ -124,7 +136,14 @@ func (job FactCalculationJob) Run() {
 		return
 	}
 
-	situationsToUpdate, err := CalculateAndPersistFacts(t, job.FactIds)
+	if jbi := job.JobBoostInfo; jbi != nil {
+		jbi.DirectSwitch = true
+		if jbi.Active {
+			jbi.Used++
+		}
+	}
+
+	situationsToUpdate, err := CalculateAndPersistFacts(t, job)
 	if err != nil {
 		zap.L().Error("CalculateAndPersistFacts", zap.Error(err))
 		S().RemoveRunningJob(job.ScheduleID)
@@ -323,10 +342,10 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 	return situationsToUpdate, nil
 }
 
-func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.HistoryRecordV4, error) {
+func CalculateAndPersistFacts(t time.Time, job FactCalculationJob) (map[string]history.HistoryRecordV4, error) {
 	situationsToUpdate := make(map[string]history.HistoryRecordV4)
 
-	for _, factID := range factIDs {
+	for _, factID := range job.FactIds {
 		f, found, err := fact.R().Get(factID)
 		if err != nil {
 			zap.L().Error("Error Getting the Fact, skipping fact calculation...", zap.Int64("factID", factID))
@@ -380,6 +399,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
 						EnableDependsOn:     sh.EnableDependsOn,
 						DependsOnParameters: sh.DependsOnParameters,
+						JobBoostInfo:        job.JobBoostInfo,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -428,6 +448,7 @@ func CalculateAndPersistFacts(t time.Time, factIDs []int64) (map[string]history.
 						HistoryFacts:        []history.HistoryFactsV4{historyFactNew},
 						EnableDependsOn:     sh.EnableDependsOn,
 						DependsOnParameters: sh.DependsOnParameters,
+						JobBoostInfo:        job.JobBoostInfo,
 					}
 				} else {
 					situation := situationsToUpdate[key]
@@ -445,6 +466,8 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 	taskBatchs := make([]tasker.TaskBatch, 0)
 	taskBatchsMap := make(map[string]tasker.TaskBatch)
 	situationHistoryMetadata := make(map[model.Key]map[string]interface{})
+	allMetadatas := make([]metadata.MetaData, 0)
+	var aggregatedBoostInfo *model.JobBoostInfo
 	for _, situationToUpdate := range situationsToUpdate {
 
 		// zap.L().Sugar().Info(situationToUpdate)
@@ -546,10 +569,11 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
 		if err != nil {
 			zap.L().Error("", zap.Error(err))
-		} else {
-			if situationToUpdate.JobBoostInfo != nil {
-				JBM().Evaluate(metadatas, *situationToUpdate.JobBoostInfo)
-			}
+		}
+		allMetadatas = append(allMetadatas, metadatas...)
+		if aggregatedBoostInfo == nil && situationToUpdate.JobBoostInfo != nil {
+			boostCopy := *situationToUpdate.JobBoostInfo
+			aggregatedBoostInfo = &boostCopy
 		}
 		// zap.L().Sugar().Info("insert new situation", historySituationNew)
 
@@ -589,15 +613,35 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		}
 	}
 
-	filteredTaskBatch := filterTaskByDependency(situationsToUpdate, situationHistoryMetadata, taskBatchsMap)
+	// Evaluate once per scheduler run with aggregated metadata from all updated instance situation.
+	// Attention: if a job updates multiple situation instances in one run, a single "critical"
+	// metadata is enough to trigger boost mode for the whole job.
+	if aggregatedBoostInfo != nil {
+		JBM().Evaluate(allMetadatas, *aggregatedBoostInfo)
+	}
+
+	filteredTaskBatch := filterTask(situationsToUpdate, situationHistoryMetadata, taskBatchsMap)
 
 	return filteredTaskBatch, nil
 }
 
 // filtration
-func filterTaskByDependency(situationsToUpdate map[string]history.HistoryRecordV4, situationHistoryMetadata map[model.Key]map[string]interface{}, taskBatchsMap map[string]tasker.TaskBatch) []tasker.TaskBatch {
+func filterTask(situationsToUpdate map[string]history.HistoryRecordV4, situationHistoryMetadata map[model.Key]map[string]interface{}, taskBatchsMap map[string]tasker.TaskBatch) []tasker.TaskBatch {
 	filteredTaskBatch := make(map[string]tasker.TaskBatch, len(taskBatchsMap))
 	for key, taskBatch := range taskBatchsMap {
+		info := taskBatch.JobBoostInfo
+
+		if info != nil && info.Active && info.Used < info.Quota {
+			ignoredActions := extractIgnoredActionNames(taskBatch)
+			zap.L().Info(
+				"Task batch ignored: boost quota not yet exhausted",
+				zap.String("taskBatchKey", key),
+				zap.Int("quota", info.Quota),
+				zap.Int("used", info.Used),
+				zap.Strings("ignoredActions", ignoredActions),
+			)
+			continue
+		}
 		filteredTaskBatch[key] = taskBatch
 	}
 
@@ -684,6 +728,19 @@ func filterTaskByDependency(situationsToUpdate map[string]history.HistoryRecordV
 	}
 
 	return taskBatchSlice
+}
+
+func extractIgnoredActionNames(taskBatch tasker.TaskBatch) []string {
+	ignored := make([]string, 0, len(taskBatch.Agenda))
+	for _, action := range taskBatch.Agenda {
+		actionName := action.GetName()
+		// "set" actions are metadata-only and intentionally excluded from ignored action logs.
+		if actionName == ActionSetValue || actionName == tasker.ActionSet {
+			continue
+		}
+		ignored = append(ignored, actionName)
+	}
+	return ignored
 }
 
 func filterAgendaAndUpdateHistory(keychild string, DependsOnMetadata string, filteredTaskBatch map[string]tasker.TaskBatch, situationHistoryMetadata map[model.Key]map[string]interface{}, situation history.HistoryRecordV4) error {
@@ -789,4 +846,54 @@ func (job *FactCalculationJob) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	return nil
+}
+
+// boostConfigured returns true only if the job is explicitly configured to allow boost.
+//
+// Note: "Configured" does NOT mean boost is active at runtime.
+// It only indicates that boost is allowed for this job.
+// A value of false (or missing, e.g., legacy configs) means boost is ignored by default.
+//
+// Runtime activation still depends on boost logic (quota, conditions, etc.).
+func boostConfigured(info *model.JobBoostInfo) bool {
+	if info == nil {
+		return false
+	}
+	return info.Configured
+}
+
+func asFactCalculationJob(job InternalJob) (FactCalculationJob, bool) {
+	switch typedJob := job.(type) {
+	case FactCalculationJob:
+		return typedJob, true
+	case *FactCalculationJob:
+		if typedJob == nil {
+			return FactCalculationJob{}, false
+		}
+		return *typedJob, true
+	default:
+		return FactCalculationJob{}, false
+	}
+}
+
+func extractFactCalculationJob(schedule InternalSchedule) (FactCalculationJob, bool) {
+	switch typedJob := schedule.Job.(type) {
+	case FactCalculationJob:
+		return typedJob, true
+	case *FactCalculationJob:
+		if typedJob == nil {
+			return FactCalculationJob{}, false
+		}
+		return *typedJob, true
+	default:
+		return FactCalculationJob{}, false
+	}
+}
+
+func isFactBoostManagedSchedule(schedule InternalSchedule) bool {
+	if schedule.JobType != "fact" {
+		return false
+	}
+	factJob, ok := extractFactCalculationJob(schedule)
+	return ok && boostConfigured(factJob.JobBoostInfo)
 }
