@@ -38,7 +38,7 @@ func (r *PostgresRepository) newStatement() sq.StatementBuilderType {
 }
 
 // scanSituation scans a row into a Situation struct
-func (r *PostgresRepository) scanSituation(rows *sqlx.Rows, parseParameters bool) (Situation, error) {
+func (r *PostgresRepository) scanSituation(rows *sqlx.Rows, parseParameters bool, ts time.Time) (Situation, error) {
 	var situationID int64
 	var data string
 	var factIDs []int64
@@ -54,7 +54,7 @@ func (r *PostgresRepository) scanSituation(rows *sqlx.Rows, parseParameters bool
 	situation.Facts = factIDs
 	situation.ID = situationID
 	if parseParameters {
-		evalParameters(situation.Parameters)
+		evalParameters(situation.Parameters, ts)
 	}
 	// situation.Groups = groups.DeleteTokenAllGroups(situation.Groups)
 	return situation, nil
@@ -85,7 +85,7 @@ func (r *PostgresRepository) scanTemplateInstance(rows *sql.Rows, parseParameter
 		return TemplateInstance{}, err
 	}
 	if parseParameters {
-		evalParameters(templateInstance.Parameters)
+		evalParameters(templateInstance.Parameters, time.Now().UTC())
 	}
 	err = json.Unmarshal([]byte(dependsOnParamsData), &templateInstance.DependsOnParameters)
 	if err != nil {
@@ -110,7 +110,7 @@ func (r *PostgresRepository) Get(id int64, parseParameters ...bool) (Situation, 
 	defer rows.Close()
 
 	if rows.Next() {
-		situation, err := r.scanSituation(rows, shouldParseForEvaluation(parseParameters...))
+		situation, err := r.scanSituation(rows, shouldParseForEvaluation(parseParameters...), time.Now().UTC())
 		if err != nil {
 			return Situation{}, false, err
 		}
@@ -136,7 +136,7 @@ func (r *PostgresRepository) GetByName(name string, parseParameters ...bool) (Si
 	defer rows.Close()
 
 	if rows.Next() {
-		situation, err := r.scanSituation(rows, shouldParseForEvaluation(parseParameters...))
+		situation, err := r.scanSituation(rows, shouldParseForEvaluation(parseParameters...), time.Now().UTC())
 		if err != nil {
 			return Situation{}, false, err
 		}
@@ -353,7 +353,7 @@ func (r *PostgresRepository) deleteSituationFacts(id int64) error {
 
 // GetSituationsByFactID returns the situations in which the fact is required
 // If parseParameters is true, evaluates situation parameters using Gval.
-func (r *PostgresRepository) GetSituationsByFactID(factID int64, ignoreIsObject bool, parseParameters ...bool) ([]Situation, error) {
+func (r *PostgresRepository) GetSituationsByFactID(factID int64, ignoreIsObject bool, ts time.Time, parseParameters ...bool) ([]Situation, error) {
 
 	query := `SELECT situation_definition_v1.id, situation_definition_v1.definition,
 	ARRAY(SELECT fact_id FROM situation_facts_v1 WHERE situation_id = situation_definition_v1.id) as fact_ids
@@ -372,7 +372,7 @@ func (r *PostgresRepository) GetSituationsByFactID(factID int64, ignoreIsObject 
 
 	situations := make([]Situation, 0)
 	for rows.Next() {
-		situation, err := r.scanSituation(rows, shouldParseForEvaluation(parseParameters...))
+		situation, err := r.scanSituation(rows, shouldParseForEvaluation(parseParameters...), ts)
 		if err != nil {
 			return nil, err
 		}
@@ -465,7 +465,7 @@ func (r *PostgresRepository) GetAllByRuleID(ruleID int64, parseParameters ...boo
 func (r *PostgresRepository) parseAllRows(rows *sqlx.Rows, parseParameters bool) (map[int64]Situation, error) {
 	situations := make(map[int64]Situation)
 	for rows.Next() {
-		situation, err := r.scanSituation(rows, parseParameters)
+		situation, err := r.scanSituation(rows, parseParameters, time.Now().UTC())
 		if err != nil {
 			return nil, err
 		}
@@ -982,7 +982,7 @@ func (r *PostgresRepository) GetSituationsWithInstances(parseParameters ...bool)
 		s.Facts = nil
 
 		if parse {
-			evalParameters(s.Parameters)
+			evalParameters(s.Parameters, time.Now().UTC())
 		}
 
 		situationIDs = append(situationIDs, s.ID)

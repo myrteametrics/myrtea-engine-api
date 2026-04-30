@@ -2,6 +2,7 @@ package situation
 
 import (
 	"sync"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -23,7 +24,7 @@ type Repository interface {
 	SetRules(id int64, rules []int64) error
 	AddRule(tx *sqlx.Tx, id int64, ruleID int64) error
 	RemoveRule(tx *sqlx.Tx, id int64, ruleID int64) error
-	GetSituationsByFactID(factID int64, ignoreIsObject bool, parseGlobalVariables ...bool) ([]Situation, error)
+	GetSituationsByFactID(factID int64, ignoreIsObject bool, ts time.Time, parseGlobalVariables ...bool) ([]Situation, error)
 	GetFacts(id int64) ([]int64, error)
 
 	CreateTemplateInstance(situationID int64, instance TemplateInstance) (int64, error)
