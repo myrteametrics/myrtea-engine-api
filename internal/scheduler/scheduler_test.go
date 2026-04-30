@@ -245,7 +245,7 @@ func TestAddJobScheduleKeepsCurrentModeAndUsed(t *testing.T) {
 				JobID:      "50",
 				Frequency:  "*/1 * * * *", // edited boost cron
 				Quota:      20,            // edited quota
-				Used:       0,             // should keep runtime used
+				Used:       0,             // Should not keep the runtime in use
 			},
 		},
 	}
