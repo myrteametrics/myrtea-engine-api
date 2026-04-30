@@ -146,7 +146,8 @@ const (
 		cronexpr varchar(100) not null,
 		job_type varchar(100) not null,
 		job_data json not null,
-		last_modified timestamptz not null
+		last_modified timestamptz not null,
+		enabled boolean not null default true
 	);`
 
 	// IssuesDropTableV1 SQL statement for table drop
