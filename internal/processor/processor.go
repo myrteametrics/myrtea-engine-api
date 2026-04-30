@@ -18,9 +18,9 @@ import (
 
 func evaluateFactObjects(factObject engine.Fact, objects []map[string]interface{}) error {
 
-	t := time.Now()
+	t := time.Now().Truncate(1 * time.Second).UTC()
 
-	situations, err := situation.R().GetSituationsByFactID(factObject.ID, false)
+	situations, err := situation.R().GetSituationsByFactID(factObject.ID, false, t, true)
 	if err != nil {
 		return err
 	}

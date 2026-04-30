@@ -711,47 +711,10 @@ func filterAgendaAndUpdateHistory(keychild string, DependsOnMetadata string, fil
 	return history.S().HistorySituationsQuerier.Update(historySituation)
 }
 
-// GetLinkedSituations returns all situation linked to a fact
-func GetLinkedSituations(fact engine.Fact) ([]history.HistoryRecordV4, error) {
-	factSituationsHistory := make([]history.HistoryRecordV4, 0)
-	factSituations, err := situation.R().GetSituationsByFactID(fact.ID, true)
-	if err != nil {
-		zap.L().Error("Cannot get the situations to update for fact", zap.Int64("id", fact.ID), zap.Any("fact", fact), zap.Error(err))
-		return nil, err
-	}
-
-	for _, s := range factSituations {
-		if !s.IsTemplate {
-			factSituationsHistory = append(factSituationsHistory, history.HistoryRecordV4{
-				SituationID:         s.ID,
-				SituationInstanceID: 0,
-				Parameters:          s.Parameters,
-			})
-		} else {
-			templateInstances, err := situation.R().GetAllTemplateInstances(s.ID)
-			if err != nil {
-				zap.L().Error("Cannot get the situations template instances for situation", zap.Int64("id", s.ID), zap.Any("fact", fact), zap.Error(err))
-				return nil, err
-			}
-			for _, ti := range templateInstances {
-				sh := history.HistoryRecordV4{
-					SituationID:         s.ID,
-					SituationInstanceID: ti.ID,
-					Parameters:          map[string]interface{}{},
-				}
-				sh.OverrideParameters(s.Parameters)
-				sh.OverrideParameters(ti.Parameters)
-				factSituationsHistory = append(factSituationsHistory, sh)
-			}
-		}
-	}
-	return factSituationsHistory, nil
-}
-
 // GetEnabledSituations returns all situation linked to a fact
 func GetEnabledSituations(fact engine.Fact, t time.Time) ([]history.HistoryRecordV4, error) {
 	factSituationsHistory := make([]history.HistoryRecordV4, 0)
-	factSituations, err := situation.R().GetSituationsByFactID(fact.ID, true)
+	factSituations, err := situation.R().GetSituationsByFactID(fact.ID, true, t)
 	if err != nil {
 		zap.L().Error("Cannot get the situations to update for fact", zap.Int64("id", fact.ID), zap.Any("fact", fact), zap.Error(err))
 		return nil, err

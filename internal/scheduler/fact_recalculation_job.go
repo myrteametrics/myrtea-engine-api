@@ -103,7 +103,7 @@ func (job FactRecalculationJob) Run() {
 
 	situations := make(map[int64]situation2.Situation)
 	for _, factID := range job.FactIds {
-		ss, _ := situation2.R().GetSituationsByFactID(factID, true)
+		ss, _ := situation2.R().GetSituationsByFactID(factID, true, t)
 		for _, s := range ss {
 			situations[s.ID] = s
 		}
