@@ -42,6 +42,25 @@ func ExecuteFact(
 	indices := FindIndices(f, ti, update)
 	zap.L().Debug("search", zap.Strings("indices", indices), zap.Any("request", searchRequest))
 
+	if canUseElasticsearchCountAPI(f) {
+		response, err := elasticsearch.C().Count().
+			Index(strings.Join(indices, ",")).
+			Query(searchRequest.Query).
+			Do(context.Background())
+		if err != nil {
+			zap.L().Error("ES Count failed", zap.Error(err))
+			return nil, err
+		}
+		if response.Shards_.Failed > 0 {
+			zap.L().Warn("count", zap.Any("failures", response.Shards_.Failures))
+			return nil, errors.New("count failed")
+		}
+
+		widgetData := buildWidgetDataFromCount(response.Count)
+		GetBaselineValues(widgetData, f.ID, situationID, situationInstanceID, ti)
+		return widgetData, nil
+	}
+
 	response, err := elasticsearch.C().Search().
 		Index(strings.Join(indices, ",")).
 		Request(searchRequest).
@@ -65,6 +84,24 @@ func ExecuteFact(
 	GetBaselineValues(widgetData, f.ID, situationID, situationInstanceID, ti)
 
 	return widgetData, nil
+}
+
+func canUseElasticsearchCountAPI(f engine.Fact) bool {
+	return f.Intent != nil &&
+		f.Intent.Operator == engine.Count &&
+		f.Intent.Term == f.Model &&
+		len(f.Dimensions) == 0
+}
+
+func buildWidgetDataFromCount(count int64) *reader.WidgetData {
+	return &reader.WidgetData{
+		Hits: []reader.Hit{},
+		Aggregates: &reader.Item{
+			Aggs: map[string]*reader.ItemAgg{
+				"doc_count": {Value: count},
+			},
+		},
+	}
 }
 
 // ExecuteFactDeleteQuery executes a delete by query on the fact
