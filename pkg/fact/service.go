@@ -53,7 +53,7 @@ func ExecuteFact(
 		}
 		if response.Shards_.Failed > 0 {
 			zap.L().Warn("count", zap.Any("failures", response.Shards_.Failures))
-			return nil, errors.New("count failed")
+			return nil, errors.New("elasticsearch count failed with shard failures")
 		}
 
 		widgetData := buildWidgetDataFromCount(response.Count)
