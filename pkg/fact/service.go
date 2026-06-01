@@ -164,11 +164,18 @@ func FindIndices(f engine.Fact, ti time.Time, update bool) []string {
 	var indices []string
 	var err error
 
+	logicalIndex := coordinator.GetInstance().LogicalIndex(f.Model)
+	if logicalIndex == nil {
+		zap.L().Warn("LogicalIndex is nil, fallback on search-all", zap.String("fact", f.Name),
+			zap.String("model", f.Model), zap.Int64("depth", f.CalculationDepth))
+		return []string{index.BuildAliasName(viper.GetString("INSTANCE_NAME"), f.Model, index.All)}
+	}
+
 	if update {
-		indices, err = coordinator.GetInstance().LogicalIndex(f.Model).FindIndices(time.Now(),
+		indices, err = logicalIndex.FindIndices(time.Now(),
 			f.CalculationDepth+int64(time.Now().Sub(ti).Hours()/24)+5)
 	} else {
-		indices, err = coordinator.GetInstance().LogicalIndex(f.Model).FindIndices(ti, f.CalculationDepth)
+		indices, err = logicalIndex.FindIndices(ti, f.CalculationDepth)
 	}
 	if err != nil {
 		zap.L().Warn("FindIndices", zap.Error(err))
