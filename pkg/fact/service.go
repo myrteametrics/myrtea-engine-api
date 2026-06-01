@@ -42,6 +42,25 @@ func ExecuteFact(
 	indices := FindIndices(f, ti, update)
 	zap.L().Debug("search", zap.Strings("indices", indices), zap.Any("request", searchRequest))
 
+	if canUseElasticsearchCountAPI(f) {
+		response, err := elasticsearch.C().Count().
+			Index(strings.Join(indices, ",")).
+			Query(searchRequest.Query).
+			Do(context.Background())
+		if err != nil {
+			zap.L().Error("ES Count failed", zap.Error(err))
+			return nil, err
+		}
+		if response.Shards_.Failed > 0 {
+			zap.L().Warn("count", zap.Any("failures", response.Shards_.Failures))
+			return nil, errors.New("elasticsearch count failed with shard failures")
+		}
+
+		widgetData := buildWidgetDataFromCount(response.Count)
+		GetBaselineValues(widgetData, f.ID, situationID, situationInstanceID, ti)
+		return widgetData, nil
+	}
+
 	response, err := elasticsearch.C().Search().
 		Index(strings.Join(indices, ",")).
 		Request(searchRequest).
@@ -65,6 +84,24 @@ func ExecuteFact(
 	GetBaselineValues(widgetData, f.ID, situationID, situationInstanceID, ti)
 
 	return widgetData, nil
+}
+
+func canUseElasticsearchCountAPI(f engine.Fact) bool {
+	return f.Intent != nil &&
+		f.Intent.Operator == engine.Count &&
+		f.Intent.Term == f.Model &&
+		len(f.Dimensions) == 0
+}
+
+func buildWidgetDataFromCount(count int64) *reader.WidgetData {
+	return &reader.WidgetData{
+		Hits: []reader.Hit{},
+		Aggregates: &reader.Item{
+			Aggs: map[string]*reader.ItemAgg{
+				"doc_count": {Value: count},
+			},
+		},
+	}
 }
 
 // ExecuteFactDeleteQuery executes a delete by query on the fact
@@ -127,11 +164,18 @@ func FindIndices(f engine.Fact, ti time.Time, update bool) []string {
 	var indices []string
 	var err error
 
+	logicalIndex := coordinator.GetInstance().LogicalIndex(f.Model)
+	if logicalIndex == nil {
+		zap.L().Warn("LogicalIndex is nil, fallback on search-all", zap.String("fact", f.Name),
+			zap.String("model", f.Model), zap.Int64("depth", f.CalculationDepth))
+		return []string{index.BuildAliasName(viper.GetString("INSTANCE_NAME"), f.Model, index.All)}
+	}
+
 	if update {
-		indices, err = coordinator.GetInstance().LogicalIndex(f.Model).FindIndices(time.Now(),
+		indices, err = logicalIndex.FindIndices(time.Now(),
 			f.CalculationDepth+int64(time.Now().Sub(ti).Hours()/24)+5)
 	} else {
-		indices, err = coordinator.GetInstance().LogicalIndex(f.Model).FindIndices(ti, f.CalculationDepth)
+		indices, err = logicalIndex.FindIndices(ti, f.CalculationDepth)
 	}
 	if err != nil {
 		zap.L().Warn("FindIndices", zap.Error(err))
