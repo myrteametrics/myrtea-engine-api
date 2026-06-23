@@ -245,6 +245,7 @@ func dynamicAuthMiddleware(config Config, jwtAuth *jwtauth.JWTAuth, apiKeyCache 
 				} else {
 					ctxMiddleware := ContextMiddleware(next)
 					jwtVerifier := jwtauth.Verify(jwtAuth,
+						TokenFromWebSocketProtocol,
 						jwtauth.TokenFromQuery,
 						jwtauth.TokenFromHeader,
 						jwtauth.TokenFromCookie)

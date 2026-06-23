@@ -13,6 +13,23 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const (
+	// writeWait is the maximum time allowed to write a message to the peer.
+	writeWait = 10 * time.Second
+	// pongWait is the maximum time we wait for a pong answer from the peer.
+	pongWait = 60 * time.Second
+	// pingPeriod is the interval at which pings are sent. Must be less than pongWait.
+	pingPeriod = (pongWait * 9) / 10
+	// sendBufferSize is the buffered capacity of the client send channel. A
+	// large-enough buffer absorbs bursts while still allowing the notifier to
+	// detect a genuinely stuck consumer (full buffer => message dropped).
+	sendBufferSize = 256
+	// wsAuthSubprotocol is the WebSocket subprotocol name used to negotiate
+	// JWT authentication. The client offers [wsAuthSubprotocol, <token>] and
+	// the server echoes wsAuthSubprotocol back to complete the handshake.
+	wsAuthSubprotocol = "bearer"
+)
+
 // WebsocketClient structure represents a specific websocket connection, used by the manager
 type WebsocketClient struct {
 	GenericClient
@@ -25,7 +42,7 @@ func NewWebsocketClient(conn *websocket.Conn, user *users.UserWithPermissions) *
 	return &WebsocketClient{
 		GenericClient: GenericClient{
 			ID:   uuid.New().String(),
-			Send: make(chan []byte, 1),
+			Send: make(chan []byte, sendBufferSize),
 			User: user,
 		},
 		Socket:  conn,
@@ -34,6 +51,9 @@ func NewWebsocketClient(conn *websocket.Conn, user *users.UserWithPermissions) *
 }
 
 var upgrader = &websocket.Upgrader{
+	// Allow the JWT to be passed through the WebSocket subprotocol so that it
+	// does not have to travel in the URL query string.
+	Subprotocols: []string{wsAuthSubprotocol},
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
@@ -50,7 +70,7 @@ func BuildWebsocketClient(w http.ResponseWriter, r *http.Request, user *users.Us
 
 // Write a message on a client socket
 func (c *WebsocketClient) Write() {
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(pingPeriod)
 
 	defer func() {
 		ticker.Stop()
@@ -60,15 +80,20 @@ func (c *WebsocketClient) Write() {
 	for {
 		select {
 		case message, ok := <-c.Send:
+			_ = c.Socket.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				zap.L().Info("Notification nok write, closing")
 				c.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			zap.L().Info("Notification write msg", zap.ByteString("msg", message))
-			c.Socket.WriteMessage(websocket.TextMessage, message)
+			zap.L().Debug("Notification write msg", zap.ByteString("msg", message))
+			if err := c.Socket.WriteMessage(websocket.TextMessage, message); err != nil {
+				zap.L().Debug("Notification write failed", zap.Error(err))
+				return
+			}
 		case <-ticker.C:
 			// Send the Ping and return to close conn whether an error occurs
+			_ = c.Socket.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.Socket.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 				return
 			}
@@ -76,11 +101,19 @@ func (c *WebsocketClient) Write() {
 	}
 }
 
-// Read a message from one client and broadcast it to others
+// Read consumes incoming messages from the client. Its main purpose is to keep
+// the connection alive and to detect dead connections: a read deadline is set
+// and extended each time a pong is received, so a peer that stops answering
+// pings is detected and pruned instead of lingering in the client pool.
 func (c *WebsocketClient) Read() {
 	defer func() {
 		destroyWebsocketClient(c)
 	}()
+
+	_ = c.Socket.SetReadDeadline(time.Now().Add(pongWait))
+	c.Socket.SetPongHandler(func(string) error {
+		return c.Socket.SetReadDeadline(time.Now().Add(pongWait))
+	})
 
 	for {
 		mt, message, err := c.Socket.ReadMessage()
@@ -92,13 +125,19 @@ func (c *WebsocketClient) Read() {
 					zap.L().Error("Read socket", zap.Error(err))
 				}
 			default:
-				zap.L().Error("Read socket", zap.Error(err))
+				zap.L().Debug("Read socket closed", zap.Error(err))
 			}
 			break
 		}
-		zap.L().Info("message received", zap.ByteString("message", message), zap.String("client", c.ID))
+		zap.L().Debug("message received", zap.ByteString("message", message), zap.String("client", c.ID))
 		_ = mt
-		c.Receive <- message
+		// Forward to Receive without blocking: there is no consumer in
+		// production, so a full/unconsumed channel must not stall the read
+		// loop (which would defeat the liveness detection).
+		select {
+		case c.Receive <- message:
+		default:
+		}
 	}
 }
 
@@ -108,10 +147,10 @@ func destroyWebsocketClient(c *WebsocketClient) {
 	}
 	err := C().Unregister(c)
 	if err != nil {
-		zap.L().Error("Could not unregister ws client", zap.Error(err), zap.String("id", c.ID))
+		zap.L().Debug("Could not unregister ws client", zap.Error(err), zap.String("id", c.ID))
 	}
 	err = c.Socket.Close()
 	if err != nil {
-		zap.L().Error("Could not unregister ws client", zap.Error(err), zap.String("id", c.ID))
+		zap.L().Debug("Could not close ws client socket", zap.Error(err), zap.String("id", c.ID))
 	}
 }

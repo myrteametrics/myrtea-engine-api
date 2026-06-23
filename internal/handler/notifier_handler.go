@@ -58,8 +58,9 @@ func NotificationsWSRegister(w http.ResponseWriter, r *http.Request) {
 	//	}
 	//}(client)
 	go client.Write()
-
-	// go client.Read() // Disabled until proper usage
+	// Read keeps the connection alive and detects dead connections
+	// (pong handler + read deadline), pruning stale clients from the pool.
+	go client.Read()
 }
 
 // NotificationsSSERegister godoc

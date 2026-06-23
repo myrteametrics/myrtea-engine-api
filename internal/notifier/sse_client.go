@@ -20,7 +20,7 @@ func BuildSSEClient(w http.ResponseWriter, user *users.UserWithPermissions) (*SS
 		GenericClient: GenericClient{
 			ID:   uuid.New().String(),
 			User: user,
-			Send: make(chan []byte),
+			Send: make(chan []byte, sendBufferSize),
 		},
 		w: w,
 	}, nil
