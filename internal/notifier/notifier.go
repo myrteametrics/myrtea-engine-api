@@ -38,6 +38,7 @@ func ReplaceGlobals(notifier *Notifier) func() {
 // Notifier is the main struct used to send notifications
 type Notifier struct {
 	clientManager *ClientManager
+	cacheMu       sync.Mutex
 	cache         map[string]time.Time
 	// queue / cache / batch system
 }
@@ -65,6 +66,9 @@ func (notifier *Notifier) Unregister(client Client) error {
 
 // verifyCache check if a notification has already been sent
 func (notifier *Notifier) verifyCache(key string, timeout time.Duration) bool {
+	notifier.cacheMu.Lock()
+	defer notifier.cacheMu.Unlock()
+
 	if val, ok := notifier.cache[key]; ok && time.Now().UTC().Before(val) {
 		return false
 	}
@@ -73,6 +77,9 @@ func (notifier *Notifier) verifyCache(key string, timeout time.Duration) bool {
 }
 
 func (notifier *Notifier) CleanCache() {
+	notifier.cacheMu.Lock()
+	defer notifier.cacheMu.Unlock()
+
 	for key, val := range notifier.cache {
 		if time.Now().UTC().After(val) {
 			delete(notifier.cache, key)
@@ -186,22 +193,26 @@ func (notifier *Notifier) SendToUserLogin(notif notification.Notification, login
 	return nil
 }
 
-// Send a byte slices to a specific websocket client
+// Send a byte slice to a specific websocket client.
+// The send is non-blocking: if the client's buffer is full (slow or dead
+// consumer), the message is dropped instead of blocking the caller. This
+// prevents a single stuck client from freezing the whole sending pipeline
+// (e.g. the export workers). Dead clients are eventually pruned by the
+// connection liveness detection (ping/read deadline).
 func (notifier *Notifier) Send(message []byte, client Client) {
-	if client != nil {
-		client.GetSendChannel() <- message
+	if client == nil {
+		return
+	}
+	select {
+	case client.GetSendChannel() <- message:
+	default:
+		zap.L().Warn("Notifier send channel full, dropping message", zap.Any("user", client.GetUser()))
 	}
 }
 
 // findClientsByUserLogin returns a list of clients corresponding to the input login
 func (notifier *Notifier) findClientsByUserLogin(login string) []Client {
-	clients := make([]Client, 0)
-	for _, client := range notifier.clientManager.GetClients() {
-		if client.GetUser() != nil && client.GetUser().Login == login {
-			clients = append(clients, client)
-		}
-	}
-	return clients
+	return notifier.clientManager.GetClientsByLogin(login)
 }
 
 // findClientsByRoleID returns a list of clients corresponding to the input role id
