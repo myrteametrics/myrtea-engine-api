@@ -29,6 +29,8 @@ func OIDCMiddleware(next http.Handler) http.Handler {
 			tokenStr = strings.TrimPrefix(authHeader, tokenPrefix)
 		} else if r.URL.Query().Has(tokenKey) {
 			tokenStr = r.URL.Query().Get(tokenKey)
+		} else if ws := tokenFromWebSocketProtocol(r); ws != "" {
+			tokenStr = ws
 		} else {
 			zap.L().Warn("No token string found in request")
 			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("missing token"))
