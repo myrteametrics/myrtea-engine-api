@@ -638,8 +638,7 @@ func isActionConditionVerified(agen ruleeng.Action, currentActionSets map[string
 	verified := true
 
 	if slot := condition.T; slot != nil && slot.Enabled {
-		_, found := currentActionSets[slot.ActionSetID]
-		verified = verified && found
+		_, verified = currentActionSets[slot.ActionSetID]
 	}
 
 	if slot := condition.TMinus1; slot != nil && slot.Enabled {
