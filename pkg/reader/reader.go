@@ -24,11 +24,12 @@ type Hit struct {
 
 // Item is used to represent a calculated aggregate and it's sub-aggregate
 type Item struct {
-	Key         string                            `json:"key,omitempty"`
-	KeyAsString string                            `json:"key-as-string,omitempty"`
-	Aggs        map[string]*ItemAgg               `json:"aggs,omitempty"`
-	Buckets     map[string][]*Item                `json:"buckets,omitempty"`
-	Baselines   map[string]baseline.BaselineValue `json:"baselines,omitempty"`
+	Key            string                                  `json:"key,omitempty"`
+	KeyAsString    string                                  `json:"key-as-string,omitempty"`
+	Aggs           map[string]*ItemAgg                     `json:"aggs,omitempty"`
+	Buckets        map[string][]*Item                      `json:"buckets,omitempty"`
+	Baselines      map[string]baseline.BaselineValue       `json:"baselines,omitempty"`
+	MatrixProfiles map[string]baseline.MatrixProfileResult `json:"matrixProfiles,omitempty"`
 }
 
 // ToAbstractMap convert an Item in an abstract map[string]interface{}
