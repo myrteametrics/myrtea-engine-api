@@ -206,8 +206,13 @@ func (querier HistorySituationsQuerier) scanAllIDs(rows *sql.Rows) ([]int64, err
 func (querier HistorySituationsQuerier) scanID(rows *sql.Rows) (int64, error) {
 	var id int64
 	if rows.Next() {
-		rows.Scan(&id)
+		if err := rows.Scan(&id); err != nil {
+			return -1, err
+		}
 	} else {
+		if err := rows.Err(); err != nil {
+			return -1, err
+		}
 		return -1, errors.New("no id returned")
 	}
 

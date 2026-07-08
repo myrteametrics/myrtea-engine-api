@@ -258,7 +258,7 @@ func (job FactRecalculationJob) RecalculateAndUpdateSituations(localRuleEngine *
 			historyFact := newFactHistory[historyFactID]
 			historyFactData, err := historyFact.Result.ToAbstractMap()
 			if err != nil {
-				zap.L().Error("", zap.Error(err))
+				zap.L().Error("HistoryFact Result.ToAbstractMap failed", zap.Error(err), zap.Int64("historyFactID", historyFactID))
 				return err
 			}
 			historySituationFlattenData[historyFact.FactName] = historyFactData
@@ -280,7 +280,7 @@ func (job FactRecalculationJob) RecalculateAndUpdateSituations(localRuleEngine *
 		// Evaluate rules
 		enabledRuleIDs, err := rule.R().GetEnabledRuleIDs(sh.SituationID, sh.Ts)
 		if err != nil {
-			zap.L().Error("", zap.Error(err))
+			zap.L().Error("GetEnabledRuleIDs failed", zap.Error(err), zap.Int64("situationID", sh.SituationID))
 			return err
 		}
 
@@ -314,7 +314,7 @@ func (job FactRecalculationJob) RecalculateAndUpdateSituations(localRuleEngine *
 
 		err = history.S().HistorySituationsQuerier.Update(historySituationNew)
 		if err != nil {
-			zap.L().Error("", zap.Error(err))
+			zap.L().Error("Update HistorySituationsV4 failed", zap.Error(err), zap.Int64("situationID", sh.SituationID), zap.Int64("situationInstanceID", sh.SituationInstanceID))
 			return err
 		}
 	}

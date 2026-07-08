@@ -31,7 +31,7 @@ func evaluateFactObjects(factObject engine.Fact, objects []map[string]interface{
 
 	localRuleEngine, err := evaluator.BuildLocalRuleEngine("object")
 	if err != nil {
-		zap.L().Error("", zap.Error(err))
+		zap.L().Error("BuildLocalRuleEngine failed", zap.Error(err))
 	}
 
 	taskBatchs := make([]tasker.TaskBatch, 0)
@@ -45,7 +45,7 @@ func evaluateFactObjects(factObject engine.Fact, objects []map[string]interface{
 
 		historyFactsAll, historySituationFlattenData, err := history.S().ExtractFactData(s.ID, 0, make([]history.HistoryFactsV4, 0), s.Facts)
 		if err != nil {
-			zap.L().Error("", zap.Error(err))
+			zap.L().Error("ExtractFactData failed, skipping situation", zap.Error(err), zap.Int64("situationID", s.ID))
 			continue
 		}
 		for key, value := range s.Parameters {
@@ -62,7 +62,7 @@ func evaluateFactObjects(factObject engine.Fact, objects []map[string]interface{
 
 		enabledRuleIDs, err := rule.R().GetEnabledRuleIDs(s.ID, t)
 		if err != nil {
-			zap.L().Error("", zap.Error(err))
+			zap.L().Error("GetEnabledRuleIDs failed", zap.Error(err), zap.Int64("situationID", s.ID))
 		}
 
 		for _, object := range objects {
@@ -91,7 +91,7 @@ func evaluateFactObjects(factObject engine.Fact, objects []map[string]interface{
 				}
 				historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 				if err != nil {
-					zap.L().Error("", zap.Error(err))
+					zap.L().Error("Insert HistoryFactsV4 failed", zap.Error(err), zap.Int64("factID", factObject.ID), zap.Int64("situationID", s.ID))
 				}
 
 				historySituationNew := history.HistorySituationsV4{
@@ -105,7 +105,7 @@ func evaluateFactObjects(factObject engine.Fact, objects []map[string]interface{
 				}
 				historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
 				if err != nil {
-					zap.L().Error("", zap.Error(err))
+					zap.L().Error("Insert HistorySituationsV4 failed", zap.Error(err), zap.Int64("situationID", s.ID))
 				}
 
 				historySituationFactNew := make([]history.HistorySituationFactsV4, 0)
@@ -118,7 +118,7 @@ func evaluateFactObjects(factObject engine.Fact, objects []map[string]interface{
 				}
 				err = history.S().HistorySituationFactsQuerier.Execute(history.S().HistorySituationFactsQuerier.Builder.InsertBulk(historySituationFactNew))
 				if err != nil {
-					zap.L().Error("", zap.Error(err))
+					zap.L().Error("Insert HistorySituationFactsV4 failed", zap.Error(err), zap.Int64("situationID", s.ID))
 				}
 
 				taskBatchs = append(taskBatchs, tasker.TaskBatch{

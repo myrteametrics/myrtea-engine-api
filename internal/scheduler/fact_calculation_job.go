@@ -260,7 +260,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 			}
 			historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 			if err != nil {
-				zap.L().Error("", zap.Error(err))
+				zap.L().Error("Insert HistoryFactsV4 failed", zap.Error(err), zap.Int64("factID", f.ID))
 			}
 
 			for _, sh := range factSituationsHistory {
@@ -313,7 +313,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 				}
 				historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 				if err != nil {
-					zap.L().Error("", zap.Error(err))
+					zap.L().Error("Insert HistoryFactsV4 failed", zap.Error(err), zap.Int64("factID", f.ID), zap.Int64("situationID", sh.SituationID), zap.Int64("situationInstanceID", sh.SituationInstanceID))
 				}
 				// zap.L().Sugar().Info("insert fact", historyFactNew)
 
@@ -385,7 +385,7 @@ func CalculateAndPersistFacts(t time.Time, job FactCalculationJob) (map[string]h
 			}
 			historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 			if err != nil {
-				zap.L().Error("", zap.Error(err))
+				zap.L().Error("Insert HistoryFactsV4 failed", zap.Error(err), zap.Int64("factID", f.ID))
 			}
 
 			for _, sh := range factSituationsHistory {
@@ -435,7 +435,7 @@ func CalculateAndPersistFacts(t time.Time, job FactCalculationJob) (map[string]h
 				}
 				historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 				if err != nil {
-					zap.L().Error("", zap.Error(err))
+					zap.L().Error("Insert HistoryFactsV4 failed", zap.Error(err), zap.Int64("factID", f.ID), zap.Int64("situationID", sh.SituationID), zap.Int64("situationInstanceID", sh.SituationInstanceID))
 				}
 
 				key := fmt.Sprintf("%d-%d", sh.SituationID, sh.SituationInstanceID)
@@ -475,7 +475,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		// Flatten parameters from situation definition + situation instance definition
 		s, parameters, err := history.ExtractSituationData(situationToUpdate.SituationID, situationToUpdate.SituationInstanceID)
 		if err != nil {
-			zap.L().Error("", zap.Error(err))
+			zap.L().Error("ExtractSituationData failed, skipping situation history", zap.Error(err), zap.Int64("situationID", situationToUpdate.SituationID), zap.Int64("situationInstanceID", situationToUpdate.SituationInstanceID))
 			continue
 		}
 
@@ -483,7 +483,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 
 		historyFactsAll, historySituationFlattenData, err := history.S().ExtractFactData(situationToUpdate.SituationID, situationToUpdate.SituationInstanceID, situationToUpdate.HistoryFacts, s.Facts)
 		if err != nil {
-			zap.L().Error("", zap.Error(err))
+			zap.L().Error("ExtractFactData failed, skipping situation history", zap.Error(err), zap.Int64("situationID", situationToUpdate.SituationID), zap.Int64("situationInstanceID", situationToUpdate.SituationInstanceID))
 			continue
 		}
 		for key, value := range parameters {
@@ -505,7 +505,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		// Evaluate rules
 		enabledRuleIDs, err := rule.R().GetEnabledRuleIDs(situationToUpdate.SituationID, situationToUpdate.Ts)
 		if err != nil {
-			zap.L().Error("", zap.Error(err))
+			zap.L().Error("GetEnabledRuleIDs failed", zap.Error(err), zap.Int64("situationID", situationToUpdate.SituationID))
 		}
 
 		metadatas := make([]metadata.MetaData, 0)
@@ -568,7 +568,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		}
 		historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
 		if err != nil {
-			zap.L().Error("", zap.Error(err))
+			zap.L().Error("Insert HistorySituationsV4 failed", zap.Error(err), zap.Int64("situationID", situationToUpdate.SituationID), zap.Int64("situationInstanceID", situationToUpdate.SituationInstanceID))
 		}
 		allMetadatas = append(allMetadatas, metadatas...)
 		if aggregatedBoostInfo == nil && situationToUpdate.JobBoostInfo != nil {
