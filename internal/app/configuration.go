@@ -57,6 +57,7 @@ var AllowedConfigKey = [][]helpers.ConfigKey{
 		{Type: helpers.StringFlag, Name: "AUTHENTICATION_CREATE_SUPERUSER", DefaultValue: "false", Description: "Create superuser if not exists"},
 		{Type: helpers.StringFlag, Name: "JWT_SIGNING_KEY", DefaultValue: "", Description: "JWT signing key for token generation. If not set, a random key will be generated on startup (in production mode only)."},
 		{Type: helpers.StringFlag, Name: "JOB_BOOST_LIFETIME", DefaultValue: "5m", Description: "Time-to-live for boost and revert actions in the BoostManager. Actions older than this duration will be automatically cleaned up."},
+                {Type: helpers.StringFlag, Name: "AGGREGATEINGESTER_QUEUE_BUFFER_SIZE", DefaultValue: "100", Description: "Aggregate ingester queue buffer size"},
 	},
 }
 
