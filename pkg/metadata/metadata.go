@@ -5,7 +5,7 @@ type MetaData struct {
 	Key         string      `json:"key"`
 	Value       interface{} `json:"value"`
 	RuleID      int64       `json:"ruleId"`
-	ActionID    string      `json:"actionId"`
+	ActionID    string      `json:"actionId,omitempty"`
 	RuleVersion int64       `json:"ruleVersion"`
 	CaseName    string      `json:"caseName"`
 }
