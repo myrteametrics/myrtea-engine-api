@@ -296,6 +296,7 @@ func (job FactRecalculationJob) RecalculateAndUpdateSituations(localRuleEngine *
 						RuleID:      context.RuleID,
 						RuleVersion: context.RuleVersion,
 						CaseName:    context.CaseName,
+						ActionID:    agen.GetID(),
 					})
 				}
 			}

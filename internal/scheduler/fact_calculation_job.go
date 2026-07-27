@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/calendar"
@@ -511,7 +510,20 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 		metadatas := make([]metadata.MetaData, 0)
 		agenda := evaluator.EvaluateRules(localRuleEngine, historySituationFlattenData, enabledRuleIDs)
 		var filteredAgenda []ruleeng.Action
-		var prev *history.HistorySituationsV4 = nil
+
+		// Index the "set" actions resolved for the current tick (T) by their action set id,
+		// so dependent actions can check whether the action set they depend on fired.
+		currentActionSets := make(map[string]ruleeng.Action)
+		for _, agen := range agenda {
+			if agen.GetName() == tasker.ActionSet {
+				currentActionSets[agen.GetID()] = agen
+			}
+		}
+
+		// Lazily fetched and cached: the situation's previous history record, used to
+		// verify "t-1" action dependency conditions.
+		var previousHistory *history.HistorySituationsV4
+
 		for _, agen := range agenda {
 			if agen.GetName() == tasker.ActionSet {
 				context := tasker.BuildContextData(agen.GetMetaData())
@@ -522,37 +534,14 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 						RuleID:      context.RuleID,
 						RuleVersion: context.RuleVersion,
 						CaseName:    context.CaseName,
+						ActionID:    agen.GetID(),
 					})
 				}
 				continue
 			}
-			if !agen.GetCheckPrevSetAction() {
+
+			if isActionConditionVerified(agen, currentActionSets, &previousHistory, situationToUpdate.SituationID, situationToUpdate.SituationInstanceID) {
 				filteredAgenda = append(filteredAgenda, agen)
-				continue
-			}
-
-			if agen.GetName() == tasker.ActionCreateIssue || agen.GetName() == tasker.ActionSituationReporting {
-				// Load previous history if necessary
-				if prev == nil {
-					latestHistory, err := history.S().HistorySituationsQuerier.GetLatestHistory(situationToUpdate.SituationID, situationToUpdate.SituationInstanceID)
-					if err != nil {
-						filteredAgenda = append(filteredAgenda, agen)
-						continue
-					}
-					prev = &latestHistory
-				}
-				isCritical := false
-				for _, metadata := range prev.Metadatas {
-					if strings.EqualFold(metadata.Value.(string), model.Critical.String()) {
-						isCritical = true
-						break
-					}
-				}
-
-				if !isCritical {
-					filteredAgenda = append(filteredAgenda, agen)
-				}
-
 			}
 		}
 
@@ -625,6 +614,60 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 	return filteredTaskBatch, nil
 }
 
+// isActionConditionVerified checks whether an action's action-set dependency
+// conditions (actionCondition.t and actionCondition.t_minus_1) allow it to be executed.
+//
+//   - If the action does not have action-set conditions enabled, or has none configured,
+//     it is always verified.
+//   - The "t" slot is verified if the action set it depends on fired during the current tick
+//     (present in currentActionSets).
+//   - The "t_minus_1" slot is verified if the action set it depends on fired during the
+//     previous tick (present in the situation's previous history metadata).
+//   - Only enabled slots are checked, and all enabled slots must be verified (AND).
+//     If neither slot is enabled, the action is verified by default.
+func isActionConditionVerified(agen ruleeng.Action, currentActionSets map[string]ruleeng.Action, previousHistory **history.HistorySituationsV4, situationID, situationInstanceID int64) bool {
+	if !agen.GetEnableActionCondition() {
+		return true
+	}
+
+	condition := agen.GetActionCondition()
+	if condition == nil {
+		return true
+	}
+
+	verified := true
+
+	if slot := condition.T; slot != nil && slot.Enabled {
+		_, verified = currentActionSets[slot.ActionSetID]
+	}
+
+	if slot := condition.TMinus1; slot != nil && slot.Enabled {
+		verified = verified && actionSetFiredInPreviousTick(slot.ActionSetID, previousHistory, situationID, situationInstanceID)
+	}
+
+	return verified
+}
+
+// actionSetFiredInPreviousTick checks whether a "set" action with the given action set id
+// produced metadata in the situation's previous history record. The previous history is
+// fetched at most once and cached in previousHistory for reuse across actions of the same situation.
+func actionSetFiredInPreviousTick(actionSetID string, previousHistory **history.HistorySituationsV4, situationID, situationInstanceID int64) bool {
+	if *previousHistory == nil {
+		latest, err := history.S().HistorySituationsQuerier.GetLatestHistory(situationID, situationInstanceID)
+		if err != nil {
+			return false
+		}
+		*previousHistory = &latest
+	}
+
+	for _, md := range (*previousHistory).Metadatas {
+		if md.ActionID == actionSetID {
+			return true
+		}
+	}
+	return false
+}
+
 // filtration
 func filterTask(situationsToUpdate map[string]history.HistoryRecordV4, situationHistoryMetadata map[model.Key]map[string]interface{}, taskBatchsMap map[string]tasker.TaskBatch) []tasker.TaskBatch {
 	filteredTaskBatch := make(map[string]tasker.TaskBatch, len(taskBatchsMap))
@@ -664,7 +707,7 @@ func filterTask(situationsToUpdate map[string]history.HistoryRecordV4, situation
 			if childFilterdTaskBatch, exists := filteredTaskBatch[keychild]; exists {
 				for _, agenda := range childFilterdTaskBatch.Agenda {
 					if agenda.GetName() == ActionSetValue &&
-						agenda.GetEnableDependsForALLAction() &&
+						agenda.GetEnableDependsForAllAction() &&
 						agenda.GetEnabledDependsAction() {
 						metadataInterface, err := agenda.GetParameters()[DependsOnMetadata]
 						if err {
@@ -747,7 +790,7 @@ func filterAgendaAndUpdateHistory(keychild string, DependsOnMetadata string, fil
 	// Filter agenda...
 	filteredAgenda := make([]ruleeng.Action, 0)
 	for _, action := range filteredTaskBatch[keychild].Agenda {
-		if (action.GetEnableDependsForALLAction() == false) || (action.GetEnableDependsForALLAction() == true && action.GetEnabledDependsAction() == false) {
+		if (action.GetEnableDependsForAllAction() == false) || (action.GetEnableDependsForAllAction() == true && action.GetEnabledDependsAction() == false) {
 			filteredAgenda = append(filteredAgenda, action)
 		}
 	}
