@@ -96,10 +96,13 @@ func (m *GRPCClient) GetMatrixProfileResults(situationID int64, situationInstanc
 	}
 
 	for k, v := range resp.Values {
+		// An unparseable timestamp must not drop the whole entry: business rules address these
+		// results by path, and a missing key makes the condition false with no trace. Keep the
+		// status and the scores, which are what rules actually test, and leave the time zeroed.
 		bestMatchTime, err := time.Parse(timeLayout, v.GetBestMatchTime())
 		if err != nil {
-			zap.L().Warn("parse matrix profile best match time", zap.Error(err))
-			continue
+			zap.L().Warn("parse matrix profile best match time", zap.String("definition", k), zap.Error(err))
+			bestMatchTime = time.Time{}
 		}
 		results[k] = MatrixProfileResult{
 			Status:                   v.Status,
