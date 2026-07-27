@@ -57,8 +57,6 @@ func ExecuteFact(
 		}
 
 		widgetData := buildWidgetDataFromCount(response.Count)
-		// GetBaselineValues(widgetData, f.ID, situationID, situationInstanceID, ti) // deprecated: superseded by GetMatrixProfileResults
-		GetMatrixProfileResults(widgetData, situationID, situationInstanceID, ti)
 		return widgetData, nil
 	}
 
@@ -81,9 +79,6 @@ func ExecuteFact(
 	if err != nil {
 		return nil, err
 	}
-
-	// GetBaselineValues(widgetData, f.ID, situationID, situationInstanceID, ti) // deprecated: superseded by GetMatrixProfileResults
-	GetMatrixProfileResults(widgetData, situationID, situationInstanceID, ti)
 
 	return widgetData, nil
 }

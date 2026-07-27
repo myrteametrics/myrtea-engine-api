@@ -502,6 +502,29 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			historySituationFlattenData[key] = value
 		}
 
+		// Insert the situation history without its metadata: the matrix profile computed just
+		// below reads the value of the current tick back from history, and the rules evaluated
+		// after it produce the metadata, which is written back by the update at the end of the
+		// iteration.
+		historySituationNew := history.HistorySituationsV4{
+			SituationID:         situationToUpdate.SituationID,
+			SituationInstanceID: situationToUpdate.SituationInstanceID,
+			Ts:                  situationToUpdate.Ts,
+			Parameters:          parameters,
+			ExpressionFacts:     expressionFacts,
+			Metadatas:           nil,
+		}
+		historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
+		if err != nil {
+			zap.L().Error("", zap.Error(err))
+		}
+
+		// Expose the matrix profile results to the rules, so a condition can combine a
+		// threshold on the value with how much the current pattern resembles the history.
+		if matrixProfiles := fact.GetMatrixProfileResults(situationToUpdate.SituationID, situationToUpdate.SituationInstanceID, situationToUpdate.Ts); matrixProfiles != nil {
+			historySituationFlattenData[fact.MatrixProfileKnowledgeKey] = matrixProfiles
+		}
+
 		// Evaluate rules
 		enabledRuleIDs, err := rule.R().GetEnabledRuleIDs(situationToUpdate.SituationID, situationToUpdate.Ts)
 		if err != nil {
@@ -532,9 +555,11 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			}
 
 			if agen.GetName() == tasker.ActionCreateIssue || agen.GetName() == tasker.ActionSituationReporting {
-				// Load previous history if necessary
+				// Load previous history if necessary. The row of the current tick has already
+				// been inserted above, so this must be bounded strictly before its timestamp,
+				// otherwise it would read our own write back as if it were the previous state.
 				if prev == nil {
-					latestHistory, err := history.S().HistorySituationsQuerier.GetLatestHistory(situationToUpdate.SituationID, situationToUpdate.SituationInstanceID)
+					latestHistory, err := history.S().HistorySituationsQuerier.GetLatestHistoryBefore(situationToUpdate.SituationID, situationToUpdate.SituationInstanceID, situationToUpdate.Ts)
 					if err != nil {
 						filteredAgenda = append(filteredAgenda, agen)
 						continue
@@ -556,19 +581,11 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			}
 		}
 
-		// Build and insert HistorySituationV4
-		historySituationNew := history.HistorySituationsV4{
-			// ID:                    -1,
-			SituationID:         situationToUpdate.SituationID,
-			SituationInstanceID: situationToUpdate.SituationInstanceID,
-			Ts:                  situationToUpdate.Ts,
-			Parameters:          parameters,
-			ExpressionFacts:     expressionFacts,
-			Metadatas:           metadatas,
-		}
-		historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
-		if err != nil {
-			zap.L().Error("", zap.Error(err))
+		// Write back the metadata produced by the rules on the row inserted above.
+		historySituationNew.Metadatas = metadatas
+		if err := history.S().HistorySituationsQuerier.Update(historySituationNew); err != nil {
+			zap.L().Error("Cannot update situation history with rule metadata",
+				zap.Int64("id", historySituationNew.ID), zap.Error(err))
 		}
 		allMetadatas = append(allMetadatas, metadatas...)
 		if aggregatedBoostInfo == nil && situationToUpdate.JobBoostInfo != nil {

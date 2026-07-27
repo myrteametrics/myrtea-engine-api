@@ -23,13 +23,16 @@ type Hit struct {
 }
 
 // Item is used to represent a calculated aggregate and it's sub-aggregate
+//
+// Matrix profile results used to be carried here too. They are now computed once per
+// situation instance, after the fact values have been persisted, and injected directly in the
+// rule engine knowledge base (see fact.MatrixProfileKnowledgeKey).
 type Item struct {
-	Key            string                                  `json:"key,omitempty"`
-	KeyAsString    string                                  `json:"key-as-string,omitempty"`
-	Aggs           map[string]*ItemAgg                     `json:"aggs,omitempty"`
-	Buckets        map[string][]*Item                      `json:"buckets,omitempty"`
-	Baselines      map[string]baseline.BaselineValue       `json:"baselines,omitempty"`
-	MatrixProfiles map[string]baseline.MatrixProfileResult `json:"matrixProfiles,omitempty"`
+	Key         string                            `json:"key,omitempty"`
+	KeyAsString string                            `json:"key-as-string,omitempty"`
+	Aggs        map[string]*ItemAgg               `json:"aggs,omitempty"`
+	Buckets     map[string][]*Item                `json:"buckets,omitempty"`
+	Baselines   map[string]baseline.BaselineValue `json:"baselines,omitempty"`
 }
 
 // ToAbstractMap convert an Item in an abstract map[string]interface{}

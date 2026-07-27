@@ -404,11 +404,22 @@ func (p ParamGetFactExprHistoryByDate) IsValid() error {
 }
 
 func (querier HistorySituationsQuerier) GetLatestHistory(situationID int64, situationInstanceID int64) (HistorySituationsV4, error) {
+	builder := HistorySituationsBuilder{}
+	return querier.getLatestHistory(builder.GetLatestHistorySituation(situationID, situationInstanceID))
+}
+
+// GetLatestHistoryBefore returns the latest history strictly before ts. Use it over
+// GetLatestHistory when the row of the current tick has already been written and would
+// otherwise be returned as if it were the previous state.
+func (querier HistorySituationsQuerier) GetLatestHistoryBefore(situationID int64, situationInstanceID int64, ts time.Time) (HistorySituationsV4, error) {
+	builder := HistorySituationsBuilder{}
+	return querier.getLatestHistory(builder.GetLatestHistorySituationBefore(situationID, situationInstanceID, ts))
+}
+
+func (querier HistorySituationsQuerier) getLatestHistory(selectBuilder sq.SelectBuilder) (HistorySituationsV4, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	builder := HistorySituationsBuilder{}
-	selectBuilder := builder.GetLatestHistorySituation(situationID, situationInstanceID)
 	results, err := querier.QueryGetFieldsTsMetadatas(ctx, selectBuilder)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {

@@ -148,6 +148,14 @@ func (builder HistorySituationsBuilder) GetLatestHistorySituation(situationID in
 		Limit(1)
 }
 
+// GetLatestHistorySituationBefore is GetLatestHistorySituation restricted to the state
+// strictly before ts. Callers that have already written the row of the current tick need this
+// to reach the actual previous state rather than reading their own write back.
+func (builder HistorySituationsBuilder) GetLatestHistorySituationBefore(situationID int64, situationInstanceID int64, ts time.Time) sq.SelectBuilder {
+	return builder.GetLatestHistorySituation(situationID, situationInstanceID).
+		Where(sq.Expr("ts < ?::timestamptz", ts))
+}
+
 func (builder HistorySituationsBuilder) GetTodaysFactExprResultByParameters(param ParamGetFactExprHistory) sq.SelectBuilder {
 	todayStart, tomorrowStart := getTodayTimeRange()
 
