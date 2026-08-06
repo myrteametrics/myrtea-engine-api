@@ -303,6 +303,88 @@ func CreateConfigHistory(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, r, createdHistory)
 }
 
+// UpdateConfigHistoryCommentary godoc
+//
+//	@Id				UpdateConfigHistoryCommentary
+//
+//	@Summary		Update the commentary of a config history entry
+//	@Description	Update the commentary of a config history entry. Only the commentary can be
+//	@Description	changed: the configuration itself, its author, its type and its date make up the
+//	@Description	audit trail of the save point and stay immutable.
+//	@Tags			ConfigHistory
+//	@Accept			json
+//	@Produce		json
+//	@Param			id			path	int													true	"Config History ID"
+//	@Param			commentary	body	handler.UpdateConfigHistoryCommentary.commentaryInput	true	"New commentary"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	confighistory.ConfigHistory	"updated config history"
+//	@Failure		400	{object}	httputil.APIError			"Bad Request"
+//	@Failure		404	{object}	httputil.APIError			"Not Found"
+//	@Failure		500	{object}	httputil.APIError			"Internal Server Error"
+//	@Router			/engine/config-histories/{id}/commentary [put]
+func UpdateConfigHistoryCommentary(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	idHistory, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		zap.L().Warn("Error on parsing config history id", zap.String("historyID", id), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIParsingInteger, err)
+		return
+	}
+
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeConfig, permissions.All, permissions.ActionUpdate)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return
+	}
+
+	// Only the commentary travels: a saved configuration weighs a couple of megabytes and has no
+	// reason to be sent back to rename its save point.
+	var commentaryInput struct {
+		Commentary string `json:"commentary"`
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&commentaryInput)
+	if err != nil {
+		zap.L().Warn("Config history commentary json decoding", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
+		return
+	}
+
+	_, found, err := confighistory.R().Get(idHistory)
+	if err != nil {
+		zap.L().Error("Error getting config history", zap.Int64("id", idHistory), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("Config history not found", zap.Int64("id", idHistory))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("config history not found"))
+		return
+	}
+
+	err = confighistory.R().UpdateCommentary(idHistory, commentaryInput.Commentary)
+	if err != nil {
+		zap.L().Error("Error updating config history commentary", zap.Int64("id", idHistory), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBUpdateFailed, err)
+		return
+	}
+
+	updatedHistory, found, err := confighistory.R().Get(idHistory)
+	if err != nil {
+		zap.L().Error("Error getting updated config history", zap.Int64("id", idHistory), zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+	if !found {
+		zap.L().Warn("Updated config history not found", zap.Int64("id", idHistory))
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("updated config history not found"))
+		return
+	}
+
+	httputil.JSON(w, r, updatedHistory)
+}
+
 // DeleteConfigHistory godoc
 //
 //	@Id				DeleteConfigHistory

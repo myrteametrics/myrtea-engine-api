@@ -12,6 +12,9 @@ import (
 // It allows standard CRUD operations on config history entries
 type Repository interface {
 	Create(history ConfigHistory) (int64, error)
+	// UpdateCommentary changes only the commentary of an entry. The configuration, its author,
+	// its type and its date are the audit trail of the save point and stay immutable.
+	UpdateCommentary(id int64, commentary string) error
 	Get(id int64) (ConfigHistory, bool, error)
 	GetAll() (map[int64]ConfigHistory, error)
 	GetAllFromInterval(from time.Time, to time.Time) (map[int64]ConfigHistory, error)
