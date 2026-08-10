@@ -303,6 +303,13 @@ func CreateConfigHistory(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, r, createdHistory)
 }
 
+// UpdateCommentaryRequest is the body of an update on the commentary of a save point.
+// Only the commentary travels: a saved configuration weighs a couple of megabytes and has no
+// reason to be sent back to rename its save point.
+type UpdateCommentaryRequest struct {
+	Commentary string `json:"commentary"`
+}
+
 // UpdateConfigHistoryCommentary godoc
 //
 //	@Id				UpdateConfigHistoryCommentary
@@ -315,7 +322,7 @@ func CreateConfigHistory(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id			path	int													true	"Config History ID"
-//	@Param			commentary	body	handler.UpdateConfigHistoryCommentary.commentaryInput	true	"New commentary"
+//	@Param			commentary	body	handler.UpdateCommentaryRequest						true	"New commentary"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	confighistory.ConfigHistory	"updated config history"
@@ -338,11 +345,7 @@ func UpdateConfigHistoryCommentary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Only the commentary travels: a saved configuration weighs a couple of megabytes and has no
-	// reason to be sent back to rename its save point.
-	var commentaryInput struct {
-		Commentary string `json:"commentary"`
-	}
+	var commentaryInput UpdateCommentaryRequest
 
 	err = json.NewDecoder(r.Body).Decode(&commentaryInput)
 	if err != nil {
