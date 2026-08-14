@@ -254,6 +254,29 @@ func (r *PostgresRepository) GetAllByUser(user string) (map[int64]ConfigHistory,
 	return histories, nil
 }
 
+// UpdateCommentary changes only the commentary of a ConfigHistory entry
+func (r *PostgresRepository) UpdateCommentary(id int64, commentary string) error {
+	result, err := r.newStatement().
+		Update(table).
+		Set("commentary", commentary).
+		Where("id = ?", id).
+		Exec()
+	if err != nil {
+		return fmt.Errorf("couldn't update config history commentary: %s", err.Error())
+	}
+
+	count, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("error checking affected rows: %s", err.Error())
+	}
+
+	if count == 0 {
+		return errors.New("no config history found with the specified id")
+	}
+
+	return nil
+}
+
 // Delete removes a ConfigHistory entry by id
 func (r *PostgresRepository) Delete(id int64) error {
 	result, err := r.newStatement().

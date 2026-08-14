@@ -418,6 +418,103 @@ func TestPostgresDelete(t *testing.T) {
 	}
 }
 
+func TestPostgresUpdateCommentary(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql test in short mode")
+	}
+	db := tests.DBClient(t)
+	defer dbDestroyRepo(db, t)
+	dbInitRepo(db, t)
+	r := NewPostgresRepository(db)
+
+	history := NewConfigHistory("commentaire initial", "test_type", "test_user", "la configuration")
+	id, err := r.Create(history)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	err = r.UpdateCommentary(id, "commentaire corrigé")
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	updated, found, err := r.Get(id)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	if !found {
+		t.Error("ConfigHistory doesn't exist after update")
+		t.FailNow()
+	}
+	if updated.Commentary != "commentaire corrigé" {
+		t.Errorf("Commentary not updated, got %s", updated.Commentary)
+	}
+	// The save point is an audit trail: everything but the commentary must survive untouched.
+	if updated.Config != "la configuration" {
+		t.Errorf("Config must not change, got %s", updated.Config)
+	}
+	if updated.User != "test_user" {
+		t.Errorf("User must not change, got %s", updated.User)
+	}
+	if updated.Type != "test_type" {
+		t.Errorf("Type must not change, got %s", updated.Type)
+	}
+	if updated.ID != id {
+		t.Errorf("ID must not change, got %d", updated.ID)
+	}
+}
+
+func TestPostgresUpdateCommentaryEmpty(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql test in short mode")
+	}
+	db := tests.DBClient(t)
+	defer dbDestroyRepo(db, t)
+	dbInitRepo(db, t)
+	r := NewPostgresRepository(db)
+
+	history := NewConfigHistory("commentaire initial", "test_type", "test_user", "")
+	id, err := r.Create(history)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	// Clearing the commentary is a legitimate edit, not a no-op.
+	err = r.UpdateCommentary(id, "")
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	updated, _, err := r.Get(id)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	if updated.Commentary != "" {
+		t.Errorf("Commentary should be empty, got %s", updated.Commentary)
+	}
+}
+
+func TestPostgresUpdateCommentaryNotExists(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping postgresql test in short mode")
+	}
+	db := tests.DBClient(t)
+	defer dbDestroyRepo(db, t)
+	dbInitRepo(db, t)
+	r := NewPostgresRepository(db)
+
+	err := r.UpdateCommentary(999999, "peu importe")
+	if err == nil {
+		t.Error("Should not be able to update a non-existing ConfigHistory")
+	}
+}
+
 func TestPostgresDeleteNotExists(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping postgresql test in short mode")

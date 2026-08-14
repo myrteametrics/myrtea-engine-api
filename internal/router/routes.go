@@ -270,6 +270,7 @@ func engineRouter(services Services) http.Handler {
 		r.Get("/", handler.GetConfigHistories)
 		r.Get("/{id}", handler.GetConfigHistory)
 		r.Post("/", handler.CreateConfigHistory)
+		r.Put("/{id}/commentary", handler.UpdateConfigHistoryCommentary)
 		r.Delete("/{id}", handler.DeleteConfigHistory)
 		r.Delete("/oldest", handler.DeleteOldestConfigHistory)
 		r.Get("/type/{type}", handler.GetConfigHistoriesByType)
