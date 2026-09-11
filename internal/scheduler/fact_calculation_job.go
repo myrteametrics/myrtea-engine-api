@@ -259,7 +259,7 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 			}
 			historyFactNew.ID, err = history.S().HistoryFactsQuerier.Insert(historyFactNew)
 			if err != nil {
-				zap.L().Error("", zap.Error(err))
+				zap.L().Error("Failed to insert fact history", zap.Error(err))
 			}
 
 			for _, sh := range factSituationsHistory {
