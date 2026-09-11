@@ -103,3 +103,29 @@ func TestGetLatestHistorySituation(t *testing.T) {
 		t.Errorf("Expected args to be %v, but got %v", expectedArgs, args)
 	}
 }
+
+func TestGetLatestHistorySituationBefore(t *testing.T) {
+	builder := HistorySituationsBuilder{}
+	ts := time.Date(2026, 7, 27, 10, 30, 0, 0, time.UTC)
+
+	expectedSQL := "SELECT ts, metadatas FROM situation_history_v5 WHERE situation_id = $1 AND situation_instance_id = $2 AND ts >= $3::timestamptz AND ts < $4::timestamptz ORDER BY ts DESC LIMIT 1"
+	expectedArgs := []interface{}{
+		int64(1),
+		int64(12345678),
+		getStartDate30DaysAgo(),
+		ts,
+	}
+
+	sql, args, err := builder.GetLatestHistorySituationBefore(1, 12345678, ts).ToSql()
+	if err != nil {
+		t.Fatalf("Failed to build SQL: %v", err)
+	}
+
+	if expectedSQL != sql {
+		t.Errorf("Expected SQL to be \n%s\n but got \n%s", expectedSQL, sql)
+	}
+
+	if !reflect.DeepEqual(expectedArgs, args) {
+		t.Errorf("Expected args to be %v, but got %v", expectedArgs, args)
+	}
+}
