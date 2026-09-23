@@ -34,7 +34,7 @@ type GRPCClient struct {
 	client proto2.BaselineClient
 }
 
-func (m *GRPCClient) GetMatrixProfileResults(situationID int64, situationInstanceID int64, ti time.Time) (map[string]MatrixProfileResult, error) {
+func (m *GRPCClient) GetMatrixProfileResults(situationID int64, situationInstanceID int64, ti time.Time, expressionFacts map[string]float64) (map[string]MatrixProfileResult, error) {
 
 	results := make(map[string]MatrixProfileResult, 0)
 
@@ -42,6 +42,7 @@ func (m *GRPCClient) GetMatrixProfileResults(situationID int64, situationInstanc
 		SituationId:         situationID,
 		SituationInstanceId: situationInstanceID,
 		Time:                ti.Format(timeLayout),
+		ExpressionFacts:     expressionFacts,
 	})
 	if err != nil {
 		return results, err
@@ -79,7 +80,7 @@ func (m *GRPCServer) GetMatrixProfileResults(ctx context.Context, req *proto2.Ma
 		return nil, err
 	}
 
-	results, err := m.Impl.GetMatrixProfileResults(req.SituationId, req.SituationInstanceId, ti)
+	results, err := m.Impl.GetMatrixProfileResults(req.SituationId, req.SituationInstanceId, ti, req.ExpressionFacts)
 
 	values := make(map[string]*proto2.MatrixProfileResult, 0)
 	for k, v := range results {

@@ -6,7 +6,10 @@ import (
 
 // Baseline is the interface that we're exposing as a plugin.
 type BaselineService interface {
-	GetMatrixProfileResults(situationID int64, situationInstanceID int64, ti time.Time) (map[string]MatrixProfileResult, error)
+	// expressionFacts carries the current tick's evaluated expression facts, keyed by name, so
+	// a "fact_expression" definition can read its current point without the caller having to
+	// persist it to situation_history_v5 first.
+	GetMatrixProfileResults(situationID int64, situationInstanceID int64, ti time.Time, expressionFacts map[string]float64) (map[string]MatrixProfileResult, error)
 }
 
 const (

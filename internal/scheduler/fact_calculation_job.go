@@ -497,26 +497,12 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			historySituationFlattenData[key] = value
 		}
 
-		// Insert the situation history without its metadata: the matrix profile computed just
-		// below reads the value of the current tick back from history, and the rules evaluated
-		// after it produce the metadata, which is written back by the update at the end of the
-		// iteration.
-		historySituationNew := history.HistorySituationsV4{
-			SituationID:         situationToUpdate.SituationID,
-			SituationInstanceID: situationToUpdate.SituationInstanceID,
-			Ts:                  situationToUpdate.Ts,
-			Parameters:          parameters,
-			ExpressionFacts:     expressionFacts,
-			Metadatas:           nil,
-		}
-		historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
-		if err != nil {
-			zap.L().Error("", zap.Error(err))
-		}
-
 		// Expose the matrix profile results to the rules, so a condition can combine a
-		// threshold on the value with how much the current pattern resembles the history.
-		if matrixProfiles := fact.GetMatrixProfileResults(situationToUpdate.SituationID, situationToUpdate.SituationInstanceID, situationToUpdate.Ts); matrixProfiles != nil {
+		// threshold on the value with how much the current pattern resembles the history. The
+		// current tick's expression facts are passed directly rather than read back from
+		// situation_history_v5, since that row is only inserted below, once the metadata
+		// produced by the rules is known.
+		if matrixProfiles := fact.GetMatrixProfileResults(situationToUpdate.SituationID, situationToUpdate.SituationInstanceID, situationToUpdate.Ts, expressionFacts); matrixProfiles != nil {
 			historySituationFlattenData[fact.MatrixProfileKnowledgeKey] = matrixProfiles
 		}
 
@@ -564,11 +550,19 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			}
 		}
 
-		// Write back the metadata produced by the rules on the row inserted above.
-		historySituationNew.Metadatas = metadatas
-		if err := history.S().HistorySituationsQuerier.Update(historySituationNew); err != nil {
-			zap.L().Error("Cannot update situation history with rule metadata",
-				zap.Int64("id", historySituationNew.ID), zap.Error(err))
+		// Insert the situation history once the metadata produced by the rules is known, so no
+		// row is ever persisted without its metadata.
+		historySituationNew := history.HistorySituationsV4{
+			SituationID:         situationToUpdate.SituationID,
+			SituationInstanceID: situationToUpdate.SituationInstanceID,
+			Ts:                  situationToUpdate.Ts,
+			Parameters:          parameters,
+			ExpressionFacts:     expressionFacts,
+			Metadatas:           metadatas,
+		}
+		historySituationNew.ID, err = history.S().HistorySituationsQuerier.Insert(historySituationNew)
+		if err != nil {
+			zap.L().Error("", zap.Error(err))
 		}
 		allMetadatas = append(allMetadatas, metadatas...)
 		if aggregatedBoostInfo == nil && situationToUpdate.JobBoostInfo != nil {
