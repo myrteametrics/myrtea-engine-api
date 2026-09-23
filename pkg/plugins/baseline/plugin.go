@@ -143,18 +143,8 @@ func (p *BaselinePlugin) Running() bool {
 	return p.Client != nil && !p.Client.Exited()
 }
 
-// func (p *BaselinePlugin) Test() {
-// 	result, err := p.BaselineService.GetBaselineValues(-1, 19, 4, 111, time.Now())
-// 	if err != nil {
-// 		fmt.Println(err.Error())
-// 	}
-// 	fmt.Println(result)
-// }
-
 func (p *BaselinePlugin) Handler() http.Handler {
 	r := chi.NewRouter()
-
-	// Add HTTP routes for every method exposed in the plugin interface GetBaselineValues
 
 	return r
 }

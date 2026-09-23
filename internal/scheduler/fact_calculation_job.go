@@ -246,8 +246,6 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 				Aggregates: &agg.Value,
 			}
 
-			fact.GetBaselineValues(widgetData, agg.FactID, agg.SituationID, agg.SituationInstanceID, agg.Time)
-
 			historyFactNew := history.HistoryFactsV4{
 				// ID:                  -1,
 				FactID:              f.ID,
@@ -298,8 +296,6 @@ func ReceiveAndPersistFacts(aggregates []ExternalAggregate) (map[string]history.
 				widgetData := &reader.WidgetData{
 					Aggregates: &agg.Value,
 				}
-
-				fact.GetBaselineValues(widgetData, agg.FactID, agg.SituationID, agg.SituationInstanceID, agg.Time)
 
 				historyFactNew := history.HistoryFactsV4{
 					// ID:                  -1,
