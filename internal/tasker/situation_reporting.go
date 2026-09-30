@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/utils/emailutils"
@@ -17,9 +18,14 @@ import (
 )
 
 // Temp solution before proper task condition trigger
-var cache = make(map[string]time.Time)
+var (
+	cache   = make(map[string]time.Time)
+	cacheMu sync.Mutex
+)
 
 func verifyCache(key string, timeout time.Duration) bool {
+	cacheMu.Lock()
+	defer cacheMu.Unlock()
 	if val, ok := cache[key]; ok && time.Now().UTC().Before(val) {
 		return false
 	}
@@ -40,6 +46,14 @@ type SituationReportingTask struct {
 	Columns             []export.Column `json:"columns"`
 	Separator           rune            `json:"separator"`
 	Timeout             string          `json:"timeout"`
+
+	// GroupBySituation, when true, holds this instance's report back instead of sending it right
+	// away: every instance of the same situation evaluated during the same scheduler run is merged
+	// into a single email once the run completes (see collectGroupedSituationReporting).
+	GroupBySituation bool `json:"groupBySituation,omitempty"`
+	// GroupSubject is the subject used for that merged email (the "Global Title"). Required when
+	// GroupBySituation is true.
+	GroupSubject string `json:"groupSubject,omitempty"`
 }
 
 func buildSituationReportingTask(parameters map[string]interface{}) (SituationReportingTask, error) {
@@ -157,6 +171,35 @@ func buildSituationReportingTask(parameters map[string]interface{}) (SituationRe
 		return task, errors.New("missing or not valid 'timeout' parameter (string not empty required)")
 	}
 
+	// groupBySituation is a boolean expression (like 'isNotification' on create-issue), not a quoted
+	// string: rule authors write the bare literal true/false as the parameter value.
+	if raw, exists := parameters["groupBySituation"]; exists {
+		val, ok := raw.(bool)
+		if !ok {
+			return task, errors.New("invalid 'groupBySituation' parameter (boolean required)")
+		}
+		task.GroupBySituation = val
+	}
+
+	if task.GroupBySituation {
+		if val, ok := parameters["groupSubject"].(string); ok && val != "" {
+			task.GroupSubject = val
+		} else {
+			return task, errors.New("missing or invalid 'groupSubject' parameter (required when 'groupBySituation' is true)")
+		}
+
+		// Attachments are not supported on grouped reports yet: each instance could reference a
+		// different fact export, and merging several CSV attachments into one email is left for a
+		// later iteration. Rule.IsValid() rejects this combination at save time; this is the
+		// defensive fallback for any rule that predates that check.
+		if len(task.AttachmentFileNames) > 0 || len(task.AttachmentFactIDs) > 0 {
+			zap.L().Warn("Attachments are not supported when 'groupBySituation' is enabled, ignoring them",
+				zap.String("id", task.ID))
+			task.AttachmentFileNames = nil
+			task.AttachmentFactIDs = nil
+		}
+	}
+
 	return task, nil
 }
 
@@ -169,7 +212,69 @@ func (task SituationReportingTask) GetID() string {
 	return task.ID
 }
 
-// Perform executes the task
+// isIssueAlreadyHandled returns true when task.IssueID references an issue that is already open or
+// in draft, meaning this report must be skipped. Shared by the single-instance Perform path and by
+// the grouped path (where it filters out individual members instead of aborting the whole group).
+func (task SituationReportingTask) isIssueAlreadyHandled(key string) (bool, error) {
+	if task.IssueID == "" {
+		return false, nil
+	}
+	isOpen, _, err := explainer.IsOpenOrDraftIssue(task.IssueID)
+	if err != nil {
+		zap.L().Error("Cannot search in issue history", zap.String("key", key), zap.Error(err))
+		return false, err
+	}
+	return isOpen, nil
+}
+
+// buildReportContent renders this task's email body and attachments for one specific instance
+// context. Shared by the single-instance Perform path and by the grouped path, where each member's
+// body is rendered independently before being merged into a single email.
+func (task SituationReportingTask) buildReportContent(context ContextData) (body []byte, attachments []email2.MessageAttachment, err error) {
+	situationData := context.HistorySituationFlattenData
+	zap.L().Debug("GetSituationKnowledge()", zap.Any("situationData", situationData))
+
+	body, err = emailutils.BuildMessageBody(task.BodyTemplate, situationData)
+	if err != nil {
+		zap.L().Error("Error Building MessageBody", zap.Error(err))
+		body = []byte("<p>Error Building MessageBody</p>")
+	}
+	zap.L().Debug("BuildMessageBody()", zap.Any("situationData", situationData))
+
+	attachments = make([]email2.MessageAttachment, 0)
+	for i, attachmentFactID := range task.AttachmentFactIDs {
+		f, found, err := fact.R().Get(attachmentFactID)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !found {
+			return nil, nil, fmt.Errorf("attachment fact %d not found", attachmentFactID)
+		}
+
+		fullHits, err := export.ExportFactHitsFull(f)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		csvAttachment, err := export.ConvertHitsToCSV(fullHits, export.CSVParameters{Columns: task.Columns, Separator: string(task.Separator)}, true)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		attachmentFileName := task.AttachmentFileNames[i]
+		attachments = append(attachments, email2.MessageAttachment{
+			FileName: attachmentFileName,
+			Mime:     "application/octet-stream",
+			Content:  csvAttachment,
+		})
+
+		zap.L().Debug("Attachments Added", zap.Any("factID", attachmentFactID))
+	}
+
+	return body, attachments, nil
+}
+
+// Perform executes the task (non-grouped path): one instance, one email, sent immediately.
 func (task SituationReportingTask) Perform(key string, context ContextData) error {
 	zap.L().Info("Perform SituationReportingTask", zap.Any("task", task), zap.Any("key", key), zap.Any("context", context))
 
@@ -184,57 +289,18 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 		return nil
 	}
 
-	if task.IssueID != "" {
-		isOpen, _, err := explainer.IsOpenOrDraftIssue(task.IssueID)
-		if err != nil {
-			zap.L().Error("Cannot search in issue history", zap.String("key", key), zap.Error(err))
-			return err
-		}
-		if isOpen {
-			zap.L().Debug("SituationReportingTask creation skipped - open/draft issue already existed")
-			return nil
-		}
-	}
-
-	situationData := context.HistorySituationFlattenData
-	zap.L().Debug("GetSituationKnowledge()", zap.Any("situationData", situationData))
-
-	var body []byte
-	body, err = emailutils.BuildMessageBody(task.BodyTemplate, situationData)
+	skip, err := task.isIssueAlreadyHandled(key)
 	if err != nil {
-		zap.L().Error("Error Building MessageBody", zap.Error(err))
-		body = []byte("<p>Error Building MessageBody</p>")
+		return err
 	}
-	zap.L().Debug("BuildMessageBody()", zap.Any("situationData", situationData))
+	if skip {
+		zap.L().Debug("SituationReportingTask creation skipped - open/draft issue already existed")
+		return nil
+	}
 
-	attachments := make([]email2.MessageAttachment, 0)
-	for i, attachmentFactID := range task.AttachmentFactIDs {
-		f, found, err := fact.R().Get(attachmentFactID)
-		if err != nil {
-			return err
-		}
-		if !found {
-			return err
-		}
-
-		fullHits, err := export.ExportFactHitsFull(f)
-		if err != nil {
-			return err
-		}
-
-		csvAttachment, err := export.ConvertHitsToCSV(fullHits, export.CSVParameters{Columns: task.Columns, Separator: string(task.Separator)}, true)
-		if err != nil {
-			return err
-		}
-
-		var attachmentFileName = task.AttachmentFileNames[i]
-		attachments = append(attachments, email2.MessageAttachment{
-			FileName: attachmentFileName,
-			Mime:     "application/octet-stream",
-			Content:  csvAttachment,
-		})
-
-		zap.L().Debug("Attachments Added", zap.Any("factID", attachmentFactID))
+	body, attachments, err := task.buildReportContent(context)
+	if err != nil {
+		return err
 	}
 
 	message := email2.NewMessage(task.Subject, "text/html", string(body))
@@ -242,8 +308,6 @@ func (task SituationReportingTask) Perform(key string, context ContextData) erro
 	message.CC = task.Cc
 	message.Attachments = attachments
 	zap.L().Debug("Message ready to be sent")
-
-	zap.L().Debug("Email sender ready")
 
 	err = email2.S().Send(message)
 	if err != nil {

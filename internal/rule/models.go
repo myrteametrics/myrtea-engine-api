@@ -42,11 +42,19 @@ func (r *Rule) IsValid() (bool, error) {
 		return false, err
 	}
 
-	// we want to check whether bodyTemplate is a valid template or not
+	// we want to check whether bodyTemplate is a valid template or not, and that a situation-reporting
+	// action grouped by situation (groupBySituation=true) is properly configured: it needs a
+	// groupSubject (the merged email's title), and it cannot carry attachments (grouping several
+	// instances' CSV exports into one email isn't supported yet).
 	for _, c := range r.Cases {
 		for _, action := range c.Actions {
+			groupBySituation := false
+			hasGroupSubject := false
+			hasAttachment := false
+
 			for key, param := range action.Parameters {
-				if key == "bodyTemplate" {
+				switch key {
+				case "bodyTemplate":
 					result, err := expression.Process(expression.LangEval, string(param), map[string]interface{}{})
 					if err != nil {
 						zap.L().Warn("Rule IsValid: bodyTemplate expression syntax is invalid", zap.String("bodyTemplate", string(param)), zap.Error(err))
@@ -66,7 +74,40 @@ func (r *Rule) IsValid() (bool, error) {
 					if err != nil {
 						return false, fmt.Errorf("invalid bodyTemplate in case '%s': %w", c.Name, err)
 					}
+
+				case "groupBySituation":
+					result, err := expression.Process(expression.LangEval, string(param), map[string]interface{}{})
+					if err != nil {
+						zap.L().Warn("Rule IsValid: groupBySituation expression syntax is invalid", zap.String("groupBySituation", string(param)), zap.Error(err))
+						continue
+					}
+					if b, ok := result.(bool); ok {
+						groupBySituation = b
+					}
+
+				case "groupSubject":
+					result, err := expression.Process(expression.LangEval, string(param), map[string]interface{}{})
+					if err == nil {
+						if s, ok := result.(string); ok && strings.TrimSpace(s) != "" {
+							hasGroupSubject = true
+						}
+					}
+
+				case "attachmentFileNames", "attachmentFactIds":
+					result, err := expression.Process(expression.LangEval, string(param), map[string]interface{}{})
+					if err == nil {
+						if s, ok := result.(string); ok && strings.TrimSpace(s) != "" {
+							hasAttachment = true
+						}
+					}
 				}
+			}
+
+			if groupBySituation && !hasGroupSubject {
+				return false, fmt.Errorf("case '%s': 'groupSubject' is required when 'groupBySituation' is enabled", c.Name)
+			}
+			if groupBySituation && hasAttachment {
+				return false, fmt.Errorf("case '%s': attachments are not supported when 'groupBySituation' is enabled - remove 'attachmentFileNames'/'attachmentFactIds'", c.Name)
 			}
 		}
 	}
