@@ -30,7 +30,8 @@ func OIDCMiddleware(next http.Handler) http.Handler {
 		} else if r.URL.Query().Has(tokenKey) {
 			tokenStr = r.URL.Query().Get(tokenKey)
 		} else {
-			zap.L().Warn("No token string found in request")
+			zap.L().Warn("No token string found in request", zap.String("method", r.Method),
+				zap.String("path", r.URL.Path))
 			httputil.Error(w, r, httputil.ErrAPISecurityMissingContext, errors.New("missing token"))
 			return
 		}
@@ -38,20 +39,27 @@ func OIDCMiddleware(next http.Handler) http.Handler {
 		// Check the token with the OIDC server
 		instanceOidc, err := GetOidcInstance()
 		if err != nil {
-			zap.L().Error("", zap.Error(err))
+			zap.L().Error("OIDC instance initialization failed", zap.Error(err))
 			httputil.Error(w, r, httputil.ErrAPIProcessError, err)
 			return
 		}
 		idToken, err := instanceOidc.Provider.Verifier(&oidc.Config{ClientID: instanceOidc.OidcConfig.ClientID}).Verify(r.Context(), tokenStr)
 		if err != nil {
-			zap.L().Error("Invalid OIDC auth Token", zap.Error(err))
+			zap.L().Error(
+				"Invalid OIDC auth token",
+				zap.Error(err),
+				zap.String("path", r.URL.Path),
+				zap.String("method", r.Method),
+			)
 			httputil.Error(w, r, httputil.ErrAPIInvalidAuthToken, err)
 			return
 		}
 
 		// Check if the token has expired
 		if idToken.Expiry.Before(time.Now()) {
-			zap.L().Error("OIDC auth Token expired")
+			zap.L().Error("OIDC auth Token expired",
+				zap.String("path", r.URL.Path),
+				zap.String("method", r.Method))
 			httputil.Error(w, r, httputil.ErrAPIExpiredAuthToken, errors.New("expired auth token"))
 			return
 		}
