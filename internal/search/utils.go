@@ -28,7 +28,6 @@ func extractFactHistoryRecordValues(rawResults []byte, out *FactHistoryRecord, d
 			}
 		}
 		out.Buckets = item.Buckets
-		out.Baselines = item.Baselines
 
 	} else {
 		var itemList []reader.Item

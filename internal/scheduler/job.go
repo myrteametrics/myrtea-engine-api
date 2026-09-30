@@ -96,11 +96,6 @@ func UnmarshalInternalJob(t string, b json.RawMessage, scheduleID int64) (Intern
 		}
 		job = tJob
 
-	case "baseline":
-		var tJob BaselineCalculationJob
-		err = json.Unmarshal(b, &tJob)
-		tJob.ScheduleID = scheduleID
-		job = tJob
 	case "compact":
 		var tJob CompactHistoryJob
 		err = json.Unmarshal(b, &tJob)

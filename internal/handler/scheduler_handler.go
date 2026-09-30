@@ -44,8 +44,7 @@ func StartScheduler(w http.ResponseWriter, r *http.Request) {
 //	@Summary		Force facts calculation pipeline
 //	@Description	<b>Force facts calculation pipeline</b>
 //	@Description	Example :
-//	@Description	<pre>{"jobtype":"fact","job":{"facts_ids":["fact_1","fact_2"]}}
-//	@Description	{"jobtype":"baseline","job":{"baselines":{"3":["by_day","by_day_week"]}}}</pre>
+//	@Description	<pre>{"jobtype":"fact","job":{"facts_ids":["fact_1","fact_2"]}}</pre>
 //	@Tags			Scheduler
 //	@Produce		json
 //	@Param			job	body	scheduler.InternalSchedule	true	"JobSchedule definition (json)"

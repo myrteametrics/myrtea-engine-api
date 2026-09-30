@@ -6,7 +6,6 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
 	"go.uber.org/zap"
 )
 
@@ -28,11 +27,10 @@ type Hit struct {
 // situation instance, after the fact values have been persisted, and injected directly in the
 // rule engine knowledge base (see fact.MatrixProfileKnowledgeKey).
 type Item struct {
-	Key         string                            `json:"key,omitempty"`
-	KeyAsString string                            `json:"key-as-string,omitempty"`
-	Aggs        map[string]*ItemAgg               `json:"aggs,omitempty"`
-	Buckets     map[string][]*Item                `json:"buckets,omitempty"`
-	Baselines   map[string]baseline.BaselineValue `json:"baselines,omitempty"`
+	Key         string              `json:"key,omitempty"`
+	KeyAsString string              `json:"key-as-string,omitempty"`
+	Aggs        map[string]*ItemAgg `json:"aggs,omitempty"`
+	Buckets     map[string][]*Item  `json:"buckets,omitempty"`
 }
 
 // ToAbstractMap convert an Item in an abstract map[string]interface{}

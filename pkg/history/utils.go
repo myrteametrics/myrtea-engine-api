@@ -127,13 +127,12 @@ func buildFactHistoryRecord(factId int64, mapFacts map[int64]HistoryFactsV4) sea
 	}
 
 	factHistoryRecord := search.FactHistoryRecord{
-		FactID:    factHistory.FactID,
-		FactName:  factHistory.FactName,
-		DateTime:  factHistory.Ts,
-		Value:     value,
-		DocCount:  docCount,
-		Buckets:   factHistory.Result.Buckets,
-		Baselines: factHistory.Result.Baselines,
+		FactID:   factHistory.FactID,
+		FactName: factHistory.FactName,
+		DateTime: factHistory.Ts,
+		Value:    value,
+		DocCount: docCount,
+		Buckets:  factHistory.Result.Buckets,
 	}
 
 	return factHistoryRecord

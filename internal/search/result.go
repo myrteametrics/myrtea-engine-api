@@ -3,7 +3,6 @@ package search
 import (
 	"time"
 
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
 )
 
@@ -41,13 +40,12 @@ type SituationHistoryRecord struct {
 
 // FactHistoryRecord struct to represent a fact history record
 type FactHistoryRecord struct {
-	DateTime  time.Time                         `json:"dateTime"`
-	FactID    int64                             `json:"factId"`
-	FactName  string                            `json:"factName"`
-	Value     interface{}                       `json:"value,omitempty"`
-	DocCount  interface{}                       `json:"docCount,omitempty"`
-	Buckets   map[string][]*reader.Item         `json:"buckets,omitempty"`
-	Baselines map[string]baseline.BaselineValue `json:"baselines,omitempty"`
+	DateTime time.Time                 `json:"dateTime"`
+	FactID   int64                     `json:"factId"`
+	FactName string                    `json:"factName"`
+	Value    interface{}               `json:"value,omitempty"`
+	DocCount interface{}               `json:"docCount,omitempty"`
+	Buckets  map[string][]*reader.Item `json:"buckets,omitempty"`
 }
 
 type SituationHistoryCalendarRecord struct {

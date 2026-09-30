@@ -18,7 +18,6 @@ import (
 	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/plugins/baseline"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
 )
@@ -397,18 +396,6 @@ func ExecuteFact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if data.Aggregates != nil {
-		pluginBaseline, err := baseline.P()
-		if err == nil {
-			// value, err := pluginBaseline.Baseline.GetBaselineValue(0, f.ID, situationID, situationInstanceID, t)
-			values, err := pluginBaseline.BaselineService.GetBaselineValues(-1, f.ID, 0, 0, t)
-			if err != nil {
-				zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
-			}
-			data.Aggregates.Baselines = values
-		}
-	}
-
 	httputil.JSON(w, r, data)
 }
 
@@ -540,17 +527,6 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 		zap.L().Error("Cannot execute fact", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIElasticSelectFailed, err)
 		return
-	}
-
-	if !request.HitsOnly && data.Aggregates != nil {
-		pluginBaseline, err := baseline.P()
-		if err == nil {
-			values, err := pluginBaseline.BaselineService.GetBaselineValues(-1, f.ID, 0, 0, t)
-			if err != nil {
-				zap.L().Error("Cannot fetch fact baselines", zap.Int64("id", f.ID), zap.Error(err))
-			}
-			data.Aggregates.Baselines = values
-		}
 	}
 
 	httputil.JSON(w, r, data)

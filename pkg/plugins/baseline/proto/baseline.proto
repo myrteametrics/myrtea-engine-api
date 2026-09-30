@@ -4,38 +4,14 @@ option go_package = "github.com/myrteametrics/myrtea-engine-api/plugins/baseline
 
 package proto;
 
-import "google/protobuf/empty.proto";
-
-message BaselineValueRequest {
-    int64 id = 1;
-    int64 fact_id = 2;
-    int64 situation_id = 3;
-    int64 situation_instance_id = 4;
-    string time = 5;
-}
-
-message BuildBaselineRequest {
-    int64 id = 1;
-}
-
-message BaselineValue {
-    string time = 1;
-    double value = 2;
-    double value_lower = 3;
-    double value_upper = 4;
-    double avg = 5;
-    double std = 6;
-    double median = 7;
-}
-
-message BaselineValues {
-    map<string, BaselineValue> values = 1;
-}
-
 message MatrixProfileResultRequest {
     int64 situation_id = 1;
     int64 situation_instance_id = 2;
     string time = 3;
+    // Expression facts evaluated for the current tick, keyed by name. A definition whose
+    // value_type is "fact_expression" reads its current point from here instead of from
+    // situation_history_v5, since that row is not written until after this call returns.
+    map<string, double> expression_facts = 4;
 }
 
 message MatrixProfileResult {
@@ -50,8 +26,5 @@ message MatrixProfileResults {
 }
 
 service Baseline {
-    // rpc GetBaselineValue(BaselineValueRequest) returns (BaselineValue)
-    rpc GetBaselineValues(BaselineValueRequest) returns (BaselineValues) {}
-    rpc BuildBaselineValues(BuildBaselineRequest) returns (google.protobuf.Empty) {}
     rpc GetMatrixProfileResults(MatrixProfileResultRequest) returns (MatrixProfileResults) {}
 }
