@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
@@ -204,5 +205,42 @@ func TestDeleteFactInvalidID(t *testing.T) {
 	}
 	if _, exists := facts[2]; !exists {
 		t.Error("Fact test2 should not have been deleted")
+	}
+}
+
+func TestBuildFactESQuery(t *testing.T) {
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "*", permissions.ActionGet)}}
+	body := `{
+		"fact": {"name": "missing_objects", "model": "record", "intent": {"name": "count", "operator": "count", "term": "id"},
+			"condition": {"operator": "for", "term": "supervision", "value": "supervision"}},
+		"time": "2026-10-20T12:00:00Z",
+		"factParameters": {"supervision": "\"distri_eai_elit\""}
+	}`
+	rr := tests.BuildTestHandler(t, "POST", "/facts/es", body, "/facts/es", BuildFactESQuery, user)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("handler returned wrong status code: got %v want %v (%s)", rr.Code, http.StatusOK, rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), `"distri_eai_elit"`) {
+		t.Errorf("query does not contain the fact parameter value: %s", rr.Body.String())
+	}
+}
+
+func TestBuildFactESQueryMissingVariable(t *testing.T) {
+	user := users.UserWithPermissions{Permissions: []permissions.Permission{permissions.New(permissions.TypeFact, "*", permissions.ActionGet)}}
+	body := `{
+		"fact": {"name": "missing_objects", "model": "record", "intent": {"name": "count", "operator": "count", "term": "id"},
+			"condition": {"operator": "for", "term": "supervision", "value": "supervision"}}
+	}`
+	rr := tests.BuildTestHandler(t, "POST", "/facts/es", body, "/facts/es", BuildFactESQuery, user)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v (%s)", rr.Code, http.StatusBadRequest, rr.Body.String())
+	}
+}
+
+func TestBuildFactESQueryNoPermission(t *testing.T) {
+	user := users.UserWithPermissions{}
+	rr := tests.BuildTestHandler(t, "POST", "/facts/es", `{}`, "/facts/es", BuildFactESQuery, user)
+	if rr.Code != http.StatusForbidden {
+		t.Errorf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusForbidden)
 	}
 }
