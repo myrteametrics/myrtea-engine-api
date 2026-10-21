@@ -800,7 +800,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 //	@Id				FactToESQuery
 //
 //	@Summary		Execute a fact with a given timestamp
-//	@Description	Execute a fact with a given timestamp
+//	@Description	Execute a fact with a given timestamp (This route is deprecated. Please use POST /engine/facts/es instead, with the situation and instance parameters passed as factParameters.)
 //	@Tags			Facts
 //	@Produce		json
 //	@Param			id				path	int	true	"Fact ID"
@@ -816,7 +816,10 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	map[string]interface{}	"Status OK"
 //	@Failure		400	{object}	httputil.APIError		"Bad Request"
+//	@Deprecated		true
 //	@Router			/engine/facts/{id}/es [get]
+//
+// Deprecated: Use BuildFactESQuery instead.
 func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 
 	debug := false
@@ -910,7 +913,7 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 //
 //	@Summary		Build the Elasticsearch query of a fact definition
 //	@Description	Build the Elasticsearch query of a fact definition, which does not need to be saved.
-//	@Description	Its condition variables are only resolved with factParameters; use GET /engine/facts/{id}/es for a situation context.
+//	@Description	Its condition variables are only resolved with factParameters: for a situation context, pass the situation then instance parameters there.
 //	@Tags			Facts
 //	@Accept			json
 //	@Produce		json

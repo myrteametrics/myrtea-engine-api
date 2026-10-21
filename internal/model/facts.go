@@ -148,8 +148,8 @@ func (r *FactHitsReq) validateFields() error {
 }
 
 // FactESQueryReq builds the Elasticsearch query of a fact definition, which does not need to be saved.
-// Its condition variables are only resolved by the fact parameters: the query of a fact within a situation
-// context is built by GET /engine/facts/{id}/es.
+// Its condition variables are only resolved by the fact parameters: a caller building the query of a fact
+// within a situation context passes the situation then instance parameters as fact parameters.
 type FactESQueryReq struct {
 	Params
 	Fact   engine.Fact `json:"fact"`
