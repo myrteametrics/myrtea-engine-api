@@ -910,23 +910,23 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 //
 //	@Summary		Build the Elasticsearch query of a fact definition
 //	@Description	Build the Elasticsearch query of a fact definition, which does not need to be saved.
-//	@Description	Its condition variables are resolved with the situation (and instance) parameters, then with factParameters.
+//	@Description	Its condition variables are only resolved with factParameters; use GET /engine/facts/{id}/es for a situation context.
 //	@Tags			Facts
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body	model.FactESQueryReq	true	"Fact definition, time, situation context and fact parameters"
+//	@Param			request	body	model.FactESQueryReq	true	"Fact definition, time and fact parameters"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	map[string]interface{}	"Elasticsearch search request"
 //	@Failure		400	{object}	httputil.APIError		"Bad Request"
 //	@Router			/engine/facts/es [post]
 func BuildFactESQuery(w http.ResponseWriter, r *http.Request) {
-	request, parameters, ok := decodeFactESQueryReq(w, r)
+	request, ok := decodeFactESQueryReq(w, r)
 	if !ok {
 		return
 	}
 
-	source, err := factToSearchRequest(request.Fact, *request.Time, parameters, request.Nhit, request.Offset)
+	source, err := factToSearchRequest(request.Fact, *request.Time, request.FactParams, request.Nhit, request.Offset)
 	if err != nil {
 		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
@@ -941,18 +941,18 @@ func BuildFactESQuery(w http.ResponseWriter, r *http.Request) {
 //
 //	@Summary		List the variables a fact definition needs to build its Elasticsearch query
 //	@Description	List the variables read by the condition of a fact definition and resolved neither by the date keywords,
-//	@Description	the global variables, the situation (and instance) parameters nor factParameters.
+//	@Description	the global variables nor factParameters.
 //	@Tags			Facts
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body	model.FactESQueryReq	true	"Fact definition, time, situation context and fact parameters"
+//	@Param			request	body	model.FactESQueryReq	true	"Fact definition, time and fact parameters"
 //	@Security		Bearer
 //	@Security		ApiKeyAuth
 //	@Success		200	{array}		evaluator.FactVariable	"Missing variables, sorted by name"
 //	@Failure		400	{object}	httputil.APIError		"Bad Request"
 //	@Router			/engine/facts/es/variables [post]
 func ScanFactESQueryVariables(w http.ResponseWriter, r *http.Request) {
-	request, parameters, ok := decodeFactESQueryReq(w, r)
+	request, ok := decodeFactESQueryReq(w, r)
 	if !ok {
 		return
 	}
@@ -964,53 +964,44 @@ func ScanFactESQueryVariables(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Same precedence as the expression evaluation: global variables, then date keywords, then the request parameters
-	known := make(map[string]interface{}, len(globals)+len(parameters))
+	// Same precedence as the expression evaluation: global variables, then date keywords, then the fact parameters
+	known := make(map[string]interface{}, len(globals)+len(request.FactParams))
 	for k, v := range globals {
 		known[k] = v
 	}
 	for k, v := range expression.GetDateKeywords(*request.Time) {
 		known[k] = v
 	}
-	for k, v := range parameters {
+	for k, v := range request.FactParams {
 		known[k] = v
 	}
 
 	httputil.JSON(w, r, evaluator.ScanFactConditionVariables(request.Fact.Condition, known))
 }
 
-// decodeFactESQueryReq decodes and checks a FactESQueryReq, then merges the situation (and instance) parameters
-// with the fact parameters, the latter taking precedence. It writes the error response itself and returns false on failure.
-func decodeFactESQueryReq(w http.ResponseWriter, r *http.Request) (model.FactESQueryReq, map[string]interface{}, bool) {
+// decodeFactESQueryReq decodes and checks a FactESQueryReq.
+// It writes the error response itself and returns false on failure.
+func decodeFactESQueryReq(w http.ResponseWriter, r *http.Request) (model.FactESQueryReq, bool) {
 	userCtx, _ := GetUserFromContext(r)
 	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionGet)) {
 		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
-		return model.FactESQueryReq{}, nil, false
+		return model.FactESQueryReq{}, false
 	}
 
 	var request model.FactESQueryReq
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		zap.L().Warn("Fact ES query request json decode", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
-		return model.FactESQueryReq{}, nil, false
+		return model.FactESQueryReq{}, false
 	}
 
 	if err := request.Process(); err != nil {
 		zap.L().Warn("Fact ES query request is invalid", zap.Error(err))
 		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
-		return model.FactESQueryReq{}, nil, false
+		return model.FactESQueryReq{}, false
 	}
 
-	parameters, apiError, err := situationParameters(request.SituationId, request.SituationInstanceId)
-	if err != nil {
-		httputil.Error(w, r, apiError, err)
-		return model.FactESQueryReq{}, nil, false
-	}
-	for k, v := range request.FactParams {
-		parameters[k] = v
-	}
-
-	return request, parameters, true
+	return request, true
 }
 
 // situationParameters returns the parameters of a situation, overridden by those of one of its instances when it is a template.

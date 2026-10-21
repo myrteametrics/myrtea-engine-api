@@ -147,15 +147,15 @@ func (r *FactHitsReq) validateFields() error {
 	return nil
 }
 
-// FactESQueryReq builds the Elasticsearch query of a fact definition, which does not need to be saved
+// FactESQueryReq builds the Elasticsearch query of a fact definition, which does not need to be saved.
+// Its condition variables are only resolved by the fact parameters: the query of a fact within a situation
+// context is built by GET /engine/facts/{id}/es.
 type FactESQueryReq struct {
 	Params
-	Fact                engine.Fact `json:"fact"`
-	Time                *time.Time  `json:"time,omitempty"`
-	Nhit                int         `json:"nhit,omitempty"`
-	Offset              int         `json:"offset,omitempty"`
-	SituationId         int64       `json:"situationId,omitempty"`
-	SituationInstanceId int64       `json:"situationInstanceId,omitempty"`
+	Fact   engine.Fact `json:"fact"`
+	Time   *time.Time  `json:"time,omitempty"`
+	Nhit   int         `json:"nhit,omitempty"`
+	Offset int         `json:"offset,omitempty"`
 }
 
 // Process checks if the FactESQueryReq request is valid, evaluates the fact parameters and defaults the time to now
@@ -168,9 +168,6 @@ func (r *FactESQueryReq) Process() error {
 	}
 	if r.Offset < 0 {
 		return errors.New("offset cannot be negative")
-	}
-	if r.SituationInstanceId > 0 && r.SituationId <= 0 {
-		return errors.New("situationInstanceId requires a situationId")
 	}
 	if r.Time == nil {
 		now := time.Now().Truncate(1 * time.Second).UTC()
