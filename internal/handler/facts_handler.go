@@ -468,15 +468,6 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 	var data *reader.WidgetData
 	placeholders := make(map[string]interface{})
 
-	// The situation context of a template fact is optional: its variables can be given as fact parameters
-	// instead. When given, the situation then the instance parameters are applied, and the fact parameters
-	// override both.
-	if f.IsTemplate && request.SituationInstanceId > 0 && request.SituationId <= 0 {
-		zap.L().Warn("Missing situationId for situationInstanceId", zap.Int64("situationInstanceID", request.SituationInstanceId))
-		httputil.Error(w, r, httputil.ErrAPIParsingInteger, errors.New("situationInstanceId requires a situationId"))
-		return
-	}
-
 	if f.IsTemplate && request.SituationId > 0 {
 		situation, found, err := situation2.R().Get(request.SituationId, true)
 		if err != nil {
