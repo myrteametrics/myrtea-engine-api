@@ -468,14 +468,8 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 	var data *reader.WidgetData
 	placeholders := make(map[string]interface{})
 
-	if f.IsTemplate {
-		if request.SituationId <= 0 {
-			zap.L().Warn("Missing situationId for template fact")
-			httputil.Error(w, r, httputil.ErrAPIParsingInteger, errors.New("missing situationId for template fact"))
-			return
-		}
-
-		situationn, found, err := situation2.R().Get(request.SituationId, true)
+	if f.IsTemplate && request.SituationId > 0 {
+		situation, found, err := situation2.R().Get(request.SituationId, true)
 		if err != nil {
 			zap.L().Error("Cannot retrieve situation", zap.Int64("situationID", request.SituationId), zap.Error(err))
 			httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
@@ -487,30 +481,32 @@ func ExecuteFactOrGetHits(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var situationInstance situation2.TemplateInstance
-		if request.SituationInstanceId <= 0 {
-			zap.L().Warn("Missing situationInstanceId for template fact")
-			httputil.Error(w, r, httputil.ErrAPIParsingInteger, errors.New("missing situationInstanceId for template fact"))
-			return
-		}
-		situationInstance, found, err = situation2.R().GetTemplateInstance(request.SituationInstanceId, true)
-		if err != nil {
-			zap.L().Error("Cannot retrieve situation Instance", zap.Int64("situationInstanceID", request.SituationInstanceId), zap.Error(err))
-			httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
-			return
-		}
-		if !found {
-			zap.L().Warn("Situation Instance does not exists", zap.Int64("situationInstanceID", request.SituationInstanceId))
-			httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
-			return
-		}
-
-		for key, param := range situationn.Parameters {
+		for key, param := range situation.Parameters {
 			placeholders[key] = param
 		}
 
-		for key, param := range situationInstance.Parameters {
-			placeholders[key] = param
+		if request.SituationInstanceId > 0 {
+			situationInstance, found, err := situation2.R().GetTemplateInstance(request.SituationInstanceId, true)
+			if err != nil {
+				zap.L().Error("Cannot retrieve situation Instance", zap.Int64("situationInstanceID", request.SituationInstanceId), zap.Error(err))
+				httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+				return
+			}
+			if !found {
+				zap.L().Warn("Situation Instance does not exists", zap.Int64("situationInstanceID", request.SituationInstanceId))
+				httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, err)
+				return
+			}
+			if situationInstance.SituationID != request.SituationId {
+				zap.L().Warn("Situation Instance does not belong to the situation", zap.Int64("situationInstanceID", request.SituationInstanceId),
+					zap.Int64("situationID", request.SituationId))
+				httputil.Error(w, r, httputil.ErrAPIResourceInvalid, errors.New("situationInstanceId does not belong to situationId"))
+				return
+			}
+
+			for key, param := range situationInstance.Parameters {
+				placeholders[key] = param
+			}
 		}
 	}
 
