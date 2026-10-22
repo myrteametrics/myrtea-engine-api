@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/myrteametrics/myrtea-engine-api/v5/internal/evaluator"
 	"github.com/myrteametrics/myrtea-engine-api/v5/internal/model"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/fact"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/reader"
@@ -16,7 +17,10 @@ import (
 	situation2 "github.com/myrteametrics/myrtea-engine-api/v5/pkg/situation"
 	"github.com/myrteametrics/myrtea-engine-api/v5/pkg/utils/httputil"
 	"github.com/myrteametrics/myrtea-sdk/v5/elasticsearch"
+	"github.com/myrteametrics/myrtea-sdk/v5/expression"
+	"github.com/myrteametrics/myrtea-sdk/v5/repositories/variablesconfig"
 
+	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/go-chi/chi/v5"
 	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"go.uber.org/zap"
@@ -796,7 +800,7 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 //	@Id				FactToESQuery
 //
 //	@Summary		Execute a fact with a given timestamp
-//	@Description	Execute a fact with a given timestamp
+//	@Description	Execute a fact with a given timestamp (This route is deprecated. Please use POST /engine/facts/es instead, with the situation and instance parameters passed as factParameters.)
 //	@Tags			Facts
 //	@Produce		json
 //	@Param			id				path	int	true	"Fact ID"
@@ -812,7 +816,10 @@ func GetFactHits(w http.ResponseWriter, r *http.Request) {
 //	@Security		ApiKeyAuth
 //	@Success		200	{object}	map[string]interface{}	"Status OK"
 //	@Failure		400	{object}	httputil.APIError		"Bad Request"
+//	@Deprecated		true
 //	@Router			/engine/facts/{id}/es [get]
+//
+// Deprecated: Use BuildFactESQuery instead.
 func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 
 	debug := false
@@ -876,35 +883,10 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parameters := make(map[string]interface{})
-	if situationid != 0 {
-		s, found, err := situation2.R().Get(int64(situationid))
-		if err != nil {
-			httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
-			return
-		}
-		if !found {
-			httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, nil)
-			return
-		}
-		for k, v := range s.Parameters {
-			parameters[k] = v
-		}
-
-		if s.IsTemplate && instanceid != 0 {
-			template, found, err := situation2.R().GetTemplateInstance(int64(instanceid))
-			if err != nil {
-				httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
-				return
-			}
-			if !found {
-				httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, nil)
-				return
-			}
-			for k, v := range template.Parameters {
-				parameters[k] = v
-			}
-		}
+	parameters, apiError, err := situationParameters(int64(situationid), int64(instanceid))
+	if err != nil {
+		httputil.Error(w, r, apiError, err)
+		return
 	}
 
 	for k, v := range placeholders {
@@ -916,27 +898,167 @@ func FactToESQuery(w http.ResponseWriter, r *http.Request) {
 		zap.L().Debug("Debugging fact", zap.Any("f", f))
 	}
 
-	// Add context to fact, replace params and evaluate queries
-	f.ContextualizeDimensions(t)
-	err = f.ContextualizeCondition(t, parameters)
+	source, err := factToSearchRequest(f, t, parameters, nhit, offset)
 	if err != nil {
 		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
 		return
 	}
 
+	httputil.JSON(w, r, source)
+}
+
+// BuildFactESQuery godoc
+//
+//	@Id				BuildFactESQuery
+//
+//	@Summary		Build the Elasticsearch query of a fact definition
+//	@Description	Build the Elasticsearch query of a fact definition, which does not need to be saved.
+//	@Description	Its condition variables are only resolved with factParameters: for a situation context, pass the situation then instance parameters there.
+//	@Tags			Facts
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body	model.FactESQueryReq	true	"Fact definition, time and fact parameters"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	map[string]interface{}	"Elasticsearch search request"
+//	@Failure		400	{object}	httputil.APIError		"Bad Request"
+//	@Router			/engine/facts/es [post]
+func BuildFactESQuery(w http.ResponseWriter, r *http.Request) {
+	request, ok := decodeFactESQueryReq(w, r)
+	if !ok {
+		return
+	}
+
+	source, err := factToSearchRequest(request.Fact, *request.Time, request.FactParams, request.Nhit, request.Offset)
+	if err != nil {
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
+		return
+	}
+
+	httputil.JSON(w, r, source)
+}
+
+// ScanFactESQueryVariables godoc
+//
+//	@Id				ScanFactESQueryVariables
+//
+//	@Summary		List the variables a fact definition needs to build its Elasticsearch query
+//	@Description	List the variables read by the condition of a fact definition and resolved neither by the date keywords,
+//	@Description	the global variables nor factParameters.
+//	@Tags			Facts
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body	model.FactESQueryReq	true	"Fact definition, time and fact parameters"
+//	@Security		Bearer
+//	@Security		ApiKeyAuth
+//	@Success		200	{array}		evaluator.FactVariable	"Missing variables, sorted by name"
+//	@Failure		400	{object}	httputil.APIError		"Bad Request"
+//	@Router			/engine/facts/es/variables [post]
+func ScanFactESQueryVariables(w http.ResponseWriter, r *http.Request) {
+	request, ok := decodeFactESQueryReq(w, r)
+	if !ok {
+		return
+	}
+
+	globals, err := variablesconfig.R().GetAllAsMap()
+	if err != nil {
+		zap.L().Error("Cannot retrieve global variables", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDBSelectFailed, err)
+		return
+	}
+
+	// Same precedence as the expression evaluation: global variables, then date keywords, then the fact parameters
+	known := make(map[string]interface{}, len(globals)+len(request.FactParams))
+	for k, v := range globals {
+		known[k] = v
+	}
+	for k, v := range expression.GetDateKeywords(*request.Time) {
+		known[k] = v
+	}
+	for k, v := range request.FactParams {
+		known[k] = v
+	}
+
+	httputil.JSON(w, r, evaluator.ScanFactConditionVariables(request.Fact.Condition, known))
+}
+
+// decodeFactESQueryReq decodes and checks a FactESQueryReq.
+// It writes the error response itself and returns false on failure.
+func decodeFactESQueryReq(w http.ResponseWriter, r *http.Request) (model.FactESQueryReq, bool) {
+	userCtx, _ := GetUserFromContext(r)
+	if !userCtx.HasPermission(permissions.New(permissions.TypeFact, permissions.All, permissions.ActionGet)) {
+		httputil.Error(w, r, httputil.ErrAPISecurityNoPermissions, errors.New("missing permission"))
+		return model.FactESQueryReq{}, false
+	}
+
+	var request model.FactESQueryReq
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		zap.L().Warn("Fact ES query request json decode", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIDecodeJSONBody, err)
+		return model.FactESQueryReq{}, false
+	}
+
+	if err := request.Process(); err != nil {
+		zap.L().Warn("Fact ES query request is invalid", zap.Error(err))
+		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
+		return model.FactESQueryReq{}, false
+	}
+
+	return request, true
+}
+
+// situationParameters returns the parameters of a situation, overridden by those of one of its instances when it is a template.
+// A zero situationID returns no parameter, and an instanceID is ignored for a situation which is not a template.
+func situationParameters(situationID int64, instanceID int64) (map[string]interface{}, httputil.APIError, error) {
+	parameters := make(map[string]interface{})
+	if situationID == 0 {
+		return parameters, httputil.APIError{}, nil
+	}
+
+	s, found, err := situation2.R().Get(situationID)
+	if err != nil {
+		return nil, httputil.ErrAPIDBSelectFailed, err
+	}
+	if !found {
+		return nil, httputil.ErrAPIDBResourceNotFound, fmt.Errorf("situation not found with id %d", situationID)
+	}
+	for k, v := range s.Parameters {
+		parameters[k] = v
+	}
+
+	if s.IsTemplate && instanceID != 0 {
+		template, found, err := situation2.R().GetTemplateInstance(instanceID)
+		if err != nil {
+			return nil, httputil.ErrAPIDBSelectFailed, err
+		}
+		if !found {
+			return nil, httputil.ErrAPIDBResourceNotFound, fmt.Errorf("situation instance not found with id %d", instanceID)
+		}
+		for k, v := range template.Parameters {
+			parameters[k] = v
+		}
+	}
+	return parameters, httputil.APIError{}, nil
+}
+
+// factToSearchRequest contextualizes the fact (placeholders, timezones) and converts it into an Elasticsearch search request
+func factToSearchRequest(f engine.Fact, t time.Time, parameters map[string]interface{}, nhit int, offset int) (*search.Request, error) {
+	f.ContextualizeDimensions(t)
+	if err := f.ContextualizeCondition(t, parameters); err != nil {
+		return nil, err
+	}
+
 	source, err := elasticsearch.ConvertFactToSearchRequestV8(f, t, parameters)
 	if err != nil {
 		zap.L().Error("Cannot convert fact to search request", zap.Error(err), zap.Any("fact", f))
-		httputil.Error(w, r, httputil.ErrAPIResourceInvalid, err)
-		return
+		return nil, err
 	}
 
 	source.Size = &nhit
 	source.From = &offset
 
 	zap.L().Info("Debugging final elastic query", zap.Any("query", source))
-
-	httputil.JSON(w, r, source)
+	return source, nil
 }
 
 func lookupFact(byName bool, id string) (engine.Fact, httputil.APIError, error) {

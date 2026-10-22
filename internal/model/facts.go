@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/myrteametrics/myrtea-sdk/v5/engine"
 	"github.com/myrteametrics/myrtea-sdk/v5/expression"
 )
 
@@ -144,6 +145,35 @@ func (r *FactHitsReq) validateFields() error {
 		r.Debug = new(true)
 	}
 	return nil
+}
+
+// FactESQueryReq builds the Elasticsearch query of a fact definition, which does not need to be saved.
+// Its condition variables are only resolved by the fact parameters: a caller building the query of a fact
+// within a situation context passes the situation then instance parameters as fact parameters.
+type FactESQueryReq struct {
+	Params
+	Fact   engine.Fact `json:"fact"`
+	Time   *time.Time  `json:"time,omitempty"`
+	Nhit   int         `json:"nhit,omitempty"`
+	Offset int         `json:"offset,omitempty"`
+}
+
+// Process checks if the FactESQueryReq request is valid, evaluates the fact parameters and defaults the time to now
+func (r *FactESQueryReq) Process() error {
+	if ok, err := r.Fact.IsValid(); !ok {
+		return fmt.Errorf("invalid fact definition: %w", err)
+	}
+	if r.Nhit < 0 {
+		return errors.New("nhit cannot be negative")
+	}
+	if r.Offset < 0 {
+		return errors.New("offset cannot be negative")
+	}
+	if r.Time == nil {
+		now := time.Now().Truncate(1 * time.Second).UTC()
+		r.Time = &now
+	}
+	return r.Params.Process()
 }
 
 type Params struct {
