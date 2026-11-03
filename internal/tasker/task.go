@@ -95,7 +95,7 @@ func ApplyTasks(batch TaskBatch) (err error) {
 }
 
 func buildTaskKey(input ContextData, task Task) string {
-	key := fmt.Sprintf("%d-%d-%s", input.SituationID, input.RuleID, task.GetID())
+	key := fmt.Sprintf("%d-%d-%d-%s", input.SituationID, input.TemplateInstanceID, input.RuleID, task.GetID())
 	return key
 }
 

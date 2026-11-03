@@ -124,7 +124,7 @@ func evaluateFactObjects(factObject engine.Fact, objects []map[string]interface{
 				taskBatchs = append(taskBatchs, tasker.TaskBatch{
 					Context: map[string]interface{}{
 						"situationID":        s.ID,
-						"templateInstanceID": 0,
+						"templateInstanceID": int64(0),
 						"ts":                 t,
 					},
 					Agenda: agenda,
