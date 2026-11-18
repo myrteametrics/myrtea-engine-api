@@ -134,14 +134,10 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, searchRe
 	}
 
 	// handle pit creation
+	// (Cleanup: the error check right after OpenPointInTime used to be duplicated, it is now done only once)
 	pit, err := cli.OpenPointInTime(params.Indices).
 		IgnoreUnavailable(params.IgnoreUnavailable).
 		KeepAlive("5m").Do(context.Background())
-	if err != nil {
-		zap.L().Error("OpenPointInTime failed", zap.Error(err))
-		return err
-	}
-
 	if err != nil {
 		zap.L().Error("OpenPointInTime failed", zap.Error(err))
 		return err
@@ -219,9 +215,12 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, searchRe
 			return ctx.Err()
 		case export.Data <- widgetData.Hits:
 			// do nothing
-		default:
-			return errors.New("StreamedExport channel closed unexceptionally")
-		} // send data through channel
+		}
+		// Fix: this select used to have a `default` branch returning "StreamedExport channel closed
+		// unexceptionally". The channel is buffered (10), so as soon as the consumer was slower than
+		// Elasticsearch (disk/gzip writing) and the buffer was full, the export failed with a false error.
+		// Now the send blocks until the consumer is ready, and is still interrupted by ctx.Done()
+		// (cancellation, or the worker leaving its loop after a write error).
 
 		// avoids a useless search request
 		if len(response.Hits.Hits) < size {

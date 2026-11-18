@@ -31,6 +31,7 @@ const (
 	StatusError     = 3
 	StatusCanceled  = 4
 	StatusCanceling = 5
+	StatusEmpty     = 6 // the export succeeded but the query returned no data, no file is kept
 
 	// Delete return codes
 	DeleteExportNotFound    = 0
@@ -48,6 +49,7 @@ type WrapperItem struct {
 	Facts          []engine.Fact          `json:"-"`
 	Error          string                 `json:"error"`
 	Status         int                    `json:"status"`
+	RowCount       int64                  `json:"rowCount"` // number of rows written in the export file
 	FileName       string                 `json:"fileName"`
 	Title          string                 `json:"title"`
 	Date           time.Time              `json:"date"`

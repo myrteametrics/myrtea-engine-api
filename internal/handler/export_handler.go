@@ -542,6 +542,11 @@ func (e *ExportHandler) DownloadExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if item.Status == export.StatusEmpty {
+		httputil.Error(w, r, httputil.ErrAPIDBResourceNotFound, errors.New("export is empty: no data to download"))
+		return
+	}
+
 	if e.directDownload {
 		path := filepath.Join(e.exportWrapper.BasePath, item.FileName)
 		httputil.StreamFile(path, item.FileName, w, r)
