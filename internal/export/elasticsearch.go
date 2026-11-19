@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -50,6 +51,49 @@ func (export StreamedExport) DrainChannel() {
 			break // Channel is closed and empty
 		}
 	}
+}
+
+// formatElasticError turns an Elasticsearch error into a message the user can understand.
+//
+// Fix: the raw error looks like "status: 400, failed: [search_phase_execution_exception], reason: all shards failed".
+// The useful information (why the query is wrong, e.g. a parsing error or an unknown field) is only available in the
+// root causes of the error, which were never displayed, and the generic prefix alone was shown to the user.
+// Non-Elasticsearch errors are returned unchanged.
+func formatElasticError(err error) error {
+	var esErr *types.ElasticsearchError
+	if !errors.As(err, &esErr) || esErr == nil {
+		return err
+	}
+
+	// collect distinct root cause reasons (one per failed shard, most of the time identical)
+	reasons := make([]string, 0)
+	seen := make(map[string]struct{})
+	for _, cause := range esErr.ErrorCause.RootCause {
+		if cause.Reason == nil || *cause.Reason == "" {
+			continue
+		}
+		msg := cause.Type + ": " + *cause.Reason
+		if _, ok := seen[msg]; !ok {
+			seen[msg] = struct{}{}
+			reasons = append(reasons, msg)
+		}
+	}
+	// no root cause: walk the "caused_by" chain, its deepest element is the most precise explanation
+	if len(reasons) == 0 {
+		for cause := esErr.ErrorCause.CausedBy; cause != nil; cause = cause.CausedBy {
+			if cause.Reason != nil && *cause.Reason != "" {
+				reasons = []string{cause.Type + ": " + *cause.Reason}
+			}
+		}
+	}
+	if len(reasons) == 0 && esErr.ErrorCause.Reason != nil {
+		reasons = append(reasons, *esErr.ErrorCause.Reason)
+	}
+	if len(reasons) == 0 {
+		return err
+	}
+
+	return fmt.Errorf("elasticsearch error (status %d, %s): %s", esErr.Status, esErr.ErrorCause.Type, strings.Join(reasons, " | "))
 }
 
 // StreamedExportFactHitsFull export data from ElasticSearch to a channel
@@ -140,7 +184,7 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, searchRe
 		KeepAlive("5m").Do(context.Background())
 	if err != nil {
 		zap.L().Error("OpenPointInTime failed", zap.Error(err))
-		return err
+		return formatElasticError(err)
 	}
 
 	// close point in time
@@ -188,7 +232,7 @@ func (export StreamedExport) ProcessStreamedExport(ctx context.Context, searchRe
 		response, err := customSearchRequest.Do(context.Background())
 		if err != nil {
 			zap.L().Error("ES Search failed", zap.Error(err))
-			return err
+			return formatElasticError(err)
 		}
 
 		if hasLimit {
