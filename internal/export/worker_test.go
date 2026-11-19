@@ -47,3 +47,21 @@ func TestExportWorker_DrainCancelChannel(t *testing.T) {
 	worker.DrainCancelChannel()
 	expression.AssertEqual(t, len(worker.Cancel), 0)
 }
+
+func TestExportWorker_finalizeKeepsEmptyStatus(t *testing.T) {
+	success := make(chan int, 1)
+	worker := NewExportWorker(0, "/tmp", success)
+	worker.QueueItem.Status = StatusEmpty
+	worker.finalize()
+	expression.AssertEqual(t, worker.QueueItem.Status, StatusEmpty)
+	expression.AssertEqual(t, <-success, 0)
+}
+
+func TestExportWorker_finalizeSetsDone(t *testing.T) {
+	success := make(chan int, 1)
+	worker := NewExportWorker(0, "/tmp", success)
+	worker.QueueItem.Status = StatusRunning
+	worker.finalize()
+	expression.AssertEqual(t, worker.QueueItem.Status, StatusDone)
+	<-success
+}

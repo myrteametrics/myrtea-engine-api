@@ -89,7 +89,8 @@ func (e *ExportWorker) finalize() {
 		e.QueueItem.Status = StatusError
 	}
 	// set status to done if no error occurred
-	if e.QueueItem.Status != StatusError && e.QueueItem.Status != StatusCanceled {
+	// StatusEmpty is a final status too: it must not be overwritten by StatusDone
+	if e.QueueItem.Status != StatusError && e.QueueItem.Status != StatusCanceled && e.QueueItem.Status != StatusEmpty {
 		e.QueueItem.Status = StatusDone
 	}
 	e.Mutex.Unlock()
@@ -200,6 +201,7 @@ func (e *ExportWorker) Start(item WrapperItem, ctx context.Context) {
 
 	// Chunk handler
 	first := true
+	var rowCount int64
 
 loop:
 	for {
@@ -217,6 +219,8 @@ loop:
 				break loop
 			}
 
+			rowCount += int64(len(hits))
+
 			// Flush data
 			csvWriter.Flush()
 
@@ -232,6 +236,10 @@ loop:
 	}
 
 	wg.Wait()
+
+	e.Mutex.Lock()
+	e.QueueItem.RowCount = rowCount
+	e.Mutex.Unlock()
 
 	// error occurred, close file and delete
 	if writerErr != nil || err != nil {
@@ -258,6 +266,24 @@ loop:
 		if err != nil {
 			zap.L().Error("Export worker: couldn't delete file", zap.String("filePath", path), zap.Error(err))
 		}
+		return
 	}
 
+	// Fix: when the query returned zero hits, no chunk was ever received, so the file stayed empty
+	// (0 bytes, or a few bytes of gzip header) while the export was still reported as "done".
+	// We now flag it as StatusEmpty (the user is notified that there is nothing to export)
+	// and delete the useless file. A canceled export (ctx.Err() != nil) must not be flagged as empty.
+	if rowCount == 0 && ctx.Err() == nil {
+		zap.L().Info("Export worker: no data to export, deleting empty file...", zap.String("filePath", path))
+		e.SetStatus(StatusEmpty)
+
+		if gzipWriter != nil {
+			_ = gzipWriter.Close()
+		}
+		_ = file.Close()
+
+		if err = os.Remove(path); err != nil {
+			zap.L().Error("Export worker: couldn't delete empty file", zap.String("filePath", path), zap.Error(err))
+		}
+	}
 }
