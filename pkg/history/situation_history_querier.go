@@ -326,6 +326,39 @@ func (querier *HistorySituationsQuerier) QueryGetFieldsTsMetadatas(ctx context.C
 	return result, nil
 }
 
+// QueryGetFieldsTsMetadatasList reads every row returned by the builder (ts, metadatas), in the
+// order of the query. Unlike QueryGetFieldsTsMetadatas, a row without metadata is kept as an
+// empty record: it is a valid tick on which no "set" action fired, and dropping it would shift
+// the position of the older ticks.
+func (querier *HistorySituationsQuerier) QueryGetFieldsTsMetadatasList(ctx context.Context, builder sq.SelectBuilder) ([]HistorySituationsV4, error) {
+	rows, err := builder.RunWith(querier.conn).QueryContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("query execution failed: %w", err)
+	}
+	defer rows.Close()
+
+	results := make([]HistorySituationsV4, 0)
+	for rows.Next() {
+		var ts time.Time
+		var metadataBytes []byte
+		if err := rows.Scan(&ts, &metadataBytes); err != nil {
+			return nil, fmt.Errorf("row scanning failed: %w", err)
+		}
+
+		var metadatas []metadata.MetaData
+		if len(metadataBytes) > 0 {
+			if err := json.Unmarshal(metadataBytes, &metadatas); err != nil {
+				return nil, fmt.Errorf("unable to unmarshal metadatas JSON: %w", err)
+			}
+		}
+		results = append(results, HistorySituationsV4{Metadatas: metadatas, Ts: ts})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration failed: %w", err)
+	}
+	return results, nil
+}
+
 func (querier *HistorySituationsQuerier) QueryGetSpecificFactExpr(builder sq.SelectBuilder, formatTime string, factExpr string) (GetFactExprHistory, error) {
 	rows, err := builder.RunWith(querier.conn).Query()
 	if err != nil {
@@ -414,6 +447,29 @@ func (querier HistorySituationsQuerier) GetLatestHistory(situationID int64, situ
 func (querier HistorySituationsQuerier) GetLatestHistoryBefore(situationID int64, situationInstanceID int64, ts time.Time) (HistorySituationsV4, error) {
 	builder := HistorySituationsBuilder{}
 	return querier.getLatestHistory(builder.GetLatestHistorySituationBefore(situationID, situationInstanceID, ts))
+}
+
+// GetLatestHistories returns the n most recent history rows of a situation instance, most
+// recent first: index 0 is the previous tick (T-1), index 1 the one before (T-2), and so on.
+// It returns fewer than n rows when the situation has less history, and an empty slice if none.
+// It must be called before the row of the current tick is inserted.
+func (querier HistorySituationsQuerier) GetLatestHistories(situationID int64, situationInstanceID int64, n int) ([]HistorySituationsV4, error) {
+	if n <= 0 {
+		return []HistorySituationsV4{}, nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	builder := HistorySituationsBuilder{}
+	results, err := querier.QueryGetFieldsTsMetadatasList(ctx, builder.GetLatestHistoriesSituation(situationID, situationInstanceID, n))
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, errors.New("Timeout Error: The request targeting the 'situation_history_v5' table timed out after 10 seconds.")
+		}
+		return nil, err
+	}
+	return results, nil
 }
 
 func (querier HistorySituationsQuerier) getLatestHistory(selectBuilder sq.SelectBuilder) (HistorySituationsV4, error) {

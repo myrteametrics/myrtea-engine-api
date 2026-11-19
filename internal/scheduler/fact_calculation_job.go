@@ -525,9 +525,9 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 			}
 		}
 
-		// Lazily fetched and cached: the situation's previous history record, used to
-		// verify "t-1" action dependency conditions.
-		var previousHistory *history.HistorySituationsV4
+		// Lazily fetched and cached (one query, sized on the deepest offset used by the agenda):
+		// the situation's previous history rows, used to verify "t-k" action dependency conditions.
+		historyWindow := newActionHistoryWindow(situationToUpdate.SituationID, situationToUpdate.SituationInstanceID, maxActionConditionDepth(agenda))
 
 		for _, agen := range agenda {
 			if agen.GetName() == tasker.ActionSet {
@@ -545,7 +545,7 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 				continue
 			}
 
-			if isActionConditionVerified(agen, currentActionSets, &previousHistory, situationToUpdate.SituationID, situationToUpdate.SituationInstanceID) {
+			if isActionConditionVerified(agen, currentActionSets, historyWindow) {
 				filteredAgenda = append(filteredAgenda, agen)
 			}
 		}
@@ -620,17 +620,17 @@ func CalculateAndPersistSituations(localRuleEngine *ruleeng.RuleEngine, situatio
 }
 
 // isActionConditionVerified checks whether an action's action-set dependency
-// conditions (actionCondition.t and actionCondition.t_minus_1) allow it to be executed.
+// conditions (actionCondition.slots, one per offset) allow it to be executed.
 //
 //   - If the action does not have action-set conditions enabled, or has none configured,
 //     it is always verified.
-//   - The "t" slot is verified if the action set it depends on fired during the current tick
-//     (present in currentActionSets).
-//   - The "t_minus_1" slot is verified if the action set it depends on fired during the
-//     previous tick (present in the situation's previous history metadata).
+//   - The slot at offset 0 ("T") is verified if the action set it depends on fired during
+//     the current tick (present in currentActionSets).
+//   - The slot at offset k >= 1 ("T-k") is verified if the action set it depends on fired
+//     k ticks ago (present in the metadata of the k-th previous history row of the situation).
 //   - Only enabled slots are checked, and all enabled slots must be verified (AND).
-//     If neither slot is enabled, the action is verified by default.
-func isActionConditionVerified(agen ruleeng.Action, currentActionSets map[string]ruleeng.Action, previousHistory **history.HistorySituationsV4, situationID, situationInstanceID int64) bool {
+//     If no slot is enabled, the action is verified by default.
+func isActionConditionVerified(agen ruleeng.Action, currentActionSets map[string]ruleeng.Action, window *actionHistoryWindow) bool {
 	if !agen.GetEnableActionCondition() {
 		return true
 	}
@@ -640,32 +640,78 @@ func isActionConditionVerified(agen ruleeng.Action, currentActionSets map[string
 		return true
 	}
 
-	verified := true
-
-	if slot := condition.T; slot != nil && slot.Enabled {
-		_, verified = currentActionSets[slot.ActionSetID]
-	}
-
-	if slot := condition.TMinus1; slot != nil && slot.Enabled {
-		verified = verified && actionSetFiredInPreviousTick(slot.ActionSetID, previousHistory, situationID, situationInstanceID)
-	}
-
-	return verified
-}
-
-// actionSetFiredInPreviousTick checks whether a "set" action with the given action set id
-// produced metadata in the situation's previous history record. The previous history is
-// fetched at most once and cached in previousHistory for reuse across actions of the same situation.
-func actionSetFiredInPreviousTick(actionSetID string, previousHistory **history.HistorySituationsV4, situationID, situationInstanceID int64) bool {
-	if *previousHistory == nil {
-		latest, err := history.S().HistorySituationsQuerier.GetLatestHistory(situationID, situationInstanceID)
-		if err != nil {
+	for _, slot := range condition.Slots {
+		if !slot.Enabled {
+			continue
+		}
+		if slot.Offset == 0 {
+			if _, fired := currentActionSets[slot.ActionSetID]; !fired {
+				return false
+			}
+			continue
+		}
+		if !window.actionSetFiredAt(slot.Offset, slot.ActionSetID) {
 			return false
 		}
-		*previousHistory = &latest
 	}
+	return true
+}
 
-	for _, md := range (*previousHistory).Metadatas {
+// maxActionConditionDepth returns the deepest history offset needed by the actions of an agenda.
+func maxActionConditionDepth(agenda []ruleeng.Action) int {
+	depth := 0
+	for _, agen := range agenda {
+		if !agen.GetEnableActionCondition() {
+			continue
+		}
+		if d := agen.GetActionCondition().MaxEnabledOffset(); d > depth {
+			depth = d
+		}
+	}
+	return depth
+}
+
+// actionHistoryWindow lazily loads, once, the previous history rows of a situation instance
+// (most recent first: rows[0] is T-1, rows[1] is T-2, ...) so that every action of the
+// situation can check its "T-k" dependencies without querying again.
+type actionHistoryWindow struct {
+	situationID         int64
+	situationInstanceID int64
+	depth               int
+	loaded              bool
+	rows                []history.HistorySituationsV4
+}
+
+func newActionHistoryWindow(situationID, situationInstanceID int64, depth int) *actionHistoryWindow {
+	return &actionHistoryWindow{situationID: situationID, situationInstanceID: situationInstanceID, depth: depth}
+}
+
+// actionSetFiredAt checks whether a "set" action with the given action set id produced metadata
+// k ticks ago. It returns false if the situation has less than k previous rows, or if the
+// history cannot be read.
+func (w *actionHistoryWindow) actionSetFiredAt(offset int, actionSetID string) bool {
+	if offset < 1 {
+		return false
+	}
+	if !w.loaded {
+		// Fetch at least the requested offset, even if the window was sized smaller.
+		depth := w.depth
+		if offset > depth {
+			depth = offset
+		}
+		rows, err := history.S().HistorySituationsQuerier.GetLatestHistories(w.situationID, w.situationInstanceID, depth)
+		if err != nil {
+			zap.L().Warn("Unable to read the situation history for an action condition",
+				zap.Int64("situationID", w.situationID), zap.Int64("situationInstanceID", w.situationInstanceID), zap.Error(err))
+			return false
+		}
+		w.rows = rows
+		w.loaded = true
+	}
+	if offset > len(w.rows) {
+		return false
+	}
+	for _, md := range w.rows[offset-1].Metadatas {
 		if md.ActionID == actionSetID {
 			return true
 		}

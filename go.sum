@@ -201,6 +201,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/myrteametrics/myrtea-sdk/v5 v5.4.7 h1:3yeghDxZemL73d4mKEjwJf/JUHMpR96/RzTXdYq2lSA=
 github.com/myrteametrics/myrtea-sdk/v5 v5.4.7/go.mod h1:cvn1MytS9keAKn1r530qR9nepfzvTCPLVUuozfGOU+s=
+github.com/myrteametrics/myrtea-sdk/v5 v5.4.8-0.20261119100304-9388a4697a2c h1:vRa0TO1y2OGrK8DGlLz11W+4IvW9B1fMNGlCsC+D0iQ=
+github.com/myrteametrics/myrtea-sdk/v5 v5.4.8-0.20261119100304-9388a4697a2c/go.mod h1:cvn1MytS9keAKn1r530qR9nepfzvTCPLVUuozfGOU+s=
 github.com/ncruces/go-strftime v1.1.0 h1:vtPmPWMkb539RGV9WpWT9EwJGvrOCKvMNI4obWL47Hk=
 github.com/ncruces/go-strftime v1.1.0/go.mod h1:yVaq7iwCN09vHRrKBrrflXT0M9tTMG2KmZ9Fj7xeG/g=
 github.com/oklog/run v1.2.0 h1:O8x3yXwah4A73hJdlrwo/2X6J62gE5qTMusH0dvz60E=
