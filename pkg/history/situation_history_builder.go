@@ -148,6 +148,12 @@ func (builder HistorySituationsBuilder) GetLatestHistorySituation(situationID in
 		Limit(1)
 }
 
+// GetLatestHistoriesSituation returns the n most recent history rows of a situation instance,
+// most recent first. It leaves GetLatestHistorySituation untouched.
+func (builder HistorySituationsBuilder) GetLatestHistoriesSituation(situationID int64, situationInstanceID int64, n int) sq.SelectBuilder {
+	return builder.GetLatestHistorySituation(situationID, situationInstanceID).Limit(uint64(n))
+}
+
 // GetLatestHistorySituationBefore is GetLatestHistorySituation restricted to the state
 // strictly before ts. Callers that have already written the row of the current tick need this
 // to reach the actual previous state rather than reading their own write back.
